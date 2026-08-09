@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/http/friend.dart'
-    show FriendApplyInfo;
 import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
 import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show SearchFriendItem;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 
+import '../data/repositories/friend_application_repository.dart';
 import '../data/repositories/friend_repository.dart';
 import '../services/friend_service.dart';
+import '../ui/features/contacts/view_models/friend_apply_view_model.dart';
 import '../ui/features/contacts/view_models/friend_list_view_model.dart';
 import 'im_providers.dart';
 import 'message_service_provider.dart';
@@ -25,8 +25,9 @@ final friendRepositoryProvider = Provider<FriendRepository>((ref) {
 /// 好友列表 ViewModel Provider
 final friendListProvider =
     StateNotifierProvider<FriendListViewModel, FriendListState>((ref) {
-      final viewModel =
-          FriendListViewModel(repository: ref.watch(friendRepositoryProvider));
+      final viewModel = FriendListViewModel(
+        repository: ref.watch(friendRepositoryProvider),
+      );
       ref.listen(messageServiceProvider, (prev, next) {
         if (prev?.friendRevision != next.friendRevision) {
           viewModel.loadFriends();
@@ -37,122 +38,27 @@ final friendListProvider =
 
 // ==================== 好友申请 ====================
 
-/// 好友申请状态
-class FriendApplyState {
-  final List<FriendApplyInfo> received;
-  final List<FriendApplyInfo> sent;
-  final bool isLoading;
-  final String? error;
-
-  const FriendApplyState({
-    this.received = const [],
-    this.sent = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  FriendApplyState copyWith({
-    List<FriendApplyInfo>? received,
-    List<FriendApplyInfo>? sent,
-    bool? isLoading,
-    String? error,
-  }) {
-    return FriendApplyState(
-      received: received ?? this.received,
-      sent: sent ?? this.sent,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-
-  /// 未处理的申请数量
-  int get unhandledCount => received.length;
-}
-
-/// 好友申请 Notifier
-class FriendApplyNotifier extends StateNotifier<FriendApplyState> {
-  FriendApplyNotifier(this._ref) : super(const FriendApplyState()) {
-    _init();
-  }
-
-  final Ref _ref;
-
-  void _init() {
-    _ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.friendRevision != next.friendRevision) {
-        loadApplications();
-      }
+/// 好友申请 Repository Provider
+final friendApplicationRepositoryProvider =
+    Provider<FriendApplicationRepository>((ref) {
+      return FriendApplicationRepositoryImpl(
+        friendService: FriendService.instance,
+        imClient: ref.watch(imClientProvider),
+      );
     });
-  }
 
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载好友申请列表
-  Future<void> loadApplications() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final received = await client.getFriendApplyList();
-      final sent = await client.getFriendApplyListAsApplicant();
-      state = state.copyWith(received: received, sent: sent, isLoading: false);
-      appLog.i(
-        '[FriendProvider] 好友申请加载完成: 收到=${received.length}, 发出=${sent.length}',
-      );
-    } catch (e) {
-      appLog.e('[FriendProvider] 加载好友申请失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载好友申请失败: $e');
-    }
-  }
-
-  /// 接受好友申请
-  Future<void> acceptApplication(String userId, {String? handleMsg}) async {
-    final client = _client;
-    if (client == null) return;
-
-    try {
-      await client.acceptFriendApplication(
-        userId: userId,
-        handleMsg: handleMsg,
-      );
-      appLog.i('[FriendProvider] 已接受好友申请: userId=$userId');
-      // 刷新列表
-      await loadApplications();
-    } catch (e) {
-      appLog.e('[FriendProvider] 接受好友申请失败: $e');
-      state = state.copyWith(error: '接受好友申请失败: $e');
-    }
-  }
-
-  /// 拒绝好友申请
-  Future<void> refuseApplication(String userId, {String? handleMsg}) async {
-    final client = _client;
-    if (client == null) return;
-
-    try {
-      await client.refuseFriendApplication(
-        userId: userId,
-        handleMsg: handleMsg,
-      );
-      appLog.i('[FriendProvider] 已拒绝好友申请: userId=$userId');
-      // 刷新列表
-      await loadApplications();
-    } catch (e) {
-      appLog.e('[FriendProvider] 拒绝好友申请失败: $e');
-      state = state.copyWith(error: '拒绝好友申请失败: $e');
-    }
-  }
-}
-
-/// 好友申请 Provider
+/// 好友申请 ViewModel Provider
 final friendApplyProvider =
-    StateNotifierProvider<FriendApplyNotifier, FriendApplyState>((ref) {
-      return FriendApplyNotifier(ref);
+    StateNotifierProvider<FriendApplyViewModel, FriendApplyState>((ref) {
+      final viewModel = FriendApplyViewModel(
+        repository: ref.watch(friendApplicationRepositoryProvider),
+      );
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.friendRevision != next.friendRevision) {
+          viewModel.loadApplications();
+        }
+      });
+      return viewModel;
     });
 
 // ==================== 好友搜索 ====================

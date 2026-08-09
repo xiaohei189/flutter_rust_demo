@@ -121,7 +121,7 @@ lib/
             └── views/
 ```
 
-当前好友列表已按该结构落地：`lib/domain/models/friend.dart`、`lib/data/repositories/friend_repository.dart`、`lib/ui/features/contacts/`。其余 feature 按同一模式渐进迁移。
+当前好友列表和好友申请已按该结构落地：`lib/domain/models/friend.dart`、`lib/domain/models/friend_application.dart`、`lib/data/repositories/friend_repository.dart`、`lib/data/repositories/friend_application_repository.dart`、`lib/ui/features/contacts/`。其余 feature 按同一模式渐进迁移。
 
 ### Rust 侧 (`rust/src/`)
 

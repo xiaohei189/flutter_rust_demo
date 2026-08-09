@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/providers.dart';
-import '../src/rust/http/friend.dart' show FriendApplyInfo;
-import '../theme/app_theme.dart';
-import '../widgets/user_avatar.dart';
-import '../models/user.dart';
+import '../../../../domain/models/friend_application.dart';
+import '../../../../models/user.dart';
+import '../../../../providers/providers.dart';
+import '../../../../theme/app_theme.dart';
+import '../../../../widgets/user_avatar.dart';
 
 /// 好友申请页面
 ///
@@ -34,10 +34,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
     final state = ref.watch(friendApplyProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('好友申请'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('好友申请'), elevation: 0),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -46,30 +43,20 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
               child: ListView(
                 children: [
                   // 收到的申请
-                  _buildSectionHeader(
-                    '收到的申请',
-                    count: state.received.length,
-                  ),
+                  _buildSectionHeader('收到的申请', count: state.received.length),
                   if (state.received.isEmpty)
                     _buildEmptyHint('暂无收到的好友申请')
                   else
-                    ...state.received.map(
-                      (apply) => _buildReceivedItem(apply),
-                    ),
+                    ...state.received.map((apply) => _buildReceivedItem(apply)),
 
                   const SizedBox(height: 12),
 
                   // 我发出的申请
-                  _buildSectionHeader(
-                    '我发出的申请',
-                    count: state.sent.length,
-                  ),
+                  _buildSectionHeader('我发出的申请', count: state.sent.length),
                   if (state.sent.isEmpty)
                     _buildEmptyHint('暂无发出的好友申请')
                   else
-                    ...state.sent.map(
-                      (apply) => _buildSentItem(apply),
-                    ),
+                    ...state.sent.map((apply) => _buildSentItem(apply)),
 
                   const SizedBox(height: 40),
                 ],
@@ -116,7 +103,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   }
 
   /// 构建收到的申请项
-  Widget _buildReceivedItem(FriendApplyInfo apply) {
+  Widget _buildReceivedItem(FriendApplication apply) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -171,7 +158,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   }
 
   /// 构建收到的申请状态按钮
-  Widget _buildReceivedStatusButton(FriendApplyInfo apply) {
+  Widget _buildReceivedStatusButton(FriendApplication apply) {
     switch (apply.handleResult) {
       case 0:
         // 未处理 -> 显示"处理"按钮
@@ -202,10 +189,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         // 已拒绝
         return const Text(
           '已拒绝',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppTheme.textSecondaryColor,
-          ),
+          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
         );
       default:
         return const SizedBox.shrink();
@@ -213,7 +197,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   }
 
   /// 构建发出的申请项
-  Widget _buildSentItem(FriendApplyInfo apply) {
+  Widget _buildSentItem(FriendApplication apply) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -268,16 +252,13 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   }
 
   /// 构建发出的申请状态
-  Widget _buildSentStatus(FriendApplyInfo apply) {
+  Widget _buildSentStatus(FriendApplication apply) {
     switch (apply.handleResult) {
       case 0:
         // 等待验证
         return const Text(
           '等待验证',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppTheme.textSecondaryColor,
-          ),
+          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
         );
       case 1:
         // 已同意
@@ -293,10 +274,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         // 已拒绝
         return const Text(
           '已拒绝',
-          style: TextStyle(
-            fontSize: 13,
-            color: AppTheme.textSecondaryColor,
-          ),
+          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
         );
       default:
         return const SizedBox.shrink();
@@ -324,26 +302,22 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   void _showHandleDialog(String userId) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('处理好友申请'),
         content: const Text('请选择操作'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final ok = await ref
                   .read(friendApplyProvider.notifier)
                   .refuseApplication(userId);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已拒绝好友申请'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              if (!mounted) return;
+              _showApplyFeedback(ok, '已拒绝好友申请', '拒绝好友申请失败');
             },
             child: const Text(
               '拒绝',
@@ -351,21 +325,26 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              final ok = await ref
                   .read(friendApplyProvider.notifier)
                   .acceptApplication(userId);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已接受好友申请'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              if (!mounted) return;
+              _showApplyFeedback(ok, '已接受好友申请', '接受好友申请失败');
             },
             child: const Text('同意'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showApplyFeedback(bool ok, String success, String failure) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? success : failure),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
