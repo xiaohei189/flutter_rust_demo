@@ -82,13 +82,15 @@ class _EntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        leading: Icon(icon, color: AppTheme.primaryColor),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right, size: 20),
-        onTap: onTap,
+      child: Material(
+        color: Colors.white,
+        child: ListTile(
+          leading: Icon(icon, color: AppTheme.primaryColor),
+          title: Text(title),
+          trailing: const Icon(Icons.chevron_right, size: 20),
+          onTap: onTap,
+        ),
       ),
     );
   }

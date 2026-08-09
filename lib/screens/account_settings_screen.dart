@@ -32,7 +32,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       ),
       body: ListView(
         children: [
-          Container(
+          Material(
             color: Colors.white,
             child: SwitchListTile(
               title: const Text('全局消息免打扰'),
