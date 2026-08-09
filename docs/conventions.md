@@ -100,6 +100,13 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 - `initState` / `dispose` 管理 Timer/Subscription
 - 异步操作后检查 `mounted`
 
+### Repository / ViewModel 模式
+
+- Repository 位于 `lib/data/repositories/`，消费 Service，负责缓存、重试和 API 模型到领域模型的转换。
+- ViewModel 位于 `lib/ui/features/<feature>/view_models/`，通过构造函数注入 Repository，只暴露不可变状态和命令方法。
+- View 只负责渲染和路由/交互反馈，不直接访问 FFI client 或 Service。
+- Provider 只做依赖注册和状态桥接，不在 Provider 中实现数据获取。
+
 ```dart
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});

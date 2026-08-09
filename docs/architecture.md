@@ -86,12 +86,42 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 | `lib/widgets/` | 18 个可复用 UI 组件 |
 | `lib/services/` | 13 个业务服务（IM 客户端、消息、用户等） |
 | `lib/providers/` | Riverpod 状态管理 |
+| `lib/data/` | 数据层：Repository 等（好友功能已作为 pilot 落地） |
+| `lib/domain/` | 领域层：领域模型、Use Case |
+| `lib/ui/features/` | feature 化 UI：views、view_models |
 | `lib/models/` | Freezed 数据模型 |
 | `lib/router/` | go_router 路由配置 |
 | `lib/theme/` | AppTheme 颜色/样式 |
 | `lib/utils/` | 工具类（日志、存储） |
 | `lib/extensions/` | 扩展方法 |
 | `lib/src/rust/` | flutter_rust_bridge 自动生成的 Dart 绑定 |
+
+### 目标目录结构（渐进迁移）
+
+UI 按 feature 组织，Data/Domain 按类型组织，依赖方向固定为：
+
+```text
+UI (views/view_models) -> Domain (models/use_cases) -> Data (repositories/services) -> FFI
+```
+
+```text
+lib/
+├── data/
+│   ├── models/         # API/raw 模型
+│   ├── repositories/   # Repository 实现
+│   └── services/       # API 客户端、本地存储封装
+├── domain/
+│   ├── models/         # 领域模型
+│   └── use_cases/      # 复杂业务逻辑（按需）
+└── ui/
+    ├── core/           # 共享 widgets、theme、通用组件
+    └── features/
+        └── [feature_name]/
+            ├── view_models/
+            └── views/
+```
+
+当前好友列表已按该结构落地：`lib/domain/models/friend.dart`、`lib/data/repositories/friend_repository.dart`、`lib/ui/features/contacts/`。其余 feature 按同一模式渐进迁移。
 
 ### Rust 侧 (`rust/src/`)
 

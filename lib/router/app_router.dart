@@ -10,7 +10,7 @@ import '../screens/group_info_screen.dart';
 import '../screens/my_profile_screen.dart' show MyProfileScreen, ProfileFieldEditScreen;
 import '../screens/search_screen.dart';
 import '../screens/user_profile_screen.dart';
-import '../screens/friend_list_screen.dart';
+import '../ui/features/contacts/views/friend_list_screen.dart';
 import '../screens/friend_requests_screen.dart';
 import '../screens/friend_setup_screen.dart';
 import '../screens/group_list_screen.dart';

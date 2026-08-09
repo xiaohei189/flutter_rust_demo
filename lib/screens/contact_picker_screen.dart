@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../domain/models/friend.dart';
 import '../providers/providers.dart';
-import '../src/rust/model/friend.dart' show FriendInfo;
 import '../src/rust/model/group.dart' show GroupInfo;
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -73,7 +73,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 获取过滤后的好友列表
-  List<FriendInfo> _getFilteredFriends(List<FriendInfo> friends) {
+  List<Friend> _getFilteredFriends(List<Friend> friends) {
     final excludeSet = widget.excludeIds?.toSet() ?? {};
     return friends.where((f) {
       if (excludeSet.contains(f.userId)) return false;
@@ -238,7 +238,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 联系人列表
-  Widget _buildContactList(List<FriendInfo> friends, List<GroupInfo> groups) {
+  Widget _buildContactList(List<Friend> friends, List<GroupInfo> groups) {
     final hasFriends = friends.isNotEmpty;
     final hasGroups = groups.isNotEmpty;
 
@@ -297,7 +297,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   }
 
   /// 好友列表项
-  Widget _buildFriendItem(FriendInfo friend) {
+  Widget _buildFriendItem(Friend friend) {
     final id = friend.userId;
     final displayName = friend.remark.isNotEmpty ? friend.remark : friend.nickname;
     final isSelected = _selectedIds.contains(id);

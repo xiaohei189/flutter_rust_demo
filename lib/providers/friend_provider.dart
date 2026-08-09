@@ -1,116 +1,39 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/model/friend.dart' show FriendInfo;
-import 'package:flutter_rust_demo/src/rust/http/friend.dart' show FriendApplyInfo;
+import 'package:flutter_rust_demo/src/rust/http/friend.dart'
+    show FriendApplyInfo;
 import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
 import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show SearchFriendItem;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 
+import '../data/repositories/friend_repository.dart';
+import '../services/friend_service.dart';
+import '../ui/features/contacts/view_models/friend_list_view_model.dart';
+import 'im_providers.dart';
 import 'message_service_provider.dart';
 
 // ==================== 好友列表 ====================
 
-/// 好友列表状态
-class FriendListState {
-  final List<FriendInfo> friends;
-  final bool isLoading;
-  final String? error;
-
-  const FriendListState({
-    this.friends = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  FriendListState copyWith({
-    List<FriendInfo>? friends,
-    bool? isLoading,
-    String? error,
-  }) {
-    return FriendListState(
-      friends: friends ?? this.friends,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-
-  /// 好友总数
-  int get friendCount => friends.length;
-}
-
-/// 好友列表 Notifier
-class FriendListNotifier extends StateNotifier<FriendListState> {
-  FriendListNotifier(this._ref) : super(const FriendListState());
-
-  final Ref _ref;
-
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载好友列表
-  Future<void> loadFriends() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final friends = await client.getFriendList();
-      state = state.copyWith(friends: friends, isLoading: false);
-      appLog.i('[FriendProvider] 好友列表加载完成: ${friends.length} 人');
-    } catch (e) {
-      appLog.e('[FriendProvider] 加载好友列表失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载好友列表失败: $e');
-    }
-  }
-
-  /// 搜索好友
-  Future<void> searchFriends(String keyword) async {
-    final client = _client;
-    if (client == null) return;
-
-    if (keyword.trim().isEmpty) {
-      await loadFriends();
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final results = await client.searchFriends(keyword: keyword);
-      // SearchFriendItem -> FriendInfo 简单映射
-      final friends = results
-          .map((item) => FriendInfo(
-                userId: item.friendUserId,
-                nickname: item.nickname,
-                faceUrl: item.faceUrl,
-                gender: 0,
-                remark: item.remark,
-                createTime: item.createTime,
-                addSource: '',
-                ex: item.ex,
-              ))
-          .toList();
-      state = state.copyWith(friends: friends, isLoading: false);
-      appLog.i('[FriendProvider] 搜索好友完成: ${friends.length} 人');
-    } catch (e) {
-      appLog.e('[FriendProvider] 搜索好友失败: $e');
-      state = state.copyWith(isLoading: false, error: '搜索好友失败: $e');
-    }
-  }
-
-  /// 刷新好友列表
-  Future<void> refreshFriends() async {
-    await loadFriends();
-  }
-}
-
-/// 好友列表 Provider
-final friendListProvider =
-    StateNotifierProvider<FriendListNotifier, FriendListState>((ref) {
-  return FriendListNotifier(ref);
+/// 好友 Repository Provider
+final friendRepositoryProvider = Provider<FriendRepository>((ref) {
+  return FriendRepositoryImpl(
+    friendService: FriendService.instance,
+    imClient: ref.watch(imClientProvider),
+  );
 });
+
+/// 好友列表 ViewModel Provider
+final friendListProvider =
+    StateNotifierProvider<FriendListViewModel, FriendListState>((ref) {
+      final viewModel =
+          FriendListViewModel(repository: ref.watch(friendRepositoryProvider));
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.friendRevision != next.friendRevision) {
+          viewModel.loadFriends();
+        }
+      });
+      return viewModel;
+    });
 
 // ==================== 好友申请 ====================
 
@@ -148,9 +71,19 @@ class FriendApplyState {
 
 /// 好友申请 Notifier
 class FriendApplyNotifier extends StateNotifier<FriendApplyState> {
-  FriendApplyNotifier(this._ref) : super(const FriendApplyState());
+  FriendApplyNotifier(this._ref) : super(const FriendApplyState()) {
+    _init();
+  }
 
   final Ref _ref;
+
+  void _init() {
+    _ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.friendRevision != next.friendRevision) {
+        loadApplications();
+      }
+    });
+  }
 
   fb.OpenImBridgeClient? get _client =>
       _ref.read(messageServiceProvider.notifier).client;
@@ -167,13 +100,10 @@ class FriendApplyNotifier extends StateNotifier<FriendApplyState> {
     try {
       final received = await client.getFriendApplyList();
       final sent = await client.getFriendApplyListAsApplicant();
-      state = state.copyWith(
-        received: received,
-        sent: sent,
-        isLoading: false,
-      );
+      state = state.copyWith(received: received, sent: sent, isLoading: false);
       appLog.i(
-          '[FriendProvider] 好友申请加载完成: 收到=${received.length}, 发出=${sent.length}');
+        '[FriendProvider] 好友申请加载完成: 收到=${received.length}, 发出=${sent.length}',
+      );
     } catch (e) {
       appLog.e('[FriendProvider] 加载好友申请失败: $e');
       state = state.copyWith(isLoading: false, error: '加载好友申请失败: $e');
@@ -222,8 +152,8 @@ class FriendApplyNotifier extends StateNotifier<FriendApplyState> {
 /// 好友申请 Provider
 final friendApplyProvider =
     StateNotifierProvider<FriendApplyNotifier, FriendApplyState>((ref) {
-  return FriendApplyNotifier(ref);
-});
+      return FriendApplyNotifier(ref);
+    });
 
 // ==================== 好友搜索 ====================
 
@@ -294,8 +224,8 @@ class FriendSearchNotifier extends StateNotifier<FriendSearchState> {
 /// 好友搜索 Provider
 final friendSearchProvider =
     StateNotifierProvider<FriendSearchNotifier, FriendSearchState>((ref) {
-  return FriendSearchNotifier(ref);
-});
+      return FriendSearchNotifier(ref);
+    });
 
 // ==================== 黑名单 ====================
 
@@ -329,9 +259,19 @@ class BlackListState {
 
 /// 黑名单 Notifier
 class BlackListNotifier extends StateNotifier<BlackListState> {
-  BlackListNotifier(this._ref) : super(const BlackListState());
+  BlackListNotifier(this._ref) : super(const BlackListState()) {
+    _init();
+  }
 
   final Ref _ref;
+
+  void _init() {
+    _ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.friendRevision != next.friendRevision) {
+        load();
+      }
+    });
+  }
 
   fb.OpenImBridgeClient? get _client =>
       _ref.read(messageServiceProvider.notifier).client;
@@ -389,5 +329,5 @@ class BlackListNotifier extends StateNotifier<BlackListState> {
 /// 黑名单 Provider
 final blackListProvider =
     StateNotifierProvider<BlackListNotifier, BlackListState>((ref) {
-  return BlackListNotifier(ref);
-});
+      return BlackListNotifier(ref);
+    });

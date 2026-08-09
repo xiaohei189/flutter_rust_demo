@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/user.dart';
-import '../providers/providers.dart';
-import '../router/app_router.dart';
-import '../src/rust/model/friend.dart';
-import '../widgets/user_avatar.dart';
+import '../../../../domain/models/friend.dart';
+import '../../../../models/user.dart';
+import '../../../../providers/providers.dart';
+import '../../../../router/app_router.dart';
+import '../../../../widgets/user_avatar.dart';
+import '../view_models/friend_list_view_model.dart';
 
 /// 好友列表页面
 class FriendListScreen extends ConsumerStatefulWidget {
@@ -61,14 +62,10 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
       itemCount: friendState.friends.length,
       itemBuilder: (context, index) {
         final friend = friendState.friends[index];
-        final displayName =
-            friend.remark.isNotEmpty ? friend.remark : friend.nickname;
+        final displayName = friend.displayName;
 
         return ListTile(
-          leading: UserAvatar(
-            user: _friendToUser(friend),
-            radius: 22,
-          ),
+          leading: UserAvatar(user: _friendToUser(friend), radius: 22),
           title: Text(
             displayName,
             maxLines: 1,
@@ -79,12 +76,17 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
                   friend.nickname,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8E8E93),
+                  ),
                 )
               : null,
           onTap: () {
-            context.push('/profile/user/${friend.userId}',
-                extra: _friendToUser(friend));
+            context.push(
+              '/profile/user/${friend.userId}',
+              extra: _friendToUser(friend),
+            );
           },
           onLongPress: () => _showFriendOptions(friend),
         );
@@ -92,9 +94,8 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
     );
   }
 
-  void _showFriendOptions(FriendInfo friend) {
-    final displayName =
-        friend.remark.isNotEmpty ? friend.remark : friend.nickname;
+  void _showFriendOptions(Friend friend) {
+    final displayName = friend.displayName;
 
     showModalBottomSheet(
       context: context,
@@ -118,8 +119,10 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
               title: const Text('查看资料'),
               onTap: () {
                 Navigator.pop(context);
-                context.push('/profile/user/${friend.userId}',
-                    extra: _friendToUser(friend));
+                context.push(
+                  '/profile/user/${friend.userId}',
+                  extra: _friendToUser(friend),
+                );
               },
             ),
             ListTile(
@@ -148,9 +151,8 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
     );
   }
 
-  void _confirmDeleteFriend(FriendInfo friend) {
-    final displayName =
-        friend.remark.isNotEmpty ? friend.remark : friend.nickname;
+  void _confirmDeleteFriend(Friend friend) {
+    final displayName = friend.displayName;
 
     showDialog(
       context: context,
@@ -165,20 +167,14 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              try {
-                final client = ref
-                    .read(messageServiceProvider.notifier)
-                    .client;
-                if (client != null) {
-                  await client.deleteFriend(userId: friend.userId);
-                  if (mounted) {
-                    _onFriendDeleted();
-                  }
-                }
-              } catch (e) {
-                if (mounted) {
-                  _onFriendDeleteFailed(e);
-                }
+              final ok = await ref
+                  .read(friendListProvider.notifier)
+                  .deleteFriend(friend.userId);
+              if (!mounted) return;
+              if (ok) {
+                _onFriendDeleted();
+              } else {
+                _onFriendDeleteFailed();
               }
             },
             child: const Text('删除', style: TextStyle(color: Colors.red)),
@@ -189,7 +185,6 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
   }
 
   void _onFriendDeleted() {
-    ref.read(friendListProvider.notifier).loadFriends();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('已删除好友'),
@@ -198,17 +193,18 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
     );
   }
 
-  void _onFriendDeleteFailed(Object e) {
+  void _onFriendDeleteFailed() {
+    final error = ref.read(friendListProvider).error;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('删除失败: $e'),
+        content: Text(error ?? '删除失败'),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  /// FriendInfo -> User 转换
-  static User _friendToUser(FriendInfo friend) {
+  /// Friend -> User 转换
+  static User _friendToUser(Friend friend) {
     return User(
       id: friend.userId,
       name: friend.nickname,
