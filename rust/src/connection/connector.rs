@@ -142,7 +142,11 @@ impl ConnectionManager {
                 }
                 error!("WebSocket auth parse error: {:?}", e);
                 *self.state.write().await = crate::connection::manager::ConnectionState::Disconnected;
-                self.send(ConnectionEvent::Disconnected(format!("auth parse error: {}", e)));
+                self.send(ConnectionEvent::ConnectFailed {
+                    // 对齐 Go sdkerrs.NetworkError = 10000
+                    err_code: 10000,
+                    error: format!("auth parse error: {}", e),
+                });
                 Err(e)
             }
         }

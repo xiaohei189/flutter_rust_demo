@@ -150,12 +150,24 @@ impl FriendService {
         // 4a. 删除
         if !resp.delete.is_empty() {
             info!("增量同步: 删除 {} 个好友", resp.delete.len());
+            // 删除前收集完整好友信息用于事件（对齐 Go OnFriendDeleted(friendInfo)）
+            let friends = self.friends.read().await;
+            let deleted_events: Vec<String> = resp
+                .delete
+                .iter()
+                .filter_map(|user_id| friends.iter().find(|f| &f.user_id == user_id))
+                .filter_map(|f| serde_json::to_string(f).ok())
+                .collect();
+            drop(friends);
             if let Err(e) = self.repositories.friend_repo.batch_delete(&user_id, &resp.delete).await {
                 warn!("增量删除好友数据库操作失败: {}", e);
             }
             // 更新内存
             let del_set: HashSet<&String> = resp.delete.iter().collect();
             self.friends.write().await.retain(|f| !del_set.contains(&f.user_id));
+            for json in deleted_events {
+                self.send(FriendEvent::Deleted(json));
+            }
         }
 
         // 4b. 新增
@@ -169,8 +181,10 @@ impl FriendService {
         }
 
         // 4c. 更新
+        let mut changed_events: Vec<FriendInfo> = Vec::new();
         for s in &resp.update {
             let friend_info = server_to_friend(s.clone());
+            changed_events.push(friend_info.clone());
             let local = friend_info_to_local(&friend_info, &user_id);
             if let Err(e) = self.repositories.friend_repo.upsert(&local).await {
                 warn!("增量更新好友数据库操作失败: {}", e);
@@ -183,6 +197,10 @@ impl FriendService {
                 // 本地不存在视为新增
                 friends.push(friend_info);
             }
+        }
+
+        if !changed_events.is_empty() {
+            self.send(FriendEvent::InfoChanged(changed_events));
         }
 
         // 4d. 如果排序版本变化，从数据库刷新内存列表
@@ -391,9 +409,18 @@ impl FriendService {
 
         self.api.delete_friend(&req).await?;
 
+        let friend_json = self
+            .friends
+            .read()
+            .await
+            .iter()
+            .find(|f| f.user_id == user_id)
+            .and_then(|f| serde_json::to_string(f).ok())
+            .unwrap_or_else(|| format!("{{\"userId\":\"{}\"}}", user_id));
+
         self.friends.write().await.retain(|f| f.user_id != user_id);
 
-        self.send(FriendEvent::Deleted(user_id.to_string()));
+        self.send(FriendEvent::Deleted(friend_json));
 
         info!("好友已删除: {}", user_id);
         Ok(())
@@ -419,11 +446,27 @@ impl FriendService {
     pub async fn sync_blacks(&self) -> Result<()> {
         let resp = self.api.get_black_list().await?;
 
-        let blacks: Vec<String> = resp.blacks_info.into_iter().map(|b| b.user_id).collect();
+        let new_blacks: Vec<String> = resp.blacks_info.iter().map(|b| b.user_id.clone()).collect();
+        let old_blacks = self.blacks.read().await.clone();
+        let old_set: HashSet<String> = old_blacks.iter().cloned().collect();
+        let new_set: HashSet<String> = new_blacks.iter().cloned().collect();
 
-        *self.blacks.write().await = blacks.clone();
+        for black in &resp.blacks_info {
+            if !old_set.contains(&black.user_id) {
+                if let Ok(json) = serde_json::to_string(black) {
+                    self.send(FriendEvent::BlackAdded(json));
+                }
+            }
+        }
+        for user_id in &old_blacks {
+            if !new_set.contains(user_id) {
+                self.send(FriendEvent::BlackDeleted(format!("{{\"userId\":\"{}\"}}", user_id)));
+            }
+        }
 
-        info!("黑名单已同步, count={}", blacks.len());
+        *self.blacks.write().await = new_blacks;
+
+        info!("黑名单已同步, count={}", self.blacks.read().await.len());
         Ok(())
     }
 
@@ -439,7 +482,7 @@ impl FriendService {
 
         self.blacks.write().await.push(user_id.clone());
 
-        self.send(FriendEvent::BlackAdded(user_id.to_string()));
+        self.send(FriendEvent::BlackAdded(format!("{{\"userId\":\"{}\"}}", user_id)));
 
         info!("已添加到黑名单: {}", user_id);
         Ok(())
@@ -456,7 +499,7 @@ impl FriendService {
 
         self.blacks.write().await.retain(|id| id != &user_id);
 
-        self.send(FriendEvent::BlackDeleted(user_id.to_string()));
+        self.send(FriendEvent::BlackDeleted(format!("{{\"userId\":\"{}\"}}", user_id)));
 
         info!("已从黑名单移除: {}", user_id);
         Ok(())

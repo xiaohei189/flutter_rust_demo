@@ -96,34 +96,16 @@ impl NotificationHandler {
                 }
             }
             notification_type::FRIEND_DELETED => {
-                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
-                    .map(|t| t.user_id)
-                    .unwrap_or_default();
-                if !user_id.is_empty() {
-                    self.friend_listener.emit(FriendEvent::Deleted(user_id));
-                }
                 if let Err(e) = self.friend_manager.sync_friends_incremental().await {
                     warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
                 }
             }
             notification_type::BLACK_ADDED => {
-                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
-                    .map(|t| t.user_id)
-                    .unwrap_or_default();
-                if !user_id.is_empty() {
-                    self.friend_listener.emit(FriendEvent::BlackAdded(user_id));
-                }
                 if let Err(e) = self.friend_manager.sync_blacks().await {
                     warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
             }
             notification_type::BLACK_DELETED => {
-                let user_id = unmarshal_notification_elem::<UserIdOnlyJson>(&msg.content)
-                    .map(|t| t.user_id)
-                    .unwrap_or_default();
-                if !user_id.is_empty() {
-                    self.friend_listener.emit(FriendEvent::BlackDeleted(user_id));
-                }
                 if let Err(e) = self.friend_manager.sync_blacks().await {
                     warn!("[NOTIFY] 同步黑名单失败: {}", e);
                 }
@@ -609,7 +591,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_notification_friend_deleted_dispatch() {
+    async fn test_notification_friend_deleted_triggers_sync() {
         let pool = create_pool_memory().await.unwrap();
         let hub = EventHub::new();
         let mut rx = hub.take_friend_rx().unwrap();
@@ -622,11 +604,8 @@ mod tests {
         };
         handler.handle_single_notification(&msg).await.unwrap();
 
-        let event = rx.try_recv().expect("应发布好友删除事件");
-        match event {
-            FriendEvent::Deleted(user_id) => assert_eq!(user_id, "user_2"),
-            other => panic!("期望 Deleted，实际 {:?}", other),
-        }
+        // 对齐 Go：好友删除通知只触发增量同步，事件由同步器在拿到完整好友信息后发布
+        assert!(rx.try_recv().is_err(), "通知本身不应直接发布 Deleted 事件");
     }
 
     #[tokio::test]

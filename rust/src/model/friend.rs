@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// 好友信息模型
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FriendInfo {
     /// 用户 ID
     pub user_id: String,

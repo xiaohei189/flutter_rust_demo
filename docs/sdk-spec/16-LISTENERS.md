@@ -46,9 +46,9 @@
 | 回调 | 说明 |
 |------|------|
 | `on_added(friends: &[FriendInfo])` | 好友新增/同步 |
-| `on_deleted(user_id: &str)` | 好友删除 |
+| `on_deleted(friend_json: &str)` | 好友删除（完整好友信息 JSON） |
 | `on_info_changed(friends: &[FriendInfo])` | 好友信息变更（预留） |
-| `on_black_added(user_id: &str)` / `on_black_deleted(user_id: &str)` | 黑名单增删 |
+| `on_black_added(black_json: &str)` / `on_black_deleted(black_json: &str)` | 黑名单增删（黑名单信息 JSON） |
 | `on_application_added(user_id: &str)` / `on_application_deleted(user_id: &str)` | 好友申请新增/删除 |
 | `on_application_accepted(user_id: &str)` / `on_application_rejected(user_id: &str)` | 申请被接受/拒绝 |
 
