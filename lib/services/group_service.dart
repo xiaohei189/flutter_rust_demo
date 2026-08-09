@@ -101,12 +101,16 @@ class GroupService {
     required String groupId,
     String? groupName,
     String? faceUrl,
+    String? introduction,
+    String? notification,
   }) async {
     try {
       await client.setGroupInfo(
         groupId: groupId,
         groupName: groupName,
         faceUrl: faceUrl,
+        introduction: introduction,
+        notification: notification,
       );
       appLog.i('[GroupService] 修改群组信息成功: $groupId');
     } catch (e) {
@@ -185,9 +189,7 @@ class GroupService {
   }) async {
     try {
       final members = await client.getGroupMembers(groupId: groupId);
-      appLog.i(
-        '[GroupService] 获取群成员列表成功: $groupId, 共 ${members.length} 人',
-      );
+      appLog.i('[GroupService] 获取群成员列表成功: $groupId, 共 ${members.length} 人');
       return members;
     } catch (e) {
       appLog.e('[GroupService] 获取群成员列表失败: $e');
@@ -249,13 +251,8 @@ class GroupService {
     required List<String> memberIds,
   }) async {
     try {
-      await client.inviteGroupMembers(
-        groupId: groupId,
-        memberIds: memberIds,
-      );
-      appLog.i(
-        '[GroupService] 邀请群成员成功: $groupId, ${memberIds.length} 人',
-      );
+      await client.inviteGroupMembers(groupId: groupId, memberIds: memberIds);
+      appLog.i('[GroupService] 邀请群成员成功: $groupId, ${memberIds.length} 人');
     } catch (e) {
       appLog.e('[GroupService] 邀请群成员失败: $e');
       rethrow;
@@ -269,13 +266,8 @@ class GroupService {
     required List<String> memberIds,
   }) async {
     try {
-      await client.kickGroupMembers(
-        groupId: groupId,
-        memberIds: memberIds,
-      );
-      appLog.i(
-        '[GroupService] 踢出群成员成功: $groupId, ${memberIds.length} 人',
-      );
+      await client.kickGroupMembers(groupId: groupId, memberIds: memberIds);
+      appLog.i('[GroupService] 踢出群成员成功: $groupId, ${memberIds.length} 人');
     } catch (e) {
       appLog.e('[GroupService] 踢出群成员失败: $e');
       rethrow;
@@ -290,9 +282,7 @@ class GroupService {
   }) async {
     try {
       await client.muteGroup(groupId: groupId, isMute: isMute);
-      appLog.i(
-        '[GroupService] ${isMute ? "禁言" : "解除禁言"}群组成功: $groupId',
-      );
+      appLog.i('[GroupService] ${isMute ? "禁言" : "解除禁言"}群组成功: $groupId');
     } catch (e) {
       appLog.e('[GroupService] 禁言群组失败: $e');
       rethrow;
@@ -340,9 +330,7 @@ class GroupService {
           mutedSeconds: mutedSeconds,
         );
       } catch (e) {
-        appLog.w(
-          '[GroupService] 批量禁言部分失败: userId=$userId, error=$e',
-        );
+        appLog.w('[GroupService] 批量禁言部分失败: userId=$userId, error=$e');
       }
     }
   }
@@ -440,9 +428,7 @@ class GroupService {
         userId: userId,
         handleMsg: handleMsg,
       );
-      appLog.i(
-        '[GroupService] 接受群申请成功: group=$groupId, user=$userId',
-      );
+      appLog.i('[GroupService] 接受群申请成功: group=$groupId, user=$userId');
     } catch (e) {
       appLog.e('[GroupService] 接受群申请失败: $e');
       rethrow;
@@ -462,9 +448,7 @@ class GroupService {
         userId: userId,
         handleMsg: handleMsg,
       );
-      appLog.i(
-        '[GroupService] 拒绝群申请成功: group=$groupId, user=$userId',
-      );
+      appLog.i('[GroupService] 拒绝群申请成功: group=$groupId, user=$userId');
     } catch (e) {
       appLog.e('[GroupService] 拒绝群申请失败: $e');
       rethrow;

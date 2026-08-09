@@ -40,13 +40,14 @@ class MessageListState {
   MessageInfo? get latestMessage => messages.isNotEmpty ? messages.last : null;
 
   /// 获取最早消息
-  MessageInfo? get earliestMessage => messages.isNotEmpty ? messages.first : null;
+  MessageInfo? get earliestMessage =>
+      messages.isNotEmpty ? messages.first : null;
 }
 
 /// 消息列表 Notifier（按会话）
 class MessageListNotifier extends StateNotifier<MessageListState> {
   MessageListNotifier(this._messageService, this._conversationId)
-      : super(const MessageListState()) {
+    : super(const MessageListState()) {
     _init();
   }
 
@@ -92,16 +93,10 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
       );
 
       _syncState();
-      state = state.copyWith(
-        isLoading: false,
-        hasMore: hasMore,
-      );
+      state = state.copyWith(isLoading: false, hasMore: hasMore);
       return hasMore;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '加载历史消息失败: $e',
-      );
+      state = state.copyWith(isLoading: false, error: '加载历史消息失败: $e');
       return false;
     }
   }
@@ -303,19 +298,42 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
       return false;
     }
   }
+
+  /// 重发发送失败的消息
+  Future<bool> resendMessage({
+    required MessageInfo message,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    try {
+      final result = await _messageService.resendMessage(
+        message: message,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      );
+      _messageService.removeMessage(_conversationId, message.clientMsgId);
+      _addSentMessage(result);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '消息重发失败: $e');
+      return false;
+    }
+  }
 }
 
 /// 消息列表 Provider（按会话 ID）
-final messageListProvider = StateNotifierProvider.family<MessageListNotifier, MessageListState, String>(
-  (ref, conversationId) {
-    return MessageListNotifier(
-      ref.read(messageServiceProvider.notifier),
-      conversationId,
+final messageListProvider =
+    StateNotifierProvider.family<MessageListNotifier, MessageListState, String>(
+      (ref, conversationId) {
+        return MessageListNotifier(
+          ref.read(messageServiceProvider.notifier),
+          conversationId,
+        );
+      },
     );
-  },
-);
 
 /// 指定会话的消息列表 Provider（便捷访问）
-final messagesByConversationIdProvider = Provider.family<List<MessageInfo>, String>((ref, conversationId) {
-  return ref.watch(messageListProvider(conversationId)).messages;
-});
+final messagesByConversationIdProvider =
+    Provider.family<List<MessageInfo>, String>((ref, conversationId) {
+      return ref.watch(messageListProvider(conversationId)).messages;
+    });

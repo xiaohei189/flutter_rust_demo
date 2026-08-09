@@ -13,6 +13,8 @@ import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
 import '../screens/qr_code_screen.dart';
 
+enum _JoinTimeFilter { all, today, week, month }
+
 /// 群信息页面：群头像（可编辑）、群名称（可编辑）、群描述（可编辑）、群二维码（只读）
 class GroupInfoScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -26,6 +28,8 @@ class GroupInfoScreen extends ConsumerStatefulWidget {
 class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   late String _groupName;
   late String _groupDescription;
+  String _memberKeyword = '';
+  _JoinTimeFilter _joinTimeFilter = _JoinTimeFilter.all;
 
   /// 获取会话信息
   LocalConversation? get _conversation {
@@ -33,7 +37,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);
     if (conversation != null) return conversation;
-    
+
     // 如果新服务没有，尝试从旧的 conversationListProvider 获取
     final oldState = ref.read(conversationListProvider);
     conversation = oldState.conversations
@@ -53,18 +57,12 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   User get _groupUser {
     final conversation = _conversation;
     if (conversation == null) {
-      return User(
-        id: widget.conversationId,
-        name: '未知群组',
-        avatar: null,
-      );
+      return User(id: widget.conversationId, name: '未知群组', avatar: null);
     }
     return User(
       id: _groupId,
       name: _groupName,
-      avatar: conversation.faceUrl.isNotEmpty
-          ? conversation.faceUrl
-          : null,
+      avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
     );
   }
 
@@ -101,14 +99,33 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             onPressed: () => AppRouter.goBack(context),
           ),
         ),
-        body: const Center(
-          child: Text('群组不存在'),
-        ),
+        body: const Center(child: Text('群组不存在')),
       );
     }
 
     final currentUserId = ref.watch(userProfileProvider).profile?.userId ?? '';
     final memberState = ref.watch(groupMemberProvider(_groupId));
+    final keyword = _memberKeyword.trim().toLowerCase();
+    final now = DateTime.now();
+    final joinCutoff = switch (_joinTimeFilter) {
+      _JoinTimeFilter.all => null,
+      _JoinTimeFilter.today => DateTime(now.year, now.month, now.day),
+      _JoinTimeFilter.week => now.subtract(const Duration(days: 7)),
+      _JoinTimeFilter.month => now.subtract(const Duration(days: 30)),
+    };
+    final visibleMembers = memberState.members.where((m) {
+      final matchKeyword =
+          keyword.isEmpty ||
+          m.nickname.toLowerCase().contains(keyword) ||
+          m.userId.toLowerCase().contains(keyword);
+      final rawJoinTime = m.joinTime.toInt();
+      final joinTime = rawJoinTime > 946684800000
+          ? rawJoinTime
+          : rawJoinTime * 1000;
+      final matchTime =
+          joinCutoff == null || joinTime >= joinCutoff.millisecondsSinceEpoch;
+      return matchKeyword && matchTime;
+    }).toList();
     final currentMember = memberState.members
         .where((m) => m.userId == currentUserId)
         .firstOrNull;
@@ -152,7 +169,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 onTap: () => _editField(
                   title: '修改群名称',
                   initialValue: _groupName,
-                  onSave: (val) => setState(() => _groupName = val),
+                  onSave: _saveGroupName,
                 ),
               ),
               const ListDivider(),
@@ -161,10 +178,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 value: _groupDescription,
                 onTap: () => _editField(
                   title: '修改群描述',
-                  initialValue: _groupDescription == '暂无描述' ? '' : _groupDescription,
-                  onSave: (val) => setState(
-                    () => _groupDescription = val.isEmpty ? '暂无描述' : val,
-                  ),
+                  initialValue: _groupDescription == '暂无描述'
+                      ? ''
+                      : _groupDescription,
+                  onSave: _saveGroupDescription,
                 ),
               ),
             ],
@@ -176,10 +193,30 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ListRow(
                 label: '群成员',
                 trailing: Text(
-                  memberState.isLoading ? '加载中...' : '${memberState.members.length}人',
+                  memberState.isLoading
+                      ? '加载中...'
+                      : '${memberState.members.length}人',
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+              ),
+              const ListDivider(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                child: TextField(
+                  onChanged: (value) => setState(() => _memberKeyword = value),
+                  decoration: InputDecoration(
+                    hintText: '搜索群成员',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    filled: true,
+                    fillColor: AppTheme.backgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
@@ -189,13 +226,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                   padding: EdgeInsets.all(20),
                   child: Center(child: CircularProgressIndicator()),
                 )
-              else if (memberState.members.isEmpty)
+              else if (visibleMembers.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(20),
-                  child: Center(child: Text('暂无成员')),
+                  child: Center(child: Text('没有匹配的成员')),
                 )
               else
-                ...memberState.members.map(
+                ...visibleMembers.map(
                   (m) => ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -224,6 +261,30 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                     onTap: () => _showMemberActions(m),
                   ),
                 ),
+              const ListDivider(),
+              ListRow(
+                label: '群主和管理员',
+                trailing: Text(
+                  '${memberState.members.where((m) => m.roleLevel >= 2).length}人',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+                onTap: _showOwnerAdminList,
+              ),
+              const ListDivider(),
+              ListRow(
+                label: '按加入时间筛选',
+                trailing: Text(
+                  _joinTimeFilterLabel,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                ),
+                onTap: _showJoinTimeFilter,
+              ),
             ],
           ),
           if (isOwner) ...[
@@ -307,8 +368,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   Future<void> _showMemberActions(GroupMember member) async {
     final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
     final members = ref.read(groupMemberProvider(_groupId)).members;
-    final currentMember =
-        members.where((m) => m.userId == currentUserId).firstOrNull;
+    final currentMember = members
+        .where((m) => m.userId == currentUserId)
+        .firstOrNull;
     final canManage = currentMember != null && currentMember.roleLevel >= 2;
     final isOwner = currentMember?.roleLevel == 3;
 
@@ -349,6 +411,14 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               title: const Text('取消禁言'),
               onTap: () => Navigator.of(ctx).pop('unmute'),
             ),
+            if (isOwner && member.roleLevel != 3)
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: Text(member.roleLevel == 2 ? '取消管理员' : '设为管理员'),
+                onTap: () => Navigator.of(
+                  ctx,
+                ).pop(member.roleLevel == 2 ? 'unsetAdmin' : 'setAdmin'),
+              ),
             if (isOwner)
               ListTile(
                 leading: const Icon(Icons.swap_horiz),
@@ -367,8 +437,146 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         await _muteMemberDialog(member);
       case 'unmute':
         await _unmuteMember(member);
+      case 'setAdmin':
+        await _setAdmin(member, true);
+      case 'unsetAdmin':
+        await _setAdmin(member, false);
       case 'transfer':
         await _transferOwner(target: member);
+    }
+  }
+
+  Future<void> _setAdmin(GroupMember member, bool isAdmin) async {
+    final client = ref.read(messageServiceProvider.notifier).client;
+    if (client == null) return;
+    try {
+      await GroupService.instance.setGroupMemberInfo(
+        client,
+        groupId: _groupId,
+        userId: member.userId,
+        roleLevel: isAdmin ? 2 : 1,
+      );
+      await ref.read(groupMemberProvider(_groupId).notifier).loadMembers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isAdmin ? '已设为管理员' : '已取消管理员'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('设置管理员失败: $e')));
+      }
+    }
+  }
+
+  void _showOwnerAdminList() {
+    final members = ref
+        .read(groupMemberProvider(_groupId))
+        .members
+        .where((m) => m.roleLevel >= 2)
+        .toList();
+    if (members.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('暂无群主和管理员'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                '群主和管理员',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Divider(height: 1),
+            ...members.map(
+              (m) => ListTile(
+                leading: UserAvatar(
+                  user: User(
+                    id: m.userId,
+                    name: m.nickname,
+                    avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
+                  ),
+                  radius: 18,
+                ),
+                title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
+                subtitle: Text(_roleName(m.roleLevel)),
+                onTap: () => Navigator.of(sheetContext).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String get _joinTimeFilterLabel => switch (_joinTimeFilter) {
+    _JoinTimeFilter.all => '全部',
+    _JoinTimeFilter.today => '今天',
+    _JoinTimeFilter.week => '近 7 天',
+    _JoinTimeFilter.month => '近 30 天',
+  };
+
+  Future<void> _showJoinTimeFilter() async {
+    final selected = await showModalBottomSheet<_JoinTimeFilter>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                '按加入时间筛选',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Divider(height: 1),
+            for (final filter in _JoinTimeFilter.values)
+              ListTile(
+                title: Text(switch (filter) {
+                  _JoinTimeFilter.all => '全部',
+                  _JoinTimeFilter.today => '今天',
+                  _JoinTimeFilter.week => '近 7 天',
+                  _JoinTimeFilter.month => '近 30 天',
+                }),
+                trailing: _joinTimeFilter == filter
+                    ? const Icon(
+                        Icons.check,
+                        size: 20,
+                        color: AppTheme.primaryColor,
+                      )
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(filter),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() => _joinTimeFilter = selected);
     }
   }
 
@@ -377,7 +585,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('踢出群聊'),
-        content: Text('确定将 ${member.nickname.isNotEmpty ? member.nickname : member.userId} 移出群聊吗？'),
+        content: Text(
+          '确定将 ${member.nickname.isNotEmpty ? member.nickname : member.userId} 移出群聊吗？',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -385,7 +595,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('踢出', style: TextStyle(color: AppTheme.unreadRed)),
+            child: const Text(
+              '踢出',
+              style: TextStyle(color: AppTheme.unreadRed),
+            ),
           ),
         ],
       ),
@@ -396,7 +609,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .kickMembers([member.userId]);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已踢出'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('已踢出'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -420,7 +636,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('选择禁言时长', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                '选择禁言时长',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             ...durations.entries.map(
               (e) => ListTile(
@@ -438,7 +657,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .muteMember(member.userId, duration);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已禁言'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('已禁言'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -449,7 +671,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .unmuteMember(member.userId);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已取消禁言'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('已取消禁言'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -486,8 +711,14 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               onTap: () => Navigator.of(ctx).pop('transfer'),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
-              title: const Text('解散群组', style: TextStyle(color: AppTheme.unreadRed)),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: AppTheme.unreadRed,
+              ),
+              title: const Text(
+                '解散群组',
+                style: TextStyle(color: AppTheme.unreadRed),
+              ),
               onTap: () => Navigator.of(ctx).pop('dismiss'),
             ),
           ],
@@ -524,11 +755,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   Future<void> _transferOwner({GroupMember? target}) async {
     final members = ref.read(groupMemberProvider(_groupId)).members;
     final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
-    final candidates =
-        members.where((m) => m.userId != currentUserId).toList();
+    final candidates = members.where((m) => m.userId != currentUserId).toList();
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无可转让成员'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('暂无可转让成员'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -546,7 +779,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('选择新群主', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                '选择新群主',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             const Divider(height: 1),
             ...candidates.map(
@@ -566,7 +802,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .transferOwner(selected.userId);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('群主已转让'), behavior: SnackBarBehavior.floating),
+        const SnackBar(
+          content: Text('群主已转让'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }
@@ -584,18 +823,26 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('解散', style: TextStyle(color: AppTheme.unreadRed)),
+            child: const Text(
+              '解散',
+              style: TextStyle(color: AppTheme.unreadRed),
+            ),
           ),
         ],
       ),
     );
     if (confirmed != true) return;
-    final ok = await ref.read(groupMemberProvider(_groupId).notifier).dismissGroup();
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .dismissGroup();
     if (ok && mounted) {
       await ref.read(groupListProvider.notifier).loadGroups();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('群组已解散'), behavior: SnackBarBehavior.floating),
+          const SnackBar(
+            content: Text('群组已解散'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         AppRouter.goBack(context);
       }
@@ -651,9 +898,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('更新失败: $e')));
       }
     }
   }
@@ -661,7 +908,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   void _editField({
     required String title,
     required String initialValue,
-    required ValueChanged<String> onSave,
+    required Future<void> Function(String) onSave,
     int maxLines = 1,
   }) {
     final controller = TextEditingController(text: initialValue);
@@ -689,15 +936,73 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final text = controller.text.trim();
-              if (text.isNotEmpty) onSave(text);
-              NavigationService.instance.goBack();
+              if (text.isNotEmpty) {
+                await onSave(text);
+              }
+              if (context.mounted) {
+                NavigationService.instance.goBack();
+              }
             },
             child: const Text('保存'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _saveGroupName(String value) async {
+    final client = ref.read(messageServiceProvider.notifier).client;
+    if (client == null) return;
+    try {
+      await GroupService.instance.setGroupInfo(
+        client,
+        groupId: _groupId,
+        groupName: value,
+      );
+      if (mounted) {
+        setState(() => _groupName = value);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('群名称已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('群名称更新失败: $e')));
+      }
+    }
+  }
+
+  Future<void> _saveGroupDescription(String value) async {
+    final client = ref.read(messageServiceProvider.notifier).client;
+    if (client == null) return;
+    try {
+      await GroupService.instance.setGroupInfo(
+        client,
+        groupId: _groupId,
+        introduction: value,
+      );
+      if (mounted) {
+        setState(() => _groupDescription = value.isEmpty ? '暂无描述' : value);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('群描述已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('群描述更新失败: $e')));
+      }
+    }
   }
 }

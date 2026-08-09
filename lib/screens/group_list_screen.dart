@@ -16,11 +16,19 @@ class GroupListScreen extends ConsumerStatefulWidget {
 class _GroupListScreenState extends ConsumerState<GroupListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _createdScrollController = ScrollController();
+  final _joinedScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _createdScrollController.addListener(
+      () => _maybeLoadMore(_createdScrollController),
+    );
+    _joinedScrollController.addListener(
+      () => _maybeLoadMore(_joinedScrollController),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(groupListProvider.notifier).loadGroups();
     });
@@ -29,7 +37,17 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _createdScrollController.dispose();
+    _joinedScrollController.dispose();
     super.dispose();
+  }
+
+  void _maybeLoadMore(ScrollController controller) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      ref.read(groupListProvider.notifier).loadMoreGroups();
+    }
   }
 
   @override
@@ -37,10 +55,12 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
     final groupState = ref.watch(groupListProvider);
     final currentUserId = ref.watch(userProfileProvider).profile?.userId ?? '';
 
-    final createdGroups =
-        groupState.groups.where((g) => g.ownerUserId == currentUserId).toList();
-    final joinedGroups =
-        groupState.groups.where((g) => g.ownerUserId != currentUserId).toList();
+    final createdGroups = groupState.groups
+        .where((g) => g.ownerUserId == currentUserId)
+        .toList();
+    final joinedGroups = groupState.groups
+        .where((g) => g.ownerUserId != currentUserId)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -58,8 +78,16 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                _GroupTab(groups: createdGroups),
-                _GroupTab(groups: joinedGroups),
+                _GroupTab(
+                  groups: createdGroups,
+                  controller: _createdScrollController,
+                  isLoadingMore: groupState.isLoadingMore,
+                ),
+                _GroupTab(
+                  groups: joinedGroups,
+                  controller: _joinedScrollController,
+                  isLoadingMore: groupState.isLoadingMore,
+                ),
               ],
             ),
     );
@@ -69,8 +97,14 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
 /// 群组 Tab 内容
 class _GroupTab extends StatelessWidget {
   final List<GroupInfo> groups;
+  final ScrollController? controller;
+  final bool isLoadingMore;
 
-  const _GroupTab({required this.groups});
+  const _GroupTab({
+    required this.groups,
+    this.controller,
+    this.isLoadingMore = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +118,15 @@ class _GroupTab extends StatelessWidget {
     }
 
     return ListView.builder(
-      itemCount: groups.length,
+      controller: controller,
+      itemCount: groups.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == groups.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
         final group = groups[index];
         return ListTile(
           leading: CircleAvatar(

@@ -1,10 +1,15 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../models/message_ext.dart';
 import '../models/message.dart' show MessageType;
@@ -14,6 +19,7 @@ import '../src/rust/ffi/message_advanced.dart' show sendTyping;
 import '../src/rust/ffi/message.dart' show sendMergerMessage;
 import '../src/rust/model/message.dart' show MessageInfo;
 import '../src/rust/model/group.dart' show GroupMember;
+import '../domain/models/friend.dart';
 import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_logger.dart';
@@ -27,6 +33,7 @@ import '../widgets/message_action_menu.dart';
 import '../widgets/user_avatar.dart';
 import '../screens/contact_picker_screen.dart';
 import '../screens/merge_message_detail_screen.dart';
+import '../widgets/media_viewer.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends ConsumerStatefulWidget {
@@ -43,7 +50,8 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with WidgetsBindingObserver {
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _loadingNotifier = ValueNotifier<bool>(false);
@@ -74,7 +82,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     _onMessageListChanged();
     // 设置当前选中的会话
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(selectedConversationIdProvider.notifier).state = widget.conversationId;
+      ref.read(selectedConversationIdProvider.notifier).state =
+          widget.conversationId;
       if (!widget.preLoaded) _loadMessages();
       if (mounted) setState(() => _bodyReady = true);
       _markConversationMessageAsRead();
@@ -126,13 +135,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
     // 防抖：1秒内只执行一次
     final now = DateTime.now();
-    if (_lastMarkReadTime != null && now.difference(_lastMarkReadTime!).inMilliseconds < 1000) {
+    if (_lastMarkReadTime != null &&
+        now.difference(_lastMarkReadTime!).inMilliseconds < 1000) {
       return;
     }
     _lastMarkReadTime = now;
 
     try {
-      appLog.i('[READ] 标记会话已读: ${widget.conversationId}, 当前未读数: ${conv.unreadCount}');
+      appLog.i(
+        '[READ] 标记会话已读: ${widget.conversationId}, 当前未读数: ${conv.unreadCount}',
+      );
       await service.markConversationMessageAsRead(widget.conversationId);
       appLog.i('[READ] 标记会话已读完成: ${widget.conversationId}');
     } catch (e) {
@@ -169,9 +181,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     final text = _textController.text;
     final service = _messageService;
     if (service == null) return;
-    
+
     final draftText = text.isNotEmpty ? jsonEncode({'text': text}) : '';
-    
+
     // 通过 service 层保存草稿，确保会话列表状态同步更新
     if (text.isNotEmpty) {
       service.saveDraft(widget.conversationId, draftText);
@@ -206,7 +218,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       return;
     }
     _lastMessageListTailId = lastId;
-    final isOwnMessage = _messageService?.currentState.currentUserId == last.sendId;
+    final isOwnMessage =
+        _messageService?.currentState.currentUserId == last.sendId;
     if (!isOwnMessage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _scrollToBottom();
@@ -250,7 +263,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
     // 从 notifier 获取用户资料缓存
     final cached = conversation.userId.isNotEmpty
-        ? ref.read(userProfileProvider.notifier).getUserProfile(conversation.userId)
+        ? ref
+              .read(userProfileProvider.notifier)
+              .getUserProfile(conversation.userId)
         : null;
 
     return User(
@@ -259,8 +274,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       avatar: (cached?.faceUrl ?? '').isNotEmpty
           ? cached!.faceUrl
           : conversation.faceUrl.isNotEmpty
-              ? conversation.faceUrl
-              : null,
+          ? conversation.faceUrl
+          : null,
       status: null,
     );
   }
@@ -276,31 +291,52 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     if (_loadingNotifier.value) return;
     if (!_hasMoreHistory && isLoadMore) return;
 
-    appLog.i('[MSG] 加载历史消息: conversationId=${widget.conversationId}, isLoadMore=$isLoadMore');
+    final messageState = ref.read(messageListProvider(widget.conversationId));
+    final currentMessages = messageState.messages;
+    String startClientMsgId = '';
+    int? cursorSeq;
+
+    if (isLoadMore && currentMessages.isNotEmpty) {
+      final earliestMsg = currentMessages.first;
+      startClientMsgId = earliestMsg.clientMsgId;
+      cursorSeq = earliestMsg.seq.toInt();
+    }
+
+    final pos = _scrollController.hasClients
+        ? _scrollController.position
+        : null;
+    appLog.i(
+      '[MSG] 加载历史消息: conv=${widget.conversationId} '
+      'loadMore=$isLoadMore '
+      'cursor=$startClientMsgId '
+      'cursorSeq=$cursorSeq '
+      'total=${currentMessages.length} '
+      'hasMore=$_hasMoreHistory '
+      'scroll=${pos == null ? '-' : '${pos.pixels.toStringAsFixed(0)}/${pos.maxScrollExtent.toStringAsFixed(0)}'}',
+    );
 
     // 首次加载时重置 Notifier 的 hasMore 状态，确保能加载消息
     if (!isLoadMore) {
-      ref.read(messageListProvider(widget.conversationId).notifier).resetLoadState();
+      ref
+          .read(messageListProvider(widget.conversationId).notifier)
+          .resetLoadState();
     }
 
     _loadingNotifier.value = true;
 
     try {
-      final messageState = ref.read(messageListProvider(widget.conversationId));
-      final currentMessages = messageState.messages;
-      String startClientMsgId = '';
-
-      if (isLoadMore && currentMessages.isNotEmpty) {
-        final earliestMsg = currentMessages.first;
-        startClientMsgId = earliestMsg.clientMsgId;
-      }
-
       final hasMore = await ref
           .read(messageListProvider(widget.conversationId).notifier)
-          .loadHistoryMessages(
-            count: 20,
-            startClientMsgId: startClientMsgId,
-          );
+          .loadHistoryMessages(count: 20, startClientMsgId: startClientMsgId);
+
+      final loadError = ref
+          .read(messageListProvider(widget.conversationId))
+          .error;
+      if (loadError != null) {
+        appLog.e('[MSG] 加载历史消息失败: $loadError');
+        _loadingNotifier.value = false;
+        return;
+      }
 
       appLog.i('[MSG] 加载完成: hasMore=$hasMore');
       _hasMoreHistory = hasMore;
@@ -327,6 +363,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     // reverse ListView: pixels=0 是最新消息(底部)，maxScrollExtent 是最早消息(顶部)
     // 向上滚动到顶部加载更多 → pixels 接近 maxScrollExtent 时触发
     if (pos.pixels >= pos.maxScrollExtent - 200) {
+      appLog.i(
+        '[MSG] 触发加载更多: scroll=${pos.pixels.toStringAsFixed(0)}/${pos.maxScrollExtent.toStringAsFixed(0)} '
+        'threshold=${(pos.maxScrollExtent - 200).toStringAsFixed(0)}',
+      );
       _loadMessages(isLoadMore: true);
     }
   }
@@ -413,7 +453,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
       if (recvId.isEmpty) {
         appLog.e(
-            '发送消息失败: recvId 为空，conversationId=${conversation.conversationId}');
+          '发送消息失败: recvId 为空，conversationId=${conversation.conversationId}',
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -427,14 +468,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
       _textController.clear();
 
-      final groupId = sessionType == SessionType.writeGroupChat || sessionType == SessionType.readGroupChat
+      final groupId =
+          sessionType == SessionType.writeGroupChat ||
+              sessionType == SessionType.readGroupChat
           ? (conversation.groupId.isNotEmpty
-              ? conversation.groupId
-              : cid.startsWith('sg_')
-                  ? cid.substring(3)
-                  : cid.startsWith('g_')
-                      ? cid.substring(2)
-                      : '')
+                ? conversation.groupId
+                : cid.startsWith('sg_')
+                ? cid.substring(3)
+                : cid.startsWith('g_')
+                ? cid.substring(2)
+                : '')
           : '';
 
       // 如果有引用消息，发送引用消息
@@ -501,7 +544,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
   void _onTextChanged() {
     final now = DateTime.now();
-    if (_lastTypingSent != null && now.difference(_lastTypingSent!).inSeconds < 3) return;
+    if (_lastTypingSent != null &&
+        now.difference(_lastTypingSent!).inSeconds < 3) {
+      return;
+    }
     _lastTypingSent = now;
     _sendTyping(focus: true);
   }
@@ -533,7 +579,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
 
     final memberState = ref.read(groupMemberProvider(target.groupId));
     if (memberState.members.isEmpty) {
-      await ref.read(groupMemberProvider(target.groupId).notifier).loadMembers();
+      await ref
+          .read(groupMemberProvider(target.groupId).notifier)
+          .loadMembers();
       if (!mounted) return;
     }
     final members = ref.read(groupMemberProvider(target.groupId)).members;
@@ -589,7 +637,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     if (selected == null || !mounted) return;
     final text = _textController.text;
     final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
-    final displayName = selected.nickname.isNotEmpty ? selected.nickname : selected.userId;
+    final displayName = selected.nickname.isNotEmpty
+        ? selected.nickname
+        : selected.userId;
     final inserted = '$text$suffix@$displayName ';
     _textController.value = TextEditingValue(
       text: inserted,
@@ -611,9 +661,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _MessageSearchSheet(
-        conversationId: conversation.conversationId,
-      ),
+      builder: (_) =>
+          _MessageSearchSheet(conversationId: conversation.conversationId),
     );
   }
 
@@ -639,20 +688,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       case 2:
         recvId = cid.startsWith('g_') ? cid.substring(2) : conversation.groupId;
       case 3:
-        recvId = cid.startsWith('sg_') ? cid.substring(3) : conversation.groupId;
+        recvId = cid.startsWith('sg_')
+            ? cid.substring(3)
+            : conversation.groupId;
       default:
         recvId = '';
     }
     if (recvId.isEmpty) return null;
     final sessionType = conversation.sessionType;
-    final groupId = (sessionType == SessionType.writeGroupChat || sessionType == SessionType.readGroupChat)
+    final groupId =
+        (sessionType == SessionType.writeGroupChat ||
+            sessionType == SessionType.readGroupChat)
         ? (conversation.groupId.isNotEmpty
-            ? conversation.groupId
-            : cid.startsWith('sg_')
-                ? cid.substring(3)
-                : cid.startsWith('g_')
-                    ? cid.substring(2)
-                    : '')
+              ? conversation.groupId
+              : cid.startsWith('sg_')
+              ? cid.substring(3)
+              : cid.startsWith('g_')
+              ? cid.substring(2)
+              : '')
         : '';
     return (recvId: recvId, sessionType: sessionType, groupId: groupId);
   }
@@ -670,15 +723,22 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
     final target = _getSendTarget();
-    if (target == null) { _showError('会话信息异常'); return; }
-    final ok = await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
-      recvId: target.recvId,
-      filePath: picked.path,
-      sessionType: target.sessionType,
-      groupId: target.groupId,
-    );
+    if (target == null) {
+      _showError('会话信息异常');
+      return;
+    }
+    final ok = await ref
+        .read(messageListProvider(_conversation!.conversationId).notifier)
+        .sendImageMessage(
+          recvId: target.recvId,
+          filePath: picked.path,
+          sessionType: target.sessionType,
+          groupId: target.groupId,
+        );
     if (!ok) {
-      final err = ref.read(messageListProvider(_conversation!.conversationId)).error;
+      final err = ref
+          .read(messageListProvider(_conversation!.conversationId))
+          .error;
       _showError(err ?? '发送图片失败');
     }
     if (!widget.preLoaded) _scrollToBottom();
@@ -689,33 +749,155 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     final picked = await picker.pickImage(source: ImageSource.camera);
     if (picked == null) return;
     final target = _getSendTarget();
-    if (target == null) { _showError('会话信息异常'); return; }
-    final ok = await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendImageMessage(
-      recvId: target.recvId,
-      filePath: picked.path,
-      sessionType: target.sessionType,
-      groupId: target.groupId,
-    );
+    if (target == null) {
+      _showError('会话信息异常');
+      return;
+    }
+    final ok = await ref
+        .read(messageListProvider(_conversation!.conversationId).notifier)
+        .sendImageMessage(
+          recvId: target.recvId,
+          filePath: picked.path,
+          sessionType: target.sessionType,
+          groupId: target.groupId,
+        );
     if (!ok) {
-      final err = ref.read(messageListProvider(_conversation!.conversationId)).error;
+      final err = ref
+          .read(messageListProvider(_conversation!.conversationId))
+          .error;
       _showError(err ?? '发送图片失败');
     }
     if (!widget.preLoaded) _scrollToBottom();
   }
 
   Future<void> _pickLocation() async {
-    // 简单实现：使用默认坐标发送当前位置
     final target = _getSendTarget();
-    if (target == null) { _showError('会话信息异常'); return; }
-    await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendLocationMessage(
-      recvId: target.recvId,
-      description: '当前位置',
-      latitude: 39.9042,
-      longitude: 116.4074,
-      sessionType: target.sessionType,
-      groupId: target.groupId,
+    if (target == null) {
+      _showError('会话信息异常');
+      return;
+    }
+
+    double? latitude;
+    double? longitude;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        var permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          final position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+            ),
+          );
+          latitude = position.latitude;
+          longitude = position.longitude;
+        }
+      }
+    } catch (_) {
+      // 定位失败时仍允许手动填写坐标
+    }
+
+    final location = await _askLocation(
+      latitude: latitude,
+      longitude: longitude,
     );
+    if (location == null || !mounted) return;
+
+    await ref
+        .read(messageListProvider(_conversation!.conversationId).notifier)
+        .sendLocationMessage(
+          recvId: target.recvId,
+          description: location.description,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          sessionType: target.sessionType,
+          groupId: target.groupId,
+        );
     if (!widget.preLoaded) _scrollToBottom();
+  }
+
+  Future<({String description, double latitude, double longitude})?>
+  _askLocation({double? latitude, double? longitude}) async {
+    final descriptionController = TextEditingController(text: '当前位置');
+    final latitudeController = TextEditingController(
+      text: latitude?.toStringAsFixed(6) ?? '',
+    );
+    final longitudeController = TextEditingController(
+      text: longitude?.toStringAsFixed(6) ?? '',
+    );
+
+    final result =
+        await showDialog<
+          ({String description, double latitude, double longitude})
+        >(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('发送位置'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: '位置描述',
+                      hintText: '当前位置',
+                    ),
+                  ),
+                  TextField(
+                    controller: latitudeController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: '纬度'),
+                  ),
+                  TextField(
+                    controller: longitudeController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: '经度'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final lat = double.tryParse(latitudeController.text.trim());
+                  final lon = double.tryParse(longitudeController.text.trim());
+                  if (lat == null || lon == null) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(content: Text('请输入有效的纬度和经度')),
+                    );
+                    return;
+                  }
+                  Navigator.of(dialogContext).pop((
+                    description: descriptionController.text.trim().isEmpty
+                        ? '当前位置'
+                        : descriptionController.text.trim(),
+                    latitude: lat,
+                    longitude: lon,
+                  ));
+                },
+                child: const Text('发送'),
+              ),
+            ],
+          ),
+        );
+
+    descriptionController.dispose();
+    latitudeController.dispose();
+    longitudeController.dispose();
+    return result;
   }
 
   /// 选择并发送文件
@@ -726,13 +908,18 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       final file = result.files.first;
       if (file.path == null) return;
       final target = _getSendTarget();
-      if (target == null) { _showError('会话信息异常'); return; }
-      await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendFileMessage(
-        recvId: target.recvId,
-        filePath: file.path!,
-        sessionType: target.sessionType,
-        groupId: target.groupId,
-      );
+      if (target == null) {
+        _showError('会话信息异常');
+        return;
+      }
+      await ref
+          .read(messageListProvider(_conversation!.conversationId).notifier)
+          .sendFileMessage(
+            recvId: target.recvId,
+            filePath: file.path!,
+            sessionType: target.sessionType,
+            groupId: target.groupId,
+          );
       if (!widget.preLoaded) _scrollToBottom();
     } catch (e) {
       appLog.e('发送文件失败: $e');
@@ -746,31 +933,126 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
       final video = await picker.pickVideo(source: ImageSource.gallery);
       if (video == null) return;
       final target = _getSendTarget();
-      if (target == null) { _showError('会话信息异常'); return; }
-      await ref.read(messageListProvider(_conversation!.conversationId).notifier).sendVideoMessage(
-        recvId: target.recvId,
-        videoPath: video.path,
-        snapshotPath: '',
-        sessionType: target.sessionType,
-        duration: 0,
-        groupId: target.groupId,
-      );
+      if (target == null) {
+        _showError('会话信息异常');
+        return;
+      }
+      var duration = 0;
+      var snapshotPath = '';
+      try {
+        final controller = VideoPlayerController.file(File(video.path));
+        await controller.initialize();
+        duration = controller.value.duration.inSeconds;
+        await controller.dispose();
+        final tempDir = await getTemporaryDirectory();
+        snapshotPath =
+            (await VideoThumbnail.thumbnailFile(
+              video: video.path,
+              thumbnailPath:
+                  '${tempDir.path}/video_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              imageFormat: ImageFormat.JPEG,
+              maxHeight: 720,
+              quality: 80,
+            )) ??
+            '';
+      } catch (_) {
+        // 时长或缩略图解析失败不阻塞发送
+      }
+      await ref
+          .read(messageListProvider(_conversation!.conversationId).notifier)
+          .sendVideoMessage(
+            recvId: target.recvId,
+            videoPath: video.path,
+            snapshotPath: snapshotPath,
+            sessionType: target.sessionType,
+            duration: duration,
+            groupId: target.groupId,
+          );
       if (!widget.preLoaded) _scrollToBottom();
     } catch (e) {
       appLog.e('发送视频失败: $e');
     }
   }
 
+  Future<void> _sendVoiceMessage(int duration, String filePath) async {
+    final target = _getSendTarget();
+    if (target == null) {
+      _showError('会话信息异常');
+      return;
+    }
+    final ok = await ref
+        .read(messageListProvider(_conversation!.conversationId).notifier)
+        .sendSoundMessage(
+          recvId: target.recvId,
+          filePath: filePath,
+          sessionType: target.sessionType,
+          duration: duration,
+          groupId: target.groupId,
+        );
+    if (!ok) {
+      final err = ref
+          .read(messageListProvider(_conversation!.conversationId))
+          .error;
+      _showError(err ?? '发送语音失败');
+    }
+    if (!widget.preLoaded) _scrollToBottom();
+  }
+
   /// 发送名片消息
-  Future<void> _sendCardMessage(String userId, String nickname, String faceUrl) async {
+  Future<void> _sendCardMessage() async {
     try {
       final target = _getSendTarget();
-      if (target == null) { _showError('会话信息异常'); return; }
+      if (target == null) {
+        _showError('会话信息异常');
+        return;
+      }
+      final friendState = ref.read(friendListProvider);
+      if (friendState.friends.isEmpty) {
+        await ref.read(friendListProvider.notifier).loadFriends();
+      }
+      if (!mounted) return;
+      final friends = ref.read(friendListProvider).friends;
+      if (friends.isEmpty) {
+        _showError('暂无好友可选');
+        return;
+      }
+      final selected = await showModalBottomSheet<Friend>(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (sheetContext) => SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: friends.length,
+            itemBuilder: (_, index) {
+              final friend = friends[index];
+              return ListTile(
+                leading: UserAvatar(
+                  user: User(
+                    id: friend.userId,
+                    name: friend.nickname,
+                    avatar: friend.faceUrl.isNotEmpty ? friend.faceUrl : null,
+                  ),
+                  radius: 20,
+                ),
+                title: Text(
+                  friend.remark.isNotEmpty ? friend.remark : friend.nickname,
+                ),
+                subtitle: Text('ID: ${friend.userId}'),
+                onTap: () => Navigator.of(sheetContext).pop(friend),
+              );
+            },
+          ),
+        ),
+      );
+      if (selected == null || !mounted) return;
       final svc = ref.read(messageServiceProvider.notifier);
       await svc.sendCardMessage(
-        userId: userId,
-        nickname: nickname,
-        faceUrl: faceUrl,
+        userId: selected.userId,
+        nickname: selected.nickname,
+        faceUrl: selected.faceUrl,
         ex: '',
         sourceId: target.recvId,
         sessionType: target.sessionType,
@@ -833,21 +1115,129 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     if (_selectMode) {
       setState(() {
         if (_selectedMessages.any((m) => m.clientMsgId == msg.clientMsgId)) {
-          _selectedMessages.removeWhere((m) => m.clientMsgId == msg.clientMsgId);
+          _selectedMessages.removeWhere(
+            (m) => m.clientMsgId == msg.clientMsgId,
+          );
         } else {
           _selectedMessages.add(msg);
         }
       });
       return;
     }
-    if (msg.messageType == MessageType.merge) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MergeMessageDetailScreen(message: msg),
-        ),
-      );
+    switch (msg.messageType) {
+      case MessageType.merge:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MergeMessageDetailScreen(message: msg),
+          ),
+        );
+        break;
+      case MessageType.image:
+        final source = msg.displayImageSource;
+        if (source.isNotEmpty) {
+          openImagePreview(
+            context,
+            source: source,
+            suggestedName: 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          );
+        }
+        break;
+      case MessageType.video:
+        openVideoPreview(context, source: msg.videoSource);
+        break;
+      case MessageType.file:
+        final source = msg.fileSource;
+        final name = msg.fileName.isNotEmpty
+            ? msg.fileName
+            : 'file_${DateTime.now().millisecondsSinceEpoch}';
+        saveMessageMedia(context, source: source, suggestedName: name);
+        break;
+      case MessageType.card:
+        if (msg.cardUserId.isNotEmpty) {
+          AppRouter.goToUserProfile(
+            context,
+            userId: msg.cardUserId,
+            user: User(
+              id: msg.cardUserId,
+              name: msg.cardNickname.isNotEmpty
+                  ? msg.cardNickname
+                  : msg.cardUserId,
+              avatar: msg.cardFaceUrl.isNotEmpty ? msg.cardFaceUrl : null,
+            ),
+          );
+        }
+        break;
+      case MessageType.location:
+        _showLocationDetail(msg);
+        break;
+      case MessageType.custom:
+        showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('自定义消息'),
+            content: SelectableText(msg.displayText),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('关闭'),
+              ),
+            ],
+          ),
+        );
+        break;
+      default:
+        break;
     }
+  }
+
+  Future<void> _resendMessage(MessageInfo msg) async {
+    final target = _getSendTarget();
+    if (target == null) {
+      _showError('会话信息异常，无法重发');
+      return;
+    }
+    final sourceId = target.groupId.isNotEmpty ? target.groupId : target.recvId;
+    final ok = await ref
+        .read(messageListProvider(widget.conversationId).notifier)
+        .resendMessage(
+          message: msg,
+          sourceId: sourceId,
+          sessionType: target.sessionType,
+        );
+    if (!ok) {
+      final err = ref.read(messageListProvider(widget.conversationId)).error;
+      _showError(err ?? '消息重发失败');
+    }
+  }
+
+  void _showLocationDetail(MessageInfo msg) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(msg.locationName.isNotEmpty ? msg.locationName : '位置'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (msg.locationDesc.isNotEmpty) ...[
+              Text(msg.locationDesc),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              '纬度: ${msg.latitude.toStringAsFixed(6)}\n'
+              '经度: ${msg.longitude.toStringAsFixed(6)}',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 逐条转发或合并转发选中的消息
@@ -856,10 +1246,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     final result = await Navigator.push<List<ContactPickItem>>(
       context,
       MaterialPageRoute(
-        builder: (_) => const ContactPickerScreen(
-          multiSelect: false,
-          title: '选择转发目标',
-        ),
+        builder: (_) =>
+            const ContactPickerScreen(multiSelect: false, title: '选择转发目标'),
       ),
     );
     if (result == null || result.isEmpty || !mounted) return;
@@ -905,19 +1293,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
     // 只监听当前会话的未读数，其他会话变化不触发此页重建
     final unread = ref.watch(
       conversationListProvider.select(
-        (state) => state.conversations
-            .where((c) => c.conversationId == widget.conversationId)
-            .firstOrNull
-            ?.unreadCount ?? 0,
+        (state) =>
+            state.conversations
+                .where((c) => c.conversationId == widget.conversationId)
+                .firstOrNull
+                ?.unreadCount ??
+            0,
       ),
     );
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final currentUserId = userProfileState.profile?.userId ?? '';
     final typingUserId = ref.watch(
-      messageServiceProvider.select((s) => s.typingUsers[widget.conversationId]),
+      messageServiceProvider.select(
+        (s) => s.typingUsers[widget.conversationId],
+      ),
     );
-    final isTyping = typingUserId != null &&
+    final isTyping =
+        typingUserId != null &&
         typingUserId.isNotEmpty &&
         typingUserId != currentUserId;
 
@@ -931,50 +1324,48 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
           ),
           title: const Text('会话不存在'),
         ),
-        body: const Center(
-          child: Text('会话信息不存在或已被删除'),
-        ),
+        body: const Center(child: Text('会话信息不存在或已被删除')),
       );
     }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-          leading: IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.arrow_back_ios_new, size: 22),
-                if (unread > 0)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: AppTheme.unreadRed,
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                      ),
-                      child: Text(
-                        unread > 99 ? '99+' : '$unread',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
+        leading: IconButton(
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.arrow_back_ios_new, size: 22),
+              if (unread > 0)
+                Positioned(
+                  right: -8,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppTheme.unreadRed,
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                    child: Text(
+                      unread > 99 ? '99+' : '$unread',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-              ],
-            ),
-            onPressed: () {
-              _onUserGoBack();
-              Navigator.of(context).pop();
-            },
+                ),
+            ],
           ),
+          onPressed: () {
+            _onUserGoBack();
+            Navigator.of(context).pop();
+          },
+        ),
         title: LayoutBuilder(
           builder: (context, constraints) {
             return InkWell(
@@ -987,7 +1378,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                   UserAvatar(user: user, radius: 18),
                   const SizedBox(width: 10),
                   SizedBox(
-                    width: constraints.maxWidth.isFinite && constraints.maxWidth > 56
+                    width:
+                        constraints.maxWidth.isFinite &&
+                            constraints.maxWidth > 56
                         ? constraints.maxWidth - 56
                         : 200,
                     child: Column(
@@ -1010,7 +1403,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                             '对方正在输入...',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.9,
+                              ),
                             ),
                           )
                         else if (_isGroup)
@@ -1070,115 +1465,161 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                         final messages = messageState.messages;
                         final isLoading = _loadingNotifier.value;
 
-                      return MessageList(
-                        messages: messages,
-                        otherUser: user,
-                        currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
-                        scrollController: _scrollController,
-                        isLoading: isLoading,
-                        selectMode: _selectMode,
-                        selectedClientMsgIds: _selectedMessages
-                            .map((m) => m.clientMsgId)
-                            .toSet(),
-                        cachedCurrentUserProfile: ref.watch(userProfileProvider).profile,
-                        onMessageVisible: (msg) {
-                          // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
-                          if (!msg.isRead && msg.sendId != (currentUserId.isNotEmpty ? currentUserId : null)) {
-                            _markConversationMessageAsRead();
-                          }
-                        },
-                        onMessageLongPress: (msg) => showMessageActionMenu(
-                          context,
-                          message: msg,
-                          currentUserId: currentUserId,
-                          actions: MessageActions(
-                            onCopy: (_) {},
-                            onRevoke: _revokeMessage,
-                            onDelete: _deleteMessage,
-                            onForward: (msg) async {
-                              final result = await Navigator.push<List<ContactPickItem>>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ContactPickerScreen(multiSelect: false, title: '转发给'),
-                                ),
-                              );
-                              if (result != null && result.isNotEmpty) {
-                                final target = result.first;
-                                final st = target.isGroup ? SessionType.writeGroupChat : SessionType.singleChat;
-                                try {
-                                  final sourceId = target.isGroup ? target.id : target.id;
-                                  await ref.read(messageServiceProvider.notifier).forwardMessage(
-                                    clientMsgId: msg.clientMsgId,
-                                    sourceId: sourceId,
-                                    sessionType: st,
-                                  );
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('已转发给 ${target.name}')),
-                                  );
+                        return MessageList(
+                          messages: messages,
+                          otherUser: user,
+                          currentUserId: currentUserId.isNotEmpty
+                              ? currentUserId
+                              : null,
+                          scrollController: _scrollController,
+                          isLoading: isLoading,
+                          selectMode: _selectMode,
+                          selectedClientMsgIds: _selectedMessages
+                              .map((m) => m.clientMsgId)
+                              .toSet(),
+                          uploadProgress: ref.watch(
+                            messageServiceProvider.select(
+                              (s) => s.uploadProgress,
+                            ),
+                          ),
+                          groupReadReceipts: ref.watch(
+                            messageServiceProvider.select(
+                              (s) => s.groupReadReceipts,
+                            ),
+                          ),
+                          cachedCurrentUserProfile: ref
+                              .watch(userProfileProvider)
+                              .profile,
+                          onMessageVisible: (msg) {
+                            // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
+                            if (!msg.isRead &&
+                                msg.sendId !=
+                                    (currentUserId.isNotEmpty
+                                        ? currentUserId
+                                        : null)) {
+                              _markConversationMessageAsRead();
+                            }
+                          },
+                          onMessageLongPress: (msg) => showMessageActionMenu(
+                            context,
+                            message: msg,
+                            currentUserId: currentUserId,
+                            actions: MessageActions(
+                              onCopy: (_) {},
+                              onRevoke: _revokeMessage,
+                              onDelete: _deleteMessage,
+                              onForward: (msg) async {
+                                final result =
+                                    await Navigator.push<List<ContactPickItem>>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ContactPickerScreen(
+                                              multiSelect: false,
+                                              title: '转发给',
+                                            ),
+                                      ),
+                                    );
+                                if (result != null && result.isNotEmpty) {
+                                  final target = result.first;
+                                  final st = target.isGroup
+                                      ? SessionType.writeGroupChat
+                                      : SessionType.singleChat;
+                                  try {
+                                    final sourceId = target.isGroup
+                                        ? target.id
+                                        : target.id;
+                                    await ref
+                                        .read(messageServiceProvider.notifier)
+                                        .forwardMessage(
+                                          clientMsgId: msg.clientMsgId,
+                                          sourceId: sourceId,
+                                          sessionType: st,
+                                        );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('已转发给 ${target.name}'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    appLog.e('转发失败: $e');
                                   }
-                                } catch (e) {
-                                  appLog.e('转发失败: $e');
                                 }
-                              }
-                            },
-                            onQuote: (msg) {
-                              setState(() => _quotedMessage = msg);
-                            },
-                            onMultiSelect: _enterSelectMode,
+                              },
+                              onQuote: (msg) {
+                                setState(() => _quotedMessage = msg);
+                              },
+                              onMultiSelect: _enterSelectMode,
+                              onResend: _resendMessage,
+                            ),
                           ),
-                        ),
-                        onMessageTap: _handleMessageTap,
-                      );
-                    },
+                          onMessageTap: _handleMessageTap,
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-              // 引用消息提示栏
-              if (_selectMode)
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '已选 ${_selectedMessages.length} 条',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textPrimaryColor,
+                // 引用消息提示栏
+                if (_selectMode)
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '已选 ${_selectedMessages.length} 条',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.textPrimaryColor,
+                            ),
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () => _forwardSelected(merge: false),
-                        child: const Text('逐条转发'),
-                      ),
-                      TextButton(
-                        onPressed: () => _forwardSelected(merge: true),
-                        child: const Text('合并转发'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: _exitSelectMode,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
+                        TextButton(
+                          onPressed: () => _forwardSelected(merge: false),
+                          child: const Text('逐条转发'),
+                        ),
+                        TextButton(
+                          onPressed: () => _forwardSelected(merge: true),
+                          child: const Text('合并转发'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: _exitSelectMode,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 if (_quotedMessage != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundColor,
                       border: Border(
-                        top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                        top: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.reply, size: 16, color: AppTheme.primaryColor),
+                        const Icon(
+                          Icons.reply,
+                          size: 16,
+                          color: AppTheme.primaryColor,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -1226,6 +1667,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> with Widget
                   onFilePick: _pickFile,
                   onVideoPick: _pickVideo,
                   onCardSend: _sendCardMessage,
+                  onVoiceRecord: _sendVoiceMessage,
                   onAtMention: _showAtMentionPicker,
                   isGroupChat: _isGroup,
                 ),
@@ -1342,7 +1784,10 @@ class _MessageSearchSheetState extends ConsumerState<_MessageSearchSheet> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(_error!, style: const TextStyle(color: AppTheme.unreadRed)),
+          child: Text(
+            _error!,
+            style: const TextStyle(color: AppTheme.unreadRed),
+          ),
         ),
       );
     }
@@ -1380,7 +1825,9 @@ class _MessageSearchSheetState extends ConsumerState<_MessageSearchSheet> {
           onTap: () => showDialog<void>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: Text(log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId),
+              title: Text(
+                log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId,
+              ),
               content: SelectableText(log.content),
               actions: [
                 TextButton(

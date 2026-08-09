@@ -644,6 +644,8 @@ abstract class RustLibApi extends BaseApi {
     required String groupId,
     String? groupName,
     String? faceUrl,
+    String? introduction,
+    String? notification,
   });
 
   Future<void> crateFfiClientOpenImBridgeClientSetGroupMemberInfo({
@@ -4865,6 +4867,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String groupId,
     String? groupName,
     String? faceUrl,
+    String? introduction,
+    String? notification,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -4877,6 +4881,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(groupId, serializer);
           sse_encode_opt_String(groupName, serializer);
           sse_encode_opt_String(faceUrl, serializer);
+          sse_encode_opt_String(introduction, serializer);
+          sse_encode_opt_String(notification, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -4889,7 +4895,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateFfiClientOpenImBridgeClientSetGroupInfoConstMeta,
-        argValues: [that, groupId, groupName, faceUrl],
+        argValues: [
+          that,
+          groupId,
+          groupName,
+          faceUrl,
+          introduction,
+          notification,
+        ],
         apiImpl: this,
       ),
     );
@@ -4898,7 +4911,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateFfiClientOpenImBridgeClientSetGroupInfoConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_set_group_info",
-        argNames: ["that", "groupId", "groupName", "faceUrl"],
+        argNames: [
+          "that",
+          "groupId",
+          "groupName",
+          "faceUrl",
+          "introduction",
+          "notification",
+        ],
       );
 
   @override
@@ -13224,11 +13244,15 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String groupId,
     String? groupName,
     String? faceUrl,
+    String? introduction,
+    String? notification,
   }) => RustLib.instance.api.crateFfiClientOpenImBridgeClientSetGroupInfo(
     that: this,
     groupId: groupId,
     groupName: groupName,
     faceUrl: faceUrl,
+    introduction: introduction,
+    notification: notification,
   );
 
   /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）

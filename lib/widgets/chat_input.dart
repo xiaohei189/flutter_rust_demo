@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 import '../theme/app_theme.dart';
 import 'attachment_panel.dart';
@@ -29,7 +30,7 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onLocationPick;
   final VoidCallback? onVideoPick;
   final Function(int duration, String filePath)? onVoiceRecord;
-  final Function(String userId, String nickname, String faceUrl)? onCardSend;
+  final VoidCallback? onCardSend;
   final VoidCallback? onAtMention;
   final bool isGroupChat;
 
@@ -65,22 +66,93 @@ class _ChatInputState extends State<ChatInput> {
   Timer? _recordingTimer;
   String? _recordingPath;
   DateTime? _recordingStart;
+  final AudioRecorder _recorder = AudioRecorder();
 
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
 
   /// 常用 emoji 列表
   static const List<String> _commonEmojis = [
-    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
-    '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
-    '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜',
-    '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐',
-    '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬',
-    '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨',
-    '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞',
-    '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬',
-    '👍', '👎', '👏', '🙏', '💪', '❤️', '🔥', '⭐',
-    '🎉', '🎊', '💯', '✅', '❌', '⚡', '🌟', '💫',
+    '😀',
+    '😃',
+    '😄',
+    '😁',
+    '😆',
+    '😅',
+    '🤣',
+    '😂',
+    '🙂',
+    '🙃',
+    '😉',
+    '😊',
+    '😇',
+    '🥰',
+    '😍',
+    '🤩',
+    '😘',
+    '😗',
+    '😚',
+    '😙',
+    '🥲',
+    '😋',
+    '😛',
+    '😜',
+    '🤪',
+    '😝',
+    '🤑',
+    '🤗',
+    '🤭',
+    '🤫',
+    '🤔',
+    '🤐',
+    '🤨',
+    '😐',
+    '😑',
+    '😶',
+    '😏',
+    '😒',
+    '🙄',
+    '😬',
+    '😮',
+    '😯',
+    '😲',
+    '😳',
+    '🥺',
+    '😦',
+    '😧',
+    '😨',
+    '😰',
+    '😥',
+    '😢',
+    '😭',
+    '😱',
+    '😖',
+    '😣',
+    '😞',
+    '😓',
+    '😩',
+    '😫',
+    '🥱',
+    '😤',
+    '😡',
+    '😠',
+    '🤬',
+    '👍',
+    '👎',
+    '👏',
+    '🙏',
+    '💪',
+    '❤️',
+    '🔥',
+    '⭐',
+    '🎉',
+    '🎊',
+    '💯',
+    '✅',
+    '❌',
+    '⚡',
+    '🌟',
+    '💫',
   ];
 
   @override
@@ -102,14 +174,35 @@ class _ChatInputState extends State<ChatInput> {
 
   void _initAttachmentItems() {
     _cachedAttachmentItems = [
-      AttachmentItem(icon: Icons.photo_library_outlined, label: '相册', onTap: widget.onImagePick),
-      AttachmentItem(icon: Icons.camera_alt_outlined, label: '拍照', onTap: widget.onCameraPick),
-      AttachmentItem(icon: Icons.videocam_outlined, label: '视频', onTap: widget.onVideoPick),
-      AttachmentItem(icon: Icons.location_on_outlined, label: '位置', onTap: widget.onLocationPick),
-      AttachmentItem(icon: Icons.insert_drive_file_outlined, label: '文件', onTap: widget.onFilePick),
       AttachmentItem(
-        icon: Icons.person_add_outlined, label: '名片',
-        onTap: widget.onCardSend != null ? () => _showCardSendDialog(context) : null,
+        icon: Icons.photo_library_outlined,
+        label: '相册',
+        onTap: widget.onImagePick,
+      ),
+      AttachmentItem(
+        icon: Icons.camera_alt_outlined,
+        label: '拍照',
+        onTap: widget.onCameraPick,
+      ),
+      AttachmentItem(
+        icon: Icons.videocam_outlined,
+        label: '视频',
+        onTap: widget.onVideoPick,
+      ),
+      AttachmentItem(
+        icon: Icons.location_on_outlined,
+        label: '位置',
+        onTap: widget.onLocationPick,
+      ),
+      AttachmentItem(
+        icon: Icons.insert_drive_file_outlined,
+        label: '文件',
+        onTap: widget.onFilePick,
+      ),
+      AttachmentItem(
+        icon: Icons.person_add_outlined,
+        label: '名片',
+        onTap: widget.onCardSend != null ? () => widget.onCardSend!() : null,
       ),
     ];
   }
@@ -133,6 +226,7 @@ class _ChatInputState extends State<ChatInput> {
     widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
     _recordingTimer?.cancel();
+    _recorder.dispose();
     _hasTextNotifier.dispose();
     super.dispose();
   }
@@ -184,12 +278,15 @@ class _ChatInputState extends State<ChatInput> {
       controller.value = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(
-          offset: selection.start + prefix.length + selected.length + suffix.length,
+          offset:
+              selection.start + prefix.length + selected.length + suffix.length,
         ),
       );
     } else {
       // 无选中：插入标记，光标放在标记中间
-      final offset = selection.baseOffset >= 0 ? selection.baseOffset : text.length;
+      final offset = selection.baseOffset >= 0
+          ? selection.baseOffset
+          : text.length;
       final placeholder = _placeholderFor(prefix);
       final newText = text.replaceRange(
         offset,
@@ -252,6 +349,33 @@ class _ChatInputState extends State<ChatInput> {
         '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.aac';
     _recordingStart = DateTime.now();
 
+    try {
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission) {
+        _recordingPath = null;
+        _recordingStart = null;
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('没有录音权限')));
+        }
+        return;
+      }
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.aacLc),
+        path: _recordingPath!,
+      );
+    } catch (_) {
+      _recordingPath = null;
+      _recordingStart = null;
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('录音启动失败')));
+      }
+      return;
+    }
+
     _recordingTimer = Timer(const Duration(seconds: 60), () {
       _stopRecording();
     });
@@ -266,14 +390,14 @@ class _ChatInputState extends State<ChatInput> {
     }
   }
 
-  void _stopRecording([LongPressEndDetails? details]) {
+  Future<void> _stopRecording([LongPressEndDetails? details]) async {
     _recordingTimer?.cancel();
     _recordingTimer = null;
 
     if (_recordingPath == null || _recordingStart == null) return;
+    final path = await _recorder.stop() ?? _recordingPath;
     final duration = DateTime.now().difference(_recordingStart!).inSeconds;
 
-    final path = _recordingPath;
     _recordingPath = null;
     _recordingStart = null;
 
@@ -289,7 +413,9 @@ class _ChatInputState extends State<ChatInput> {
       return;
     }
 
-    widget.onVoiceRecord?.call(duration, path!);
+    if (path != null) {
+      widget.onVoiceRecord?.call(duration, path);
+    }
   }
 
   // ==================== Emoji 插入 ====================
@@ -311,30 +437,6 @@ class _ChatInputState extends State<ChatInput> {
   // ==================== 附件列表 ====================
 
   List<AttachmentItem> get _attachmentItems => _cachedAttachmentItems;
-
-  void _showCardSendDialog(BuildContext context) {
-    _closeAllPanels();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('发送名片'),
-        content: const Text('请选择要发送名片的好友'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onCardSend?.call('', '', '');
-            },
-            child: const Text('确认'),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ==================== 构建 ====================
 
@@ -394,14 +496,29 @@ class _ChatInputState extends State<ChatInput> {
       ),
       decoration: InputDecoration(
         hintText: _isMarkdownMode ? 'Markdown...' : '输入消息...',
-        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor, fontSize: 16),
+        hintStyle: const TextStyle(
+          color: AppTheme.textSecondaryColor,
+          fontSize: 16,
+        ),
         filled: true,
         fillColor: AppTheme.feishuInputBg,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
         suffixIcon: ValueListenableBuilder<bool>(
           valueListenable: _hasTextNotifier,
           builder: (_, hasText, __) {
@@ -409,7 +526,8 @@ class _ChatInputState extends State<ChatInput> {
             return IconButton(
               icon: Icon(
                 _inputExpanded ? Icons.zoom_in_map : Icons.zoom_out_map,
-                size: 18, color: AppTheme.textSecondaryColor,
+                size: 18,
+                color: AppTheme.textSecondaryColor,
               ),
               onPressed: () => setState(() => _inputExpanded = !_inputExpanded),
               padding: EdgeInsets.zero,
@@ -417,7 +535,10 @@ class _ChatInputState extends State<ChatInput> {
             );
           },
         ),
-        suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 32,
+          minHeight: 32,
+        ),
       ),
       onSubmitted: (_) => _doSend(),
     );
@@ -498,10 +619,25 @@ class _ChatInputState extends State<ChatInput> {
       child: Row(
         children: [
           _formatBtn('B', '粗体', () => _handleFormat(MarkdownFormat.bold)),
-          _formatBtn('I', '斜体', () => _handleFormat(MarkdownFormat.italic), italic: true),
-          _formatBtn('S', '删除线', () => _handleFormat(MarkdownFormat.strikethrough), strikethrough: true),
+          _formatBtn(
+            'I',
+            '斜体',
+            () => _handleFormat(MarkdownFormat.italic),
+            italic: true,
+          ),
+          _formatBtn(
+            'S',
+            '删除线',
+            () => _handleFormat(MarkdownFormat.strikethrough),
+            strikethrough: true,
+          ),
           _formatBtn('H', '标题', () => _handleFormat(MarkdownFormat.heading)),
-          _formatBtn('<>', '行内代码', () => _handleFormat(MarkdownFormat.inlineCode), mono: true),
+          _formatBtn(
+            '<>',
+            '行内代码',
+            () => _handleFormat(MarkdownFormat.inlineCode),
+            mono: true,
+          ),
           _formatBtn('"', '引用', () => _handleFormat(MarkdownFormat.quote)),
           _formatBtn('•', '列表', () => _handleFormat(MarkdownFormat.bulletList)),
           _formatBtn('🔗', '链接', () => _handleFormat(MarkdownFormat.link)),
@@ -519,7 +655,14 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  Widget _formatBtn(String label, String tooltip, VoidCallback onTap, {bool italic = false, bool strikethrough = false, bool mono = false}) {
+  Widget _formatBtn(
+    String label,
+    String tooltip,
+    VoidCallback onTap, {
+    bool italic = false,
+    bool strikethrough = false,
+    bool mono = false,
+  }) {
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -571,8 +714,8 @@ class _ChatInputState extends State<ChatInput> {
             size: 24,
             color: enabled
                 ? (active
-                    ? AppTheme.primaryColor
-                    : AppTheme.textPrimaryColor.withValues(alpha: 0.7))
+                      ? AppTheme.primaryColor
+                      : AppTheme.textPrimaryColor.withValues(alpha: 0.7))
                 : AppTheme.textSecondaryColor.withValues(alpha: 0.3),
           ),
           onPressed: hasLongPress ? null : (enabled ? onTap : null),
@@ -606,8 +749,8 @@ class _ChatInputState extends State<ChatInput> {
             decoration: BoxDecoration(
               color: enabled
                   ? (_isMarkdownMode
-                      ? AppTheme.textSecondaryColor
-                      : AppTheme.primaryColor)
+                        ? AppTheme.textSecondaryColor
+                        : AppTheme.primaryColor)
                   : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(22),
             ),
@@ -633,7 +776,9 @@ class _ChatInputState extends State<ChatInput> {
       constraints: const BoxConstraints(maxHeight: 260),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.dividerColor, width: 0.5)),
+        border: Border(
+          top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -645,11 +790,23 @@ class _ChatInputState extends State<ChatInput> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('最常使用', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor)),
+                  const Text(
+                    '最常使用',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   _buildEmojiGrid(recentEmojis),
                   const SizedBox(height: 8),
-                  const Text('默认表情', style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor)),
+                  const Text(
+                    '默认表情',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   _buildEmojiGrid(defaultEmojis),
                 ],
@@ -662,14 +819,36 @@ class _ChatInputState extends State<ChatInput> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                const Icon(Icons.add, size: 20, color: AppTheme.textSecondaryColor),
-                const Icon(Icons.emoji_emotions_outlined, size: 20, color: AppTheme.primaryColor),
-                const Icon(Icons.favorite_border, size: 20, color: AppTheme.textSecondaryColor),
+                const Icon(
+                  Icons.add,
+                  size: 20,
+                  color: AppTheme.textSecondaryColor,
+                ),
+                const Icon(
+                  Icons.emoji_emotions_outlined,
+                  size: 20,
+                  color: AppTheme.primaryColor,
+                ),
+                const Icon(
+                  Icons.favorite_border,
+                  size: 20,
+                  color: AppTheme.textSecondaryColor,
+                ),
                 IconButton(
-                  icon: const Icon(Icons.keyboard, size: 20, color: AppTheme.textSecondaryColor),
-                  onPressed: () { _closeAllPanels(); _focusNode.requestFocus(); },
+                  icon: const Icon(
+                    Icons.keyboard,
+                    size: 20,
+                    color: AppTheme.textSecondaryColor,
+                  ),
+                  onPressed: () {
+                    _closeAllPanels();
+                    _focusNode.requestFocus();
+                  },
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
               ],
             ),
@@ -684,16 +863,19 @@ class _ChatInputState extends State<ChatInput> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 8, mainAxisSpacing: 4, crossAxisSpacing: 4,
+        crossAxisCount: 8,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
       ),
       itemCount: emojis.length,
       itemBuilder: (_, i) => InkWell(
         onTap: () => _insertEmoji(emojis[i]),
-        child: Center(child: Text(emojis[i], style: const TextStyle(fontSize: 22))),
+        child: Center(
+          child: Text(emojis[i], style: const TextStyle(fontSize: 22)),
+        ),
       ),
     );
   }
 
   // ==================== 辅助 ====================
-
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user.dart';
 import '../providers/user_profile_provider.dart';
+import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 import '../widgets/list_row.dart';
 import '../widgets/user_avatar.dart';
@@ -17,13 +18,15 @@ class ProfileScreen extends ConsumerWidget {
     final state = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
     final avatarUrl = notifier.getDisplayAvatarUrl();
-    
+
     // 使用用户资料中的信息
     final userName = state.nickname.isNotEmpty
         ? state.nickname
-        : (state.profile?.userId.isNotEmpty == true ? state.profile!.userId : '我');
+        : (state.profile?.userId.isNotEmpty == true
+              ? state.profile!.userId
+              : '我');
     final userId = state.profile?.userId ?? '';
-    
+
     final displayUser = User(
       id: userId,
       name: userName,
@@ -89,7 +92,11 @@ class ProfileScreen extends ConsumerWidget {
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(10),
-                      child: Icon(Icons.qr_code, size: 28, color: AppTheme.textPrimaryColor),
+                      child: Icon(
+                        Icons.qr_code,
+                        size: 28,
+                        color: AppTheme.textPrimaryColor,
+                      ),
                     ),
                   ),
                 ),
@@ -99,11 +106,55 @@ class ProfileScreen extends ConsumerWidget {
           const Divider(height: 1),
 
           // 功能列表
-          _buildMenuItem(Icons.settings, '设置', () {}),
-          _buildMenuItem(Icons.notifications, '通知', () {}),
-          _buildMenuItem(Icons.privacy_tip, '隐私', () {}),
-          _buildMenuItem(Icons.help, '帮助与反馈', () {}),
-          _buildMenuItem(Icons.info, '关于', () {}),
+          _buildMenuItem(
+            Icons.settings,
+            '设置',
+            () => AppRouter.goToAccountSettings(context),
+          ),
+          _buildMenuItem(
+            Icons.notifications,
+            '通知',
+            () => AppRouter.goToAccountSettings(context),
+          ),
+          _buildMenuItem(
+            Icons.privacy_tip,
+            '隐私',
+            () => AppRouter.goToBlacklist(context),
+          ),
+          _buildMenuItem(Icons.help, '帮助与反馈', () => _showHelp(context)),
+          _buildMenuItem(Icons.info, '关于', () => _showAbout(context)),
+        ],
+      ),
+    );
+  }
+
+  void _showHelp(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('帮助与反馈'),
+        content: const Text('遇到问题请提供操作步骤与日志。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('关于我们'),
+        content: const Text('OpenIM Flutter Rust 示例应用\n版本 1.0.0'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('知道了'),
+          ),
         ],
       ),
     );

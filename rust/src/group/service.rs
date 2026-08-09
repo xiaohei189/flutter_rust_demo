@@ -209,14 +209,8 @@ impl GroupService {
         owner_user_id: String,
     ) -> Result<GroupInfo> {
         // 服务端会自动把 ownerUserID 追加为成员，成员/管理员列表里不能重复包含群主。
-        let member_user_ids = member_user_ids
-            .into_iter()
-            .filter(|id| id != &owner_user_id)
-            .collect::<Vec<_>>();
-        let admin_user_ids = admin_user_ids
-            .into_iter()
-            .filter(|id| id != &owner_user_id)
-            .collect::<Vec<_>>();
+        let member_user_ids = member_user_ids.into_iter().filter(|id| id != &owner_user_id).collect::<Vec<_>>();
+        let admin_user_ids = admin_user_ids.into_iter().filter(|id| id != &owner_user_id).collect::<Vec<_>>();
         let req = CreateGroupReq {
             group_info: CreateGroupInfo {
                 group_name,
@@ -259,10 +253,7 @@ impl GroupService {
 
     pub async fn quit_group(&self, group_id: String) -> Result<()> {
         let user_id = self.user_id.get().await;
-        let req = QuitGroupReq {
-            group_id: group_id.clone(),
-            user_id,
-        };
+        let req = QuitGroupReq { group_id: group_id.clone(), user_id };
 
         self.api.quit_group(&req).await?;
 
@@ -306,6 +297,12 @@ impl GroupService {
             }
             if let Some(url) = &req.face_url {
                 group.face_url = url.clone();
+            }
+            if let Some(introduction) = &req.introduction {
+                group.introduction = introduction.clone();
+            }
+            if let Some(notification) = &req.notification {
+                group.notification = notification.clone();
             }
         }
 

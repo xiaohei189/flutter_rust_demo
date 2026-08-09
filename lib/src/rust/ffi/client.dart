@@ -411,6 +411,8 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required String groupId,
     String? groupName,
     String? faceUrl,
+    String? introduction,
+    String? notification,
   });
 
   /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）

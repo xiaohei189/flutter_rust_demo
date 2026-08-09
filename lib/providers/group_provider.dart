@@ -13,22 +13,30 @@ import 'message_service_provider.dart';
 class GroupListState {
   final List<GroupInfo> groups;
   final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
   final String? error;
 
   const GroupListState({
     this.groups = const [],
     this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
     this.error,
   });
 
   GroupListState copyWith({
     List<GroupInfo>? groups,
     bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
     String? error,
   }) {
     return GroupListState(
       groups: groups ?? this.groups,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
       error: error,
     );
   }
@@ -36,9 +44,20 @@ class GroupListState {
 
 /// 群组列表 Notifier
 class GroupListNotifier extends StateNotifier<GroupListState> {
-  GroupListNotifier(this._ref) : super(const GroupListState());
+  GroupListNotifier(this._ref) : super(const GroupListState()) {
+    _init();
+  }
 
   final Ref _ref;
+  int _offset = 0;
+
+  void _init() {
+    _ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadGroups();
+      }
+    });
+  }
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get _client =>
@@ -52,16 +71,22 @@ class GroupListNotifier extends StateNotifier<GroupListState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true, isLoadingMore: false, error: null);
     try {
-      final groups = await GroupService.instance.getGroupList(client);
-      state = state.copyWith(groups: groups, isLoading: false);
+      final groups = await GroupService.instance.getJoinedGroupListPage(
+        client,
+        offset: 0,
+        count: 50,
+      );
+      _offset = groups.length;
+      state = state.copyWith(
+        groups: groups,
+        isLoading: false,
+        hasMore: groups.length >= 50,
+      );
     } catch (e) {
       appLog.e('[GroupListProvider] 加载群组列表失败: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: '加载群组列表失败: $e',
-      );
+      state = state.copyWith(isLoading: false, error: '加载群组列表失败: $e');
     }
   }
 
@@ -69,13 +94,40 @@ class GroupListNotifier extends StateNotifier<GroupListState> {
   Future<void> refreshGroups() async {
     await loadGroups();
   }
+
+  Future<void> loadMoreGroups() async {
+    final client = _client;
+    if (client == null ||
+        state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore) {
+      return;
+    }
+    state = state.copyWith(isLoadingMore: true);
+    try {
+      final more = await GroupService.instance.getJoinedGroupListPage(
+        client,
+        offset: _offset,
+        count: 50,
+      );
+      final merged = [...state.groups, ...more];
+      _offset = merged.length;
+      state = state.copyWith(
+        groups: merged,
+        isLoadingMore: false,
+        hasMore: more.length >= 50,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoadingMore: false, error: '加载更多群组失败: $e');
+    }
+  }
 }
 
 /// 群组列表 Provider
 final groupListProvider =
     StateNotifierProvider<GroupListNotifier, GroupListState>((ref) {
-  return GroupListNotifier(ref);
-});
+      return GroupListNotifier(ref);
+    });
 
 // ==================== 群成员 Provider ====================
 
@@ -107,10 +159,20 @@ class GroupMemberState {
 /// 群成员 Notifier（按群组 ID 区分）
 class GroupMemberNotifier extends StateNotifier<GroupMemberState> {
   GroupMemberNotifier(this._ref, this._groupId)
-      : super(const GroupMemberState());
+    : super(const GroupMemberState()) {
+    _init();
+  }
 
   final Ref _ref;
   final String _groupId;
+
+  void _init() {
+    _ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadMembers();
+      }
+    });
+  }
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get _client =>
@@ -133,10 +195,7 @@ class GroupMemberNotifier extends StateNotifier<GroupMemberState> {
       state = state.copyWith(members: members, isLoading: false);
     } catch (e) {
       appLog.e('[GroupMemberProvider] 加载群成员失败: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: '加载群成员失败: $e',
-      );
+      state = state.copyWith(isLoading: false, error: '加载群成员失败: $e');
     }
   }
 
@@ -261,10 +320,12 @@ class GroupMemberNotifier extends StateNotifier<GroupMemberState> {
 }
 
 /// 群成员 Provider（Family，按群组 ID）
-final groupMemberProvider = StateNotifierProvider.family<
-    GroupMemberNotifier, GroupMemberState, String>((ref, groupId) {
-  return GroupMemberNotifier(ref, groupId);
-});
+final groupMemberProvider =
+    StateNotifierProvider.family<GroupMemberNotifier, GroupMemberState, String>(
+      (ref, groupId) {
+        return GroupMemberNotifier(ref, groupId);
+      },
+    );
 
 // ==================== 群申请 Provider ====================
 
@@ -302,9 +363,19 @@ class GroupApplicationState {
 
 /// 群申请 Notifier
 class GroupApplicationNotifier extends StateNotifier<GroupApplicationState> {
-  GroupApplicationNotifier(this._ref) : super(const GroupApplicationState());
+  GroupApplicationNotifier(this._ref) : super(const GroupApplicationState()) {
+    _init();
+  }
 
   final Ref _ref;
+
+  void _init() {
+    _ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadApplications();
+      }
+    });
+  }
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get _client =>
@@ -331,10 +402,7 @@ class GroupApplicationNotifier extends StateNotifier<GroupApplicationState> {
       );
     } catch (e) {
       appLog.e('[GroupApplicationProvider] 加载群申请列表失败: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: '加载群申请列表失败: $e',
-      );
+      state = state.copyWith(isLoading: false, error: '加载群申请列表失败: $e');
     }
   }
 
@@ -393,10 +461,11 @@ class GroupApplicationNotifier extends StateNotifier<GroupApplicationState> {
 
 /// 群申请列表 Provider
 final groupApplicationProvider =
-    StateNotifierProvider<GroupApplicationNotifier, GroupApplicationState>(
-        (ref) {
-  return GroupApplicationNotifier(ref);
-});
+    StateNotifierProvider<GroupApplicationNotifier, GroupApplicationState>((
+      ref,
+    ) {
+      return GroupApplicationNotifier(ref);
+    });
 
 // ==================== 创建群组 Provider ====================
 
@@ -423,8 +492,9 @@ class CreateGroupState {
   }) {
     return CreateGroupState(
       isCreating: isCreating ?? this.isCreating,
-      createdGroup:
-          clearCreatedGroup ? null : (createdGroup ?? this.createdGroup),
+      createdGroup: clearCreatedGroup
+          ? null
+          : (createdGroup ?? this.createdGroup),
       selectedMemberIds: selectedMemberIds ?? this.selectedMemberIds,
       error: error,
     );
@@ -458,8 +528,9 @@ class CreateGroupNotifier extends StateNotifier<CreateGroupState> {
   /// 移除一个已选成员
   void removeSelectedMember(String userId) {
     state = state.copyWith(
-      selectedMemberIds:
-          state.selectedMemberIds.where((id) => id != userId).toList(),
+      selectedMemberIds: state.selectedMemberIds
+          .where((id) => id != userId)
+          .toList(),
     );
   }
 
@@ -496,10 +567,7 @@ class CreateGroupNotifier extends StateNotifier<CreateGroupState> {
       return group;
     } catch (e) {
       appLog.e('[CreateGroupProvider] 创建群组失败: $e');
-      state = state.copyWith(
-        isCreating: false,
-        error: '创建群组失败: $e',
-      );
+      state = state.copyWith(isCreating: false, error: '创建群组失败: $e');
       return null;
     }
   }
@@ -513,5 +581,5 @@ class CreateGroupNotifier extends StateNotifier<CreateGroupState> {
 /// 创建群组 Provider
 final createGroupProvider =
     StateNotifierProvider<CreateGroupNotifier, CreateGroupState>((ref) {
-  return CreateGroupNotifier(ref);
-});
+      return CreateGroupNotifier(ref);
+    });

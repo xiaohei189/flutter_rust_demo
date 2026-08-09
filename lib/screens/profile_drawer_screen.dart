@@ -12,10 +12,7 @@ import '../models/user.dart';
 /// 个人资料左侧抽屉（参考飞书风格）
 /// 从左侧滑入，占满屏幕高度，宽度约 80%
 class ProfileDrawerScreen extends ConsumerWidget {
-  const ProfileDrawerScreen({
-    super.key,
-    this.onOpenMyProfile,
-  });
+  const ProfileDrawerScreen({super.key, this.onOpenMyProfile});
 
   final VoidCallback? onOpenMyProfile;
 
@@ -27,8 +24,8 @@ class ProfileDrawerScreen extends ConsumerWidget {
       name: state.nickname.isNotEmpty
           ? state.nickname
           : (state.profile?.userId.isNotEmpty == true
-              ? state.profile!.userId
-              : '我'),
+                ? state.profile!.userId
+                : '我'),
       avatar: avatarUrl,
       status: null,
     );
@@ -41,21 +38,14 @@ class ProfileDrawerScreen extends ConsumerWidget {
     return '输入你的个性签名...';
   }
 
-  void _comingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('功能开发中，敬请期待'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   void _showAbout(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('帮助与客服'),
-        content: const Text('OpenIM Flutter Rust 示例应用\n版本 1.0.0\n\n遇到问题请提供操作步骤与日志。'),
+        content: const Text(
+          'OpenIM Flutter Rust 示例应用\n版本 1.0.0\n\n遇到问题请提供操作步骤与日志。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -110,30 +100,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          UserAvatar(user: currentUser, radius: 32),
-                          const Spacer(),
-                          // +状态 按钮
-                          OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.add, size: 16),
-                            label: const Text('状态'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppTheme.primaryColor,
-                              side: BorderSide(
-                                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              textStyle: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ],
+                        children: [UserAvatar(user: currentUser, radius: 32)],
                       ),
                     ),
                     // 名字 + 二维码 + 箭头（点击进入个人信息）
@@ -189,14 +156,22 @@ class ProfileDrawerScreen extends ConsumerWidget {
                                 },
                                 child: const Padding(
                                   padding: EdgeInsets.all(8),
-                                  child: Icon(Icons.qr_code_2, size: 22,
-                                      color: AppTheme.textPrimaryColor),
+                                  child: Icon(
+                                    Icons.qr_code_2,
+                                    size: 22,
+                                    color: AppTheme.textPrimaryColor,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(Icons.chevron_right, size: 22,
-                                color: AppTheme.textSecondaryColor.withValues(alpha: 0.4)),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 22,
+                              color: AppTheme.textSecondaryColor.withValues(
+                                alpha: 0.4,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -210,7 +185,9 @@ class ProfileDrawerScreen extends ConsumerWidget {
                           signature,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
+                            color: AppTheme.textSecondaryColor.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ),
@@ -235,23 +212,6 @@ class ProfileDrawerScreen extends ConsumerWidget {
                                 ),
                               );
                             },
-                          ),
-                          _MenuItem(
-                            icon: Icons.account_balance_wallet_outlined,
-                            label: '钱包',
-                            iconColor: const Color(0xFFFF9500),
-                            onTap: () => _comingSoon(context),
-                          ),
-                          _MenuItem(
-                            icon: Icons.star_outline,
-                            label: '收藏',
-                            iconColor: const Color(0xFFFFCC00),
-                            onTap: () => _comingSoon(context),
-                          ),
-                          _MenuItem(
-                            icon: Icons.people_outline,
-                            label: '登录更多账号',
-                            onTap: () => _comingSoon(context),
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -292,14 +252,12 @@ class _MenuItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.iconColor,
     this.trailing,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final Color? iconColor;
   final String? trailing;
 
   @override
@@ -312,7 +270,7 @@ class _MenuItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, size: 24, color: iconColor ?? AppTheme.textPrimaryColor),
+              Icon(icon, size: 24, color: AppTheme.textPrimaryColor),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(

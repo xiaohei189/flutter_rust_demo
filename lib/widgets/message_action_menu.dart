@@ -12,6 +12,7 @@ class MessageActions {
   final void Function(MessageInfo message) onForward;
   final void Function(MessageInfo message) onQuote;
   final VoidCallback? onMultiSelect;
+  final void Function(MessageInfo message)? onResend;
 
   const MessageActions({
     required this.onCopy,
@@ -20,6 +21,7 @@ class MessageActions {
     required this.onForward,
     required this.onQuote,
     this.onMultiSelect,
+    this.onResend,
   });
 }
 
@@ -31,8 +33,8 @@ void showMessageActionMenu(
   required MessageActions actions,
 }) {
   final isFromMe = message.sendId == currentUserId;
-  final canRevoke = isFromMe &&
-      DateTime.now().difference(message.sendDateTime).inMinutes < 2;
+  final canRevoke =
+      isFromMe && DateTime.now().difference(message.sendDateTime).inMinutes < 2;
 
   showModalBottomSheet(
     context: context,
@@ -84,12 +86,20 @@ class _MessageActionSheet extends StatelessWidget {
             // 取消按钮
             InkWell(
               onTap: () => Navigator.of(context).pop(),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(12),
+              ),
               child: const SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: Center(
-                  child: Text('取消', style: TextStyle(fontSize: 16, color: AppTheme.textPrimaryColor)),
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textPrimaryColor,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -101,36 +111,64 @@ class _MessageActionSheet extends StatelessWidget {
 
   List<Widget> _buildActionItems(BuildContext context) {
     final items = <_ActionItem>[
-      _ActionItem(icon: Icons.copy_rounded, label: '复制', onTap: () => _doCopy(context)),
-      _ActionItem(icon: Icons.reply_rounded, label: '引用', onTap: () => _doAction(context, actions.onQuote)),
-      _ActionItem(icon: Icons.forward_rounded, label: '转发', onTap: () => _doAction(context, actions.onForward)),
+      _ActionItem(
+        icon: Icons.copy_rounded,
+        label: '复制',
+        onTap: () => _doCopy(context),
+      ),
+      _ActionItem(
+        icon: Icons.reply_rounded,
+        label: '引用',
+        onTap: () => _doAction(context, actions.onQuote),
+      ),
+      _ActionItem(
+        icon: Icons.forward_rounded,
+        label: '转发',
+        onTap: () => _doAction(context, actions.onForward),
+      ),
     ];
 
     if (actions.onMultiSelect != null) {
-      items.add(_ActionItem(
-        icon: Icons.library_add_check_outlined,
-        label: '多选',
-        onTap: () {
-          Navigator.of(context).pop();
-          actions.onMultiSelect!();
-        },
-      ));
+      items.add(
+        _ActionItem(
+          icon: Icons.library_add_check_outlined,
+          label: '多选',
+          onTap: () {
+            Navigator.of(context).pop();
+            actions.onMultiSelect!();
+          },
+        ),
+      );
     }
 
     if (canRevoke) {
-      items.add(_ActionItem(
-        icon: Icons.undo_rounded,
-        label: '撤回',
-        onTap: () => _doAction(context, actions.onRevoke),
-      ));
+      items.add(
+        _ActionItem(
+          icon: Icons.undo_rounded,
+          label: '撤回',
+          onTap: () => _doAction(context, actions.onRevoke),
+        ),
+      );
     }
 
-    items.add(_ActionItem(
-      icon: Icons.delete_outline_rounded,
-      label: '删除',
-      isDestructive: true,
-      onTap: () => _confirmDelete(context),
-    ));
+    if (isFromMe && message.status == 3 && actions.onResend != null) {
+      items.add(
+        _ActionItem(
+          icon: Icons.refresh_rounded,
+          label: '重发',
+          onTap: () => _doAction(context, actions.onResend!),
+        ),
+      );
+    }
+
+    items.add(
+      _ActionItem(
+        icon: Icons.delete_outline_rounded,
+        label: '删除',
+        isDestructive: true,
+        onTap: () => _confirmDelete(context),
+      ),
+    );
 
     return items.map((item) => _buildActionItem(context, item)).toList();
   }
@@ -144,13 +182,21 @@ class _MessageActionSheet extends StatelessWidget {
         child: Row(
           children: [
             const SizedBox(width: 20),
-            Icon(item.icon, size: 22, color: item.isDestructive ? AppTheme.unreadRed : AppTheme.textPrimaryColor),
+            Icon(
+              item.icon,
+              size: 22,
+              color: item.isDestructive
+                  ? AppTheme.unreadRed
+                  : AppTheme.textPrimaryColor,
+            ),
             const SizedBox(width: 12),
             Text(
               item.label,
               style: TextStyle(
                 fontSize: 15,
-                color: item.isDestructive ? AppTheme.unreadRed : AppTheme.textPrimaryColor,
+                color: item.isDestructive
+                    ? AppTheme.unreadRed
+                    : AppTheme.textPrimaryColor,
               ),
             ),
           ],
@@ -190,7 +236,10 @@ class _MessageActionSheet extends StatelessWidget {
               Navigator.of(ctx).pop();
               actions.onDelete(message);
             },
-            child: const Text('删除', style: TextStyle(color: AppTheme.unreadRed)),
+            child: const Text(
+              '删除',
+              style: TextStyle(color: AppTheme.unreadRed),
+            ),
           ),
         ],
       ),

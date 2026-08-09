@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import '../src/rust/model/message.dart' show MessageInfo;
-import 'message.dart' show MessageType, MessageSendStatus, messageTypeFromContentType;
+import 'message.dart'
+    show MessageType, MessageSendStatus, messageTypeFromContentType;
 
 /// 给 Rust 生成的 MessageInfo 添加 UI 便利方法
 extension MessageInfoExt on MessageInfo {
@@ -36,7 +37,7 @@ extension MessageInfoExt on MessageInfo {
   String _systemDisplayText(Map<String, dynamic> json) {
     // 撤回通知（contentType=2101，DB 中存储的完整撤回信息）
     if (json.containsKey('revokerID') || json.containsKey('revokerNickname')) {
-      final nickname = json['revokerNickname'] as String? ;
+      final nickname = json['revokerNickname'] as String?;
       return '$nickname 撤回了一条消息';
     }
     // 撤回通知（实时回调，简化格式 {"content":"xxx"}）
@@ -49,11 +50,14 @@ extension MessageInfoExt on MessageInfo {
   /// 发送时间 DateTime
   DateTime get sendDateTime {
     final t = sendTime.toInt();
-    return t > 0 ? DateTime.fromMillisecondsSinceEpoch(t) : DateTime.fromMillisecondsSinceEpoch(createTime.toInt());
+    return t > 0
+        ? DateTime.fromMillisecondsSinceEpoch(t)
+        : DateTime.fromMillisecondsSinceEpoch(createTime.toInt());
   }
 
   /// 消息发送状态（仅自己发的消息有效）
-  MessageSendStatus? get messageSendStatus => MessageSendStatus.fromValue(status);
+  MessageSendStatus? get messageSendStatus =>
+      MessageSendStatus.fromValue(status);
 
   // ---- 图片 ----
   String get imagePath {
@@ -105,17 +109,35 @@ extension MessageInfoExt on MessageInfo {
 
   // ---- 视频 ----
   String get videoPath => parsedContent['videoPath'] as String? ?? '';
-  String get videoSnapshotPath => parsedContent['snapshotPath'] as String? ?? '';
+  String get videoSource {
+    if (videoPath.isNotEmpty) return videoPath;
+    return parsedContent['videoUrl'] as String? ?? '';
+  }
+
+  String get videoSnapshotPath =>
+      parsedContent['snapshotPath'] as String? ?? '';
   int get videoDuration => parsedContent['duration'] as int? ?? 0;
   int get videoSize => parsedContent['size'] as int? ?? 0;
 
   // ---- 语音 ----
   String get soundPath => parsedContent['soundPath'] as String? ?? '';
+  String get soundSource {
+    if (soundPath.isNotEmpty) return soundPath;
+    return parsedContent['sourceUrl'] as String? ?? '';
+  }
+
   int get audioDuration => parsedContent['duration'] as int? ?? 0;
   int get audioDataSize => parsedContent['dataSize'] as int? ?? 0;
 
   // ---- 文件 ----
   String get filePath => parsedContent['filePath'] as String? ?? '';
+  String get fileSource {
+    if (filePath.isNotEmpty) return filePath;
+    return parsedContent['sourceUrl'] as String? ??
+        parsedContent['url'] as String? ??
+        '';
+  }
+
   String get fileName => parsedContent['fileName'] as String? ?? '';
   int get fileSize => parsedContent['fileSize'] as int? ?? 0;
   String get fileType => parsedContent['fileType'] as String? ?? '';
@@ -131,7 +153,8 @@ extension MessageInfoExt on MessageInfo {
   String get locationName => parsedContent['name'] as String? ?? '';
   String get locationDesc => parsedContent['desc'] as String? ?? '';
   double get latitude => (parsedContent['latitude'] as num?)?.toDouble() ?? 0.0;
-  double get longitude => (parsedContent['longitude'] as num?)?.toDouble() ?? 0.0;
+  double get longitude =>
+      (parsedContent['longitude'] as num?)?.toDouble() ?? 0.0;
 
   // ---- 名片 ----
   String get cardUserId => parsedContent['userID'] as String? ?? '';
@@ -145,6 +168,7 @@ extension MessageInfoExt on MessageInfo {
     if (list is List) return list.length;
     return 0;
   }
+
   List<String> get mergeSenderNicknames {
     final list = parsedContent['abstractList'];
     if (list is List) return list.cast<String>();
@@ -153,10 +177,14 @@ extension MessageInfoExt on MessageInfo {
 
   // ---- 引用 ----
   String get quoteText => parsedContent['text'] as String? ?? '';
-  String get quoteReplyMessageId => parsedContent['replyMessageId'] as String? ?? '';
-  String get quoteSenderNickname => parsedContent['senderNickname'] as String? ?? '';
-  int get quoteReplyContentType => parsedContent['replyMessageContentType'] as int? ?? 0;
-  String get quoteReplyContent => parsedContent['replyMessageContent'] as String? ?? '';
+  String get quoteReplyMessageId =>
+      parsedContent['replyMessageId'] as String? ?? '';
+  String get quoteSenderNickname =>
+      parsedContent['senderNickname'] as String? ?? '';
+  int get quoteReplyContentType =>
+      parsedContent['replyMessageContentType'] as int? ?? 0;
+  String get quoteReplyContent =>
+      parsedContent['replyMessageContent'] as String? ?? '';
 
   // ---- @ ----
   List<String> get atUserIds {
@@ -190,6 +218,36 @@ extension MessageInfoExt on MessageInfo {
   String get customData => parsedContent['data'] as String? ?? '';
   String get customExtension => parsedContent['extension'] as String? ?? '';
 
+  /// 生成 UI 事件更新后的新消息对象（Rust 生成的 MessageInfo 没有 copyWith）。
+  MessageInfo copyMessageInfo({
+    int? status,
+    bool? isRead,
+    String? content,
+    int? contentType,
+  }) {
+    return MessageInfo(
+      clientMsgId: clientMsgId,
+      serverMsgId: serverMsgId,
+      sendId: sendId,
+      recvId: recvId,
+      groupId: groupId,
+      senderPlatformId: senderPlatformId,
+      senderNickname: senderNickname,
+      senderFaceUrl: senderFaceUrl,
+      sessionType: sessionType,
+      msgFrom: msgFrom,
+      contentType: contentType ?? this.contentType,
+      content: content ?? this.content,
+      seq: seq,
+      sendTime: sendTime,
+      createTime: createTime,
+      status: status ?? this.status,
+      isRead: isRead ?? this.isRead,
+      attachedInfo: attachedInfo,
+      ex: ex,
+    );
+  }
+
   // ---- 时长格式化 ----
   String _formatDuration(int seconds) {
     if (seconds <= 0) return '0:00';
@@ -203,15 +261,18 @@ extension MessageInfoExt on MessageInfo {
 
   // ---- 文件大小格式化 ----
   String get fileSizeString {
-    final size = fileSize > 0 ? fileSize : (videoSize > 0 ? videoSize : imageOrFileSize);
+    final size = fileSize > 0
+        ? fileSize
+        : (videoSize > 0 ? videoSize : imageOrFileSize);
     if (size <= 0) return '';
     if (size < 1024) return '$size B';
     if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
-    if (size < 1024 * 1024 * 1024) return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (size < 1024 * 1024 * 1024) {
+      return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
-
 
 /// 从 messageSent 事件构造 MessageInfo
 MessageInfo messageSentToInfo({
@@ -228,28 +289,27 @@ MessageInfo messageSentToInfo({
   required String content,
   required String senderNickname,
   required String senderFaceUrl,
-}) =>
-    MessageInfo(
-      clientMsgId: clientMsgId,
-      serverMsgId: serverMsgId,
-      sendId: sendId,
-      recvId: recvId,
-      groupId: groupId,
-      senderPlatformId: 0,
-      senderNickname: senderNickname,
-      senderFaceUrl: senderFaceUrl,
-      sessionType: sessionType,
-      msgFrom: 0,
-      contentType: contentType,
-      content: content,
-      seq: 0,
-      sendTime: sendTimeMs,
-      createTime: sendTimeMs,
-      status: status,
-      isRead: false,
-      attachedInfo: '',
-      ex: '',
-    );
+}) => MessageInfo(
+  clientMsgId: clientMsgId,
+  serverMsgId: serverMsgId,
+  sendId: sendId,
+  recvId: recvId,
+  groupId: groupId,
+  senderPlatformId: 0,
+  senderNickname: senderNickname,
+  senderFaceUrl: senderFaceUrl,
+  sessionType: sessionType,
+  msgFrom: 0,
+  contentType: contentType,
+  content: content,
+  seq: 0,
+  sendTime: sendTimeMs,
+  createTime: sendTimeMs,
+  status: status,
+  isRead: false,
+  attachedInfo: '',
+  ex: '',
+);
 
 /// 按发送时间升序排序，时间相同时按 seq 升序。
 ///

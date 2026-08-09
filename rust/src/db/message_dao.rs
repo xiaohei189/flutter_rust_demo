@@ -2,7 +2,7 @@ use crate::constant::MessageSendStatus;
 use crate::error::{Result, SdkError};
 use crate::model::local::LocalChatLog;
 use sqlx::SqlitePool;
-use tracing::trace;
+use tracing::debug;
 
 pub struct MessageDao {
     pool: SqlitePool,
@@ -14,7 +14,7 @@ impl MessageDao {
     }
 
     pub async fn batch_insert(&self, logs: &[LocalChatLog]) -> Result<()> {
-        trace!("[DB] batch_insert: count={}", logs.len());
+        debug!("[DB] batch_insert: count={}", logs.len());
         for log in logs {
             sqlx::query(
                 "INSERT OR IGNORE INTO local_chat_logs (conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id, sender_nick_name, sender_face_url, session_type, msg_from, content_type, content, is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -48,10 +48,8 @@ impl MessageDao {
     }
 
     pub async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] get_by_conversation: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
-        let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time < ? OR ? = 0) ORDER BY send_time DESC, seq DESC LIMIT ?",
-        )
+        debug!("[DB] get_by_conversation: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
+        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time < ? OR ? = 0) ORDER BY send_time DESC, seq DESC LIMIT ?")
             .bind(conversation_id)
             .bind(start_time)
             .bind(start_time)
@@ -64,15 +62,8 @@ impl MessageDao {
     }
 
     /// 分页获取起始消息之前的历史消息（对齐 Go GetMessageList 非反向分支）
-    pub async fn get_by_conversation_before(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        trace!(
+    pub async fn get_by_conversation_before(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>> {
+        debug!(
             "[DB] get_by_conversation_before: conversation_id={}, start_time={}, start_seq={}, count={}",
             conversation_id, start_time, start_seq, count
         );
@@ -82,29 +73,22 @@ impl MessageDao {
                 OR (send_time = ? AND (seq < ? OR (seq = 0 AND client_msg_id != ?)))
             ) ORDER BY send_time DESC, seq DESC LIMIT ?",
         )
-            .bind(conversation_id)
-            .bind(start_time)
-            .bind(start_time)
-            .bind(start_seq)
-            .bind(start_client_msg_id)
-            .bind(count)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|e| SdkError::database(format!("query messages before: {}", e)))?;
+        .bind(conversation_id)
+        .bind(start_time)
+        .bind(start_time)
+        .bind(start_seq)
+        .bind(start_client_msg_id)
+        .bind(count)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query messages before: {}", e)))?;
 
         Ok(rows)
     }
 
     /// 分页获取起始消息之后的历史消息（对齐 Go GetMessageList 反向分支）
-    pub async fn get_by_conversation_after(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        trace!(
+    pub async fn get_by_conversation_after(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>> {
+        debug!(
             "[DB] get_by_conversation_after: conversation_id={}, start_time={}, start_seq={}, count={}",
             conversation_id, start_time, start_seq, count
         );
@@ -114,21 +98,21 @@ impl MessageDao {
                 OR (send_time = ? AND (seq > ? OR (seq = 0 AND client_msg_id != ?)))
             ) ORDER BY send_time ASC, seq ASC LIMIT ?",
         )
-            .bind(conversation_id)
-            .bind(start_time)
-            .bind(start_time)
-            .bind(start_seq)
-            .bind(start_client_msg_id)
-            .bind(count)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(|e| SdkError::database(format!("query messages after: {}", e)))?;
+        .bind(conversation_id)
+        .bind(start_time)
+        .bind(start_time)
+        .bind(start_seq)
+        .bind(start_client_msg_id)
+        .bind(count)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("query messages after: {}", e)))?;
 
         Ok(rows)
     }
 
     pub async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
-        trace!("[DB] get_max_seq: conversation_id={}", conversation_id);
+        debug!("[DB] get_max_seq: conversation_id={}", conversation_id);
         let row: (Option<i64>,) = sqlx::query_as("SELECT MAX(seq) FROM local_chat_logs WHERE conversation_id = ?")
             .bind(conversation_id)
             .fetch_one(&self.pool)
@@ -138,7 +122,7 @@ impl MessageDao {
     }
 
     pub async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>> {
-        trace!("[DB] get_by_client_msg_id: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
+        debug!("[DB] get_by_client_msg_id: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
         // conversation_id 为空时忽略会话过滤（不限定会话查询）
         let row = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE (conversation_id = ? OR ? = '') AND client_msg_id = ? LIMIT 1")
             .bind(conversation_id)
@@ -152,7 +136,7 @@ impl MessageDao {
 
     /// 按 seq 获取单条消息
     pub async fn get_by_seq(&self, seq: i64) -> Result<Option<LocalChatLog>> {
-        trace!("[DB] get_by_seq: seq={}", seq);
+        debug!("[DB] get_by_seq: seq={}", seq);
         let row = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE seq = ? LIMIT 1")
             .bind(seq)
             .fetch_optional(&self.pool)
@@ -162,7 +146,7 @@ impl MessageDao {
     }
 
     pub async fn get_by_conversation_and_seq(&self, conversation_id: &str, seq: i64) -> Result<Option<LocalChatLog>> {
-        trace!("[DB] get_by_conversation_and_seq: conversation_id={}, seq={}", conversation_id, seq);
+        debug!("[DB] get_by_conversation_and_seq: conversation_id={}, seq={}", conversation_id, seq);
         let row = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq = ? LIMIT 1")
             .bind(conversation_id)
             .bind(seq)
@@ -176,7 +160,7 @@ impl MessageDao {
         if client_msg_ids.is_empty() {
             return Ok(Vec::new());
         }
-        trace!("[DB] get_by_client_msg_ids: count={}", client_msg_ids.len());
+        debug!("[DB] get_by_client_msg_ids: count={}", client_msg_ids.len());
         let placeholders = client_msg_ids.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
         let query = format!("SELECT * FROM local_chat_logs WHERE client_msg_id IN ({})", placeholders);
         let mut builder = sqlx::query_as::<_, LocalChatLog>(&query);
@@ -188,7 +172,7 @@ impl MessageDao {
     }
 
     pub async fn get_latest(&self, conversation_id: &str, limit: i64) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] get_latest: conversation_id={}, limit={}", conversation_id, limit);
+        debug!("[DB] get_latest: conversation_id={}, limit={}", conversation_id, limit);
         let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 ORDER BY send_time DESC LIMIT ?")
             .bind(conversation_id)
             .bind(limit)
@@ -199,7 +183,7 @@ impl MessageDao {
     }
 
     pub async fn delete_by_conversation(&self, conversation_id: &str) -> Result<()> {
-        trace!("[DB] delete_by_conversation: conversation_id={}", conversation_id);
+        debug!("[DB] delete_by_conversation: conversation_id={}", conversation_id);
         sqlx::query("DELETE FROM local_chat_logs WHERE conversation_id = ?")
             .bind(conversation_id)
             .execute(&self.pool)
@@ -262,7 +246,7 @@ impl MessageDao {
     }
 
     pub async fn update_send_status(&self, client_msg_id: &str, status: MessageSendStatus) -> Result<()> {
-        trace!("[DB] update_send_status: client_msg_id={}, status={:?}", client_msg_id, status);
+        debug!("[DB] update_send_status: client_msg_id={}, status={:?}", client_msg_id, status);
         sqlx::query("UPDATE local_chat_logs SET status = ? WHERE client_msg_id = ?")
             .bind(status as i32)
             .bind(client_msg_id)
@@ -273,7 +257,7 @@ impl MessageDao {
     }
 
     pub async fn update_after_send_success(&self, client_msg_id: &str, server_msg_id: &str, send_time: i64) -> Result<()> {
-        trace!("[DB] update_after_send_success: client_msg_id={}, server_msg_id={}", client_msg_id, server_msg_id);
+        debug!("[DB] update_after_send_success: client_msg_id={}, server_msg_id={}", client_msg_id, server_msg_id);
         sqlx::query("UPDATE local_chat_logs SET server_msg_id = ?, send_time = ?, create_time = ?, status = ? WHERE client_msg_id = ?")
             .bind(server_msg_id)
             .bind(send_time)
@@ -288,7 +272,7 @@ impl MessageDao {
 
     /// 批量更新消息的 seq（对齐 Go SDK batchUpdateMessageList）
     pub async fn batch_update_seq(&self, updates: &[(String, i64)]) -> Result<()> {
-        trace!("[DB] batch_update_seq: count={}", updates.len());
+        debug!("[DB] batch_update_seq: count={}", updates.len());
         for (client_msg_id, seq) in updates {
             sqlx::query("UPDATE local_chat_logs SET seq = ? WHERE client_msg_id = ? AND seq = 0")
                 .bind(seq)
@@ -303,7 +287,7 @@ impl MessageDao {
     /// 按 max_seq 批量标记消息为已读（排除自己发送的消息）
     /// 对齐 Go SDK `MarkConversationMessageAsReadBySeqs` 中 `send_id != GetSelfUserID()`
     pub async fn mark_as_read_by_max_seq(&self, conversation_id: &str, max_seq: i64, self_user_id: &str) -> Result<()> {
-        trace!("[DB] mark_as_read_by_max_seq: conversation_id={}, max_seq={}, self_user_id={}", conversation_id, max_seq, self_user_id);
+        debug!("[DB] mark_as_read_by_max_seq: conversation_id={}, max_seq={}, self_user_id={}", conversation_id, max_seq, self_user_id);
         sqlx::query("UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq <= ? AND seq > 0 AND send_id != ?")
             .bind(conversation_id)
             .bind(max_seq)
@@ -315,7 +299,7 @@ impl MessageDao {
     }
 
     pub async fn delete_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
-        trace!("[DB] delete_by_client_msg_id: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
+        debug!("[DB] delete_by_client_msg_id: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
         sqlx::query("DELETE FROM local_chat_logs WHERE conversation_id = ? AND client_msg_id = ?")
             .bind(conversation_id)
             .bind(client_msg_id)
@@ -326,7 +310,7 @@ impl MessageDao {
     }
 
     pub async fn update_content_type(&self, conversation_id: &str, client_msg_id: &str, content_type: i32) -> Result<()> {
-        trace!(
+        debug!(
             "[DB] update_content_type: conversation_id={}, client_msg_id={}, content_type={}",
             conversation_id, client_msg_id, content_type
         );
@@ -342,7 +326,7 @@ impl MessageDao {
 
     /// 更新消息的 content 和 content_type（用于撤回消息时替换内容）
     pub async fn update_message_content_and_type(&self, conversation_id: &str, client_msg_id: &str, content: &str, content_type: i32) -> Result<()> {
-        trace!(
+        debug!(
             "[DB] update_message_content_and_type: conversation_id={}, client_msg_id={}, content_type={}",
             conversation_id, client_msg_id, content_type
         );
@@ -358,7 +342,7 @@ impl MessageDao {
     }
 
     pub async fn search_by_keyword(&self, conversation_id: &str, keyword: &str, max_count: i64) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] search_by_keyword: conversation_id={}, keyword={}, max_count={}", conversation_id, keyword, max_count);
+        debug!("[DB] search_by_keyword: conversation_id={}, keyword={}, max_count={}", conversation_id, keyword, max_count);
         let pattern = format!("%{}%", keyword);
         let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content LIKE ? ORDER BY send_time DESC LIMIT ?")
             .bind(conversation_id)
@@ -428,7 +412,7 @@ impl MessageDao {
 
     /// 按内容类型搜索消息（用于撤回时查找引用消息）
     pub async fn search_by_content_type(&self, conversation_id: &str, content_type: i32) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] search_by_content_type: conversation_id={}, content_type={}", conversation_id, content_type);
+        debug!("[DB] search_by_content_type: conversation_id={}, content_type={}", conversation_id, content_type);
         let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND content_type = ?")
             .bind(conversation_id)
             .bind(content_type)
@@ -442,7 +426,7 @@ impl MessageDao {
         if seqs.is_empty() {
             return Ok(());
         }
-        trace!("[DB] mark_as_read_by_seqs: conversation_id={}, seq_count={}", conversation_id, seqs.len());
+        debug!("[DB] mark_as_read_by_seqs: conversation_id={}, seq_count={}", conversation_id, seqs.len());
         let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({}) AND send_id != ?", placeholders);
         let mut query = sqlx::query(&sql).bind(conversation_id);
@@ -460,7 +444,7 @@ impl MessageDao {
         if seqs.is_empty() {
             return Ok(());
         }
-        trace!("[DB] mark_as_read_by_seqs_all: conversation_id={}, seq_count={}", conversation_id, seqs.len());
+        debug!("[DB] mark_as_read_by_seqs_all: conversation_id={}, seq_count={}", conversation_id, seqs.len());
         let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND seq IN ({})", placeholders);
         let mut query = sqlx::query(&sql).bind(conversation_id);
@@ -474,7 +458,7 @@ impl MessageDao {
     /// 获取会话中对方发送的未读消息（对齐 Go SDK `GetUnreadMessage`）
     /// WHERE send_id != self AND is_read = 0
     pub async fn get_unread_messages(&self, conversation_id: &str, self_user_id: &str) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] get_unread_messages: conversation_id={}, self_user_id={}", conversation_id, self_user_id);
+        debug!("[DB] get_unread_messages: conversation_id={}, self_user_id={}", conversation_id, self_user_id);
         let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND send_id != ? AND is_read = 0")
             .bind(conversation_id)
             .bind(self_user_id)
@@ -490,7 +474,7 @@ impl MessageDao {
         if client_msg_ids.is_empty() {
             return Ok(());
         }
-        trace!("[DB] mark_as_read_by_client_msg_ids: conversation_id={}, id_count={}", conversation_id, client_msg_ids.len());
+        debug!("[DB] mark_as_read_by_client_msg_ids: conversation_id={}, id_count={}", conversation_id, client_msg_ids.len());
         let placeholders = client_msg_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!(
             "UPDATE local_chat_logs SET is_read = 1 WHERE conversation_id = ? AND client_msg_id IN ({}) AND send_id != ?",
@@ -507,7 +491,7 @@ impl MessageDao {
 
     /// 获取会话中对方发送消息的最大 seq（对齐 Go SDK `GetConversationPeerNormalMsgSeq`）
     pub async fn get_peer_normal_msg_seq(&self, conversation_id: &str, self_user_id: &str) -> Result<i64> {
-        trace!("[DB] get_peer_normal_msg_seq: conversation_id={}, self_user_id={}", conversation_id, self_user_id);
+        debug!("[DB] get_peer_normal_msg_seq: conversation_id={}, self_user_id={}", conversation_id, self_user_id);
         let row: (Option<i64>,) = sqlx::query_as("SELECT MAX(seq) FROM local_chat_logs WHERE conversation_id = ? AND send_id != ?")
             .bind(conversation_id)
             .bind(self_user_id)
@@ -522,7 +506,7 @@ impl MessageDao {
         if seqs.is_empty() {
             return Ok(Vec::new());
         }
-        trace!("[DB] get_by_seqs: conversation_id={}, seq_count={}", conversation_id, seqs.len());
+        debug!("[DB] get_by_seqs: conversation_id={}, seq_count={}", conversation_id, seqs.len());
         let placeholders = seqs.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND seq IN ({})", placeholders);
         let mut query = sqlx::query_as::<_, LocalChatLog>(&sql).bind(conversation_id);
@@ -535,10 +519,8 @@ impl MessageDao {
 
     /// 按会话 ASC 排序获取消息（用于倒序翻页，对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
     pub async fn get_by_conversation_asc(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>> {
-        trace!("[DB] get_by_conversation_asc: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
-        let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time > ? OR ? = 0) ORDER BY send_time ASC LIMIT ?",
-        )
+        debug!("[DB] get_by_conversation_asc: conversation_id={}, start_time={}, count={}", conversation_id, start_time, count);
+        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND (send_time > ? OR ? = 0) ORDER BY send_time ASC LIMIT ?")
             .bind(conversation_id)
             .bind(start_time)
             .bind(start_time)
@@ -552,7 +534,7 @@ impl MessageDao {
 
     /// 更新消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
     pub async fn update_local_ex(&self, conversation_id: &str, client_msg_id: &str, local_ex: &str) -> Result<()> {
-        trace!("[DB] update_local_ex: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
+        debug!("[DB] update_local_ex: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
         sqlx::query("UPDATE local_chat_logs SET local_ex = ? WHERE conversation_id = ? AND client_msg_id = ?")
             .bind(local_ex)
             .bind(conversation_id)
@@ -567,7 +549,7 @@ impl MessageDao {
     ///
     /// 将状态标记为 MsgStatusHasDeleted (4)
     pub async fn mark_as_deleted(&self, conversation_id: &str, client_msg_id: &str) -> Result<()> {
-        trace!("[DB] mark_as_deleted: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
+        debug!("[DB] mark_as_deleted: conversation_id={}, client_msg_id={}", conversation_id, client_msg_id);
         sqlx::query("UPDATE local_chat_logs SET status = 4 WHERE conversation_id = ? AND client_msg_id = ?")
             .bind(conversation_id)
             .bind(client_msg_id)
@@ -579,7 +561,7 @@ impl MessageDao {
 
     /// 软删除指定会话的所有消息（对齐 Go SDK `DeleteAllMsgFromLocal`）
     pub async fn mark_all_as_deleted(&self) -> Result<()> {
-        trace!("[DB] mark_all_as_deleted");
+        debug!("[DB] mark_all_as_deleted");
         sqlx::query("UPDATE local_chat_logs SET status = 4")
             .execute(&self.pool)
             .await
@@ -589,7 +571,7 @@ impl MessageDao {
 
     /// 硬删除所有消息（对齐 Go SDK `DeleteAllMsgFromLocalAndSvr` 本地部分）
     pub async fn delete_all(&self) -> Result<()> {
-        trace!("[DB] delete_all");
+        debug!("[DB] delete_all");
         sqlx::query("DELETE FROM local_chat_logs")
             .execute(&self.pool)
             .await
@@ -599,7 +581,7 @@ impl MessageDao {
 
     /// 获取指定会话的最小 seq（对齐 Go SDK message_check.go 中的 userCanPullMinSeq）
     pub async fn get_min_seq(&self, conversation_id: &str) -> Result<i64> {
-        trace!("[DB] get_min_seq: conversation_id={}", conversation_id);
+        debug!("[DB] get_min_seq: conversation_id={}", conversation_id);
         let row: (Option<i64>,) = sqlx::query_as("SELECT MIN(seq) FROM local_chat_logs WHERE conversation_id = ? AND seq > 0")
             .bind(conversation_id)
             .fetch_one(&self.pool)
@@ -612,7 +594,7 @@ impl MessageDao {
     ///
     /// 用于 seq gap 检测时快速判断哪些 seq 已存在于本地。
     pub async fn get_existing_seqs_in_range(&self, conversation_id: &str, min_seq: i64, max_seq: i64) -> Result<Vec<i64>> {
-        trace!("[DB] get_existing_seqs_in_range: conversation_id={}, min_seq={}, max_seq={}", conversation_id, min_seq, max_seq);
+        debug!("[DB] get_existing_seqs_in_range: conversation_id={}, min_seq={}, max_seq={}", conversation_id, min_seq, max_seq);
         let rows: Vec<(i64,)> = sqlx::query_as("SELECT seq FROM local_chat_logs WHERE conversation_id = ? AND seq >= ? AND seq <= ? AND seq > 0")
             .bind(conversation_id)
             .bind(min_seq)
@@ -625,13 +607,11 @@ impl MessageDao {
 
     /// 按 seq 范围查询消息（对齐 Go SDK `GetAdvancedHistoryMessageList` seq 范围）
     pub async fn get_by_seq_range(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i64) -> Result<Vec<LocalChatLog>> {
-        trace!(
+        debug!(
             "[DB] get_by_seq_range: conversation_id={}, start_seq={}, end_seq={}, count={}",
             conversation_id, start_seq, end_seq, count
         );
-        let rows = sqlx::query_as::<_, LocalChatLog>(
-            "SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND seq >= ? AND seq <= ? AND seq > 0 ORDER BY seq ASC LIMIT ?",
-        )
+        let rows = sqlx::query_as::<_, LocalChatLog>("SELECT * FROM local_chat_logs WHERE conversation_id = ? AND status < 4 AND seq >= ? AND seq <= ? AND seq > 0 ORDER BY seq ASC LIMIT ?")
             .bind(conversation_id)
             .bind(start_seq)
             .bind(end_seq)
@@ -771,28 +751,12 @@ impl MessageRepository for MessageDao {
         self.get_by_conversation(conversation_id, start_time, count).await
     }
 
-    async fn get_by_conversation_before(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        self.get_by_conversation_before(conversation_id, start_time, start_seq, start_client_msg_id, count)
-            .await
+    async fn get_by_conversation_before(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>> {
+        self.get_by_conversation_before(conversation_id, start_time, start_seq, start_client_msg_id, count).await
     }
 
-    async fn get_by_conversation_after(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>> {
-        self.get_by_conversation_after(conversation_id, start_time, start_seq, start_client_msg_id, count)
-            .await
+    async fn get_by_conversation_after(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>> {
+        self.get_by_conversation_after(conversation_id, start_time, start_seq, start_client_msg_id, count).await
     }
     async fn get_max_seq(&self, conversation_id: &str) -> Result<i64> {
         self.get_max_seq(conversation_id).await

@@ -38,7 +38,7 @@ pub trait GroupApi: Send + Sync {
     async fn invite_group_members(&self, group_id: &str, member_ids: &[String], reason: Option<&str>) -> Result<()>;
     async fn kick_group_members(&self, group_id: &str, member_ids: &[String], reason: Option<&str>) -> Result<()>;
     async fn get_groups_info(&self, group_ids: &[String]) -> std::result::Result<Vec<GroupInfo>, SdkError>;
-    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>) -> Result<()>;
+    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>) -> Result<()>;
     async fn get_group_members_info(&self, group_id: &str, user_ids: &[String]) -> Result<Vec<GroupMember>>;
     async fn dismiss_group(&self, group_id: &str) -> Result<()>;
     async fn get_group_application_list(&self) -> std::result::Result<Vec<GroupApplyInfo>, SdkError>;
@@ -115,14 +115,14 @@ impl GroupApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(group_id = %group_id))]
-    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>) -> Result<()> {
+    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>) -> Result<()> {
         self.group
             .set_group_info(crate::model::group::SetGroupInfoFields {
                 group_id: group_id.to_string(),
                 group_name: group_name.map(|s| s.to_string()),
                 face_url: face_url.map(|s| s.to_string()),
-                introduction: None,
-                notification: None,
+                introduction: introduction.map(|s| s.to_string()),
+                notification: notification.map(|s| s.to_string()),
                 ex: None,
             })
             .await

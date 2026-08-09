@@ -7,8 +7,10 @@ import '../models/message.dart';
 import '../models/message_ext.dart';
 import '../models/user.dart';
 import '../router/app_router.dart';
+import '../src/rust/event/events/message.dart' show GroupReadReceipt;
 import '../src/rust/model/message.dart' show MessageInfo;
 import '../src/rust/model/user.dart' show UserInfo;
+import '../services/audio_player_service.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
@@ -21,6 +23,8 @@ class MessageBubble extends StatelessWidget {
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
   final void Function(MessageInfo message)? onTap;
+  final int? uploadProgress;
+  final GroupReadReceipt? groupReadReceipt;
 
   const MessageBubble({
     super.key,
@@ -31,6 +35,8 @@ class MessageBubble extends StatelessWidget {
     this.cachedCurrentUserProfile,
     this.onLongPress,
     this.onTap,
+    this.uploadProgress,
+    this.groupReadReceipt,
   });
 
   User _buildSenderUser() {
@@ -102,9 +108,7 @@ class MessageBubble extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isFromMe
-            ? AppTheme.myMessageColor
-            : AppTheme.otherMessageColor,
+        color: isFromMe ? AppTheme.myMessageColor : AppTheme.otherMessageColor,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -143,7 +147,9 @@ class MessageBubble extends StatelessWidget {
               Flexible(
                 child: GestureDetector(
                   onTap: onTap != null ? () => onTap!(message) : null,
-                  onLongPress: onLongPress != null ? () => onLongPress!(message) : null,
+                  onLongPress: onLongPress != null
+                      ? () => onLongPress!(message)
+                      : null,
                   child: Align(
                     alignment: isFromMe
                         ? Alignment.centerRight
@@ -184,13 +190,28 @@ class MessageBubble extends StatelessWidget {
                     color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
                   ),
                 ),
-                if (isFromMe) ...[
-                  const SizedBox(width: 4),
-                  _buildStatusIcon(),
-                ],
+                if (isFromMe) ...[const SizedBox(width: 4), _buildStatusIcon()],
               ],
             ),
           ),
+          if (isFromMe &&
+              isGroupChat &&
+              groupReadReceipt != null &&
+              groupReadReceipt!.hasReadCount > 0)
+            Padding(
+              padding: EdgeInsets.only(
+                left: isFromMe ? 0 : 44,
+                right: isFromMe ? 44 : 0,
+                top: 2,
+              ),
+              child: Text(
+                '已读 ${groupReadReceipt!.hasReadCount}/${groupReadReceipt!.groupMemberCount}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -253,9 +274,9 @@ class MessageBubble extends StatelessWidget {
       MessageType.markdown => _buildMarkdownMessage(context, isFromMe),
       // text, advancedText
       _ => Text(
-          message.displayText,
-          style: TextStyle(color: textColor, fontSize: 16),
-        ),
+        message.displayText,
+        style: TextStyle(color: textColor, fontSize: 16),
+      ),
     };
   }
 
@@ -273,12 +294,36 @@ class MessageBubble extends StatelessWidget {
       extensionSet: md.ExtensionSet.gitHubFlavored,
       styleSheet: MarkdownStyleSheet(
         p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
-        h1: TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.bold),
-        h2: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold),
-        h3: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
-        h4: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
-        h5: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
-        h6: TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.bold),
+        h1: TextStyle(
+          color: textColor,
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+        h2: TextStyle(
+          color: textColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        h3: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        h4: TextStyle(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        h5: TextStyle(
+          color: textColor,
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+        ),
+        h6: TextStyle(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
         strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
         em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
         code: TextStyle(
@@ -311,93 +356,142 @@ class MessageBubble extends StatelessWidget {
   }
 
   // ===== 图片消息 =====
+  Widget _withUploadProgress(BuildContext context, Widget child) {
+    final progress = uploadProgress;
+    if (!_isFromMe || progress == null || progress >= 100) return child;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        child,
+        const SizedBox(height: 6),
+        SizedBox(
+          width: 150,
+          child: LinearProgressIndicator(
+            value: progress / 100,
+            minHeight: 3,
+            backgroundColor: Colors.white24,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildImageMessage(BuildContext context) {
     final source = message.displayImageSource;
     if (source.isEmpty) {
       return const Icon(Icons.broken_image, size: 120, color: Colors.grey);
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: source.startsWith('http')
-          ? Image.network(
-              source,
-              width: 150,
-              height: 150,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 60),
-            )
-          : Image.asset(
-              source,
-              width: 150,
-              height: 150,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 60),
-            ),
+    return _withUploadProgress(
+      context,
+      ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: source.startsWith('http')
+            ? Image.network(
+                source,
+                width: 150,
+                height: 150,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 60),
+              )
+            : Image.asset(
+                source,
+                width: 150,
+                height: 150,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 60),
+              ),
+      ),
     );
   }
 
   // ===== 视频消息 =====
   Widget _buildVideoMessage(BuildContext context) {
     final snap = message.videoSnapshotPath;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        if (snap.isNotEmpty)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: snap.startsWith('http')
-                ? Image.network(snap, width: 150, height: 120, fit: BoxFit.cover)
-                : Image.asset(snap, width: 150, height: 120, fit: BoxFit.cover),
-          )
-        else
-          Container(
-            width: 150,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+    return _withUploadProgress(
+      context,
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          if (snap.isNotEmpty)
+            ClipRRect(
               borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        const Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
-        if (message.videoDurationString != '0:00')
-          Positioned(
-            bottom: 4,
-            right: 4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: snap.startsWith('http')
+                  ? Image.network(
+                      snap,
+                      width: 150,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.asset(
+                      snap,
+                      width: 150,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+            )
+          else
+            Container(
+              width: 150,
+              height: 120,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                message.videoDurationString,
-                style: const TextStyle(color: Colors.white, fontSize: 11),
+                color: Colors.black.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ),
-      ],
+          const Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
+          if (message.videoDurationString != '0:00')
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  message.videoDurationString,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   // ===== 语音消息 =====
   Widget _buildAudioMessage(BuildContext context, bool isFromMe) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.mic,
-          size: 24,
-          color: isFromMe ? Colors.white : AppTheme.primaryColor,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          message.audioDurationString,
-          style: TextStyle(
-            color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
-            fontSize: 16,
+    return GestureDetector(
+      onTap: () {
+        if (message.soundSource.isEmpty) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('语音地址为空，无法播放')));
+          return;
+        }
+        audioPlayerService.play(message.soundSource);
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.play_circle_outline,
+            size: 24,
+            color: isFromMe ? Colors.white : AppTheme.primaryColor,
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Text(
+            message.audioDurationString,
+            style: TextStyle(
+              color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -414,37 +508,44 @@ class MessageBubble extends StatelessWidget {
     };
     final iconColor = isFromMe ? Colors.white70 : AppTheme.primaryColor;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(iconData, size: 36, color: iconColor),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                message.fileName.isNotEmpty ? message.fileName : '未知文件',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
-                  fontSize: 14,
-                ),
-              ),
-              if (message.fileSizeString.isNotEmpty)
+    return _withUploadProgress(
+      context,
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(iconData, size: 36, color: iconColor),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  message.fileSizeString,
+                  message.fileName.isNotEmpty ? message.fileName : '未知文件',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
-                    fontSize: 12,
+                    color: isFromMe
+                        ? Colors.white
+                        : AppTheme.otherMessageTextColor,
+                    fontSize: 14,
                   ),
                 ),
-            ],
+                if (message.fileSizeString.isNotEmpty)
+                  Text(
+                    message.fileSizeString,
+                    style: TextStyle(
+                      color: isFromMe
+                          ? Colors.white70
+                          : AppTheme.textSecondaryColor,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -468,9 +569,11 @@ class MessageBubble extends StatelessWidget {
                     ? NetworkImage(message.cardFaceUrl)
                     : null,
                 child: message.cardFaceUrl.isEmpty
-                    ? Text((message.cardNickname).isNotEmpty
-                        ? message.cardNickname[0]
-                        : '?')
+                    ? Text(
+                        (message.cardNickname).isNotEmpty
+                            ? message.cardNickname[0]
+                            : '?',
+                      )
                     : null,
               ),
               const SizedBox(width: 8),
@@ -479,11 +582,15 @@ class MessageBubble extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      message.cardNickname.isNotEmpty ? message.cardNickname : '未知用户',
+                      message.cardNickname.isNotEmpty
+                          ? message.cardNickname
+                          : '未知用户',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+                        color: isFromMe
+                            ? Colors.white
+                            : AppTheme.otherMessageTextColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -493,7 +600,9 @@ class MessageBubble extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
+                        color: isFromMe
+                            ? Colors.white70
+                            : AppTheme.textSecondaryColor,
                         fontSize: 12,
                       ),
                     ),
@@ -502,7 +611,10 @@ class MessageBubble extends StatelessWidget {
               ),
             ],
           ),
-          Divider(color: (isFromMe ? Colors.white30 : Colors.grey.shade200), height: 12),
+          Divider(
+            color: (isFromMe ? Colors.white30 : Colors.grey.shade200),
+            height: 12,
+          ),
           Text(
             '个人名片',
             style: TextStyle(
@@ -550,20 +662,24 @@ class MessageBubble extends StatelessWidget {
             color: (isFromMe ? Colors.white24 : Colors.grey.shade300),
           ),
           // 摘要预览（sender: content 格式，最多 5 条）
-          ...previews.take(5).map(
-            (text) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
-                  fontSize: 12,
+          ...previews
+              .take(5)
+              .map(
+                (text) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isFromMe
+                          ? Colors.white70
+                          : AppTheme.textSecondaryColor,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
           const SizedBox(height: 4),
           // 消息条数
           Align(
@@ -631,7 +747,9 @@ class MessageBubble extends StatelessWidget {
       children: [
         _buildQuotePreview(context, isFromMe),
         Text(
-          message.quoteText.isNotEmpty ? message.quoteText : message.displayText,
+          message.quoteText.isNotEmpty
+              ? message.quoteText
+              : message.displayText,
           style: TextStyle(
             color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
             fontSize: 16,
@@ -648,13 +766,19 @@ class MessageBubble extends StatelessWidget {
     if (nicknames.isEmpty) {
       return Text(
         text,
-        style: TextStyle(color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor, fontSize: 16),
+        style: TextStyle(
+          color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+          fontSize: 16,
+        ),
       );
     }
     // 简单实现：高亮 @昵称 部分
     return Text(
       text,
-      style: TextStyle(color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor, fontSize: 16),
+      style: TextStyle(
+        color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+        fontSize: 16,
+      ),
     );
   }
 
@@ -682,7 +806,11 @@ class MessageBubble extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.location_on, size: 20, color: isFromMe ? Colors.white : AppTheme.primaryColor),
+              Icon(
+                Icons.location_on,
+                size: 20,
+                color: isFromMe ? Colors.white : AppTheme.primaryColor,
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -690,7 +818,9 @@ class MessageBubble extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+                    color: isFromMe
+                        ? Colors.white
+                        : AppTheme.otherMessageTextColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -720,7 +850,9 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.15),
+        color: isFromMe
+            ? Colors.white.withValues(alpha: 0.15)
+            : Colors.grey.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -753,11 +885,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
-    AppRouter.goToUserProfile(
-      context,
-      userId: user.id,
-      user: user,
-    );
+    AppRouter.goToUserProfile(context, userId: user.id, user: user);
   }
 
   /// 格式化消息时间（包含日期+时间）

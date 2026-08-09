@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
@@ -11,6 +12,11 @@ import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'utils/host_config.dart';
 import 'services/im_client.dart';
+import 'services/app_lifecycle_service.dart';
+import 'services/local_notification_service.dart';
+import 'services/locale_service.dart';
+import 'src/rust/ffi/global.dart' show setAppBackgroundStatus;
+import 'widgets/app_lock_gate.dart';
 
 /// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
@@ -41,8 +47,42 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initServices();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _initServices() async {
+    await LocaleService.instance.load();
+    await LocalNotificationService.instance.initialize();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final background = state != AppLifecycleState.resumed;
+    AppLifecycleService.instance.update(background: background);
+    try {
+      setAppBackgroundStatus(isBackground: background);
+    } catch (_) {
+      // SDK 未初始化时忽略前后台状态
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +92,23 @@ class MyApp extends StatelessWidget {
     );
 
     return ProviderScope(
-      child: MaterialApp.router(
-        title: 'Flutter 聊天应用',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        routerConfig: router,
+      child: ValueListenableBuilder<Locale?>(
+        valueListenable: LocaleService.instance.locale,
+        builder: (context, locale, _) => MaterialApp.router(
+          title: 'Flutter 聊天应用',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          locale: locale,
+          supportedLocales: const [Locale('zh'), Locale('en')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) =>
+              AppLockGate(child: child ?? const SizedBox.shrink()),
+          routerConfig: router,
+        ),
       ),
     );
   }

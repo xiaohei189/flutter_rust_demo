@@ -7,7 +7,8 @@ import '../providers/providers.dart';
 import '../router/app_router.dart';
 import '../services/services.dart';
 import '../src/rust/ffi/client.dart' as fb;
-import '../src/rust/ffi/message_advanced.dart' show clearConversationAndDeleteAllMsg;
+import '../src/rust/ffi/message_advanced.dart'
+    show clearConversationAndDeleteAllMsg;
 import '../src/rust/model/group.dart' show GroupMember;
 import '../src/rust/model/local.dart' show LocalConversation;
 import '../theme/app_theme.dart';
@@ -27,7 +28,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   late bool _muteNotification;
   late bool _pinChat;
   late bool _privateChat;
-  bool _addToMark = false;
 
   /// 获取会话信息
   LocalConversation? get _conversation {
@@ -35,7 +35,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);
     if (conversation != null) return conversation;
-    
+
     // 如果新服务没有，尝试从旧的 conversationListProvider 获取
     final oldState = ref.read(conversationListProvider);
     conversation = oldState.conversations
@@ -51,33 +51,35 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         conversation.conversationType == 3;
   }
 
+  String get _groupId {
+    final conversation = _conversation;
+    if (conversation == null) return widget.conversationId;
+    return conversation.groupId.isNotEmpty
+        ? conversation.groupId
+        : widget.conversationId;
+  }
+
   String get _displayName {
     final conversation = _conversation;
     if (conversation == null) return '未知';
     return conversation.showName.isNotEmpty
         ? conversation.showName
         : _isGroup
-            ? '群聊'
-            : '用户';
+        ? '群聊'
+        : '用户';
   }
 
   User get _chatUser {
     final conversation = _conversation;
     if (conversation == null) {
-      return User(
-        id: widget.conversationId,
-        name: '未知',
-        avatar: null,
-      );
+      return User(id: widget.conversationId, name: '未知', avatar: null);
     }
     return User(
       id: conversation.userId.isNotEmpty
           ? conversation.userId
           : conversation.groupId,
       name: _displayName,
-      avatar: conversation.faceUrl.isNotEmpty
-          ? conversation.faceUrl
-          : null,
+      avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
     );
   }
 
@@ -91,7 +93,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final conversation = _conversation;
     if (conversation != null) {
       _muteNotification = conversation.recvMsgOpt == 1;
-    _pinChat = conversation.isPinned;
+      _pinChat = conversation.isPinned;
       _privateChat = conversation.isPrivateChat;
     } else {
       _muteNotification = false;
@@ -122,9 +124,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             onPressed: () => AppRouter.goBack(context),
           ),
         ),
-        body: const Center(
-          child: Text('会话不存在'),
-        ),
+        body: const Center(child: Text('会话不存在')),
       );
     }
 
@@ -136,12 +136,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share_outlined, size: 22),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: ListView(
         children: [
@@ -161,148 +155,110 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ],
 
           // ---- 应用 ----
-          const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildSectionTitle(_isGroup ? '群应用' : '应用'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: Row(
-                children: [
-                  if (_isGroup)
-                    _buildAppIcon(Icons.campaign_outlined, '群公告', AppTheme.primaryColor),
-                  _buildAppIcon(Icons.edit_outlined, '任务', AppTheme.primaryColor),
-                  _buildAppIcon(Icons.push_pin_outlined, 'Pin', const Color(0xFF34C759)),
-                  _buildAppIcon(
-                    Icons.calendar_month_outlined,
-                    _isGroup ? '群成员日历' : '查看日历',
-                    const Color(0xFFFF9500),
-                  ),
-                ],
-              ),
-            ),
-          ]),
-
-          // ---- 搜索会话内容 ----
-          const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildNavRow('搜索会话内容', onTap: _showComingSoon),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Row(
-                children: [
-                  _buildSearchIcon(Icons.chat_bubble_outline, '消息'),
-                  _buildSearchIcon(Icons.description_outlined, '云文档'),
-                  _buildSearchIcon(Icons.folder_outlined, '文件'),
-                  _buildSearchIcon(Icons.image_outlined, '图片/视频'),
-                  _buildSearchIcon(Icons.link, '链接'),
-                ],
-              ),
-            ),
-          ]),
-
-          // ---- 添加标签页 ----
-          const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildNavRow('添加标签页', onTap: _showComingSoon),
-          ]),
-
-          // ---- 群机器人 + 群昵称（仅群聊） ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
-            _buildCard(children: [
-              _buildNavRow('群机器人', onTap: _showComingSoon),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              _buildNavRow('群昵称', onTap: _editGroupNickname),
-            ]),
+            _buildCard(
+              children: [
+                _buildSectionTitle('群应用'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  child: Row(
+                    children: [
+                      _buildAppIcon(
+                        Icons.campaign_outlined,
+                        '群公告',
+                        AppTheme.primaryColor,
+                        onTap: _editGroupAnnouncement,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildCard(
+              children: [
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                _buildNavRow('群昵称', onTap: _editGroupNickname),
+              ],
+            ),
           ],
 
           // ---- 开关设置区 ----
           const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
-              setState(() => _muteNotification = v);
-              final client = _client;
-              if (client != null) {
-                try {
-                  await client.setConversation(
-                    conversationId: widget.conversationId,
-                    recvMsgOpt: v ? 1 : 0,
-                  );
-                } catch (_) {}
-              }
-            }),
-            if (_isGroup) ...[
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              _buildSwitchRow('@所有人的消息不提示', false, (_) {}),
-            ],
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildSwitchRow('置顶会话', _pinChat, (v) async {
-              setState(() => _pinChat = v);
-              final client = _client;
-              if (client != null) {
-                try {
-                  await client.setConversationPinned(
-                    conversationId: widget.conversationId,
-                    isPinned: v,
-                  );
-                } catch (_) {}
-              }
-            }),
-            if (!_isGroup) ...[
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              _buildSwitchRow('私聊（阅后即焚）', _privateChat, (v) async {
-                setState(() => _privateChat = v);
+          _buildCard(
+            children: [
+              _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
+                setState(() => _muteNotification = v);
                 final client = _client;
                 if (client != null) {
                   try {
-                    await client.setConversationPrivate(
+                    await client.setConversation(
                       conversationId: widget.conversationId,
-                      isPrivate: v,
+                      recvMsgOpt: v ? 1 : 0,
                     );
                   } catch (_) {}
                 }
               }),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              _buildSwitchRow('置顶会话', _pinChat, (v) async {
+                setState(() => _pinChat = v);
+                final client = _client;
+                if (client != null) {
+                  try {
+                    await client.setConversationPinned(
+                      conversationId: widget.conversationId,
+                      isPinned: v,
+                    );
+                  } catch (_) {}
+                }
+              }),
+              if (!_isGroup) ...[
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                _buildSwitchRow('私聊（阅后即焚）', _privateChat, (v) async {
+                  setState(() => _privateChat = v);
+                  final client = _client;
+                  if (client != null) {
+                    try {
+                      await client.setConversationPrivate(
+                        conversationId: widget.conversationId,
+                        isPrivate: v,
+                      );
+                    } catch (_) {}
+                  }
+                }),
+              ],
             ],
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildNavRow('标签', onTap: _showComingSoon),
-            const Divider(height: 1, indent: 16, endIndent: 16),
-            _buildSwitchRow('添加到标记', _addToMark, (v) {
-              setState(() => _addToMark = v);
-            }),
-          ]),
-
-          // ---- 翻译助手 ----
-          const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildNavRow('翻译助手', onTap: _showComingSoon),
-          ]),
+          ),
 
           // ---- 清空聊天记录 ----
           const SizedBox(height: 8),
-          _buildCard(children: [
-            _buildNavRow('清空聊天记录', onTap: _handleClearChatHistory),
-          ]),
+          _buildCard(
+            children: [_buildNavRow('清空聊天记录', onTap: _handleClearChatHistory)],
+          ),
 
           // ---- 退出群组（仅群聊） ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
-            _buildCard(children: [
-              InkWell(
-                onTap: () => _handleQuitGroup(),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  child: Center(
-                    child: Text(
-                      '退出群组',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: AppTheme.unreadRed,
+            _buildCard(
+              children: [
+                InkWell(
+                  onTap: () => _handleQuitGroup(),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Center(
+                      child: Text(
+                        '退出群组',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppTheme.unreadRed,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ],
 
           // ---- 会话 ID ----
@@ -342,25 +298,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             ),
           ),
 
-          // ---- 举报 ----
-          const SizedBox(height: 12),
-          Center(
-            child: TextButton.icon(
-              onPressed: _showComingSoon,
-              icon: Icon(
-                Icons.warning_amber_outlined,
-                size: 16,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
-              ),
-              label: Text(
-                '举报',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-          ),
           const SizedBox(height: 24),
         ],
       ),
@@ -425,7 +362,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+              icon: const Icon(
+                Icons.chevron_right,
+                color: AppTheme.textSecondaryColor,
+              ),
               onPressed: () {},
             ),
           ],
@@ -435,8 +375,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   List<Widget> _buildGroupHeader() {
-    final memberCount =
-        ref.watch(groupMemberProvider(widget.conversationId)).members.length;
+    final memberCount = ref
+        .watch(groupMemberProvider(widget.conversationId))
+        .members
+        .length;
 
     return [
       Padding(
@@ -468,7 +410,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+              icon: const Icon(
+                Icons.chevron_right,
+                color: AppTheme.textSecondaryColor,
+              ),
               onPressed: () {},
             ),
           ],
@@ -483,15 +428,15 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     return [
       _buildSectionTitle(
-          '群成员${memberState.isLoading ? '' : ' (${members.length})'}'),
+        '群成员${memberState.isLoading ? '' : ' (${members.length})'}',
+      ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         child: Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
-            for (final member in members)
-              _buildRealMemberAvatar(member),
+            for (final member in members) _buildRealMemberAvatar(member),
             _buildAddMemberButton(),
           ],
         ),
@@ -500,7 +445,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   Widget _buildRealMemberAvatar(GroupMember member) {
-    final displayName = member.nickname.isNotEmpty ? member.nickname : member.userId;
+    final displayName = member.nickname.isNotEmpty
+        ? member.nickname
+        : member.userId;
     final user = User(
       id: member.userId,
       name: displayName,
@@ -516,7 +463,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           child: Text(
             displayName,
             style: const TextStyle(
-                fontSize: 11, color: AppTheme.textSecondaryColor),
+              fontSize: 11,
+              color: AppTheme.textSecondaryColor,
+            ),
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -538,7 +487,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               border: Border.all(color: AppTheme.dividerColor),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.add, color: AppTheme.textSecondaryColor, size: 20),
+            child: const Icon(
+              Icons.add,
+              color: AppTheme.textSecondaryColor,
+              size: 20,
+            ),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -550,40 +503,37 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
-  Widget _buildAppIcon(IconData icon, String label, Color color) {
+  Widget _buildAppIcon(
+    IconData icon,
+    String label,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textPrimaryColor),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchIcon(IconData icon, String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: AppTheme.textSecondaryColor, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textPrimaryColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -598,7 +548,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 15, color: AppTheme.textPrimaryColor),
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppTheme.textPrimaryColor,
+              ),
             ),
             Icon(
               Icons.chevron_right,
@@ -611,7 +564,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
-  Widget _buildSwitchRow(String title, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildSwitchRow(
+    String title,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
@@ -619,7 +576,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 15, color: AppTheme.textPrimaryColor),
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppTheme.textPrimaryColor,
+            ),
           ),
           Switch(
             value: value,
@@ -645,7 +605,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('退出', style: TextStyle(color: AppTheme.unreadRed)),
+            child: const Text(
+              '退出',
+              style: TextStyle(color: AppTheme.unreadRed),
+            ),
           ),
         ],
       ),
@@ -656,9 +619,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final client = _client;
     if (client == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('客户端未初始化')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('客户端未初始化')));
       }
       return;
     }
@@ -679,9 +642,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('退出群组失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('退出群组失败: $e')));
       }
     }
   }
@@ -700,7 +663,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('清空', style: TextStyle(color: AppTheme.unreadRed)),
+            child: const Text(
+              '清空',
+              style: TextStyle(color: AppTheme.unreadRed),
+            ),
           ),
         ],
       ),
@@ -711,9 +677,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final client = _client;
     if (client == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('客户端未初始化')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('客户端未初始化')));
       }
       return;
     }
@@ -732,20 +698,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('清空聊天记录失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('清空聊天记录失败: $e')));
       }
     }
-  }
-
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('功能开发中，敬请期待'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   /// 修改自己在群里的昵称
@@ -797,9 +754,79 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('更新失败: $e')));
+      }
+    }
+  }
+
+  /// 编辑群公告
+  Future<void> _editGroupAnnouncement() async {
+    final client = _client;
+    if (client == null) return;
+
+    var current = '';
+    try {
+      final groups = await GroupService.instance.getGroupsInfo(
+        client,
+        groupIds: [_groupId],
+      );
+      current = groups.isNotEmpty ? groups.first.notification : '';
+    } catch (_) {
+      // 拉取失败时允许直接编辑
+    }
+    if (!mounted) return;
+
+    final controller = TextEditingController(text: current);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('编辑群公告'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            hintText: '请输入群公告',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null || !mounted) return;
+
+    try {
+      await GroupService.instance.setGroupInfo(
+        client,
+        groupId: _groupId,
+        notification: value,
+      );
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新失败: $e')),
+          const SnackBar(
+            content: Text('群公告已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('群公告更新失败: $e')));
       }
     }
   }
@@ -835,7 +862,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                         // 标题栏
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -872,70 +901,65 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                           child: friendState.isLoading
                               ? const Center(child: CircularProgressIndicator())
                               : friendState.friends.isEmpty
-                                  ? const Center(
-                                      child: Text(
-                                        '暂无好友',
-                                        style: TextStyle(
-                                          color: AppTheme.textSecondaryColor,
-                                        ),
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      controller: scrollController,
-                                      itemCount: friendState.friends.length,
-                                      itemBuilder: (context, index) {
-                                        final friend =
-                                            friendState.friends[index];
-                                        final isSelected = selectedIds
-                                            .contains(friend.userId);
-
-                                        return ListTile(
-                                          leading: UserAvatar(
-                                            user: User(
-                                              id: friend.userId,
-                                              name: friend.nickname,
-                                              avatar: friend.faceUrl.isNotEmpty
-                                                  ? friend.faceUrl
-                                                  : null,
-                                            ),
-                                            radius: 20,
-                                          ),
-                                          title: Text(
-                                            friend.remark.isNotEmpty
-                                                ? friend.remark
-                                                : friend.nickname,
-                                            style:
-                                                const TextStyle(fontSize: 15),
-                                          ),
-                                          trailing: Checkbox(
-                                            value: isSelected,
-                                            activeColor: AppTheme.primaryColor,
-                                            onChanged: (checked) {
-                                              setSheetState(() {
-                                                if (checked == true) {
-                                                  selectedIds
-                                                      .add(friend.userId);
-                                                } else {
-                                                  selectedIds
-                                                      .remove(friend.userId);
-                                                }
-                                              });
-                                            },
-                                          ),
-                                          onTap: () {
-                                            setSheetState(() {
-                                              if (isSelected) {
-                                                selectedIds
-                                                    .remove(friend.userId);
-                                              } else {
-                                                selectedIds
-                                                    .add(friend.userId);
-                                              }
-                                            });
-                                          },
-                                        );
-                                      },
+                              ? const Center(
+                                  child: Text(
+                                    '暂无好友',
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondaryColor,
                                     ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  controller: scrollController,
+                                  itemCount: friendState.friends.length,
+                                  itemBuilder: (context, index) {
+                                    final friend = friendState.friends[index];
+                                    final isSelected = selectedIds.contains(
+                                      friend.userId,
+                                    );
+
+                                    return ListTile(
+                                      leading: UserAvatar(
+                                        user: User(
+                                          id: friend.userId,
+                                          name: friend.nickname,
+                                          avatar: friend.faceUrl.isNotEmpty
+                                              ? friend.faceUrl
+                                              : null,
+                                        ),
+                                        radius: 20,
+                                      ),
+                                      title: Text(
+                                        friend.remark.isNotEmpty
+                                            ? friend.remark
+                                            : friend.nickname,
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                      trailing: Checkbox(
+                                        value: isSelected,
+                                        activeColor: AppTheme.primaryColor,
+                                        onChanged: (checked) {
+                                          setSheetState(() {
+                                            if (checked == true) {
+                                              selectedIds.add(friend.userId);
+                                            } else {
+                                              selectedIds.remove(friend.userId);
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      onTap: () {
+                                        setSheetState(() {
+                                          if (isSelected) {
+                                            selectedIds.remove(friend.userId);
+                                          } else {
+                                            selectedIds.add(friend.userId);
+                                          }
+                                        });
+                                      },
+                                    );
+                                  },
+                                ),
                         ),
                       ],
                     );
@@ -974,9 +998,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('邀请成员失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('邀请成员失败: $e')));
       }
     }
   }

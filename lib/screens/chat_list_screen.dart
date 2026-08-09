@@ -13,6 +13,7 @@ import '../widgets/conversation_title_bar.dart';
 import '../widgets/group_filter_panel.dart';
 import 'profile_drawer_screen.dart';
 import 'my_profile_screen.dart';
+import 'scan_screen.dart';
 
 /// 会话列表页（参考飞书风格）
 class ChatListScreen extends ConsumerStatefulWidget {
@@ -51,7 +52,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         .length;
   }
 
-  List<LocalConversation> _getFilteredConversations(List<LocalConversation> conversations) {
+  List<LocalConversation> _getFilteredConversations(
+    List<LocalConversation> conversations,
+  ) {
     switch (_activeFilter) {
       case GroupFilter.unread:
         return conversations.where((c) => c.unreadCount > 0).toList();
@@ -81,18 +84,20 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final totalMessages = conversationState.conversations.length;
     final groupCount = _groupChatCount;
 
-    Navigator.of(context).push(LeftSlideRoute(
-      child: GroupFilterPanel(
-        activeFilter: _activeFilter,
-        totalMessages: totalMessages,
-        unreadCount: totalUnread,
-        groupCount: groupCount,
-        onSelect: (filter) {
-          AppRouter.goBack(context);
-          setState(() => _activeFilter = filter);
-        },
+    Navigator.of(context).push(
+      LeftSlideRoute(
+        child: GroupFilterPanel(
+          activeFilter: _activeFilter,
+          totalMessages: totalMessages,
+          unreadCount: totalUnread,
+          groupCount: groupCount,
+          onSelect: (filter) {
+            AppRouter.goBack(context);
+            setState(() => _activeFilter = filter);
+          },
+        ),
       ),
-    ));
+    );
   }
 
   @override
@@ -101,7 +106,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final connectionState = ref.watch(connectionProvider);
     final userProfileState = ref.watch(userProfileProvider);
 
-    final conversations = _getFilteredConversations(conversationState.conversations);
+    final conversations = _getFilteredConversations(
+      conversationState.conversations,
+    );
     final totalUnread = conversationState.totalUnreadCount;
 
     return Scaffold(
@@ -114,39 +121,52 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         isConnected: connectionState.isConnected,
         syncProgress: conversationState.syncProgress,
         onAvatarTap: () {
-          Navigator.of(context).push(LeftSlideRoute(
-            child: ProfileDrawerScreen(
-              onOpenMyProfile: () {
-                Navigator.of(context).pushReplacement(
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const MyProfileScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      return SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(1, 0),
-                          end: Offset.zero,
-                        ).animate(CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
-                        )),
-                        child: child,
-                      );
-                    },
-                  ),
-                );
-              },
+          Navigator.of(context).push(
+            LeftSlideRoute(
+              child: ProfileDrawerScreen(
+                onOpenMyProfile: () {
+                  Navigator.of(context).pushReplacement(
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const MyProfileScreen(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                            return SlideTransition(
+                              position:
+                                  Tween<Offset>(
+                                    begin: const Offset(1, 0),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+                                  ),
+                              child: child,
+                            );
+                          },
+                    ),
+                  );
+                },
+              ),
             ),
-          ));
+          );
         },
         onSearchTap: () {
           AppRouter.goToSearch(context);
         },
-        onRefresh: () => ref.read(conversationListProvider.notifier).refreshConversations(),
-        onAddFriend: () {},
-        onAddGroup: () {},
-        onCreateGroup: () {},
-        onScan: () {},
+        onRefresh: () =>
+            ref.read(conversationListProvider.notifier).refreshConversations(),
+        onAddFriend: () => AppRouter.goToAddContact(context),
+        onAddGroup: () => AppRouter.goToSearch(context),
+        onCreateGroup: () => AppRouter.goToCreateGroup(context),
+        onScan: () async {
+          final raw = await Navigator.of(
+            context,
+          ).push<String>(MaterialPageRoute(builder: (_) => const ScanScreen()));
+          if (raw == null || !mounted) return;
+          _handleScanResult(raw);
+        },
       ),
       body: Column(
         children: [
@@ -165,14 +185,19 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           Expanded(
             child: RefreshIndicator(
               color: AppTheme.primaryColor,
-              onRefresh: () => ref.read(conversationListProvider.notifier).refreshConversations(),
+              onRefresh: () => ref
+                  .read(conversationListProvider.notifier)
+                  .refreshConversations(),
               child: conversations.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       children: [
                         SizedBox(
                           height: MediaQuery.of(context).size.height * 0.5,
-                          child: _buildEmptyState(conversationState, connectionState),
+                          child: _buildEmptyState(
+                            conversationState,
+                            connectionState,
+                          ),
                         ),
                       ],
                     )
@@ -183,36 +208,55 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                       itemCount: conversations.length,
                       itemBuilder: (context, index) {
                         final conversation = conversations[index];
-                        final otherUserId = conversation.conversationType == 1 && conversation.userId.isNotEmpty
-                              ? conversation.userId
-                              : null;
-                          final otherUserProfile = otherUserId != null && otherUserId != userProfileState.profile?.userId
-                              ? ref.read(messageServiceProvider.notifier).getUserProfile(otherUserId)
-                              : null;
-                          return ChatListItem(
+                        final otherUserId =
+                            conversation.conversationType == 1 &&
+                                conversation.userId.isNotEmpty
+                            ? conversation.userId
+                            : null;
+                        final otherUserProfile =
+                            otherUserId != null &&
+                                otherUserId != userProfileState.profile?.userId
+                            ? ref
+                                  .read(messageServiceProvider.notifier)
+                                  .getUserProfile(otherUserId)
+                            : null;
+                        return ChatListItem(
                           key: ValueKey<String>(conversation.conversationId),
                           conversation: conversation,
                           cachedUserProfile: otherUserProfile,
-                          currentUserLocalAvatarPath: userProfileState.localAvatarPath,
+                          currentUserLocalAvatarPath:
+                              userProfileState.localAvatarPath,
                           itemIndex: index,
                           currentUserId: userProfileState.profile?.userId,
                           onTap: () {
                             AppRouter.goToChatDetail(context, conversation);
                           },
                           onDelete: () async {
-                            await ref.read(messageServiceProvider.notifier).deleteConversation(conversation.conversationId);
+                            await ref
+                                .read(messageServiceProvider.notifier)
+                                .deleteConversation(
+                                  conversation.conversationId,
+                                );
                           },
                           onPinToggle: () async {
-                            await ref.read(messageServiceProvider.notifier).toggleConversationPin(
-                              conversation.conversationId,
-        !conversation.isPinned,
-                            );
+                            await ref
+                                .read(messageServiceProvider.notifier)
+                                .toggleConversationPin(
+                                  conversation.conversationId,
+                                  !conversation.isPinned,
+                                );
                           },
                           onMarkRead: () async {
-                            await ref.read(messageServiceProvider.notifier).markConversationMessageAsRead(conversation.conversationId);
+                            await ref
+                                .read(messageServiceProvider.notifier)
+                                .markConversationMessageAsRead(
+                                  conversation.conversationId,
+                                );
                           },
                           onHide: () async {
-                            await ref.read(messageServiceProvider.notifier).hideConversation(conversation.conversationId);
+                            await ref
+                                .read(messageServiceProvider.notifier)
+                                .hideConversation(conversation.conversationId);
                           },
                         );
                       },
@@ -224,20 +268,23 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     );
   }
 
-  Widget _buildEmptyState(ConversationListState conversationState, AppConnectionState connectionState) {
+  Widget _buildEmptyState(
+    ConversationListState conversationState,
+    AppConnectionState connectionState,
+  ) {
     final label = _activeFilter == GroupFilter.all
         ? '消息'
         : _activeFilter == GroupFilter.unread
-            ? '未读'
-            : _activeFilter == GroupFilter.flagged
-                ? '标记'
-                : _activeFilter == GroupFilter.atMe
-                    ? '@我'
-                    : _activeFilter == GroupFilter.singleChat
-                        ? '单聊'
-                        : _activeFilter == GroupFilter.groupChat
-                            ? '群组'
-                            : '已完成';
+        ? '未读'
+        : _activeFilter == GroupFilter.flagged
+        ? '标记'
+        : _activeFilter == GroupFilter.atMe
+        ? '@我'
+        : _activeFilter == GroupFilter.singleChat
+        ? '单聊'
+        : _activeFilter == GroupFilter.groupChat
+        ? '群组'
+        : '已完成';
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -251,9 +298,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _activeFilter == GroupFilter.all
-                ? '暂无会话'
-                : '「$label」中没有会话',
+            _activeFilter == GroupFilter.all ? '暂无会话' : '「$label」中没有会话',
             style: const TextStyle(
               fontSize: 16,
               color: AppTheme.textSecondaryColor,
@@ -272,5 +317,19 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         ],
       ),
     );
+  }
+
+  void _handleScanResult(String raw) {
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('暂不支持打开链接: $raw')));
+      return;
+    }
+    if (raw.startsWith('g_') || raw.startsWith('sg_')) {
+      AppRouter.goToGroupInfoById(context, raw);
+    } else {
+      AppRouter.goToUserProfile(context, userId: raw);
+    }
   }
 }

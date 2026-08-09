@@ -159,7 +159,7 @@ async fn test_group_info_update() {
     println!("群: {} ({})", group.group_name, group.group_id);
 
     println!("更新群名称...");
-    let set_result = sdk.set_group_info(&group.group_id, Some("UpdatedName"), None).await;
+    let set_result = sdk.set_group_info(&group.group_id, Some("UpdatedName"), None, None, None).await;
     assert!(set_result.is_ok(), "更新群信息失败: {:?}", set_result.err());
     println!("  ✅ 更新成功");
 

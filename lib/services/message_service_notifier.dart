@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data' show Int32List;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -6,17 +7,25 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/extensions/conversation_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/ffi/message_advanced.dart' show forwardMessageByClientId, markAllConversationMessageAsRead;
-import 'package:flutter_rust_demo/src/rust/http/message.dart' show RevokeMessageReq;
-import 'package:flutter_rust_demo/src/rust/model/msg_struct.dart' show MsgStruct;
+import 'package:flutter_rust_demo/src/rust/ffi/message_advanced.dart'
+    show
+        forwardMessageByClientId,
+        markAllConversationMessageAsRead,
+        sendMessage;
+import 'package:flutter_rust_demo/src/rust/http/message.dart'
+    show RevokeMessageReq;
+import 'package:flutter_rust_demo/src/rust/model/msg_struct.dart'
+    show MsgStruct;
 import 'package:flutter_rust_demo/src/rust/client/config.dart';
 import 'package:flutter_rust_demo/src/rust/constant/enums.dart';
 import 'package:flutter_rust_demo/src/rust/client.dart';
 import 'package:flutter_rust_demo/src/rust/model/user.dart' show UserInfo;
-import 'package:flutter_rust_demo/src/rust/model/local.dart' show LocalChatLog, LocalConversation;
+import 'package:flutter_rust_demo/src/rust/model/local.dart'
+    show LocalChatLog, LocalConversation;
 import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart' show initLogger;
 import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/models/message_ext.dart' show sortMessagesByTime;
+import 'package:flutter_rust_demo/models/message_ext.dart'
+    show MessageInfoExt, sortMessagesByTime;
 import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/friend.dart';
@@ -26,6 +35,8 @@ import 'package:flutter_rust_demo/src/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 import 'package:flutter_rust_demo/utils/login_storage.dart';
 import 'package:flutter_rust_demo/services/navigation_service.dart';
+import 'package:flutter_rust_demo/services/app_lifecycle_service.dart';
+import 'package:flutter_rust_demo/services/local_notification_service.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {
@@ -39,8 +50,17 @@ class MessageServiceState {
   final UserInfo? loginUserProfile;
   final bool isInitializing;
   final int totalUnreadCount;
+  final int friendRevision;
+  final int groupRevision;
+
   /// 各会话当前正在输入的用户（conversationId -> userId）
   final Map<String, String> typingUsers;
+
+  /// 各消息上传进度（clientMsgId -> 0-100）
+  final Map<String, int> uploadProgress;
+
+  /// 群聊已读统计（msgId -> 回执）
+  final Map<String, GroupReadReceipt> groupReadReceipts;
 
   const MessageServiceState({
     this.isConnected = false,
@@ -53,7 +73,11 @@ class MessageServiceState {
     this.loginUserProfile,
     this.isInitializing = false,
     this.totalUnreadCount = 0,
+    this.friendRevision = 0,
+    this.groupRevision = 0,
     this.typingUsers = const {},
+    this.uploadProgress = const {},
+    this.groupReadReceipts = const {},
   });
 
   MessageServiceState copyWith({
@@ -67,11 +91,16 @@ class MessageServiceState {
     UserInfo? loginUserProfile,
     bool? isInitializing,
     int? totalUnreadCount,
+    int? friendRevision,
+    int? groupRevision,
     Map<String, String>? typingUsers,
+    Map<String, int>? uploadProgress,
+    Map<String, GroupReadReceipt>? groupReadReceipts,
   }) {
     return MessageServiceState(
       isConnected: isConnected ?? this.isConnected,
-      isSyncingConversations: isSyncingConversations ?? this.isSyncingConversations,
+      isSyncingConversations:
+          isSyncingConversations ?? this.isSyncingConversations,
       syncProgress: syncProgress ?? this.syncProgress,
       currentUserId: currentUserId ?? this.currentUserId,
       conversations: conversations ?? this.conversations,
@@ -80,7 +109,11 @@ class MessageServiceState {
       loginUserProfile: loginUserProfile ?? this.loginUserProfile,
       isInitializing: isInitializing ?? this.isInitializing,
       totalUnreadCount: totalUnreadCount ?? this.totalUnreadCount,
+      friendRevision: friendRevision ?? this.friendRevision,
+      groupRevision: groupRevision ?? this.groupRevision,
       typingUsers: typingUsers ?? this.typingUsers,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      groupReadReceipts: groupReadReceipts ?? this.groupReadReceipts,
     );
   }
 }
@@ -89,6 +122,7 @@ class MessageServiceState {
 class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   fb.OpenImBridgeClient? _client;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
+
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
   final Set<String> _seenClientMsgIds = {};
 
@@ -135,7 +169,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       content: result.content,
       seq: result.seq,
       sendTime: _normalizeSendTime(result.sendTime.toInt()),
-      createTime: result.createTime > 0 ? result.createTime : _normalizeSendTime(result.sendTime.toInt()),
+      createTime: result.createTime > 0
+          ? result.createTime
+          : _normalizeSendTime(result.sendTime.toInt()),
       status: result.status,
       isRead: false,
       attachedInfo: '',
@@ -239,7 +275,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return false;
 
     try {
-      appLog.i('[MSG] Service 加载历史消息: count=$count');
+      appLog.i(
+        '[MSG] Service 加载历史消息: conv=$conversationId count=$count start=$startClientMsgId',
+      );
       final result = await _client!.getHistoryMessages(
         req: GetHistoryMessagesReq(
           conversationId: conversationId,
@@ -248,29 +286,44 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         ),
       );
 
-      appLog.i('[MSG] Service 加载完成: messages=${result.messages.length}, isEnd=${result.isEnd}');
-
       if (result.messages.isEmpty) {
-        return false;
+        appLog.i(
+          '[MSG] Service 空页: conv=$conversationId isEnd=${result.isEnd}',
+        );
+        return !result.isEnd;
       }
 
       final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
+      final beforeCount = currentMessages.length;
 
       // result.messages 已经是 List<MessageInfo>，直接使用
       currentMessages.insertAll(0, result.messages);
 
       final seenIds = <String>{};
-      newMessages[conversationId] = currentMessages
+      final merged = currentMessages
           .where((msg) => seenIds.add(msg.clientMsgId))
           .toList();
+      final dedupRemoved = beforeCount + result.messages.length - merged.length;
+      newMessages[conversationId] = merged;
+
+      final firstSeq = result.messages.isNotEmpty
+          ? result.messages.first.seq
+          : 0;
+      final lastSeq = result.messages.isNotEmpty ? result.messages.last.seq : 0;
+
+      appLog.i(
+        '[MSG] Service 加载完成: conv=$conversationId start=$startClientMsgId '
+        'new=${result.messages.length} firstSeq=$firstSeq lastSeq=$lastSeq '
+        'dedupRemoved=$dedupRemoved isEnd=${result.isEnd}',
+      );
 
       state = state.copyWith(messages: newMessages);
 
       return !result.isEnd;
     } catch (e) {
       appLog.e('dart MessageService ❌ 加载历史消息失败: $e');
-      return false;
+      rethrow;
     }
   }
 
@@ -558,7 +611,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       // 关闭已有客户端（热重启或重复登录场景），避免两个实例同时存在导致被踢
       if (_client != null) {
         appLog.i('[MessageService] 关闭已有客户端，重新初始化');
-        for (final s in _subscriptions) { await s.cancel(); }
+        for (final s in _subscriptions) {
+          await s.cancel();
+        }
         _subscriptions.clear();
         try {
           await _client!.disconnect();
@@ -600,8 +655,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       );
       unawaited(_loadConversations());
 
-      _subscriptions.add(_client!.connectionStream().listen(_onConnectionEvent));
-      _subscriptions.add(_client!.conversationStream().listen(_onConversationEvent));
+      _subscriptions.add(
+        _client!.connectionStream().listen(_onConnectionEvent),
+      );
+      _subscriptions.add(
+        _client!.conversationStream().listen(_onConversationEvent),
+      );
       _subscriptions.add(_client!.friendStream().listen(_onFriendEvent));
       _subscriptions.add(_client!.groupStream().listen(_onGroupEvent));
       _subscriptions.add(_client!.messageStream().listen(_onMessageEvent));
@@ -645,9 +704,17 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onConversationEvent(ConversationEvent event) {
     event.maybeWhen(
-      syncStarted: (_) => state = state.copyWith(isSyncingConversations: true, syncProgress: 0),
-      syncFinished: (_) { state = state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
-      syncProgress: (p, _) => state = state.copyWith(isSyncingConversations: true, syncProgress: p),
+      syncStarted: (_) =>
+          state = state.copyWith(isSyncingConversations: true, syncProgress: 0),
+      syncFinished: (_) {
+        state = state.copyWith(
+          isSyncingConversations: false,
+          syncProgress: 100,
+        );
+        _loadConversations();
+      },
+      syncProgress: (p, _) =>
+          state = state.copyWith(isSyncingConversations: true, syncProgress: p),
       totalUnreadCountChanged: (c) {
         appLog.i('[MsgSvc] totalUnreadCountChanged: $c');
         state = state.copyWith(totalUnreadCount: c);
@@ -662,7 +729,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       },
       deleted: (_) => appLog.i('[MsgSvc] conversationDeleted'),
       userInputStatusChanged: (cid, uid, platformIds) {
-        appLog.i('[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}');
+        appLog.i(
+          '[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}',
+        );
         final typingUsers = Map<String, String>.from(state.typingUsers);
         if (platformIds.isNotEmpty) {
           typingUsers[cid] = uid;
@@ -671,13 +740,38 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         }
         state = state.copyWith(typingUsers: typingUsers);
       },
-      syncFailed: (reinstalled, e) => appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e'),
+      syncFailed: (reinstalled, e) =>
+          appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e'),
       orElse: () {},
     );
   }
 
-  void _onFriendEvent(FriendEvent event) {}
-  void _onGroupEvent(GroupEvent event) {}
+  void _onFriendEvent(FriendEvent event) {
+    appLog.i('[MsgSvc] friendEvent: ${event.runtimeType}');
+    state = state.copyWith(friendRevision: state.friendRevision + 1);
+  }
+
+  void _onGroupEvent(GroupEvent event) {
+    appLog.i('[MsgSvc] groupEvent: ${event.runtimeType}');
+    event.maybeWhen(
+      groupReadReceipt: (receipts) => _applyGroupReadReceipts(receipts),
+      orElse: () {
+        state = state.copyWith(groupRevision: state.groupRevision + 1);
+      },
+    );
+  }
+
+  void _applyGroupReadReceipts(List<GroupReadReceipt> receipts) {
+    if (receipts.isEmpty) return;
+    final updated = Map<String, GroupReadReceipt>.from(state.groupReadReceipts);
+    for (final receipt in receipts) {
+      updated[receipt.msgId] = receipt;
+    }
+    state = state.copyWith(
+      groupReadReceipts: updated,
+      groupRevision: state.groupRevision + 1,
+    );
+  }
 
   void _onMessageEvent(MessageEvent event) {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
@@ -691,14 +785,187 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
       onlineOnlyMessage: (conversationId, message) {
         _appendIncomingMessage(conversationId, message);
       },
-      revoked: (conversationId, seq, clientMsgId, revokerId, revokerRole,
-          revokerNickname, revokeTime, sourceMessageSendTime, sourceMessageSendId,
-          sourceMessageSenderNickname, sessionType, isAdminRevoke) {},
-      c2CReadReceipt: (_) {},
-      deleted: (_, _) {},
-      sendFailed: (_, _) {},
-      uploadProgress: (_, _, _, _) {},
+      revoked:
+          (
+            conversationId,
+            seq,
+            clientMsgId,
+            revokerId,
+            revokerRole,
+            revokerNickname,
+            revokeTime,
+            sourceMessageSendTime,
+            sourceMessageSendId,
+            sourceMessageSenderNickname,
+            sessionType,
+            isAdminRevoke,
+          ) {
+            _applyRevoked(
+              conversationId: conversationId,
+              seq: seq.toInt(),
+              clientMsgId: clientMsgId,
+              revokerNickname: revokerNickname,
+              sourceMessageSenderNickname: sourceMessageSenderNickname,
+            );
+          },
+      c2CReadReceipt: (receipts) => _applyReadReceipts(receipts),
+      deleted: (conversationId, clientMsgIds) =>
+          _applyDeleted(conversationId, clientMsgIds),
+      sendFailed: (clientMsgId, error) => _applySendFailed(clientMsgId, error),
+      uploadProgress: (clientMsgId, progress, totalSize, uploadedSize) =>
+          _applyUploadProgress(clientMsgId, progress),
     );
+  }
+
+  /// 重发一条发送失败的消息（Rust 侧会生成新 clientMsgId）。
+  Future<MsgStruct> resendMessage({
+    required MessageInfo message,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (_client == null) throw StateError('客户端未初始化');
+    final msgStruct = MsgStruct(
+      clientMsgId: message.clientMsgId,
+      serverMsgId: message.serverMsgId,
+      createTime: message.createTime,
+      sendTime: message.sendTime,
+      sessionType: message.sessionType,
+      sendId: message.sendId,
+      recvId: message.recvId,
+      msgFrom: message.msgFrom,
+      contentType: message.contentType,
+      senderPlatformId: message.senderPlatformId,
+      senderNickname: message.senderNickname,
+      senderFaceUrl: message.senderFaceUrl,
+      groupId: message.groupId,
+      content: message.content,
+      seq: message.seq,
+      isRead: message.isRead,
+      status: message.status,
+      attachedInfo: message.attachedInfo,
+      ex: message.ex,
+      localEx: '',
+    );
+    return sendMessage(
+      msgStruct: msgStruct,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 移除指定消息（用于重发成功后替换旧的失败消息）。
+  void removeMessage(String conversationId, String clientMsgId) {
+    final current = state.messages[conversationId];
+    if (current == null) return;
+    final updated = current.where((m) => m.clientMsgId != clientMsgId).toList();
+    if (updated.length == current.length) return;
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    newMessages[conversationId] = updated;
+    state = state.copyWith(messages: newMessages);
+  }
+
+  void _applyRevoked({
+    required String conversationId,
+    required int seq,
+    required String clientMsgId,
+    required String revokerNickname,
+    required String sourceMessageSenderNickname,
+  }) {
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final list = newMessages[conversationId];
+    if (list == null || list.isEmpty) return;
+
+    final nickname = revokerNickname.isNotEmpty
+        ? revokerNickname
+        : sourceMessageSenderNickname;
+    final revokedContent = jsonEncode({
+      'content': '${nickname.isEmpty ? '对方' : nickname} 撤回了一条消息',
+      'revokerNickname': nickname,
+    });
+    final idx = list.indexWhere(
+      (m) => m.clientMsgId == clientMsgId || m.seq.toInt() == seq,
+    );
+    if (idx >= 0) {
+      final updated = List<MessageInfo>.from(list);
+      updated[idx] = updated[idx].copyMessageInfo(
+        content: revokedContent,
+        contentType: 2101,
+        status: 4,
+      );
+      newMessages[conversationId] = updated;
+      state = state.copyWith(messages: newMessages);
+    }
+  }
+
+  void _applyReadReceipts(List<MessageReceipt> receipts) {
+    final msgIds = receipts.expand((r) => r.msgIds).toSet();
+    if (msgIds.isEmpty) return;
+
+    final newMessages = <String, List<MessageInfo>>{};
+    var changed = false;
+    for (final entry in state.messages.entries) {
+      final list = entry.value;
+      if (!list.any((m) => msgIds.contains(m.clientMsgId))) {
+        newMessages[entry.key] = list;
+        continue;
+      }
+      newMessages[entry.key] = list
+          .map(
+            (m) => msgIds.contains(m.clientMsgId)
+                ? m.copyMessageInfo(isRead: true)
+                : m,
+          )
+          .toList();
+      changed = true;
+    }
+    if (changed) {
+      state = state.copyWith(messages: newMessages);
+    }
+  }
+
+  void _applyDeleted(String conversationId, List<String> clientMsgIds) {
+    final ids = clientMsgIds.toSet();
+    final current = state.messages[conversationId];
+    if (current == null || ids.isEmpty) return;
+    final updated = current.where((m) => !ids.contains(m.clientMsgId)).toList();
+    if (updated.length == current.length) return;
+    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    newMessages[conversationId] = updated;
+    state = state.copyWith(messages: newMessages);
+  }
+
+  void _applySendFailed(String clientMsgId, String error) {
+    appLog.w('[MsgSvc] sendFailed: clientMsgId=$clientMsgId error=$error');
+    final newMessages = <String, List<MessageInfo>>{};
+    var changed = false;
+    for (final entry in state.messages.entries) {
+      final list = entry.value;
+      final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+      if (idx < 0) {
+        newMessages[entry.key] = list;
+        continue;
+      }
+      final updated = List<MessageInfo>.from(list);
+      updated[idx] = updated[idx].copyMessageInfo(status: 3);
+      newMessages[entry.key] = updated;
+      changed = true;
+    }
+    if (changed) {
+      final progress = Map<String, int>.from(state.uploadProgress)
+        ..remove(clientMsgId);
+      state = state.copyWith(messages: newMessages, uploadProgress: progress);
+    }
+  }
+
+  void _applyUploadProgress(String clientMsgId, int progress) {
+    final nextProgress = progress.clamp(0, 100);
+    final uploadProgress = Map<String, int>.from(state.uploadProgress);
+    if (nextProgress >= 100) {
+      uploadProgress.remove(clientMsgId);
+    } else {
+      uploadProgress[clientMsgId] = nextProgress;
+    }
+    state = state.copyWith(uploadProgress: uploadProgress);
   }
 
   /// 事件驱动更新会话列表（对齐官方 Demo：直接用 ConversationChanged 携带的数据更新，不重载 DB）
@@ -706,21 +973,28 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (incoming.isEmpty) return;
     final newConversations = List<LocalConversation>.from(state.conversations);
     for (final conv in incoming) {
-      final index = newConversations.indexWhere((c) => c.conversationId == conv.conversationId);
+      final index = newConversations.indexWhere(
+        (c) => c.conversationId == conv.conversationId,
+      );
       if (index >= 0) {
         final existing = newConversations[index];
         final existingTime = existing.latestMsgSendTime.toInt();
         final convTime = conv.latestMsgSendTime.toInt();
-        final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
+        final useExisting =
+            existing.latestMsg.isNotEmpty && existingTime >= convTime;
         newConversations[index] = LocalConversation(
           conversationId: conv.conversationId,
           conversationType: conv.conversationType,
           userId: conv.userId,
           groupId: conv.groupId,
-          showName: conv.showName.isNotEmpty ? conv.showName : existing.showName,
+          showName: conv.showName.isNotEmpty
+              ? conv.showName
+              : existing.showName,
           faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : existing.faceUrl,
           latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
-          latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
+          latestMsgSendTime: useExisting
+              ? existing.latestMsgSendTime
+              : conv.latestMsgSendTime,
           unreadCount: conv.unreadCount,
           recvMsgOpt: conv.recvMsgOpt,
           isPinned: conv.isPinned,
@@ -731,8 +1005,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
           updateUnreadCountTime: conv.updateUnreadCountTime,
           attachedInfo: conv.attachedInfo,
           ex: conv.ex,
-          draftText: existing.draftText.isNotEmpty ? existing.draftText : conv.draftText,
-          draftTextTime: existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime,
+          draftText: existing.draftText.isNotEmpty
+              ? existing.draftText
+              : conv.draftText,
+          draftTextTime: existing.draftTextTime > 0
+              ? existing.draftTextTime
+              : conv.draftTextTime,
           maxSeq: conv.maxSeq,
           minSeq: conv.minSeq,
           isMsgDestruct: conv.isMsgDestruct,
@@ -755,6 +1033,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
   void _appendIncomingMessage(String conversationId, MessageInfo message) {
+    if (AppLifecycleService.instance.isBackground.value) {
+      unawaited(
+        LocalNotificationService.instance.showMessageNotification(
+          title: message.senderNickname.isNotEmpty
+              ? message.senderNickname
+              : '新消息',
+          body: message.displayText,
+        ),
+      );
+    }
     final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     final exists = list.any((m) => m.clientMsgId == message.clientMsgId);
@@ -774,11 +1062,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         }
       },
       userStatusChanged: (userId, status, platformIds) {
-        appLog.i('[MsgSvc] userStatusChanged: userId=$userId status=$status platformIds=$platformIds');
+        appLog.i(
+          '[MsgSvc] userStatusChanged: userId=$userId status=$status platformIds=$platformIds',
+        );
       },
     );
   }
-
 
   bool _loadingConversations = false;
   bool _reloadConversationsPending = false;
@@ -797,28 +1086,37 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
     try {
       final conversations = await _client!.getConversations();
-      final newConversations = List<LocalConversation>.from(state.conversations);
+      final newConversations = List<LocalConversation>.from(
+        state.conversations,
+      );
       final dbIds = conversations.map((c) => c.conversationId).toSet();
       newConversations.removeWhere((c) => !dbIds.contains(c.conversationId));
       // 去重：移除 DB 中重复的同 ID 行（兜底 DB 无 UNIQUE 约束的情况）
       final seenIds = <String>{};
       newConversations.removeWhere((c) => !seenIds.add(c.conversationId));
       for (final conv in conversations) {
-        final index = newConversations.indexWhere((c) => c.conversationId == conv.conversationId);
+        final index = newConversations.indexWhere(
+          (c) => c.conversationId == conv.conversationId,
+        );
         if (index >= 0) {
           final existing = newConversations[index];
           final existingTime = existing.latestMsgSendTime.toInt();
           final convTime = conv.latestMsgSendTime.toInt();
-          final useExisting = existing.latestMsg.isNotEmpty && existingTime >= convTime;
+          final useExisting =
+              existing.latestMsg.isNotEmpty && existingTime >= convTime;
           newConversations[index] = LocalConversation(
             conversationId: conv.conversationId,
             conversationType: conv.conversationType,
             userId: conv.userId,
             groupId: conv.groupId,
-            showName: conv.showName.isNotEmpty ? conv.showName : existing.showName,
+            showName: conv.showName.isNotEmpty
+                ? conv.showName
+                : existing.showName,
             faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : existing.faceUrl,
             latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
-            latestMsgSendTime: useExisting ? existing.latestMsgSendTime : conv.latestMsgSendTime,
+            latestMsgSendTime: useExisting
+                ? existing.latestMsgSendTime
+                : conv.latestMsgSendTime,
             unreadCount: conv.unreadCount,
             recvMsgOpt: conv.recvMsgOpt,
             isPinned: conv.isPinned,
@@ -829,8 +1127,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
             updateUnreadCountTime: conv.updateUnreadCountTime,
             attachedInfo: conv.attachedInfo,
             ex: conv.ex,
-            draftText: existing.draftText.isNotEmpty ? existing.draftText : conv.draftText,
-            draftTextTime: existing.draftTextTime > 0 ? existing.draftTextTime : conv.draftTextTime,
+            draftText: existing.draftText.isNotEmpty
+                ? existing.draftText
+                : conv.draftText,
+            draftTextTime: existing.draftTextTime > 0
+                ? existing.draftTextTime
+                : conv.draftTextTime,
             maxSeq: conv.maxSeq,
             minSeq: conv.minSeq,
             isMsgDestruct: conv.isMsgDestruct,
@@ -841,7 +1143,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         }
       }
       newConversations.sort((a, b) {
-      if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+        if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
         final aTime = a.latestMsgSendTime.toInt();
         final bTime = b.latestMsgSendTime.toInt();
         return bTime.compareTo(aTime);
@@ -880,7 +1182,9 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   Future<void> disconnect() async {
-    for (final s in _subscriptions) { await s.cancel(); }
+    for (final s in _subscriptions) {
+      await s.cancel();
+    }
     _subscriptions.clear();
     await _client?.disconnect();
     _client = null;
@@ -892,13 +1196,22 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 从本地状态查找会话类型
-      final conv = state.conversations.where((c) => c.conversationId == conversationId).firstOrNull;
+      final conv = state.conversations
+          .where((c) => c.conversationId == conversationId)
+          .firstOrNull;
       final sessionType = conv?.sessionType ?? SessionType.singleChat;
       appLog.i('[READ] Service 标记已读: sessionType=$sessionType');
-      await _client!.markConversationMessageAsRead(conversationId: conversationId, sessionType: sessionType);
+      await _client!.markConversationMessageAsRead(
+        conversationId: conversationId,
+        sessionType: sessionType,
+      );
       // 更新本地会话未读数
-      final newConversations = List<LocalConversation>.from(state.conversations);
-      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      final newConversations = List<LocalConversation>.from(
+        state.conversations,
+      );
+      final idx = newConversations.indexWhere(
+        (c) => c.conversationId == conversationId,
+      );
       if (idx >= 0) {
         final conv = newConversations[idx];
         newConversations[idx] = LocalConversation(
@@ -943,8 +1256,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态，确保会话列表立即显示草稿
-      final newConversations = List<LocalConversation>.from(state.conversations);
-      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      final newConversations = List<LocalConversation>.from(
+        state.conversations,
+      );
+      final idx = newConversations.indexWhere(
+        (c) => c.conversationId == conversationId,
+      );
       if (idx >= 0) {
         final conv = newConversations[idx];
         final now = DateTime.now().millisecondsSinceEpoch;
@@ -976,9 +1293,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         );
         state = state.copyWith(conversations: newConversations);
       }
-      
+
       // 异步保存到数据库
-      await _client!.setConversationDraft(conversationId: conversationId, draftText: draftText);
+      await _client!.setConversationDraft(
+        conversationId: conversationId,
+        draftText: draftText,
+      );
     } catch (e) {
       appLog.e('[MessageService] 保存草稿失败: $e');
     }
@@ -989,8 +1309,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态
-      final newConversations = List<LocalConversation>.from(state.conversations);
-      final idx = newConversations.indexWhere((c) => c.conversationId == conversationId);
+      final newConversations = List<LocalConversation>.from(
+        state.conversations,
+      );
+      final idx = newConversations.indexWhere(
+        (c) => c.conversationId == conversationId,
+      );
       if (idx >= 0) {
         final conv = newConversations[idx];
         newConversations[idx] = LocalConversation(
@@ -1021,7 +1345,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         );
         state = state.copyWith(conversations: newConversations);
       }
-      
+
       // 异步清除数据库中的草稿
       await _client!.clearConversationDraft(conversationId: conversationId);
     } catch (e) {
@@ -1030,10 +1354,16 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
   }
 
   /// 切换会话置顶
-  Future<void> toggleConversationPin(String conversationId, bool isPinned) async {
+  Future<void> toggleConversationPin(
+    String conversationId,
+    bool isPinned,
+  ) async {
     if (_client == null) return;
     try {
-      await _client!.setConversationPinned(conversationId: conversationId, isPinned: isPinned);
+      await _client!.setConversationPinned(
+        conversationId: conversationId,
+        isPinned: isPinned,
+      );
       _loadConversations();
     } catch (e) {
       appLog.e('[MessageService] 切换置顶失败: $e');

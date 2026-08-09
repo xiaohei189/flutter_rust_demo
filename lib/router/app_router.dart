@@ -7,7 +7,8 @@ import '../screens/main_screen.dart';
 import '../screens/chat_detail_screen.dart';
 import '../screens/chat_settings_screen.dart';
 import '../screens/group_info_screen.dart';
-import '../screens/my_profile_screen.dart' show MyProfileScreen, ProfileFieldEditScreen;
+import '../screens/my_profile_screen.dart'
+    show MyProfileScreen, ProfileFieldEditScreen;
 import '../screens/search_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../ui/features/contacts/views/friend_list_screen.dart';
@@ -21,6 +22,7 @@ import '../screens/blacklist_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/group_applications_screen.dart';
 import '../screens/account_settings_screen.dart';
+import '../screens/scan_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
@@ -28,7 +30,7 @@ import '../src/rust/model/local.dart' show LocalConversation;
 /// 应用路由配置
 class AppRouter {
   /// 使用 NavigationService 的 navigatorKey 确保全局导航一致性
-  static GlobalKey<NavigatorState> get _rootNavigatorKey => 
+  static GlobalKey<NavigatorState> get _rootNavigatorKey =>
       NavigationService.instance.navigatorKey;
 
   /// 路由路径常量
@@ -56,18 +58,14 @@ class AppRouter {
         // 启动页
         GoRoute(
           path: splash,
-          builder: (context, state) => SplashScreen(
-            wsUrl: wsUrl,
-            apiBaseUrl: apiBaseUrl,
-          ),
+          builder: (context, state) =>
+              SplashScreen(wsUrl: wsUrl, apiBaseUrl: apiBaseUrl),
         ),
         // 登录页
         GoRoute(
           path: login,
-          builder: (context, state) => LoginScreen(
-            wsUrl: wsUrl,
-            apiBaseUrl: apiBaseUrl,
-          ),
+          builder: (context, state) =>
+              LoginScreen(wsUrl: wsUrl, apiBaseUrl: apiBaseUrl),
         ),
         // 注册页
         GoRoute(
@@ -81,10 +79,7 @@ class AppRouter {
           },
         ),
         // 主页面（底部导航）
-        GoRoute(
-          path: main,
-          builder: (context, state) => const MainScreen(),
-        ),
+        GoRoute(path: main, builder: (context, state) => const MainScreen()),
         // 聊天详情页
         GoRoute(
           path: chatDetail,
@@ -92,9 +87,7 @@ class AppRouter {
             final conversationId = state.pathParameters['id'];
             final preLoaded = state.uri.queryParameters['preLoaded'] == 'true';
             if (conversationId == null || conversationId.isEmpty) {
-              return const Scaffold(
-                body: Center(child: Text('会话ID不存在')),
-              );
+              return const Scaffold(body: Center(child: Text('会话ID不存在')));
             }
             return ChatDetailScreen(
               conversationId: conversationId,
@@ -108,9 +101,7 @@ class AppRouter {
           builder: (context, state) {
             final conversationId = state.pathParameters['id'];
             if (conversationId == null || conversationId.isEmpty) {
-              return const Scaffold(
-                body: Center(child: Text('会话ID不存在')),
-              );
+              return const Scaffold(body: Center(child: Text('会话ID不存在')));
             }
             return ChatSettingsScreen(conversationId: conversationId);
           },
@@ -121,9 +112,7 @@ class AppRouter {
           builder: (context, state) {
             final conversationId = state.pathParameters['id'];
             if (conversationId == null || conversationId.isEmpty) {
-              return const Scaffold(
-                body: Center(child: Text('会话ID不存在')),
-              );
+              return const Scaffold(body: Center(child: Text('会话ID不存在')));
             }
             return GroupInfoScreen(conversationId: conversationId);
           },
@@ -139,14 +128,9 @@ class AppRouter {
           builder: (context, state) {
             final user = state.extra as User?;
             if (user == null) {
-              return const Scaffold(
-                body: Center(child: Text('用户信息不存在')),
-              );
+              return const Scaffold(body: Center(child: Text('用户信息不存在')));
             }
-            return UserProfileScreen(
-              user: user,
-              isCurrentUser: false,
-            );
+            return UserProfileScreen(user: user, isCurrentUser: false);
           },
         ),
         // 搜索页
@@ -187,13 +171,17 @@ class AppRouter {
           path: '/add-contact',
           builder: (context, state) => const AddContactScreen(),
         ),
+        GoRoute(path: '/scan', builder: (context, state) => const ScanScreen()),
         // 联系人选择器
         GoRoute(
           path: '/contact-picker',
           builder: (context, state) {
             final mode = state.uri.queryParameters['mode'] ?? 'forward';
             final multiSelect = mode == 'group';
-            return ContactPickerScreen(multiSelect: multiSelect, title: multiSelect ? '选择群成员' : '选择联系人');
+            return ContactPickerScreen(
+              multiSelect: multiSelect,
+              title: multiSelect ? '选择群成员' : '选择联系人',
+            );
           },
         ),
         // 黑名单页
@@ -217,9 +205,7 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             if (extra == null) {
-              return const Scaffold(
-                body: Center(child: Text('参数错误')),
-              );
+              return const Scaffold(body: Center(child: Text('参数错误')));
             }
             return ProfileFieldEditScreen(
               title: extra['title'] as String? ?? '编辑',
@@ -243,10 +229,10 @@ class AppRouter {
     required String wsUrl,
     required String apiBaseUrl,
   }) {
-    context.push('/register', extra: {
-      'wsUrl': wsUrl,
-      'apiBaseUrl': apiBaseUrl,
-    });
+    context.push(
+      '/register',
+      extra: {'wsUrl': wsUrl, 'apiBaseUrl': apiBaseUrl},
+    );
   }
 
   /// 导航到主页面
@@ -299,10 +285,7 @@ class AppRouter {
   }
 
   /// 导航到群组信息页（通过ID）
-  static void goToGroupInfoById(
-    BuildContext context,
-    String conversationId,
-  ) {
+  static void goToGroupInfoById(BuildContext context, String conversationId) {
     context.push('/group/$conversationId/info');
   }
 
@@ -337,6 +320,18 @@ class AppRouter {
   /// 导航到群申请页
   static void goToGroupApplications(BuildContext context) {
     context.push('/group-applications');
+  }
+
+  static void goToAddContact(BuildContext context) {
+    context.push('/add-contact');
+  }
+
+  static void goToCreateGroup(BuildContext context) {
+    context.push('/create-group');
+  }
+
+  static void goToScan(BuildContext context) {
+    context.push('/scan');
   }
 
   /// 导航到账号设置页

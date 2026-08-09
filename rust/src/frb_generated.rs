@@ -3801,6 +3801,8 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_group_info_impl(
             let api_group_id = <String>::sse_decode(&mut deserializer);
             let api_group_name = <Option<String>>::sse_decode(&mut deserializer);
             let api_face_url = <Option<String>>::sse_decode(&mut deserializer);
+            let api_introduction = <Option<String>>::sse_decode(&mut deserializer);
+            let api_notification = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3814,7 +3816,8 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_group_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url).await?;
+                        let output_ok =
+                            crate::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url, api_introduction, api_notification).await?;
                         Ok(output_ok)
                     })()
                     .await,

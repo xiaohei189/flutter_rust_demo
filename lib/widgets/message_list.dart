@@ -4,6 +4,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import '../models/message_ext.dart';
 import '../models/user.dart';
+import '../src/rust/event/events/message.dart' show GroupReadReceipt;
 import '../src/rust/model/message.dart' show MessageInfo;
 import '../src/rust/model/user.dart' show UserInfo;
 import '../theme/app_theme.dart';
@@ -27,6 +28,8 @@ class MessageList extends StatelessWidget {
     this.onMessageTap,
     this.selectMode = false,
     this.selectedClientMsgIds = const {},
+    this.uploadProgress,
+    this.groupReadReceipts,
   });
 
   final List<MessageInfo> messages;
@@ -41,6 +44,8 @@ class MessageList extends StatelessWidget {
   final void Function(MessageInfo message)? onMessageTap;
   final bool selectMode;
   final Set<String> selectedClientMsgIds;
+  final Map<String, int>? uploadProgress;
+  final Map<String, GroupReadReceipt>? groupReadReceipts;
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +61,7 @@ class MessageList extends StatelessWidget {
             Icon(
               Icons.chat_bubble_outline,
               size: 64,
-              color: AppTheme.textSecondaryColor.withValues(
-                alpha: 0.5,
-              ),
+              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -86,9 +89,7 @@ class MessageList extends StatelessWidget {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
-              ),
+              child: CircularProgressIndicator(color: AppTheme.primaryColor),
             ),
           );
         }
@@ -99,15 +100,18 @@ class MessageList extends StatelessWidget {
         }
 
         final message = messages[messageIndex];
-        final showDateSeparator = _shouldShowDateSeparator(messages, messageIndex);
+        final showDateSeparator = _shouldShowDateSeparator(
+          messages,
+          messageIndex,
+        );
 
-        final selected = selectMode && selectedClientMsgIds.contains(message.clientMsgId);
+        final selected =
+            selectMode && selectedClientMsgIds.contains(message.clientMsgId);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (showDateSeparator)
-              _buildDateSeparator(message.sendDateTime),
+            if (showDateSeparator) _buildDateSeparator(message.sendDateTime),
             Stack(
               children: [
                 _VisibleMessageBubble(
@@ -119,6 +123,8 @@ class MessageList extends StatelessWidget {
                   onLongPress: onMessageLongPress,
                   onVisible: onMessageVisible,
                   onTap: onMessageTap,
+                  uploadProgress: uploadProgress,
+                  groupReadReceipts: groupReadReceipts,
                 ),
                 if (selectMode)
                   Positioned(
@@ -145,13 +151,15 @@ class MessageList extends StatelessWidget {
   /// 判断是否应该显示日期分隔符
   bool _shouldShowDateSeparator(List<MessageInfo> messages, int index) {
     if (index == 0) return true;
-    
+
     final currentMsg = messages[index];
     final prevMsg = messages[index - 1];
-    
-    final currentDate = DateFormat('yyyy-MM-dd').format(currentMsg.sendDateTime);
+
+    final currentDate = DateFormat(
+      'yyyy-MM-dd',
+    ).format(currentMsg.sendDateTime);
     final prevDate = DateFormat('yyyy-MM-dd').format(prevMsg.sendDateTime);
-    
+
     return currentDate != prevDate;
   }
 
@@ -160,7 +168,7 @@ class MessageList extends StatelessWidget {
     final now = DateTime.now();
     final today = DateFormat('yyyy-MM-dd').format(now);
     final msgDate = DateFormat('yyyy-MM-dd').format(dateTime);
-    
+
     String dateText;
     if (today == msgDate) {
       dateText = '今天';
@@ -172,7 +180,8 @@ class MessageList extends StatelessWidget {
       } else {
         // 判断是否在同一周
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
-        if (dateTime.isAfter(weekStart) || dateTime.isAtSameMomentAs(weekStart)) {
+        if (dateTime.isAfter(weekStart) ||
+            dateTime.isAtSameMomentAs(weekStart)) {
           final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
           dateText = weekdays[dateTime.weekday - 1];
         } else {
@@ -219,6 +228,8 @@ class _VisibleMessageBubble extends StatelessWidget {
     required this.onLongPress,
     required this.onVisible,
     this.onTap,
+    this.uploadProgress,
+    this.groupReadReceipts,
   });
 
   final MessageInfo message;
@@ -229,6 +240,8 @@ class _VisibleMessageBubble extends StatelessWidget {
   final void Function(MessageInfo message)? onLongPress;
   final void Function(MessageInfo message)? onVisible;
   final void Function(MessageInfo message)? onTap;
+  final Map<String, int>? uploadProgress;
+  final Map<String, GroupReadReceipt>? groupReadReceipts;
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +254,10 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
         onTap: onTap,
+        uploadProgress: uploadProgress?[message.clientMsgId],
+        groupReadReceipt:
+            groupReadReceipts?[message.clientMsgId] ??
+            groupReadReceipts?[message.serverMsgId],
       );
     }
 
@@ -259,6 +276,10 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
         onTap: onTap,
+        uploadProgress: uploadProgress?[message.clientMsgId],
+        groupReadReceipt:
+            groupReadReceipts?[message.clientMsgId] ??
+            groupReadReceipts?[message.serverMsgId],
       ),
     );
   }

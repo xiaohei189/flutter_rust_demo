@@ -4,15 +4,7 @@ import '../router/app_router.dart';
 import '../theme/app_theme.dart';
 
 /// 分组筛选类型
-enum GroupFilter {
-  all,
-  unread,
-  flagged,
-  atMe,
-  singleChat,
-  groupChat,
-  done,
-}
+enum GroupFilter { all, unread, flagged, atMe, singleChat, groupChat, done }
 
 /// 分组筛选面板（从左侧滑入，占满屏幕高度，宽度约 80%）
 class GroupFilterPanel extends StatelessWidget {
@@ -69,8 +61,9 @@ class GroupFilterPanel extends StatelessWidget {
                             child: Icon(
                               Icons.tune,
                               size: 20,
-                              color: AppTheme.textSecondaryColor
-                                  .withValues(alpha: 0.6),
+                              color: AppTheme.textSecondaryColor.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                           ),
                         ],
@@ -94,18 +87,6 @@ class GroupFilterPanel extends StatelessWidget {
                             filter: GroupFilter.unread,
                           ),
                           _buildItem(
-                            icon: Icons.flag_outlined,
-                            label: '标记',
-                            count: 0,
-                            filter: GroupFilter.flagged,
-                          ),
-                          _buildItem(
-                            icon: Icons.alternate_email,
-                            label: '@我',
-                            count: 0,
-                            filter: GroupFilter.atMe,
-                          ),
-                          _buildItem(
                             icon: Icons.person_outline,
                             label: '单聊',
                             count: totalMessages - groupCount,
@@ -116,12 +97,6 @@ class GroupFilterPanel extends StatelessWidget {
                             label: '群组',
                             count: groupCount,
                             filter: GroupFilter.groupChat,
-                          ),
-                          _buildItem(
-                            icon: Icons.done_all_outlined,
-                            label: '已完成',
-                            count: 0,
-                            filter: GroupFilter.done,
                           ),
                         ],
                       ),
@@ -182,11 +157,7 @@ class GroupFilterPanel extends StatelessWidget {
                   ),
                 ),
               if (isActive)
-                const Icon(
-                  Icons.check,
-                  size: 20,
-                  color: AppTheme.primaryColor,
-                ),
+                const Icon(Icons.check, size: 20, color: AppTheme.primaryColor),
             ],
           ),
         ),
@@ -200,29 +171,29 @@ class LeftSlideRoute extends PageRouteBuilder<void> {
   final Widget child;
 
   LeftSlideRoute({required this.child})
-      : super(
-          opaque: false,
-          barrierDismissible: true,
-          barrierColor: Colors.black54,
-          transitionDuration: const Duration(milliseconds: 350),
-          reverseTransitionDuration: const Duration(milliseconds: 200),
-          pageBuilder: (context, animation, secondaryAnimation) => child,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curvedAnimation = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
-              reverseCurve: Curves.easeIn,
-            );
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(-0.4, 0),
-                end: Offset.zero,
-              ).animate(curvedAnimation),
-              child: FadeTransition(
-                opacity: Tween<double>(begin: 0, end: 1).animate(curvedAnimation),
-                child: child,
-              ),
-            );
-          },
-        );
+    : super(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 350),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, secondaryAnimation) => child,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOut,
+            reverseCurve: Curves.easeIn,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-0.4, 0),
+              end: Offset.zero,
+            ).animate(curvedAnimation),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0, end: 1).animate(curvedAnimation),
+              child: child,
+            ),
+          );
+        },
+      );
 }

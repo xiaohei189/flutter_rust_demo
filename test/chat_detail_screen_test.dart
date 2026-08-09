@@ -21,55 +21,54 @@ MessageInfo _makeMessage(
   int seq,
   int sendTime,
   String sendId,
-) =>
-    MessageInfo(
-      clientMsgId: clientMsgId,
-      serverMsgId: '',
-      sendId: sendId,
-      recvId: 'user_a',
-      groupId: '',
-      senderPlatformId: 0,
-      senderNickname: '对方',
-      senderFaceUrl: '',
-      sessionType: 1,
-      msgFrom: 0,
-      contentType: 101,
-      content: '{"content":"$content"}',
-      seq: seq,
-      sendTime: sendTime,
-      createTime: sendTime,
-      status: 2,
-      isRead: false,
-      attachedInfo: '',
-      ex: '',
-    );
+) => MessageInfo(
+  clientMsgId: clientMsgId,
+  serverMsgId: '',
+  sendId: sendId,
+  recvId: 'user_a',
+  groupId: '',
+  senderPlatformId: 0,
+  senderNickname: '对方',
+  senderFaceUrl: '',
+  sessionType: 1,
+  msgFrom: 0,
+  contentType: 101,
+  content: '{"content":"$content"}',
+  seq: seq,
+  sendTime: sendTime,
+  createTime: sendTime,
+  status: 2,
+  isRead: false,
+  attachedInfo: '',
+  ex: '',
+);
 
 LocalConversation _makeConversation({int unreadCount = 0}) => LocalConversation(
-      conversationId: _convId,
-      conversationType: 1,
-      userId: 'user_b',
-      groupId: '',
-      showName: '张三',
-      faceUrl: '',
-      latestMsg: '',
-      latestMsgSendTime: 0,
-      unreadCount: unreadCount,
-      recvMsgOpt: 0,
-      isPinned: false,
-      isPrivateChat: false,
-      burnDuration: 0,
-      groupAtType: 0,
-      isNotInGroup: false,
-      updateUnreadCountTime: 0,
-      attachedInfo: '',
-      ex: '',
-      draftText: '',
-      draftTextTime: 0,
-      maxSeq: 0,
-      minSeq: 0,
-      isMsgDestruct: false,
-      msgDestructTime: 0,
-    );
+  conversationId: _convId,
+  conversationType: 1,
+  userId: 'user_b',
+  groupId: '',
+  showName: '张三',
+  faceUrl: '',
+  latestMsg: '',
+  latestMsgSendTime: 0,
+  unreadCount: unreadCount,
+  recvMsgOpt: 0,
+  isPinned: false,
+  isPrivateChat: false,
+  burnDuration: 0,
+  groupAtType: 0,
+  isNotInGroup: false,
+  updateUnreadCountTime: 0,
+  attachedInfo: '',
+  ex: '',
+  draftText: '',
+  draftTextTime: 0,
+  maxSeq: 0,
+  minSeq: 0,
+  isMsgDestruct: false,
+  msgDestructTime: 0,
+);
 
 Widget _buildHost(MessageServiceNotifier service) {
   return ProviderScope(
@@ -77,9 +76,7 @@ Widget _buildHost(MessageServiceNotifier service) {
       messageServiceProvider.overrideWith((ref) => service),
       userProfileProvider.overrideWith((ref) => UserProfileNotifier(ref)),
     ],
-    child: const MaterialApp(
-      home: ChatDetailScreen(conversationId: _convId),
-    ),
+    child: const MaterialApp(home: ChatDetailScreen(conversationId: _convId)),
   );
 }
 
@@ -90,26 +87,25 @@ void main() {
   testWidgets('进入会话后渲染会话名和已有消息', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final service = MessageServiceNotifier();
-    service.state =
-      MessageServiceState(
-        currentUserId: 'user_a',
-        conversations: [_makeConversation()],
-        messages: {
-          _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
-        },
-        userProfiles: {
-          'user_a': UserInfo(
-            userId: 'user_a',
-            nickname: '我',
-            faceUrl: '',
-            gender: 0,
-            telephone: '',
-            email: '',
-            remark: '',
-            globalRecvMsgOpt: 0,
-          ),
-        },
-      );
+    service.state = MessageServiceState(
+      currentUserId: 'user_a',
+      conversations: [_makeConversation()],
+      messages: {
+        _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
+      },
+      userProfiles: {
+        'user_a': const UserInfo(
+          userId: 'user_a',
+          nickname: '我',
+          faceUrl: '',
+          gender: 0,
+          telephone: '',
+          email: '',
+          remark: '',
+          globalRecvMsgOpt: 0,
+        ),
+      },
+    );
 
     await tester.pumpWidget(_buildHost(service));
     await tester.pump();
@@ -122,14 +118,13 @@ void main() {
   testWidgets('收到对方新消息后消息列表自动追加', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final service = MessageServiceNotifier();
-    service.state =
-      MessageServiceState(
-        currentUserId: 'user_a',
-        conversations: [_makeConversation()],
-        messages: {
-          _convId: [_makeMessage('m1', '旧消息', 1, 1000, 'user_b')],
-        },
-      );
+    service.state = MessageServiceState(
+      currentUserId: 'user_a',
+      conversations: [_makeConversation()],
+      messages: {
+        _convId: [_makeMessage('m1', '旧消息', 1, 1000, 'user_b')],
+      },
+    );
 
     await tester.pumpWidget(_buildHost(service));
     await tester.pump();
@@ -152,11 +147,10 @@ void main() {
   testWidgets('会话未读徽标随未读数变化', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final service = MessageServiceNotifier();
-    service.state =
-      MessageServiceState(
-        currentUserId: 'user_a',
-        conversations: [_makeConversation(unreadCount: 2)],
-      );
+    service.state = MessageServiceState(
+      currentUserId: 'user_a',
+      conversations: [_makeConversation(unreadCount: 2)],
+    );
 
     await tester.pumpWidget(_buildHost(service));
     await tester.pump();
