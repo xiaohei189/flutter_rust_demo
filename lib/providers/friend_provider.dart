@@ -4,7 +4,9 @@ import '../data/repositories/blacklist_repository.dart';
 import '../data/repositories/friend_application_repository.dart';
 import '../data/repositories/friend_repository.dart';
 import '../data/repositories/friend_search_repository.dart';
+import '../data/repositories/user_profile_repository.dart';
 import '../services/friend_service.dart';
+import '../services/user_service.dart';
 import '../ui/features/contacts/view_models/black_list_view_model.dart';
 import '../ui/features/contacts/view_models/friend_apply_view_model.dart';
 import '../ui/features/contacts/view_models/friend_list_view_model.dart';
@@ -68,6 +70,15 @@ final friendSearchRepositoryProvider = Provider<FriendSearchRepository>((ref) {
   return FriendSearchRepositoryImpl(
     friendService: FriendService.instance,
     imClient: ref.watch(imClientProvider),
+  );
+});
+
+/// 用户资料 Repository Provider
+final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
+  return UserProfileRepositoryImpl(
+    userService: UserService.instance,
+    friendRepository: ref.watch(friendRepositoryProvider),
+    friendSearchRepository: ref.watch(friendSearchRepositoryProvider),
   );
 });
 

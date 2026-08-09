@@ -29,8 +29,8 @@ class FriendApplicationRepositoryImpl implements FriendApplicationRepository {
     final received = await _friendService.getFriendApplyList(client);
     final sent = await _friendService.getFriendApplyListAsApplicant(client);
     return (
-      received: received.map(_toDomain).toList(growable: false),
-      sent: sent.map(_toDomain).toList(growable: false),
+      received: received.map(mapApplication).toList(growable: false),
+      sent: sent.map(mapApplication).toList(growable: false),
     );
   }
 
@@ -62,7 +62,7 @@ class FriendApplicationRepositoryImpl implements FriendApplicationRepository {
     return client;
   }
 
-  FriendApplication _toDomain(FriendApplyInfo item) {
+  static FriendApplication mapApplication(FriendApplyInfo item) {
     return FriendApplication(
       userId: item.userId,
       nickname: item.nickname,
@@ -77,7 +77,7 @@ class FriendApplicationRepositoryImpl implements FriendApplicationRepository {
     );
   }
 
-  DateTime? _epochOrNull(int epochMs) {
+  static DateTime? _epochOrNull(int epochMs) {
     if (epochMs <= 0) return null;
     return DateTime.fromMillisecondsSinceEpoch(epochMs);
   }

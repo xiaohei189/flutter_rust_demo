@@ -106,6 +106,7 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 - ViewModel 位于 `lib/ui/features/<feature>/view_models/`，通过构造函数注入 Repository，只暴露不可变状态和命令方法。
 - View 只负责渲染和路由/交互反馈，不直接访问 FFI client 或 Service。
 - Provider 只做依赖注册和状态桥接，不在 Provider 中实现数据获取。
+- Service 使用抽象接口 + 单例实现（如 `FriendService` / `FriendServiceImpl`），Repository 依赖接口以便单测注入 fake。
 
 ```dart
 class ChatListScreen extends ConsumerStatefulWidget {

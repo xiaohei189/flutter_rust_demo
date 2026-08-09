@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/message_service_notifier.dart';
+import '../ui/features/chat/view_models/message_service_notifier.dart';
 import 'message_service_provider.dart';
 
 /// 连接状态（避免与 Flutter 的 ConnectionState 冲突）

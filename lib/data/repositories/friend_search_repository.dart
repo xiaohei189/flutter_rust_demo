@@ -29,7 +29,7 @@ class FriendSearchRepositoryImpl implements FriendSearchRepository {
       client,
       keyword: keyword,
     );
-    return results.map(_toDomain).toList(growable: false);
+    return results.map(mapSearchResult).toList(growable: false);
   }
 
   @override
@@ -46,7 +46,7 @@ class FriendSearchRepositoryImpl implements FriendSearchRepository {
     return client;
   }
 
-  FriendSearchResult _toDomain(SearchFriendItem item) {
+  static FriendSearchResult mapSearchResult(SearchFriendItem item) {
     return FriendSearchResult(
       userId: item.friendUserId,
       nickname: item.nickname,
@@ -58,7 +58,7 @@ class FriendSearchRepositoryImpl implements FriendSearchRepository {
     );
   }
 
-  DateTime? _epochOrNull(int epochMs) {
+  static DateTime? _epochOrNull(int epochMs) {
     if (epochMs <= 0) return null;
     return DateTime.fromMillisecondsSinceEpoch(epochMs);
   }

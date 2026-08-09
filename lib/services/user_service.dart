@@ -4,6 +4,30 @@ import '../src/rust/model/user.dart' show UserInfo;
 import '../utils/app_logger.dart';
 import 'im_client.dart';
 
+abstract class UserService {
+  static UserService get instance => UserServiceImpl.instance;
+
+  void setCurrentUserId(String userId);
+  String get currentUserId;
+  UserInfo? get loginUserProfile;
+  Stream<UserInfo?> get loginUserStream;
+  Stream<Map<String, UserInfo>> get profilesStream;
+  UserInfo? getUserProfile(String userId);
+  List<UserInfo> getUserProfiles(List<String> userIds);
+  Future<UserInfo?> refreshLoginUserProfile();
+  Future<void> preloadUserProfiles(List<String> userIds);
+  Future<UserInfo?> fetchUserProfile(String userId);
+  Future<UserInfo?> updateLoginUserProfile({
+    String? nickname,
+    String? faceUrl,
+    String? ex,
+    int? globalRecvMsgOpt,
+  });
+  void clearCache();
+  void reset();
+  void dispose();
+}
+
 /// 用户服务 - 管理用户资料
 ///
 /// 职责：
@@ -11,11 +35,11 @@ import 'im_client.dart';
 /// 2. 更新当前登录用户资料
 /// 3. 批量预加载用户资料
 /// 4. 管理当前登录用户信息
-class UserService {
-  static final UserService _instance = UserService._internal();
+class UserServiceImpl implements UserService {
+  static final UserServiceImpl _instance = UserServiceImpl._internal();
 
   /// 全局单例实例
-  static UserService get instance => _instance;
+  static UserServiceImpl get instance => _instance;
 
   // 用户资料缓存
   final Map<String, UserInfo> _profiles = {};
@@ -30,31 +54,38 @@ class UserService {
 
   bool _isDisposed = false;
 
-  UserService._internal();
+  UserServiceImpl._internal();
 
   /// 设置当前用户ID
+  @override
   void setCurrentUserId(String userId) {
     _currentUserId = userId;
   }
 
   /// 获取当前用户ID
+  @override
   String get currentUserId => _currentUserId;
 
   /// 当前登录用户资料
+  @override
   UserInfo? get loginUserProfile => _loginUserProfile;
 
   /// 当前登录用户资料流
+  @override
   Stream<UserInfo?> get loginUserStream => _loginUserController.stream;
 
   /// 所有用户资料流
+  @override
   Stream<Map<String, UserInfo>> get profilesStream => _profilesController.stream;
 
   /// 获取指定用户资料
+  @override
   UserInfo? getUserProfile(String userId) {
     return _profiles[userId];
   }
 
   /// 获取多个用户资料
+  @override
   List<UserInfo> getUserProfiles(List<String> userIds) {
     return userIds
         .map((id) => _profiles[id])
@@ -64,6 +95,7 @@ class UserService {
   }
 
   /// 刷新当前登录用户资料
+  @override
   Future<UserInfo?> refreshLoginUserProfile() async {
     final client = ImClient.instance.client;
     if (client == null || _currentUserId.isEmpty) {
@@ -91,6 +123,7 @@ class UserService {
   }
 
   /// 批量预加载用户资料
+  @override
   Future<void> preloadUserProfiles(List<String> userIds) async {
     final client = ImClient.instance.client;
     if (client == null || userIds.isEmpty) return;
@@ -118,6 +151,7 @@ class UserService {
   }
 
   /// 获取单个用户资料（优先从缓存获取）
+  @override
   Future<UserInfo?> fetchUserProfile(String userId) async {
     // 先检查缓存
     if (_profiles.containsKey(userId)) {
@@ -143,6 +177,7 @@ class UserService {
   }
 
   /// 更新当前登录用户资料
+  @override
   Future<UserInfo?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
@@ -174,6 +209,7 @@ class UserService {
   }
 
   /// 清除缓存
+  @override
   void clearCache() {
     _profiles.clear();
     _loginUserProfile = null;
@@ -196,6 +232,7 @@ class UserService {
   }
 
   /// 重置状态
+  @override
   void reset() {
     _profiles.clear();
     _loginUserProfile = null;
@@ -203,6 +240,7 @@ class UserService {
   }
 
   /// 释放资源
+  @override
   void dispose() {
     _isDisposed = true;
     reset();

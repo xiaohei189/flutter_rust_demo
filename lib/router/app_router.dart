@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../screens/splash_screen.dart';
-import '../screens/login_screen.dart';
-import '../screens/main_screen.dart';
-import '../screens/chat_detail_screen.dart';
-import '../screens/chat_settings_screen.dart';
-import '../screens/group_info_screen.dart';
-import '../screens/my_profile_screen.dart'
+import '../ui/features/auth/views/splash_screen.dart';
+import '../ui/features/auth/views/login_screen.dart';
+import '../ui/core/main_screen.dart';
+import '../ui/features/chat/views/chat_detail_screen.dart';
+import '../ui/features/chat/views/chat_settings_screen.dart';
+import '../ui/features/groups/views/group_info_screen.dart';
+import '../ui/features/profile/views/my_profile_screen.dart'
     show MyProfileScreen, ProfileFieldEditScreen;
-import '../screens/search_screen.dart';
-import '../screens/user_profile_screen.dart';
+import '../ui/features/contacts/views/search_screen.dart';
+import '../ui/features/profile/views/user_profile_screen.dart';
 import '../ui/features/contacts/views/friend_list_screen.dart';
 import '../ui/features/contacts/views/friend_requests_screen.dart';
-import '../screens/friend_setup_screen.dart';
+import '../ui/features/contacts/views/friend_setup_screen.dart';
 import '../ui/features/groups/views/group_list_screen.dart';
-import '../screens/create_group_screen.dart';
-import '../screens/add_contact_screen.dart';
-import '../screens/contact_picker_screen.dart';
+import '../ui/features/groups/views/create_group_screen.dart';
+import '../ui/features/contacts/views/add_contact_screen.dart';
+import '../ui/features/contacts/views/contact_picker_screen.dart';
 import '../ui/features/contacts/views/blacklist_screen.dart';
-import '../screens/register_screen.dart';
-import '../screens/group_applications_screen.dart';
-import '../screens/account_settings_screen.dart';
-import '../screens/scan_screen.dart';
+import '../ui/features/auth/views/register_screen.dart';
+import '../ui/features/groups/views/group_applications_screen.dart';
+import '../ui/features/profile/views/account_settings_screen.dart';
+import '../ui/features/contacts/views/scan_screen.dart';
 import '../models/user.dart';
 import '../services/navigation_service.dart';
 import '../src/rust/model/local.dart' show LocalConversation;

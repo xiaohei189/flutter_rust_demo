@@ -40,6 +40,16 @@ class FakeFriendRepository implements FriendRepository {
     }
     deletedUserIds.add(userId);
   }
+
+  @override
+  Future<void> updateFriends(String userId, {String? remark}) async {
+    if (shouldFail) {
+      throw Exception('更新失败');
+    }
+  }
+
+  @override
+  Future<bool> isFriend(String userId) async => true;
 }
 
 const _friendA = Friend(

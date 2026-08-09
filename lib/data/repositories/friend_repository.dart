@@ -9,6 +9,8 @@ abstract class FriendRepository {
   Future<List<Friend>> loadFriends();
   Future<List<Friend>> searchFriends(String keyword);
   Future<void> deleteFriend(String userId);
+  Future<void> updateFriends(String userId, {String? remark});
+  Future<bool> isFriend(String userId);
 }
 
 class FriendRepositoryImpl implements FriendRepository {
@@ -25,7 +27,7 @@ class FriendRepositoryImpl implements FriendRepository {
   Future<List<Friend>> loadFriends() async {
     final client = _requireClient();
     final friends = await _friendService.getFriendList(client);
-    return friends.map(_fromFriendInfo).toList(growable: false);
+    return friends.map(mapFriendInfo).toList(growable: false);
   }
 
   @override
@@ -38,13 +40,29 @@ class FriendRepositoryImpl implements FriendRepository {
       client,
       keyword: keyword,
     );
-    return results.map(_fromSearchFriendItem).toList(growable: false);
+    return results.map(mapSearchFriendItem).toList(growable: false);
   }
 
   @override
   Future<void> deleteFriend(String userId) async {
     final client = _requireClient();
     await _friendService.deleteFriend(client, userId: userId);
+  }
+
+  @override
+  Future<void> updateFriends(String userId, {String? remark}) async {
+    final client = _requireClient();
+    await _friendService.updateFriends(
+      client,
+      friendUserIds: [userId],
+      remark: remark,
+    );
+  }
+
+  @override
+  Future<bool> isFriend(String userId) async {
+    final client = _requireClient();
+    return _friendService.isFriend(client, userId: userId);
   }
 
   OpenImBridgeClient _requireClient() {
@@ -55,7 +73,7 @@ class FriendRepositoryImpl implements FriendRepository {
     return client;
   }
 
-  Friend _fromFriendInfo(FriendInfo item) {
+  static Friend mapFriendInfo(FriendInfo item) {
     return Friend(
       userId: item.userId,
       nickname: item.nickname,
@@ -68,7 +86,7 @@ class FriendRepositoryImpl implements FriendRepository {
     );
   }
 
-  Friend _fromSearchFriendItem(SearchFriendItem item) {
+  static Friend mapSearchFriendItem(SearchFriendItem item) {
     return Friend(
       userId: item.friendUserId,
       nickname: item.nickname,
@@ -81,7 +99,7 @@ class FriendRepositoryImpl implements FriendRepository {
     );
   }
 
-  DateTime? _epochOrNull(int epochMs) {
+  static DateTime? _epochOrNull(int epochMs) {
     if (epochMs <= 0) return null;
     return DateTime.fromMillisecondsSinceEpoch(epochMs);
   }

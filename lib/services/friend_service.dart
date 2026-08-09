@@ -7,6 +7,105 @@ import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show FriendApplyInfo;
 import 'package:flutter_rust_demo/utils/app_logger.dart';
 
+abstract class FriendService {
+  static FriendService get instance => FriendServiceImpl.instance;
+
+  Future<void> addFriend(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+    required String reqMsg,
+  });
+
+  Future<void> acceptFriendApplication(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+    String? handleMsg,
+  });
+
+  Future<void> refuseFriendApplication(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+    String? handleMsg,
+  });
+
+  Future<List<FriendApplyInfo>> getFriendApplyList(
+    fb.OpenImBridgeClient client,
+  );
+
+  Future<List<FriendApplyInfo>> getFriendApplyListAsApplicant(
+    fb.OpenImBridgeClient client,
+  );
+
+  Future<int> getFriendApplicationUnhandledCount(
+    fb.OpenImBridgeClient client,
+  );
+
+  Future<List<FriendInfo>> getFriendList(
+    fb.OpenImBridgeClient client, {
+    bool filterBlack = true,
+  });
+
+  Future<List<FriendInfo>> getFriendListPage(
+    fb.OpenImBridgeClient client, {
+    required int offset,
+    required int count,
+    bool filterBlack = true,
+  });
+
+  Future<List<String>> getFriendIdList(fb.OpenImBridgeClient client);
+
+  Future<List<FriendInfo>> getSpecifiedFriendsInfo(
+    fb.OpenImBridgeClient client, {
+    required List<String> friendUserIds,
+    bool filterBlack = true,
+  });
+
+  Future<bool> isFriend(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+  });
+
+  Future<List<CheckFriendResult>> checkFriend(
+    fb.OpenImBridgeClient client, {
+    required List<String> userIds,
+  });
+
+  Future<List<SearchFriendItem>> searchFriends(
+    fb.OpenImBridgeClient client, {
+    required String keyword,
+  });
+
+  Future<void> deleteFriend(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+  });
+
+  Future<void> updateFriends(
+    fb.OpenImBridgeClient client, {
+    required List<String> friendUserIds,
+    bool? isPinned,
+    String? remark,
+    String? ex,
+  });
+
+  Future<void> addBlack(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+  });
+
+  Future<void> removeBlack(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+  });
+
+  Future<List<String>> getBlackList(fb.OpenImBridgeClient client);
+
+  Future<bool> isInBlacklist(
+    fb.OpenImBridgeClient client, {
+    required String userId,
+  });
+}
+
 /// 好友服务 - 封装好友相关 FFI 调用
 ///
 /// 职责：
@@ -14,17 +113,18 @@ import 'package:flutter_rust_demo/utils/app_logger.dart';
 /// 2. 好友列表（获取/分页/搜索）
 /// 3. 黑名单管理
 /// 4. 好友信息更新
-class FriendService {
-  static final FriendService _instance = FriendService._internal();
+class FriendServiceImpl implements FriendService {
+  static final FriendServiceImpl _instance = FriendServiceImpl._internal();
 
   /// 全局单例实例
-  static FriendService get instance => _instance;
+  static FriendServiceImpl get instance => _instance;
 
-  FriendService._internal();
+  FriendServiceImpl._internal();
 
   // ==================== 好友申请 ====================
 
   /// 添加好友
+  @override
   Future<void> addFriend(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -41,6 +141,7 @@ class FriendService {
   }
 
   /// 接受好友申请
+  @override
   Future<void> acceptFriendApplication(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -60,6 +161,7 @@ class FriendService {
   }
 
   /// 拒绝好友申请
+  @override
   Future<void> refuseFriendApplication(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -79,6 +181,7 @@ class FriendService {
   }
 
   /// 获取收到的好友申请列表
+  @override
   Future<List<FriendApplyInfo>> getFriendApplyList(
     fb.OpenImBridgeClient client,
   ) async {
@@ -93,6 +196,7 @@ class FriendService {
   }
 
   /// 获取我发出的好友申请列表
+  @override
   Future<List<FriendApplyInfo>> getFriendApplyListAsApplicant(
     fb.OpenImBridgeClient client,
   ) async {
@@ -107,6 +211,7 @@ class FriendService {
   }
 
   /// 获取未处理的好友申请数量
+  @override
   Future<int> getFriendApplicationUnhandledCount(
     fb.OpenImBridgeClient client,
   ) async {
@@ -123,6 +228,7 @@ class FriendService {
   // ==================== 好友列表 ====================
 
   /// 获取好友列表
+  @override
   Future<List<FriendInfo>> getFriendList(
     fb.OpenImBridgeClient client, {
     bool filterBlack = true,
@@ -138,6 +244,7 @@ class FriendService {
   }
 
   /// 分页获取好友列表
+  @override
   Future<List<FriendInfo>> getFriendListPage(
     fb.OpenImBridgeClient client, {
     required int offset,
@@ -160,6 +267,7 @@ class FriendService {
   }
 
   /// 获取好友 ID 列表
+  @override
   Future<List<String>> getFriendIdList(
     fb.OpenImBridgeClient client,
   ) async {
@@ -174,6 +282,7 @@ class FriendService {
   }
 
   /// 获取指定好友信息
+  @override
   Future<List<FriendInfo>> getSpecifiedFriendsInfo(
     fb.OpenImBridgeClient client, {
     required List<String> friendUserIds,
@@ -194,6 +303,7 @@ class FriendService {
   }
 
   /// 检查是否是好友
+  @override
   Future<bool> isFriend(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -208,6 +318,7 @@ class FriendService {
   }
 
   /// 批量检查好友关系
+  @override
   Future<List<CheckFriendResult>> checkFriend(
     fb.OpenImBridgeClient client, {
     required List<String> userIds,
@@ -224,6 +335,7 @@ class FriendService {
   }
 
   /// 搜索好友（本地 SQLite 模糊查询）
+  @override
   Future<List<SearchFriendItem>> searchFriends(
     fb.OpenImBridgeClient client, {
     required String keyword,
@@ -239,6 +351,7 @@ class FriendService {
   }
 
   /// 删除好友
+  @override
   Future<void> deleteFriend(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -254,6 +367,7 @@ class FriendService {
   }
 
   /// 更新好友信息
+  @override
   Future<void> updateFriends(
     fb.OpenImBridgeClient client, {
     required List<String> friendUserIds,
@@ -279,6 +393,7 @@ class FriendService {
   // ==================== 黑名单 ====================
 
   /// 加入黑名单
+  @override
   Future<void> addBlack(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -294,6 +409,7 @@ class FriendService {
   }
 
   /// 移出黑名单
+  @override
   Future<void> removeBlack(
     fb.OpenImBridgeClient client, {
     required String userId,
@@ -309,6 +425,7 @@ class FriendService {
   }
 
   /// 获取黑名单列表
+  @override
   Future<List<String>> getBlackList(
     fb.OpenImBridgeClient client,
   ) async {
@@ -323,6 +440,7 @@ class FriendService {
   }
 
   /// 检查是否在黑名单中
+  @override
   Future<bool> isInBlacklist(
     fb.OpenImBridgeClient client, {
     required String userId,

@@ -2,11 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/group_repository.dart';
 import '../services/group_service.dart';
-import '../src/rust/ffi/client.dart' as fb;
-import '../src/rust/model/group.dart' show GroupInfo, GroupMember;
-import '../src/rust/http/group.dart' show GroupApplyInfo;
+import '../ui/features/groups/view_models/create_group_view_model.dart';
+import '../ui/features/groups/view_models/group_application_view_model.dart';
 import '../ui/features/groups/view_models/group_list_view_model.dart';
-import '../utils/app_logger.dart';
+import '../ui/features/groups/view_models/group_member_view_model.dart';
 import 'im_providers.dart';
 import 'message_service_provider.dart';
 
@@ -36,455 +35,49 @@ final groupListProvider =
 
 // ==================== 群成员 Provider ====================
 
-/// 群成员列表状态
-class GroupMemberState {
-  final List<GroupMember> members;
-  final bool isLoading;
-  final String? error;
-
-  const GroupMemberState({
-    this.members = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  GroupMemberState copyWith({
-    List<GroupMember>? members,
-    bool? isLoading,
-    String? error,
-  }) {
-    return GroupMemberState(
-      members: members ?? this.members,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-}
-
-/// 群成员 Notifier（按群组 ID 区分）
-class GroupMemberNotifier extends StateNotifier<GroupMemberState> {
-  GroupMemberNotifier(this._ref, this._groupId)
-    : super(const GroupMemberState()) {
-    _init();
-  }
-
-  final Ref _ref;
-  final String _groupId;
-
-  void _init() {
-    _ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision) {
-        loadMembers();
-      }
-    });
-  }
-
-  /// 获取客户端实例
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载群成员列表
-  Future<void> loadMembers() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final members = await GroupService.instance.getGroupMembers(
-        client,
-        groupId: _groupId,
-      );
-      state = state.copyWith(members: members, isLoading: false);
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 加载群成员失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载群成员失败: $e');
-    }
-  }
-
-  /// 邀请成员加入群组
-  Future<bool> inviteMembers(List<String> memberIds) async {
-    final client = _client;
-    if (client == null) return false;
-
-    try {
-      await GroupService.instance.inviteGroupMembers(
-        client,
-        groupId: _groupId,
-        memberIds: memberIds,
-      );
-      // 邀请成功后重新加载成员列表
-      await loadMembers();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 邀请成员失败: $e');
-      state = state.copyWith(error: '邀请成员失败: $e');
-      return false;
-    }
-  }
-
-  /// 踢出群成员
-  Future<bool> kickMembers(List<String> memberIds) async {
-    final client = _client;
-    if (client == null) return false;
-
-    try {
-      await GroupService.instance.kickGroupMembers(
-        client,
-        groupId: _groupId,
-        memberIds: memberIds,
-      );
-      // 踢出成功后重新加载成员列表
-      await loadMembers();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 踢出成员失败: $e');
-      state = state.copyWith(error: '踢出成员失败: $e');
-      return false;
-    }
-  }
-
-  /// 禁言单个群成员
-  Future<bool> muteMember(String userId, int mutedSeconds) async {
-    final client = _client;
-    if (client == null) return false;
-    try {
-      await GroupService.instance.muteGroupMember(
-        client,
-        groupId: _groupId,
-        userId: userId,
-        mutedSeconds: mutedSeconds,
-      );
-      await loadMembers();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 禁言成员失败: $e');
-      state = state.copyWith(error: '禁言成员失败: $e');
-      return false;
-    }
-  }
-
-  /// 取消群成员禁言
-  Future<bool> unmuteMember(String userId) async {
-    return muteMember(userId, 0);
-  }
-
-  /// 转让群主
-  Future<bool> transferOwner(String newOwnerUserId) async {
-    final client = _client;
-    if (client == null) return false;
-    try {
-      await GroupService.instance.transferGroupOwner(
-        client,
-        groupId: _groupId,
-        newOwnerUserId: newOwnerUserId,
-      );
-      await loadMembers();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 转让群主失败: $e');
-      state = state.copyWith(error: '转让群主失败: $e');
-      return false;
-    }
-  }
-
-  /// 解散群组
-  Future<bool> dismissGroup() async {
-    final client = _client;
-    if (client == null) return false;
-    try {
-      await GroupService.instance.dismissGroup(client, groupId: _groupId);
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 解散群组失败: $e');
-      state = state.copyWith(error: '解散群组失败: $e');
-      return false;
-    }
-  }
-
-  /// 全员禁言/解除禁言
-  Future<bool> muteAll(bool isMute) async {
-    final client = _client;
-    if (client == null) return false;
-    try {
-      await GroupService.instance.muteGroup(
-        client,
-        groupId: _groupId,
-        isMute: isMute,
-      );
-      await loadMembers();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupMemberProvider] 全员禁言失败: $e');
-      state = state.copyWith(error: '全员禁言失败: $e');
-      return false;
-    }
-  }
-}
-
 /// 群成员 Provider（Family，按群组 ID）
 final groupMemberProvider =
-    StateNotifierProvider.family<GroupMemberNotifier, GroupMemberState, String>(
-      (ref, groupId) {
-        return GroupMemberNotifier(ref, groupId);
-      },
-    );
+    StateNotifierProvider.family<
+      GroupMemberViewModel,
+      GroupMemberState,
+      String
+    >((ref, groupId) {
+      final viewModel = GroupMemberViewModel(
+        repository: ref.watch(groupRepositoryProvider),
+        groupId: groupId,
+      );
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.groupRevision != next.groupRevision) {
+          viewModel.loadMembers();
+        }
+      });
+      return viewModel;
+    });
 
 // ==================== 群申请 Provider ====================
 
-/// 群申请列表状态
-class GroupApplicationState {
-  final List<GroupApplyInfo> received;
-  final List<GroupApplyInfo> sent;
-  final bool isLoading;
-  final String? error;
-
-  const GroupApplicationState({
-    this.received = const [],
-    this.sent = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  GroupApplicationState copyWith({
-    List<GroupApplyInfo>? received,
-    List<GroupApplyInfo>? sent,
-    bool? isLoading,
-    String? error,
-  }) {
-    return GroupApplicationState(
-      received: received ?? this.received,
-      sent: sent ?? this.sent,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
-
-  /// 未处理的申请数量
-  int get unhandledCount => received.where((a) => a.handleResult == 0).length;
-}
-
-/// 群申请 Notifier
-class GroupApplicationNotifier extends StateNotifier<GroupApplicationState> {
-  GroupApplicationNotifier(this._ref) : super(const GroupApplicationState()) {
-    _init();
-  }
-
-  final Ref _ref;
-
-  void _init() {
-    _ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision) {
-        loadApplications();
-      }
-    });
-  }
-
-  /// 获取客户端实例
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 加载群申请列表（同时获取收到的和发出的）
-  Future<void> loadApplications() async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final results = await Future.wait([
-        GroupService.instance.getGroupApplicationListAsRecipient(client),
-        GroupService.instance.getGroupApplicationListAsApplicant(client),
-      ]);
-      state = state.copyWith(
-        received: results[0],
-        sent: results[1],
-        isLoading: false,
-      );
-    } catch (e) {
-      appLog.e('[GroupApplicationProvider] 加载群申请列表失败: $e');
-      state = state.copyWith(isLoading: false, error: '加载群申请列表失败: $e');
-    }
-  }
-
-  /// 接受群申请
-  Future<bool> acceptApplication({
-    required String groupId,
-    required String userId,
-    String? handleMsg,
-  }) async {
-    final client = _client;
-    if (client == null) return false;
-
-    try {
-      await GroupService.instance.acceptGroupApplication(
-        client,
-        groupId: groupId,
-        userId: userId,
-        handleMsg: handleMsg,
-      );
-      // 接受后重新加载列表
-      await loadApplications();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupApplicationProvider] 接受群申请失败: $e');
-      state = state.copyWith(error: '接受群申请失败: $e');
-      return false;
-    }
-  }
-
-  /// 拒绝群申请
-  Future<bool> refuseApplication({
-    required String groupId,
-    required String userId,
-    String? handleMsg,
-  }) async {
-    final client = _client;
-    if (client == null) return false;
-
-    try {
-      await GroupService.instance.refuseGroupApplication(
-        client,
-        groupId: groupId,
-        userId: userId,
-        handleMsg: handleMsg,
-      );
-      // 拒绝后重新加载列表
-      await loadApplications();
-      return true;
-    } catch (e) {
-      appLog.e('[GroupApplicationProvider] 拒绝群申请失败: $e');
-      state = state.copyWith(error: '拒绝群申请失败: $e');
-      return false;
-    }
-  }
-}
-
 /// 群申请列表 Provider
 final groupApplicationProvider =
-    StateNotifierProvider<GroupApplicationNotifier, GroupApplicationState>((
+    StateNotifierProvider<GroupApplicationViewModel, GroupApplicationState>((
       ref,
     ) {
-      return GroupApplicationNotifier(ref);
+      final viewModel = GroupApplicationViewModel(
+        repository: ref.watch(groupRepositoryProvider),
+      );
+      ref.listen(messageServiceProvider, (prev, next) {
+        if (prev?.groupRevision != next.groupRevision) {
+          viewModel.loadApplications();
+        }
+      });
+      return viewModel;
     });
 
 // ==================== 创建群组 Provider ====================
 
-/// 创建群组状态
-class CreateGroupState {
-  final bool isCreating;
-  final GroupInfo? createdGroup;
-  final List<String> selectedMemberIds;
-  final String? error;
-
-  const CreateGroupState({
-    this.isCreating = false,
-    this.createdGroup,
-    this.selectedMemberIds = const [],
-    this.error,
-  });
-
-  CreateGroupState copyWith({
-    bool? isCreating,
-    GroupInfo? createdGroup,
-    List<String>? selectedMemberIds,
-    String? error,
-    bool clearCreatedGroup = false,
-  }) {
-    return CreateGroupState(
-      isCreating: isCreating ?? this.isCreating,
-      createdGroup: clearCreatedGroup
-          ? null
-          : (createdGroup ?? this.createdGroup),
-      selectedMemberIds: selectedMemberIds ?? this.selectedMemberIds,
-      error: error,
-    );
-  }
-}
-
-/// 创建群组 Notifier
-class CreateGroupNotifier extends StateNotifier<CreateGroupState> {
-  CreateGroupNotifier(this._ref) : super(const CreateGroupState());
-
-  final Ref _ref;
-
-  /// 获取客户端实例
-  fb.OpenImBridgeClient? get _client =>
-      _ref.read(messageServiceProvider.notifier).client;
-
-  /// 设置已选成员列表
-  void setSelectedMembers(List<String> memberIds) {
-    state = state.copyWith(selectedMemberIds: memberIds);
-  }
-
-  /// 添加一个已选成员
-  void addSelectedMember(String userId) {
-    if (!state.selectedMemberIds.contains(userId)) {
-      state = state.copyWith(
-        selectedMemberIds: [...state.selectedMemberIds, userId],
-      );
-    }
-  }
-
-  /// 移除一个已选成员
-  void removeSelectedMember(String userId) {
-    state = state.copyWith(
-      selectedMemberIds: state.selectedMemberIds
-          .where((id) => id != userId)
-          .toList(),
-    );
-  }
-
-  /// 创建群组
-  Future<GroupInfo?> createGroup({
-    required String groupName,
-    required int groupType,
-  }) async {
-    final client = _client;
-    if (client == null) {
-      state = state.copyWith(error: '客户端未初始化');
-      return null;
-    }
-
-    if (state.selectedMemberIds.isEmpty) {
-      state = state.copyWith(error: '请至少选择一名成员');
-      return null;
-    }
-
-    state = state.copyWith(isCreating: true, error: null);
-    try {
-      final group = await GroupService.instance.createGroup(
-        client,
-        groupName: groupName,
-        groupType: groupType,
-        memberIds: state.selectedMemberIds,
-      );
-      state = state.copyWith(
-        isCreating: false,
-        createdGroup: group,
-        selectedMemberIds: [],
-      );
-      appLog.i('[CreateGroupProvider] 创建群组成功: ${group.groupId}');
-      return group;
-    } catch (e) {
-      appLog.e('[CreateGroupProvider] 创建群组失败: $e');
-      state = state.copyWith(isCreating: false, error: '创建群组失败: $e');
-      return null;
-    }
-  }
-
-  /// 重置状态
-  void reset() {
-    state = const CreateGroupState();
-  }
-}
-
 /// 创建群组 Provider
 final createGroupProvider =
-    StateNotifierProvider<CreateGroupNotifier, CreateGroupState>((ref) {
-      return CreateGroupNotifier(ref);
+    StateNotifierProvider<CreateGroupViewModel, CreateGroupState>((ref) {
+      return CreateGroupViewModel(
+        repository: ref.watch(groupRepositoryProvider),
+      );
     });

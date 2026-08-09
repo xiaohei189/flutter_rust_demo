@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/data/repositories/group_repository.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
 import 'package:flutter_rust_demo/ui/features/groups/view_models/group_list_view_model.dart';
+import 'fake_group_repository.dart';
 
-class FakeGroupRepository implements GroupRepository {
+class FakeGroupRepository extends BaseFakeGroupRepository {
   FakeGroupRepository({this.groups = const [], this.shouldFail = false});
 
   final List<Group> groups;

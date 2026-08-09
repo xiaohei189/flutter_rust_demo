@@ -121,7 +121,7 @@ lib/
             └── views/
 ```
 
-当前好友列表、好友申请、好友搜索、黑名单和群组列表已按该结构落地：`lib/domain/models/friend.dart`、`lib/domain/models/friend_application.dart`、`lib/domain/models/friend_search_result.dart`、`lib/domain/models/blacklist_user.dart`、`lib/domain/models/group.dart`、`lib/data/repositories/`、`lib/ui/features/contacts/`、`lib/ui/features/groups/`。其余 feature 按同一模式渐进迁移。
+当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/features/contacts/`、`lib/ui/features/groups/`、`lib/ui/features/chat/`、`lib/ui/features/auth/`、`lib/ui/features/profile/`、`lib/ui/features/discover/`，应用壳在 `lib/ui/core/`。数据层统一走 `lib/data/repositories/`，`MessageServiceNotifier` 位于 `lib/ui/features/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
 
 ### Rust 侧 (`rust/src/`)
 

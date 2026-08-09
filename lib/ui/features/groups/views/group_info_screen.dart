@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/user.dart';
-import '../providers/providers.dart';
-import '../router/app_router.dart';
-import '../services/services.dart';
-import '../src/rust/model/local.dart' show LocalConversation;
-import '../src/rust/model/group.dart' show GroupMember;
-import '../theme/app_theme.dart';
-import '../widgets/card_layout.dart';
-import '../widgets/list_row.dart';
-import '../widgets/user_avatar.dart';
-import '../screens/qr_code_screen.dart';
+import '../../../../domain/models/group_member.dart';
+import '../../../../models/user.dart';
+import '../../../../providers/providers.dart';
+import '../../../../router/app_router.dart';
+import '../../../../ui/features/profile/views/qr_code_screen.dart';
+import '../../../../services/services.dart';
+import '../../../../src/rust/model/local.dart' show LocalConversation;
+import '../../../../theme/app_theme.dart';
+import '../../../../widgets/card_layout.dart';
+import '../../../../widgets/list_row.dart';
+import '../../../../widgets/user_avatar.dart';
 
 enum _JoinTimeFilter { all, today, week, month }
 
@@ -118,7 +118,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           keyword.isEmpty ||
           m.nickname.toLowerCase().contains(keyword) ||
           m.userId.toLowerCase().contains(keyword);
-      final rawJoinTime = m.joinTime.toInt();
+      final rawJoinTime = m.joinTimeMs;
       final joinTime = rawJoinTime > 946684800000
           ? rawJoinTime
           : rawJoinTime * 1000;
@@ -447,30 +447,21 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _setAdmin(GroupMember member, bool isAdmin) async {
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null) return;
-    try {
-      await GroupService.instance.setGroupMemberInfo(
-        client,
-        groupId: _groupId,
-        userId: member.userId,
-        roleLevel: isAdmin ? 2 : 1,
+    final ok = await ref
+        .read(groupMemberProvider(_groupId).notifier)
+        .setMemberRole(member.userId, isAdmin ? 2 : 1);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isAdmin ? '已设为管理员' : '已取消管理员'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
-      await ref.read(groupMemberProvider(_groupId).notifier).loadMembers();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isAdmin ? '已设为管理员' : '已取消管理员'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('设置管理员失败: $e')));
-      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('设置管理员失败')));
     }
   }
 
@@ -879,14 +870,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       ),
     );
     if (url == null || url.isEmpty) return;
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null) return;
     try {
-      await GroupService.instance.setGroupInfo(
-        client,
-        groupId: _groupId,
-        faceUrl: url,
-      );
+      await ref
+          .read(groupRepositoryProvider)
+          .setGroupInfo(_groupId, faceUrl: url);
       await ref.read(conversationListProvider.notifier).refreshConversations();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -953,14 +940,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _saveGroupName(String value) async {
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null) return;
     try {
-      await GroupService.instance.setGroupInfo(
-        client,
-        groupId: _groupId,
-        groupName: value,
-      );
+      await ref
+          .read(groupRepositoryProvider)
+          .setGroupInfo(_groupId, groupName: value);
       if (mounted) {
         setState(() => _groupName = value);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -980,14 +963,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _saveGroupDescription(String value) async {
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null) return;
     try {
-      await GroupService.instance.setGroupInfo(
-        client,
-        groupId: _groupId,
-        introduction: value,
-      );
+      await ref
+          .read(groupRepositoryProvider)
+          .setGroupInfo(_groupId, introduction: value);
       if (mounted) {
         setState(() => _groupDescription = value.isEmpty ? '暂无描述' : value);
         ScaffoldMessenger.of(context).showSnackBar(

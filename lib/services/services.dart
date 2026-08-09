@@ -8,7 +8,7 @@
 export 'im_client.dart';
 export 'connection_service.dart';
 export 'conversation_service.dart';
-export 'message_service_notifier.dart';
+export '../ui/features/chat/view_models/message_service_notifier.dart';
 export 'user_service.dart';
 export 'navigation_service.dart';
 export 'permission_service.dart';

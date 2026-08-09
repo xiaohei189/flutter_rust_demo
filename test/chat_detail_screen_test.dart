@@ -6,8 +6,9 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:flutter_rust_demo/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/providers/user_profile_provider.dart';
-import 'package:flutter_rust_demo/screens/chat_detail_screen.dart';
-import 'package:flutter_rust_demo/services/message_service_notifier.dart';
+import 'package:flutter_rust_demo/ui/features/chat/views/chat_detail_screen.dart';
+import 'package:flutter_rust_demo/ui/features/chat/view_models/message_service_notifier.dart';
+import 'fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/local.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart';
@@ -86,7 +87,7 @@ void main() {
 
   testWidgets('进入会话后渲染会话名和已有消息', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier();
+    final service = MessageServiceNotifier(repository: FakeMessageRepository());
     service.state = MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation()],
@@ -117,7 +118,7 @@ void main() {
 
   testWidgets('收到对方新消息后消息列表自动追加', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier();
+    final service = MessageServiceNotifier(repository: FakeMessageRepository());
     service.state = MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation()],
@@ -146,7 +147,7 @@ void main() {
 
   testWidgets('会话未读徽标随未读数变化', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier();
+    final service = MessageServiceNotifier(repository: FakeMessageRepository());
     service.state = MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation(unreadCount: 2)],
