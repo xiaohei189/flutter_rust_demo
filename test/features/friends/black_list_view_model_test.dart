@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/blacklist_repository.dart';
 import 'package:flutter_rust_demo/domain/models/blacklist_user.dart';
-import 'package:flutter_rust_demo/ui/features/contacts/view_models/black_list_view_model.dart';
+import 'package:flutter_rust_demo/ui/contacts/view_models/black_list_view_model.dart';
 
 class FakeBlacklistRepository implements BlacklistRepository {
   FakeBlacklistRepository({this.users = const [], this.shouldFail = false});

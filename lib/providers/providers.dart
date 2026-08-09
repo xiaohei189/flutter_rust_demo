@@ -11,3 +11,5 @@ export 'user_profile_provider.dart';
 export 'group_provider.dart';
 export 'friend_provider.dart';
 export 'online_status_provider.dart';
+export 'settings_provider.dart';
+export 'chat_aux_provider.dart';

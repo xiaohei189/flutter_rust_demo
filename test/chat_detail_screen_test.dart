@@ -6,8 +6,9 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:flutter_rust_demo/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/providers/user_profile_provider.dart';
-import 'package:flutter_rust_demo/ui/features/chat/views/chat_detail_screen.dart';
-import 'package:flutter_rust_demo/ui/features/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
+import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/local.dart';

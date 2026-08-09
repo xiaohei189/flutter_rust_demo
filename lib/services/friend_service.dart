@@ -5,7 +5,7 @@ import 'package:flutter_rust_demo/src/rust/model/friend.dart'
     show FriendInfo;
 import 'package:flutter_rust_demo/src/rust/http/friend.dart'
     show FriendApplyInfo;
-import 'package:flutter_rust_demo/utils/app_logger.dart';
+import 'package:flutter_rust_demo/ui/core/utils/app_logger.dart';
 
 abstract class FriendService {
   static FriendService get instance => FriendServiceImpl.instance;

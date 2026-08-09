@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_repository.dart';
 import 'package:flutter_rust_demo/domain/models/friend.dart';
-import 'package:flutter_rust_demo/ui/features/contacts/view_models/friend_list_view_model.dart';
+import 'package:flutter_rust_demo/ui/contacts/view_models/friend_list_view_model.dart';
 
 class FakeFriendRepository implements FriendRepository {
   FakeFriendRepository({List<Friend>? friends, this.shouldFail = false})

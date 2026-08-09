@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/models/message.dart';
-import 'package:flutter_rust_demo/models/message_ext.dart';
+import 'package:flutter_rust_demo/domain/models/message.dart';
+import 'package:flutter_rust_demo/domain/models/message_ext.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart'
     show MessageInfo;
 

@@ -9,14 +9,14 @@ import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart'
     show setLogDirectory;
 
 import 'router/app_router.dart';
-import 'theme/app_theme.dart';
-import 'utils/host_config.dart';
+import 'ui/core/theme/app_theme.dart';
+import 'ui/core/utils/host_config.dart';
 import 'services/im_client.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/locale_service.dart';
 import 'src/rust/ffi/global.dart' show setAppBackgroundStatus;
-import 'widgets/app_lock_gate.dart';
+import 'ui/core/widgets/app_lock_gate.dart';
 
 /// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';

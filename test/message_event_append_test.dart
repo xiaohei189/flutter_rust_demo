@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/ui/features/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
 import 'fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart';

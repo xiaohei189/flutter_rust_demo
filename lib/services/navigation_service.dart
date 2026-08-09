@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/user.dart';
+import '../domain/models/user.dart';
 import '../src/rust/model/local.dart';
 
 /// 导航服务 - 封装导航逻辑，提供统一的导航方法

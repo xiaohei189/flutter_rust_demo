@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../src/rust/event/events/conversation.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
-import '../utils/app_logger.dart';
+import '../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 
 /// 会话同步状态

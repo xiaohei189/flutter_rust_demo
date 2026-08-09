@@ -7,10 +7,10 @@ import '../data/repositories/friend_search_repository.dart';
 import '../data/repositories/user_profile_repository.dart';
 import '../services/friend_service.dart';
 import '../services/user_service.dart';
-import '../ui/features/contacts/view_models/black_list_view_model.dart';
-import '../ui/features/contacts/view_models/friend_apply_view_model.dart';
-import '../ui/features/contacts/view_models/friend_list_view_model.dart';
-import '../ui/features/contacts/view_models/friend_search_view_model.dart';
+import '../ui/contacts/view_models/black_list_view_model.dart';
+import '../ui/contacts/view_models/friend_apply_view_model.dart';
+import '../ui/contacts/view_models/friend_list_view_model.dart';
+import '../ui/contacts/view_models/friend_search_view_model.dart';
 import 'im_providers.dart';
 import 'message_service_provider.dart';
 

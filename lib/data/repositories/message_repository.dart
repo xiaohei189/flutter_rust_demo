@@ -20,6 +20,8 @@ abstract class MessageRepository {
     String? ex,
   });
 
+  Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt});
+
   Future<GetHistoryMessagesResult> getHistoryMessages({
     required String conversationId,
     required String startClientMsgId,
@@ -199,6 +201,11 @@ class MessageRepositoryImpl implements MessageRepository {
       faceUrl: faceUrl,
       ex: ex,
     );
+  }
+
+  @override
+  Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt}) {
+    return _client.setGlobalMsgRecvOpt(globalRecvOpt: globalRecvOpt);
   }
 
   @override

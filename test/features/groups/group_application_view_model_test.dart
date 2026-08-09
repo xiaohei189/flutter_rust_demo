@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/group_application.dart';
-import 'package:flutter_rust_demo/ui/features/groups/view_models/group_application_view_model.dart';
+import 'package:flutter_rust_demo/ui/groups/view_models/group_application_view_model.dart';
 import 'fake_group_repository.dart';
 
 class FakeGroupRepository extends BaseFakeGroupRepository {

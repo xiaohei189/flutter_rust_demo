@@ -11,7 +11,7 @@ import '../src/rust/event/events/group.dart';
 import '../src/rust/event/events/message.dart';
 import '../src/rust/event/events/user.dart';
 import '../src/rust/client/config.dart';
-import '../utils/app_logger.dart';
+import '../ui/core/utils/app_logger.dart';
 
 /// IM 客户端管理 - 负责 OpenImBridgeClient 的创建和管理
 /// 

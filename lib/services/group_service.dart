@@ -1,7 +1,7 @@
 import '../src/rust/ffi/client.dart' as fb;
 import '../src/rust/model/group.dart' show GroupInfo, GroupMember;
 import '../src/rust/http/group.dart' show GroupApplyInfo;
-import '../utils/app_logger.dart';
+import '../ui/core/utils/app_logger.dart';
 
 abstract class GroupService {
   static GroupService get instance => GroupServiceImpl.instance;

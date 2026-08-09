@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../../router/app_router.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/user_avatar.dart';
-import '../../models/user.dart';
-import '../../ui/features/chat/views/chat_list_screen.dart';
-import '../../ui/features/contacts/views/contacts_screen.dart';
-import '../features/discover/views/discover_screen.dart';
+import '../../ui/core/theme/app_theme.dart';
+import '../../ui/core/widgets/user_avatar.dart';
+import '../../domain/models/user.dart';
+import '../../ui/chat/views/chat_list_screen.dart';
+import '../../ui/contacts/views/contacts_screen.dart';
+import '../discover/views/discover_screen.dart';
 
 /// 主页面 - 底部 Tab：消息、通讯录、发现、我的
 class MainScreen extends StatefulWidget {

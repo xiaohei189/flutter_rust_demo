@@ -83,17 +83,17 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 | 目录 | 用途 |
 |------|------|
 | `lib/screens/` | 21 个 Flutter 页面 |
-| `lib/widgets/` | 18 个可复用 UI 组件 |
+| `lib/ui/core/widgets/` | 18 个可复用 UI 组件 |
 | `lib/services/` | 13 个业务服务（IM 客户端、消息、用户等） |
 | `lib/providers/` | Riverpod 状态管理 |
 | `lib/data/` | 数据层：Repository 等（好友功能已作为 pilot 落地） |
 | `lib/domain/` | 领域层：领域模型、Use Case |
-| `lib/ui/features/` | feature 化 UI：views、view_models |
-| `lib/models/` | Freezed 数据模型 |
+| `lib/ui/` | feature 化 UI：views、view_models |
+| `lib/domain/models/` | Freezed 数据模型 |
 | `lib/router/` | go_router 路由配置 |
-| `lib/theme/` | AppTheme 颜色/样式 |
-| `lib/utils/` | 工具类（日志、存储） |
-| `lib/extensions/` | 扩展方法 |
+| `lib/ui/core/theme/` | AppTheme 颜色/样式 |
+| `lib/ui/core/utils/` | 工具类（日志、存储） |
+| `lib/ui/core/extensions/` | 扩展方法 |
 | `lib/src/rust/` | flutter_rust_bridge 自动生成的 Dart 绑定 |
 
 ### 目标目录结构（渐进迁移）
@@ -101,7 +101,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 UI 按 feature 组织，Data/Domain 按类型组织，依赖方向固定为：
 
 ```text
-UI (views/view_models) -> Domain (models/use_cases) -> Data (repositories/services) -> FFI
+UI (views/view_models) -> Domain (domain/models/use_cases) -> Data (repositories/services) -> FFI
 ```
 
 ```text
@@ -114,14 +114,18 @@ lib/
 │   ├── models/         # 领域模型
 │   └── use_cases/      # 复杂业务逻辑（按需）
 └── ui/
-    ├── core/           # 共享 widgets、theme、通用组件
-    └── features/
-        └── [feature_name]/
-            ├── view_models/
-            └── views/
+    ├── core/           # 共享 widgets、theme、view_models
+    ├── auth/
+    ├── profile/
+    ├── contacts/
+    ├── groups/
+    ├── chat/
+    │   ├── view_models/
+    │   └── views/
+    └── discover/
 ```
 
-当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/features/contacts/`、`lib/ui/features/groups/`、`lib/ui/features/chat/`、`lib/ui/features/auth/`、`lib/ui/features/profile/`、`lib/ui/features/discover/`，应用壳在 `lib/ui/core/`。数据层统一走 `lib/data/repositories/`，`MessageServiceNotifier` 位于 `lib/ui/features/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
+当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/contacts/`、`lib/ui/groups/`、`lib/ui/chat/`、`lib/ui/auth/`、`lib/ui/profile/`、`lib/ui/discover/`，共享组件、主题和扩展在 `lib/ui/core/`，领域模型在 `lib/domain/models/`。数据层统一走 `lib/data/repositories/`，`MessageServiceNotifier` 位于 `lib/ui/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`，设置与在线状态/文件打开收口到 `SettingsRepository`、`ChatAuxRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
 
 ### Rust 侧 (`rust/src/`)
 
