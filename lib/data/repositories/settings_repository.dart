@@ -6,6 +6,7 @@ abstract class SettingsRepository {
   Future<bool> isAppLockEnabled();
   Future<bool> isBiometricEnabled();
   Future<void> savePin(String pin);
+  Future<bool> verifyPin(String pin);
   Future<void> setAppLockEnabled(bool enabled);
   Future<bool> canUseBiometrics();
   Future<bool> authenticateWithBiometrics();
@@ -37,6 +38,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Future<void> savePin(String pin) => _appLockService.savePin(pin);
+
+  @override
+  Future<bool> verifyPin(String pin) => _appLockService.verifyPin(pin);
 
   @override
   Future<void> setAppLockEnabled(bool enabled) =>

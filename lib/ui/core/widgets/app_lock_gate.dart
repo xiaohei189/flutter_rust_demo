@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/app_lifecycle_service.dart';
-import '../../../services/app_lock_service.dart';
+import '../../../providers/providers.dart';
 import '../theme/app_theme.dart';
 
-class AppLockGate extends StatefulWidget {
+class AppLockGate extends ConsumerStatefulWidget {
   const AppLockGate({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<AppLockGate> createState() => _AppLockGateState();
+  ConsumerState<AppLockGate> createState() => _AppLockGateState();
 }
 
-class _AppLockGateState extends State<AppLockGate> {
+class _AppLockGateState extends ConsumerState<AppLockGate> {
   final TextEditingController _pinController = TextEditingController();
   bool? _enabled;
   bool _unlocked = false;
@@ -35,7 +36,7 @@ class _AppLockGateState extends State<AppLockGate> {
   }
 
   Future<void> _load() async {
-    final enabled = await AppLockService.instance.isEnabled();
+    final enabled = await ref.read(settingsRepositoryProvider).isAppLockEnabled();
     if (mounted) {
       setState(() {
         _enabled = enabled;
@@ -56,7 +57,7 @@ class _AppLockGateState extends State<AppLockGate> {
   Future<void> _unlockWithPin() async {
     final pin = _pinController.text.trim();
     if (pin.isEmpty) return;
-    final ok = await AppLockService.instance.verifyPin(pin);
+    final ok = await ref.read(settingsRepositoryProvider).verifyPin(pin);
     if (ok && mounted) {
       _pinController.clear();
       setState(() => _unlocked = true);
@@ -68,7 +69,9 @@ class _AppLockGateState extends State<AppLockGate> {
   }
 
   Future<void> _unlockWithBiometrics() async {
-    final ok = await AppLockService.instance.authenticateWithBiometrics();
+    final ok = await ref
+        .read(settingsRepositoryProvider)
+        .authenticateWithBiometrics();
     if (ok && mounted) {
       setState(() => _unlocked = true);
     }
@@ -124,7 +127,9 @@ class _AppLockGateState extends State<AppLockGate> {
                   child: const Text('解锁'),
                 ),
                 FutureBuilder<bool>(
-                  future: AppLockService.instance.isBiometricEnabled(),
+                  future: ref
+                      .read(settingsRepositoryProvider)
+                      .isBiometricEnabled(),
                   builder: (context, snapshot) {
                     final enabled = snapshot.data ?? false;
                     if (!enabled) return const SizedBox.shrink();
