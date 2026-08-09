@@ -56,9 +56,8 @@ impl HttpApiClient {
     pub async fn post<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
-        // 记录请求
+        // 请求体仅在 trace 级别输出，避免默认日志刷屏
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::info!("[HTTP] POST {} 开始", route);
         tracing::trace!("[HTTP] POST {} Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
@@ -102,9 +101,8 @@ impl HttpApiClient {
     pub async fn post_no_auth<T: Serialize, R: for<'de> Deserialize<'de> + Default>(&self, route: &str, body: &T) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
-        // 记录请求
+        // 请求体仅在 trace 级别输出，避免默认日志刷屏
         let body_json = serde_json::to_string(body).unwrap_or_default();
-        tracing::info!("[HTTP] POST {} (no_auth) 开始", route);
         tracing::trace!("[HTTP] POST {} (no_auth) Body: {}", route, body_json);
         let start = std::time::Instant::now();
 
@@ -131,8 +129,6 @@ impl HttpApiClient {
     pub async fn get<R: for<'de> Deserialize<'de> + Default>(&self, route: &str) -> Result<R> {
         let url = format!("{}{}", *self.base_url, route);
 
-        // 记录请求
-        tracing::info!("[HTTP] GET {} 开始", route);
         let start = std::time::Instant::now();
 
         let response = self
