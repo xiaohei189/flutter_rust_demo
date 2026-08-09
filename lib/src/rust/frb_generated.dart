@@ -7405,19 +7405,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case 2:
         return ConnectionEvent_Disconnected(dco_decode_String(raw[1]));
       case 3:
-        return ConnectionEvent_ConnectFailed(dco_decode_String(raw[1]));
+        return ConnectionEvent_ConnectFailed(
+          errCode: dco_decode_i_32(raw[1]),
+          error: dco_decode_String(raw[2]),
+        );
       case 4:
         return ConnectionEvent_KickedOffline(dco_decode_String(raw[1]));
       case 5:
         return ConnectionEvent_TokenExpired();
       case 6:
+        return ConnectionEvent_TokenInvalid(error: dco_decode_String(raw[1]));
+      case 7:
         return ConnectionEvent_Reconnecting(
           attempt: dco_decode_u_32(raw[1]),
           maxAttempts: dco_decode_u_32(raw[2]),
         );
-      case 7:
-        return ConnectionEvent_LoginSuccess(dco_decode_String(raw[1]));
       case 8:
+        return ConnectionEvent_LoginSuccess(dco_decode_String(raw[1]));
+      case 9:
         return ConnectionEvent_Logout();
       default:
         throw Exception("unreachable");
@@ -7449,11 +7454,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           dco_decode_i_64(raw[1]),
         );
       case 4:
-        return ConversationEvent_SyncStarted();
+        return ConversationEvent_SyncStarted(dco_decode_bool(raw[1]));
       case 5:
-        return ConversationEvent_SyncFinished();
+        return ConversationEvent_SyncFinished(dco_decode_bool(raw[1]));
       case 6:
-        return ConversationEvent_SyncFailed(dco_decode_String(raw[1]));
+        return ConversationEvent_SyncFailed(
+          reinstalled: dco_decode_bool(raw[1]),
+          error: dco_decode_String(raw[2]),
+        );
       case 7:
         return ConversationEvent_SyncProgress(
           progress: dco_decode_i_32(raw[1]),
@@ -8022,6 +8030,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           message: dco_decode_box_autoadd_message_info(raw[2]),
         );
       case 1:
+        return MessageEvent_OfflineNewMessage(
+          conversationId: dco_decode_String(raw[1]),
+          message: dco_decode_box_autoadd_message_info(raw[2]),
+        );
+      case 2:
+        return MessageEvent_OnlineOnlyMessage(
+          conversationId: dco_decode_String(raw[1]),
+          message: dco_decode_box_autoadd_message_info(raw[2]),
+        );
+      case 3:
         return MessageEvent_Revoked(
           conversationId: dco_decode_String(raw[1]),
           seq: dco_decode_i_64(raw[2]),
@@ -8036,21 +8054,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sessionType: dco_decode_i_32(raw[11]),
           isAdminRevoke: dco_decode_bool(raw[12]),
         );
-      case 2:
+      case 4:
         return MessageEvent_C2CReadReceipt(
           receipts: dco_decode_list_message_receipt(raw[1]),
         );
-      case 3:
+      case 5:
         return MessageEvent_Deleted(
           conversationId: dco_decode_String(raw[1]),
           clientMsgIds: dco_decode_list_String(raw[2]),
         );
-      case 4:
+      case 6:
         return MessageEvent_SendFailed(
           clientMsgId: dco_decode_String(raw[1]),
           error: dco_decode_String(raw[2]),
         );
-      case 5:
+      case 7:
         return MessageEvent_UploadProgress(
           clientMsgId: dco_decode_String(raw[1]),
           progress: dco_decode_u_8(raw[2]),
@@ -8939,24 +8957,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_field0 = sse_decode_String(deserializer);
         return ConnectionEvent_Disconnected(var_field0);
       case 3:
-        var var_field0 = sse_decode_String(deserializer);
-        return ConnectionEvent_ConnectFailed(var_field0);
+        var var_errCode = sse_decode_i_32(deserializer);
+        var var_error = sse_decode_String(deserializer);
+        return ConnectionEvent_ConnectFailed(
+          errCode: var_errCode,
+          error: var_error,
+        );
       case 4:
         var var_field0 = sse_decode_String(deserializer);
         return ConnectionEvent_KickedOffline(var_field0);
       case 5:
         return ConnectionEvent_TokenExpired();
       case 6:
+        var var_error = sse_decode_String(deserializer);
+        return ConnectionEvent_TokenInvalid(error: var_error);
+      case 7:
         var var_attempt = sse_decode_u_32(deserializer);
         var var_maxAttempts = sse_decode_u_32(deserializer);
         return ConnectionEvent_Reconnecting(
           attempt: var_attempt,
           maxAttempts: var_maxAttempts,
         );
-      case 7:
+      case 8:
         var var_field0 = sse_decode_String(deserializer);
         return ConnectionEvent_LoginSuccess(var_field0);
-      case 8:
+      case 9:
         return ConnectionEvent_Logout();
       default:
         throw UnimplementedError('');
@@ -8991,12 +9016,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         var var_field0 = sse_decode_i_64(deserializer);
         return ConversationEvent_TotalUnreadCountChanged(var_field0);
       case 4:
-        return ConversationEvent_SyncStarted();
+        var var_field0 = sse_decode_bool(deserializer);
+        return ConversationEvent_SyncStarted(var_field0);
       case 5:
-        return ConversationEvent_SyncFinished();
+        var var_field0 = sse_decode_bool(deserializer);
+        return ConversationEvent_SyncFinished(var_field0);
       case 6:
-        var var_field0 = sse_decode_String(deserializer);
-        return ConversationEvent_SyncFailed(var_field0);
+        var var_reinstalled = sse_decode_bool(deserializer);
+        var var_error = sse_decode_String(deserializer);
+        return ConversationEvent_SyncFailed(
+          reinstalled: var_reinstalled,
+          error: var_error,
+        );
       case 7:
         var var_progress = sse_decode_i_32(deserializer);
         var var_message = sse_decode_String(deserializer);
@@ -9800,6 +9831,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         );
       case 1:
         var var_conversationId = sse_decode_String(deserializer);
+        var var_message = sse_decode_box_autoadd_message_info(deserializer);
+        return MessageEvent_OfflineNewMessage(
+          conversationId: var_conversationId,
+          message: var_message,
+        );
+      case 2:
+        var var_conversationId = sse_decode_String(deserializer);
+        var var_message = sse_decode_box_autoadd_message_info(deserializer);
+        return MessageEvent_OnlineOnlyMessage(
+          conversationId: var_conversationId,
+          message: var_message,
+        );
+      case 3:
+        var var_conversationId = sse_decode_String(deserializer);
         var var_seq = sse_decode_i_64(deserializer);
         var var_clientMsgId = sse_decode_String(deserializer);
         var var_revokerId = sse_decode_String(deserializer);
@@ -9825,24 +9870,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sessionType: var_sessionType,
           isAdminRevoke: var_isAdminRevoke,
         );
-      case 2:
+      case 4:
         var var_receipts = sse_decode_list_message_receipt(deserializer);
         return MessageEvent_C2CReadReceipt(receipts: var_receipts);
-      case 3:
+      case 5:
         var var_conversationId = sse_decode_String(deserializer);
         var var_clientMsgIds = sse_decode_list_String(deserializer);
         return MessageEvent_Deleted(
           conversationId: var_conversationId,
           clientMsgIds: var_clientMsgIds,
         );
-      case 4:
+      case 6:
         var var_clientMsgId = sse_decode_String(deserializer);
         var var_error = sse_decode_String(deserializer);
         return MessageEvent_SendFailed(
           clientMsgId: var_clientMsgId,
           error: var_error,
         );
-      case 5:
+      case 7:
         var var_clientMsgId = sse_decode_String(deserializer);
         var var_progress = sse_decode_u_8(deserializer);
         var var_totalSize = sse_decode_u_64(deserializer);
@@ -11054,26 +11099,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case ConnectionEvent_Disconnected(field0: final field0):
         sse_encode_i_32(2, serializer);
         sse_encode_String(field0, serializer);
-      case ConnectionEvent_ConnectFailed(field0: final field0):
+      case ConnectionEvent_ConnectFailed(
+        errCode: final errCode,
+        error: final error,
+      ):
         sse_encode_i_32(3, serializer);
-        sse_encode_String(field0, serializer);
+        sse_encode_i_32(errCode, serializer);
+        sse_encode_String(error, serializer);
       case ConnectionEvent_KickedOffline(field0: final field0):
         sse_encode_i_32(4, serializer);
         sse_encode_String(field0, serializer);
       case ConnectionEvent_TokenExpired():
         sse_encode_i_32(5, serializer);
+      case ConnectionEvent_TokenInvalid(error: final error):
+        sse_encode_i_32(6, serializer);
+        sse_encode_String(error, serializer);
       case ConnectionEvent_Reconnecting(
         attempt: final attempt,
         maxAttempts: final maxAttempts,
       ):
-        sse_encode_i_32(6, serializer);
+        sse_encode_i_32(7, serializer);
         sse_encode_u_32(attempt, serializer);
         sse_encode_u_32(maxAttempts, serializer);
       case ConnectionEvent_LoginSuccess(field0: final field0):
-        sse_encode_i_32(7, serializer);
+        sse_encode_i_32(8, serializer);
         sse_encode_String(field0, serializer);
       case ConnectionEvent_Logout():
-        sse_encode_i_32(8, serializer);
+        sse_encode_i_32(9, serializer);
     }
   }
 
@@ -11105,13 +11157,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       case ConversationEvent_TotalUnreadCountChanged(field0: final field0):
         sse_encode_i_32(3, serializer);
         sse_encode_i_64(field0, serializer);
-      case ConversationEvent_SyncStarted():
+      case ConversationEvent_SyncStarted(field0: final field0):
         sse_encode_i_32(4, serializer);
-      case ConversationEvent_SyncFinished():
+        sse_encode_bool(field0, serializer);
+      case ConversationEvent_SyncFinished(field0: final field0):
         sse_encode_i_32(5, serializer);
-      case ConversationEvent_SyncFailed(field0: final field0):
+        sse_encode_bool(field0, serializer);
+      case ConversationEvent_SyncFailed(
+        reinstalled: final reinstalled,
+        error: final error,
+      ):
         sse_encode_i_32(6, serializer);
-        sse_encode_String(field0, serializer);
+        sse_encode_bool(reinstalled, serializer);
+        sse_encode_String(error, serializer);
       case ConversationEvent_SyncProgress(
         progress: final progress,
         message: final message,
@@ -11733,6 +11791,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_i_32(0, serializer);
         sse_encode_String(conversationId, serializer);
         sse_encode_box_autoadd_message_info(message, serializer);
+      case MessageEvent_OfflineNewMessage(
+        conversationId: final conversationId,
+        message: final message,
+      ):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_box_autoadd_message_info(message, serializer);
+      case MessageEvent_OnlineOnlyMessage(
+        conversationId: final conversationId,
+        message: final message,
+      ):
+        sse_encode_i_32(2, serializer);
+        sse_encode_String(conversationId, serializer);
+        sse_encode_box_autoadd_message_info(message, serializer);
       case MessageEvent_Revoked(
         conversationId: final conversationId,
         seq: final seq,
@@ -11747,7 +11819,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sessionType: final sessionType,
         isAdminRevoke: final isAdminRevoke,
       ):
-        sse_encode_i_32(1, serializer);
+        sse_encode_i_32(3, serializer);
         sse_encode_String(conversationId, serializer);
         sse_encode_i_64(seq, serializer);
         sse_encode_String(clientMsgId, serializer);
@@ -11761,20 +11833,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_i_32(sessionType, serializer);
         sse_encode_bool(isAdminRevoke, serializer);
       case MessageEvent_C2CReadReceipt(receipts: final receipts):
-        sse_encode_i_32(2, serializer);
+        sse_encode_i_32(4, serializer);
         sse_encode_list_message_receipt(receipts, serializer);
       case MessageEvent_Deleted(
         conversationId: final conversationId,
         clientMsgIds: final clientMsgIds,
       ):
-        sse_encode_i_32(3, serializer);
+        sse_encode_i_32(5, serializer);
         sse_encode_String(conversationId, serializer);
         sse_encode_list_String(clientMsgIds, serializer);
       case MessageEvent_SendFailed(
         clientMsgId: final clientMsgId,
         error: final error,
       ):
-        sse_encode_i_32(4, serializer);
+        sse_encode_i_32(6, serializer);
         sse_encode_String(clientMsgId, serializer);
         sse_encode_String(error, serializer);
       case MessageEvent_UploadProgress(
@@ -11783,7 +11855,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         totalSize: final totalSize,
         uploadedSize: final uploadedSize,
       ):
-        sse_encode_i_32(5, serializer);
+        sse_encode_i_32(7, serializer);
         sse_encode_String(clientMsgId, serializer);
         sse_encode_u_8(progress, serializer);
         sse_encode_u_64(totalSize, serializer);

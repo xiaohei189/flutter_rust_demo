@@ -6,9 +6,10 @@ pub enum ConnectionEvent {
     Connecting,
     Connected,
     Disconnected(String),
-    ConnectFailed(String),
+    ConnectFailed { err_code: i32, error: String },
     KickedOffline(String),
     TokenExpired,
+    TokenInvalid { error: String },
     Reconnecting { attempt: u32, max_attempts: u32 },
     LoginSuccess(String),
     Logout,
@@ -21,9 +22,10 @@ impl ConnectionEvent {
             ConnectionEvent::Connecting => "connecting",
             ConnectionEvent::Connected => "connected",
             ConnectionEvent::Disconnected(_) => "disconnected",
-            ConnectionEvent::ConnectFailed(_) => "connect_failed",
+            ConnectionEvent::ConnectFailed { .. } => "connect_failed",
             ConnectionEvent::KickedOffline(_) => "kicked_offline",
             ConnectionEvent::TokenExpired => "token_expired",
+            ConnectionEvent::TokenInvalid { .. } => "token_invalid",
             ConnectionEvent::Reconnecting { .. } => "reconnecting",
             ConnectionEvent::LoginSuccess(_) => "login_success",
             ConnectionEvent::Logout => "logout",
@@ -36,9 +38,10 @@ pub trait ConnectionListener: Send + Sync {
     fn on_connecting(&self) {}
     fn on_connected(&self) {}
     fn on_disconnected(&self, _reason: &str) {}
-    fn on_connect_failed(&self, _error: &str) {}
+    fn on_connect_failed(&self, _err_code: i32, _error: &str) {}
     fn on_kicked_offline(&self, _reason: &str) {}
     fn on_token_expired(&self) {}
+    fn on_token_invalid(&self, _error: &str) {}
     fn on_reconnecting(&self, _attempt: u32, _max_attempts: u32) {}
     fn on_login_success(&self, _user_id: &str) {}
     fn on_logout(&self) {}
@@ -51,9 +54,10 @@ pub trait ConnectionListenerExt: ConnectionListener {
             ConnectionEvent::Connecting => self.on_connecting(),
             ConnectionEvent::Connected => self.on_connected(),
             ConnectionEvent::Disconnected(reason) => self.on_disconnected(&reason),
-            ConnectionEvent::ConnectFailed(error) => self.on_connect_failed(&error),
+            ConnectionEvent::ConnectFailed { err_code, error } => self.on_connect_failed(err_code, &error),
             ConnectionEvent::KickedOffline(reason) => self.on_kicked_offline(&reason),
             ConnectionEvent::TokenExpired => self.on_token_expired(),
+            ConnectionEvent::TokenInvalid { error } => self.on_token_invalid(&error),
             ConnectionEvent::Reconnecting { attempt, max_attempts } => self.on_reconnecting(attempt, max_attempts),
             ConnectionEvent::LoginSuccess(user_id) => self.on_login_success(&user_id),
             ConnectionEvent::Logout => self.on_logout(),

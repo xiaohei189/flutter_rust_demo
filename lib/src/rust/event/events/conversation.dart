@@ -22,11 +22,14 @@ sealed class ConversationEvent with _$ConversationEvent {
   const factory ConversationEvent.totalUnreadCountChanged(
     PlatformInt64 field0,
   ) = ConversationEvent_TotalUnreadCountChanged;
-  const factory ConversationEvent.syncStarted() = ConversationEvent_SyncStarted;
-  const factory ConversationEvent.syncFinished() =
+  const factory ConversationEvent.syncStarted(bool field0) =
+      ConversationEvent_SyncStarted;
+  const factory ConversationEvent.syncFinished(bool field0) =
       ConversationEvent_SyncFinished;
-  const factory ConversationEvent.syncFailed(String field0) =
-      ConversationEvent_SyncFailed;
+  const factory ConversationEvent.syncFailed({
+    required bool reinstalled,
+    required String error,
+  }) = ConversationEvent_SyncFailed;
   const factory ConversationEvent.syncProgress({
     required int progress,
     required String message,

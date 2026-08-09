@@ -59,6 +59,18 @@ sealed class MessageEvent with _$MessageEvent {
     required MessageInfo message,
   }) = MessageEvent_NewMessage;
 
+  /// 离线新消息（对齐 Go SDK `OnRecvOfflineNewMessage`）
+  const factory MessageEvent.offlineNewMessage({
+    required String conversationId,
+    required MessageInfo message,
+  }) = MessageEvent_OfflineNewMessage;
+
+  /// 在线-only 消息（对齐 Go SDK `OnRecvOnlineOnlyMessage`）
+  const factory MessageEvent.onlineOnlyMessage({
+    required String conversationId,
+    required MessageInfo message,
+  }) = MessageEvent_OnlineOnlyMessage;
+
   /// 消息被撤回
   const factory MessageEvent.revoked({
     required String conversationId,

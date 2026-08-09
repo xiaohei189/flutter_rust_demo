@@ -2352,7 +2352,7 @@ async fn test_online_only_message() {
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
 
-    // 验证 B 实时收到 3 条 NewMessage 事件
+    // 验证 B 实时收到 3 条 OnlineOnlyMessage 事件
     let mut received_online_only = Vec::new();
     let timeout = tokio::time::sleep(Duration::from_secs(10));
     tokio::pin!(timeout);
@@ -2360,7 +2360,7 @@ async fn test_online_only_message() {
         tokio::select! {
             _ = &mut timeout => break,
             event = b_events.next() => {
-                if let Some(TestEvent::Message(MessageEvent::NewMessage { message, conversation_id: _ })) = event {
+                if let Some(TestEvent::Message(MessageEvent::OnlineOnlyMessage { message, conversation_id: _ })) = event {
                     if message.content.contains("ONLINE_ONLY_MSG_") {
                         received_online_only.push(message.client_msg_id.clone());
                         println!("  B 收到 online_only 消息: content={:?}", message.content);

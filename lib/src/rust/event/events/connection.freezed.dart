@@ -22,9 +22,10 @@ mixin _$ConnectionEvent {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -34,9 +35,10 @@ mixin _$ConnectionEvent {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -46,9 +48,10 @@ mixin _$ConnectionEvent {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -64,6 +67,7 @@ mixin _$ConnectionEvent {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -76,6 +80,7 @@ mixin _$ConnectionEvent {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -88,6 +93,7 @@ mixin _$ConnectionEvent {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -165,9 +171,10 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -181,9 +188,10 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -197,9 +205,10 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -222,6 +231,7 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -238,6 +248,7 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -254,6 +265,7 @@ class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -318,9 +330,10 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -334,9 +347,10 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -350,9 +364,10 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -375,6 +390,7 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -391,6 +407,7 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -407,6 +424,7 @@ class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -503,9 +521,10 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -519,9 +538,10 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -535,9 +555,10 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -560,6 +581,7 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -576,6 +598,7 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -592,6 +615,7 @@ class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -627,7 +651,7 @@ abstract class _$$ConnectionEvent_ConnectFailedImplCopyWith<$Res> {
     $Res Function(_$ConnectionEvent_ConnectFailedImpl) then,
   ) = __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String field0});
+  $Res call({int errCode, String error});
 }
 
 /// @nodoc
@@ -644,12 +668,16 @@ class __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? field0 = null}) {
+  $Res call({Object? errCode = null, Object? error = null}) {
     return _then(
       _$ConnectionEvent_ConnectFailedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
+        errCode: null == errCode
+            ? _value.errCode
+            : errCode // ignore: cast_nullable_to_non_nullable
+                  as int,
+        error: null == error
+            ? _value.error
+            : error // ignore: cast_nullable_to_non_nullable
                   as String,
       ),
     );
@@ -660,14 +688,19 @@ class __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<$Res>
 
 class _$ConnectionEvent_ConnectFailedImpl
     extends ConnectionEvent_ConnectFailed {
-  const _$ConnectionEvent_ConnectFailedImpl(this.field0) : super._();
+  const _$ConnectionEvent_ConnectFailedImpl({
+    required this.errCode,
+    required this.error,
+  }) : super._();
 
   @override
-  final String field0;
+  final int errCode;
+  @override
+  final String error;
 
   @override
   String toString() {
-    return 'ConnectionEvent.connectFailed(field0: $field0)';
+    return 'ConnectionEvent.connectFailed(errCode: $errCode, error: $error)';
   }
 
   @override
@@ -675,11 +708,12 @@ class _$ConnectionEvent_ConnectFailedImpl
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ConnectionEvent_ConnectFailedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
+            (identical(other.errCode, errCode) || other.errCode == errCode) &&
+            (identical(other.error, error) || other.error == error));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, field0);
+  int get hashCode => Object.hash(runtimeType, errCode, error);
 
   /// Create a copy of ConnectionEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -700,14 +734,15 @@ class _$ConnectionEvent_ConnectFailedImpl
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
   }) {
-    return connectFailed(field0);
+    return connectFailed(errCode, error);
   }
 
   @override
@@ -716,14 +751,15 @@ class _$ConnectionEvent_ConnectFailedImpl
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
   }) {
-    return connectFailed?.call(field0);
+    return connectFailed?.call(errCode, error);
   }
 
   @override
@@ -732,16 +768,17 @@ class _$ConnectionEvent_ConnectFailedImpl
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
     required TResult orElse(),
   }) {
     if (connectFailed != null) {
-      return connectFailed(field0);
+      return connectFailed(errCode, error);
     }
     return orElse();
   }
@@ -757,6 +794,7 @@ class _$ConnectionEvent_ConnectFailedImpl
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -773,6 +811,7 @@ class _$ConnectionEvent_ConnectFailedImpl
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -789,6 +828,7 @@ class _$ConnectionEvent_ConnectFailedImpl
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -802,11 +842,14 @@ class _$ConnectionEvent_ConnectFailedImpl
 }
 
 abstract class ConnectionEvent_ConnectFailed extends ConnectionEvent {
-  const factory ConnectionEvent_ConnectFailed(final String field0) =
-      _$ConnectionEvent_ConnectFailedImpl;
+  const factory ConnectionEvent_ConnectFailed({
+    required final int errCode,
+    required final String error,
+  }) = _$ConnectionEvent_ConnectFailedImpl;
   const ConnectionEvent_ConnectFailed._() : super._();
 
-  String get field0;
+  int get errCode;
+  String get error;
 
   /// Create a copy of ConnectionEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -897,9 +940,10 @@ class _$ConnectionEvent_KickedOfflineImpl
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -913,9 +957,10 @@ class _$ConnectionEvent_KickedOfflineImpl
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -929,9 +974,10 @@ class _$ConnectionEvent_KickedOfflineImpl
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -954,6 +1000,7 @@ class _$ConnectionEvent_KickedOfflineImpl
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -970,6 +1017,7 @@ class _$ConnectionEvent_KickedOfflineImpl
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -986,6 +1034,7 @@ class _$ConnectionEvent_KickedOfflineImpl
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -1062,9 +1111,10 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -1078,9 +1128,10 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -1094,9 +1145,10 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -1119,6 +1171,7 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -1135,6 +1188,7 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -1151,6 +1205,7 @@ class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -1167,6 +1222,208 @@ abstract class ConnectionEvent_TokenExpired extends ConnectionEvent {
   const factory ConnectionEvent_TokenExpired() =
       _$ConnectionEvent_TokenExpiredImpl;
   const ConnectionEvent_TokenExpired._() : super._();
+}
+
+/// @nodoc
+abstract class _$$ConnectionEvent_TokenInvalidImplCopyWith<$Res> {
+  factory _$$ConnectionEvent_TokenInvalidImplCopyWith(
+    _$ConnectionEvent_TokenInvalidImpl value,
+    $Res Function(_$ConnectionEvent_TokenInvalidImpl) then,
+  ) = __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String error});
+}
+
+/// @nodoc
+class __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<$Res>
+    extends
+        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_TokenInvalidImpl>
+    implements _$$ConnectionEvent_TokenInvalidImplCopyWith<$Res> {
+  __$$ConnectionEvent_TokenInvalidImplCopyWithImpl(
+    _$ConnectionEvent_TokenInvalidImpl _value,
+    $Res Function(_$ConnectionEvent_TokenInvalidImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of ConnectionEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? error = null}) {
+    return _then(
+      _$ConnectionEvent_TokenInvalidImpl(
+        error: null == error
+            ? _value.error
+            : error // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$ConnectionEvent_TokenInvalidImpl extends ConnectionEvent_TokenInvalid {
+  const _$ConnectionEvent_TokenInvalidImpl({required this.error}) : super._();
+
+  @override
+  final String error;
+
+  @override
+  String toString() {
+    return 'ConnectionEvent.tokenInvalid(error: $error)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ConnectionEvent_TokenInvalidImpl &&
+            (identical(other.error, error) || other.error == error));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, error);
+
+  /// Create a copy of ConnectionEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ConnectionEvent_TokenInvalidImplCopyWith<
+    _$ConnectionEvent_TokenInvalidImpl
+  >
+  get copyWith =>
+      __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<
+        _$ConnectionEvent_TokenInvalidImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() connecting,
+    required TResult Function() connected,
+    required TResult Function(String field0) disconnected,
+    required TResult Function(int errCode, String error) connectFailed,
+    required TResult Function(String field0) kickedOffline,
+    required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
+    required TResult Function(int attempt, int maxAttempts) reconnecting,
+    required TResult Function(String field0) loginSuccess,
+    required TResult Function() logout,
+  }) {
+    return tokenInvalid(error);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? connecting,
+    TResult? Function()? connected,
+    TResult? Function(String field0)? disconnected,
+    TResult? Function(int errCode, String error)? connectFailed,
+    TResult? Function(String field0)? kickedOffline,
+    TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
+    TResult? Function(int attempt, int maxAttempts)? reconnecting,
+    TResult? Function(String field0)? loginSuccess,
+    TResult? Function()? logout,
+  }) {
+    return tokenInvalid?.call(error);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? connecting,
+    TResult Function()? connected,
+    TResult Function(String field0)? disconnected,
+    TResult Function(int errCode, String error)? connectFailed,
+    TResult Function(String field0)? kickedOffline,
+    TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
+    TResult Function(int attempt, int maxAttempts)? reconnecting,
+    TResult Function(String field0)? loginSuccess,
+    TResult Function()? logout,
+    required TResult orElse(),
+  }) {
+    if (tokenInvalid != null) {
+      return tokenInvalid(error);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ConnectionEvent_Connecting value) connecting,
+    required TResult Function(ConnectionEvent_Connected value) connected,
+    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
+    required TResult Function(ConnectionEvent_ConnectFailed value)
+    connectFailed,
+    required TResult Function(ConnectionEvent_KickedOffline value)
+    kickedOffline,
+    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
+    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
+    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
+    required TResult Function(ConnectionEvent_Logout value) logout,
+  }) {
+    return tokenInvalid(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ConnectionEvent_Connecting value)? connecting,
+    TResult? Function(ConnectionEvent_Connected value)? connected,
+    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
+    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
+    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
+    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
+    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
+    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
+    TResult? Function(ConnectionEvent_Logout value)? logout,
+  }) {
+    return tokenInvalid?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ConnectionEvent_Connecting value)? connecting,
+    TResult Function(ConnectionEvent_Connected value)? connected,
+    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
+    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
+    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
+    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
+    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
+    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
+    TResult Function(ConnectionEvent_Logout value)? logout,
+    required TResult orElse(),
+  }) {
+    if (tokenInvalid != null) {
+      return tokenInvalid(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class ConnectionEvent_TokenInvalid extends ConnectionEvent {
+  const factory ConnectionEvent_TokenInvalid({required final String error}) =
+      _$ConnectionEvent_TokenInvalidImpl;
+  const ConnectionEvent_TokenInvalid._() : super._();
+
+  String get error;
+
+  /// Create a copy of ConnectionEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ConnectionEvent_TokenInvalidImplCopyWith<
+    _$ConnectionEvent_TokenInvalidImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -1259,9 +1516,10 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -1275,9 +1533,10 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -1291,9 +1550,10 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -1316,6 +1576,7 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -1332,6 +1593,7 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -1348,6 +1610,7 @@ class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -1458,9 +1721,10 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -1474,9 +1738,10 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -1490,9 +1755,10 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -1515,6 +1781,7 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -1531,6 +1798,7 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -1547,6 +1815,7 @@ class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,
@@ -1622,9 +1891,10 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     required TResult Function() connecting,
     required TResult Function() connected,
     required TResult Function(String field0) disconnected,
-    required TResult Function(String field0) connectFailed,
+    required TResult Function(int errCode, String error) connectFailed,
     required TResult Function(String field0) kickedOffline,
     required TResult Function() tokenExpired,
+    required TResult Function(String error) tokenInvalid,
     required TResult Function(int attempt, int maxAttempts) reconnecting,
     required TResult Function(String field0) loginSuccess,
     required TResult Function() logout,
@@ -1638,9 +1908,10 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     TResult? Function()? connecting,
     TResult? Function()? connected,
     TResult? Function(String field0)? disconnected,
-    TResult? Function(String field0)? connectFailed,
+    TResult? Function(int errCode, String error)? connectFailed,
     TResult? Function(String field0)? kickedOffline,
     TResult? Function()? tokenExpired,
+    TResult? Function(String error)? tokenInvalid,
     TResult? Function(int attempt, int maxAttempts)? reconnecting,
     TResult? Function(String field0)? loginSuccess,
     TResult? Function()? logout,
@@ -1654,9 +1925,10 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     TResult Function()? connecting,
     TResult Function()? connected,
     TResult Function(String field0)? disconnected,
-    TResult Function(String field0)? connectFailed,
+    TResult Function(int errCode, String error)? connectFailed,
     TResult Function(String field0)? kickedOffline,
     TResult Function()? tokenExpired,
+    TResult Function(String error)? tokenInvalid,
     TResult Function(int attempt, int maxAttempts)? reconnecting,
     TResult Function(String field0)? loginSuccess,
     TResult Function()? logout,
@@ -1679,6 +1951,7 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     required TResult Function(ConnectionEvent_KickedOffline value)
     kickedOffline,
     required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
+    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
     required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
     required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
     required TResult Function(ConnectionEvent_Logout value) logout,
@@ -1695,6 +1968,7 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult? Function(ConnectionEvent_Logout value)? logout,
@@ -1711,6 +1985,7 @@ class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
     TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
     TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
     TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
+    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
     TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
     TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
     TResult Function(ConnectionEvent_Logout value)? logout,

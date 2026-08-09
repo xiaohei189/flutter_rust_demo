@@ -23,9 +23,9 @@ mixin _$ConversationEvent {
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -42,9 +42,9 @@ mixin _$ConversationEvent {
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -60,9 +60,9 @@ mixin _$ConversationEvent {
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -236,9 +236,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -259,9 +259,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -281,9 +281,9 @@ class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -470,9 +470,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -493,9 +493,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -515,9 +515,9 @@ class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -703,9 +703,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -726,9 +726,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -748,9 +748,9 @@ class _$ConversationEvent_NewImpl extends ConversationEvent_New {
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -935,9 +935,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -958,9 +958,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -980,9 +980,9 @@ class _$ConversationEvent_TotalUnreadCountChangedImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -1091,6 +1091,8 @@ abstract class _$$ConversationEvent_SyncStartedImplCopyWith<$Res> {
     _$ConversationEvent_SyncStartedImpl value,
     $Res Function(_$ConversationEvent_SyncStartedImpl) then,
   ) = __$$ConversationEvent_SyncStartedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({bool field0});
 }
 
 /// @nodoc
@@ -1108,28 +1110,57 @@ class __$$ConversationEvent_SyncStartedImplCopyWithImpl<$Res>
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$ConversationEvent_SyncStartedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
+  }
 }
 
 /// @nodoc
 
 class _$ConversationEvent_SyncStartedImpl
     extends ConversationEvent_SyncStarted {
-  const _$ConversationEvent_SyncStartedImpl() : super._();
+  const _$ConversationEvent_SyncStartedImpl(this.field0) : super._();
+
+  @override
+  final bool field0;
 
   @override
   String toString() {
-    return 'ConversationEvent.syncStarted()';
+    return 'ConversationEvent.syncStarted(field0: $field0)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncStartedImpl);
+            other is _$ConversationEvent_SyncStartedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ConversationEvent_SyncStartedImplCopyWith<
+    _$ConversationEvent_SyncStartedImpl
+  >
+  get copyWith =>
+      __$$ConversationEvent_SyncStartedImplCopyWithImpl<
+        _$ConversationEvent_SyncStartedImpl
+      >(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1138,9 +1169,9 @@ class _$ConversationEvent_SyncStartedImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -1151,7 +1182,7 @@ class _$ConversationEvent_SyncStartedImpl
     required TResult Function(String conversationId)
     updateLatestMessageReadState,
   }) {
-    return syncStarted();
+    return syncStarted(field0);
   }
 
   @override
@@ -1161,9 +1192,9 @@ class _$ConversationEvent_SyncStartedImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -1173,7 +1204,7 @@ class _$ConversationEvent_SyncStartedImpl
     userInputStatusChanged,
     TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
-    return syncStarted?.call();
+    return syncStarted?.call(field0);
   }
 
   @override
@@ -1183,9 +1214,9 @@ class _$ConversationEvent_SyncStartedImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -1197,7 +1228,7 @@ class _$ConversationEvent_SyncStartedImpl
     required TResult orElse(),
   }) {
     if (syncStarted != null) {
-      return syncStarted();
+      return syncStarted(field0);
     }
     return orElse();
   }
@@ -1272,9 +1303,19 @@ class _$ConversationEvent_SyncStartedImpl
 }
 
 abstract class ConversationEvent_SyncStarted extends ConversationEvent {
-  const factory ConversationEvent_SyncStarted() =
+  const factory ConversationEvent_SyncStarted(final bool field0) =
       _$ConversationEvent_SyncStartedImpl;
   const ConversationEvent_SyncStarted._() : super._();
+
+  bool get field0;
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ConversationEvent_SyncStartedImplCopyWith<
+    _$ConversationEvent_SyncStartedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -1283,6 +1324,8 @@ abstract class _$$ConversationEvent_SyncFinishedImplCopyWith<$Res> {
     _$ConversationEvent_SyncFinishedImpl value,
     $Res Function(_$ConversationEvent_SyncFinishedImpl) then,
   ) = __$$ConversationEvent_SyncFinishedImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({bool field0});
 }
 
 /// @nodoc
@@ -1300,28 +1343,57 @@ class __$$ConversationEvent_SyncFinishedImplCopyWithImpl<$Res>
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? field0 = null}) {
+    return _then(
+      _$ConversationEvent_SyncFinishedImpl(
+        null == field0
+            ? _value.field0
+            : field0 // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
+  }
 }
 
 /// @nodoc
 
 class _$ConversationEvent_SyncFinishedImpl
     extends ConversationEvent_SyncFinished {
-  const _$ConversationEvent_SyncFinishedImpl() : super._();
+  const _$ConversationEvent_SyncFinishedImpl(this.field0) : super._();
+
+  @override
+  final bool field0;
 
   @override
   String toString() {
-    return 'ConversationEvent.syncFinished()';
+    return 'ConversationEvent.syncFinished(field0: $field0)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncFinishedImpl);
+            other is _$ConversationEvent_SyncFinishedImpl &&
+            (identical(other.field0, field0) || other.field0 == field0));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, field0);
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ConversationEvent_SyncFinishedImplCopyWith<
+    _$ConversationEvent_SyncFinishedImpl
+  >
+  get copyWith =>
+      __$$ConversationEvent_SyncFinishedImplCopyWithImpl<
+        _$ConversationEvent_SyncFinishedImpl
+      >(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -1330,9 +1402,9 @@ class _$ConversationEvent_SyncFinishedImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -1343,7 +1415,7 @@ class _$ConversationEvent_SyncFinishedImpl
     required TResult Function(String conversationId)
     updateLatestMessageReadState,
   }) {
-    return syncFinished();
+    return syncFinished(field0);
   }
 
   @override
@@ -1353,9 +1425,9 @@ class _$ConversationEvent_SyncFinishedImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -1365,7 +1437,7 @@ class _$ConversationEvent_SyncFinishedImpl
     userInputStatusChanged,
     TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
-    return syncFinished?.call();
+    return syncFinished?.call(field0);
   }
 
   @override
@@ -1375,9 +1447,9 @@ class _$ConversationEvent_SyncFinishedImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -1389,7 +1461,7 @@ class _$ConversationEvent_SyncFinishedImpl
     required TResult orElse(),
   }) {
     if (syncFinished != null) {
-      return syncFinished();
+      return syncFinished(field0);
     }
     return orElse();
   }
@@ -1464,9 +1536,19 @@ class _$ConversationEvent_SyncFinishedImpl
 }
 
 abstract class ConversationEvent_SyncFinished extends ConversationEvent {
-  const factory ConversationEvent_SyncFinished() =
+  const factory ConversationEvent_SyncFinished(final bool field0) =
       _$ConversationEvent_SyncFinishedImpl;
   const ConversationEvent_SyncFinished._() : super._();
+
+  bool get field0;
+
+  /// Create a copy of ConversationEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ConversationEvent_SyncFinishedImplCopyWith<
+    _$ConversationEvent_SyncFinishedImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -1476,7 +1558,7 @@ abstract class _$$ConversationEvent_SyncFailedImplCopyWith<$Res> {
     $Res Function(_$ConversationEvent_SyncFailedImpl) then,
   ) = __$$ConversationEvent_SyncFailedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({String field0});
+  $Res call({bool reinstalled, String error});
 }
 
 /// @nodoc
@@ -1496,12 +1578,16 @@ class __$$ConversationEvent_SyncFailedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? field0 = null}) {
+  $Res call({Object? reinstalled = null, Object? error = null}) {
     return _then(
       _$ConversationEvent_SyncFailedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
+        reinstalled: null == reinstalled
+            ? _value.reinstalled
+            : reinstalled // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        error: null == error
+            ? _value.error
+            : error // ignore: cast_nullable_to_non_nullable
                   as String,
       ),
     );
@@ -1511,14 +1597,19 @@ class __$$ConversationEvent_SyncFailedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
-  const _$ConversationEvent_SyncFailedImpl(this.field0) : super._();
+  const _$ConversationEvent_SyncFailedImpl({
+    required this.reinstalled,
+    required this.error,
+  }) : super._();
 
   @override
-  final String field0;
+  final bool reinstalled;
+  @override
+  final String error;
 
   @override
   String toString() {
-    return 'ConversationEvent.syncFailed(field0: $field0)';
+    return 'ConversationEvent.syncFailed(reinstalled: $reinstalled, error: $error)';
   }
 
   @override
@@ -1526,11 +1617,13 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ConversationEvent_SyncFailedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
+            (identical(other.reinstalled, reinstalled) ||
+                other.reinstalled == reinstalled) &&
+            (identical(other.error, error) || other.error == error));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, field0);
+  int get hashCode => Object.hash(runtimeType, reinstalled, error);
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -1552,9 +1645,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -1565,7 +1658,7 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     required TResult Function(String conversationId)
     updateLatestMessageReadState,
   }) {
-    return syncFailed(field0);
+    return syncFailed(reinstalled, error);
   }
 
   @override
@@ -1575,9 +1668,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -1587,7 +1680,7 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     userInputStatusChanged,
     TResult? Function(String conversationId)? updateLatestMessageReadState,
   }) {
-    return syncFailed?.call(field0);
+    return syncFailed?.call(reinstalled, error);
   }
 
   @override
@@ -1597,9 +1690,9 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -1611,7 +1704,7 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
     required TResult orElse(),
   }) {
     if (syncFailed != null) {
-      return syncFailed(field0);
+      return syncFailed(reinstalled, error);
     }
     return orElse();
   }
@@ -1686,11 +1779,14 @@ class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
 }
 
 abstract class ConversationEvent_SyncFailed extends ConversationEvent {
-  const factory ConversationEvent_SyncFailed(final String field0) =
-      _$ConversationEvent_SyncFailedImpl;
+  const factory ConversationEvent_SyncFailed({
+    required final bool reinstalled,
+    required final String error,
+  }) = _$ConversationEvent_SyncFailedImpl;
   const ConversationEvent_SyncFailed._() : super._();
 
-  String get field0;
+  bool get reinstalled;
+  String get error;
 
   /// Create a copy of ConversationEvent
   /// with the given fields replaced by the non-null parameter values.
@@ -1796,9 +1892,9 @@ class _$ConversationEvent_SyncProgressImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -1819,9 +1915,9 @@ class _$ConversationEvent_SyncProgressImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -1841,9 +1937,9 @@ class _$ConversationEvent_SyncProgressImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -2063,9 +2159,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -2086,9 +2182,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -2108,9 +2204,9 @@ class _$ConversationEvent_UserInputStatusChangedImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,
@@ -2308,9 +2404,9 @@ class _$ConversationEvent_UpdateLatestMessageReadStateImpl
     required TResult Function(List<String> field0) deleted,
     required TResult Function(List<LocalConversation> field0) new_,
     required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function() syncStarted,
-    required TResult Function() syncFinished,
-    required TResult Function(String field0) syncFailed,
+    required TResult Function(bool field0) syncStarted,
+    required TResult Function(bool field0) syncFinished,
+    required TResult Function(bool reinstalled, String error) syncFailed,
     required TResult Function(int progress, String message) syncProgress,
     required TResult Function(
       String conversationId,
@@ -2331,9 +2427,9 @@ class _$ConversationEvent_UpdateLatestMessageReadStateImpl
     TResult? Function(List<String> field0)? deleted,
     TResult? Function(List<LocalConversation> field0)? new_,
     TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function()? syncStarted,
-    TResult? Function()? syncFinished,
-    TResult? Function(String field0)? syncFailed,
+    TResult? Function(bool field0)? syncStarted,
+    TResult? Function(bool field0)? syncFinished,
+    TResult? Function(bool reinstalled, String error)? syncFailed,
     TResult? Function(int progress, String message)? syncProgress,
     TResult? Function(
       String conversationId,
@@ -2353,9 +2449,9 @@ class _$ConversationEvent_UpdateLatestMessageReadStateImpl
     TResult Function(List<String> field0)? deleted,
     TResult Function(List<LocalConversation> field0)? new_,
     TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function()? syncStarted,
-    TResult Function()? syncFinished,
-    TResult Function(String field0)? syncFailed,
+    TResult Function(bool field0)? syncStarted,
+    TResult Function(bool field0)? syncFinished,
+    TResult Function(bool reinstalled, String error)? syncFailed,
     TResult Function(int progress, String message)? syncProgress,
     TResult Function(
       String conversationId,

@@ -20,8 +20,9 @@ impl ConnectionManager {
     /// 执行 WebSocket 连接 + 服务端认证握手
     #[tracing::instrument(level = "info", skip(self))]
     pub(crate) async fn do_connect(&self, conn_token: CancellationToken) -> Result<()> {
+        const TOKEN_EXPIRED_ERR_CODE: i32 = 1501;
+        const TOKEN_INVALID_ERR_CODES: [i32; 5] = [1502, 1503, 1504, 1505, 1507];
         const TOKEN_KICKED_ERR_CODE: i32 = 1506;
-        const TOKEN_NOT_EXIST_ERR_CODE: i32 = 1507;
 
         self.set_state(crate::connection::manager::ConnectionState::Connecting).await;
         self.send(ConnectionEvent::Connecting);
@@ -99,16 +100,28 @@ impl ConnectionManager {
                 self.send(ConnectionEvent::KickedOffline(conn_resp.err_msg.to_string()));
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
-            Ok(conn_resp) if conn_resp.err_code == TOKEN_NOT_EXIST_ERR_CODE => {
+            Ok(conn_resp) if conn_resp.err_code == TOKEN_EXPIRED_ERR_CODE => {
                 if conn_token.is_cancelled() {
                     return Err(SdkError::connection("connection attempt cancelled"));
                 }
-                warn!("TokenNotExistError ({}): token invalid or expired, stopping reconnect", conn_resp.err_code);
+                warn!("TokenExpiredError ({}): token expired, stopping reconnect", conn_resp.err_code);
                 conn_token.cancel();
                 *self.is_manual_disconnect.write().await = true;
                 *self.state.write().await = crate::connection::manager::ConnectionState::Kicked;
                 self.message_batcher.close().await;
                 self.send(ConnectionEvent::TokenExpired);
+                Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
+            }
+            Ok(conn_resp) if TOKEN_INVALID_ERR_CODES.contains(&conn_resp.err_code) => {
+                if conn_token.is_cancelled() {
+                    return Err(SdkError::connection("connection attempt cancelled"));
+                }
+                warn!("TokenInvalidError ({}): token invalid, stopping reconnect", conn_resp.err_code);
+                conn_token.cancel();
+                *self.is_manual_disconnect.write().await = true;
+                *self.state.write().await = crate::connection::manager::ConnectionState::Kicked;
+                self.message_batcher.close().await;
+                self.send(ConnectionEvent::TokenInvalid { error: conn_resp.err_msg.to_string() });
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Ok(conn_resp) => {
@@ -117,7 +130,10 @@ impl ConnectionManager {
                 }
                 warn!("WebSocket auth failed: errCode={}, errMsg={}", conn_resp.err_code, conn_resp.err_msg);
                 *self.state.write().await = crate::connection::manager::ConnectionState::Disconnected;
-                self.send(ConnectionEvent::Disconnected(conn_resp.err_msg.to_string()));
+                self.send(ConnectionEvent::ConnectFailed {
+                    err_code: conn_resp.err_code,
+                    error: conn_resp.err_msg.to_string(),
+                });
                 Err(SdkError::api(conn_resp.err_code, &conn_resp.err_msg))
             }
             Err(e) => {

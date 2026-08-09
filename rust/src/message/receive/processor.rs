@@ -335,19 +335,34 @@ impl MessageProcessor {
 
         // 发布 NewMessage 事件（对齐 Go SDK OnRecvNewMessages）
         for msg in &to_notify {
-            self.message_listener.emit(MessageEvent::NewMessage {
-                conversation_id: conv_id.to_string(),
-                message: MessageInfo::from(msg.clone()),
-            });
+            let conversation_id = conv_id.to_string();
+            let message = MessageInfo::from(msg.clone());
+            if msg.options.get("isOnlineOnly").copied().unwrap_or(false) {
+                self.message_listener.emit(MessageEvent::OnlineOnlyMessage { conversation_id, message });
+            } else {
+                self.message_listener.emit(MessageEvent::NewMessage { conversation_id, message });
+            }
         }
 
         // 离线新消息通知
         let offline_msgs: Vec<MsgData> = if is_from_sync && !to_notify.is_empty() {
-            to_notify.into_iter().filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING).collect()
+            to_notify
+                .into_iter()
+                .filter(|m| {
+                    m.send_id != login_user_id
+                        && m.content_type != content_type::TYPING
+                        && !m.options.get("isOnlineOnly").copied().unwrap_or(false)
+                })
+                .collect()
         } else {
             Vec::new()
         };
-        if !offline_msgs.is_empty() {}
+        for msg in &offline_msgs {
+            self.message_listener.emit(MessageEvent::OfflineNewMessage {
+                conversation_id: conv_id.to_string(),
+                message: MessageInfo::from(msg.clone()),
+            });
+        }
 
         // 对齐 Go SDK：所有消息处理完成后统一发布会话变更。
         // 不只在“新插入消息”时发：自己发的消息、seq 回填等场景消息已存在，

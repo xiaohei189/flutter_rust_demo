@@ -16,11 +16,15 @@ sealed class ConnectionEvent with _$ConnectionEvent {
   const factory ConnectionEvent.connected() = ConnectionEvent_Connected;
   const factory ConnectionEvent.disconnected(String field0) =
       ConnectionEvent_Disconnected;
-  const factory ConnectionEvent.connectFailed(String field0) =
-      ConnectionEvent_ConnectFailed;
+  const factory ConnectionEvent.connectFailed({
+    required int errCode,
+    required String error,
+  }) = ConnectionEvent_ConnectFailed;
   const factory ConnectionEvent.kickedOffline(String field0) =
       ConnectionEvent_KickedOffline;
   const factory ConnectionEvent.tokenExpired() = ConnectionEvent_TokenExpired;
+  const factory ConnectionEvent.tokenInvalid({required String error}) =
+      ConnectionEvent_TokenInvalid;
   const factory ConnectionEvent.reconnecting({
     required int attempt,
     required int maxAttempts,

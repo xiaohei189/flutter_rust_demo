@@ -173,6 +173,11 @@ impl MessageSyncer {
         self.remote.is_kicked().await
     }
 
+    /// 当前是否处于重装模式（对齐 Go SDK 回调的 reinstalled 参数）
+    async fn reinstalled_flag(&self) -> bool {
+        self.repositories.sync_version_repo.is_reinstalled().await.unwrap_or(false)
+    }
+
     pub async fn sync_after_reconnect(&self) -> Result<()> {
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
@@ -181,7 +186,7 @@ impl MessageSyncer {
         }
 
         info!("重连后开始增量同步消息");
-        self.send(ConversationEvent::SyncStarted);
+        self.send(ConversationEvent::SyncStarted(self.reinstalled_flag().await));
         self.send(ConversationEvent::SyncProgress {
             progress: 1,
             message: "重连后开始同步".into(),
@@ -191,7 +196,10 @@ impl MessageSyncer {
             Ok(seqs) => seqs,
             Err(e) => {
                 let error_msg = format!("{}", e);
-                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
+                self.send(ConversationEvent::SyncFailed {
+                    reinstalled: self.reinstalled_flag().await,
+                    error: error_msg.to_string(),
+                });
                 return Err(e);
             }
         };
@@ -202,7 +210,7 @@ impl MessageSyncer {
                 progress: 100,
                 message: "同步完成（无需同步）".into(),
             });
-            self.send(ConversationEvent::SyncFinished);
+            self.send(ConversationEvent::SyncFinished(self.reinstalled_flag().await));
             return Ok(());
         }
 
@@ -218,13 +226,16 @@ impl MessageSyncer {
                     progress: 100,
                     message: "重连后同步完成".into(),
                 });
-                self.send(ConversationEvent::SyncFinished);
+                self.send(ConversationEvent::SyncFinished(self.reinstalled_flag().await));
                 info!("重连后增量同步完成");
                 Ok(())
             }
             Err(e) => {
                 let error_msg = format!("{}", e);
-                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
+                self.send(ConversationEvent::SyncFailed {
+                    reinstalled: self.reinstalled_flag().await,
+                    error: error_msg.to_string(),
+                });
                 Err(e)
             }
         }
@@ -242,7 +253,7 @@ impl MessageSyncer {
         let reinstalled = self.repositories.sync_version_repo.is_reinstalled().await?;
         info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
 
-        self.send(ConversationEvent::SyncStarted);
+        self.send(ConversationEvent::SyncStarted(reinstalled));
         self.send(ConversationEvent::SyncProgress {
             progress: 1,
             message: "同步开始".into(),
@@ -254,13 +265,16 @@ impl MessageSyncer {
                     progress: 100,
                     message: "同步完成".into(),
                 });
-                self.send(ConversationEvent::SyncFinished);
+                self.send(ConversationEvent::SyncFinished(reinstalled));
                 info!("=== 消息同步成功: sync_on_login ===");
                 Ok(())
             }
             Err(e) => {
                 let error_msg = format!("{}", e);
-                self.send(ConversationEvent::SyncFailed(error_msg.to_string()));
+                self.send(ConversationEvent::SyncFailed {
+                    reinstalled,
+                    error: error_msg.to_string(),
+                });
                 error!("=== 消息同步失败: sync_on_login, error={} ===", e);
                 Err(e)
             }
@@ -343,7 +357,7 @@ impl MessageSyncer {
 
         if server_max_seqs.is_empty() {
             info!("服务端无会话记录，跳过同步");
-            self.send(ConversationEvent::SyncFinished);
+            self.send(ConversationEvent::SyncFinished(reinstalled));
             return Ok(());
         }
 
@@ -863,8 +877,8 @@ mod tests {
         while let Ok(e) = rx.try_recv() {
             events.push(e);
         }
-        assert!(events.iter().any(|e| matches!(e, ConversationEvent::SyncStarted)));
-        assert!(events.iter().any(|e| matches!(e, ConversationEvent::SyncFinished)));
+        assert!(events.iter().any(|e| matches!(e, ConversationEvent::SyncStarted(_))));
+        assert!(events.iter().any(|e| matches!(e, ConversationEvent::SyncFinished(_))));
     }
 
     #[tokio::test]

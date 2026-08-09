@@ -111,11 +111,11 @@ class ConversationService {
   /// 处理统一事件
   void _handleEvent(ConversationEvent event) {
     event.maybeWhen(
-      syncStarted: () {
+      syncStarted: (_) {
         _updateSyncStatus(ConversationSyncStatus.syncing);
         _updateSyncProgress(0);
       },
-      syncFinished: () {
+      syncFinished: (_) {
         _updateSyncStatus(ConversationSyncStatus.completed);
         _updateSyncProgress(100);
         loadConversations();
@@ -124,7 +124,7 @@ class ConversationService {
         _updateSyncStatus(ConversationSyncStatus.syncing);
         _updateSyncProgress(progress);
       },
-      syncFailed: (_) {
+      syncFailed: (_, _) {
         _updateSyncStatus(ConversationSyncStatus.failed);
       },
       new_: (_) {

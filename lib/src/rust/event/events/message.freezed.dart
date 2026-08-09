@@ -21,6 +21,10 @@ mixin _$MessageEvent {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -51,6 +55,10 @@ mixin _$MessageEvent {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -81,6 +89,10 @@ mixin _$MessageEvent {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -111,6 +123,10 @@ mixin _$MessageEvent {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -120,6 +136,8 @@ mixin _$MessageEvent {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -129,6 +147,8 @@ mixin _$MessageEvent {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -246,6 +266,10 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -280,6 +304,10 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -314,6 +342,10 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -351,6 +383,10 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -364,6 +400,8 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -377,6 +415,8 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -405,6 +445,554 @@ abstract class MessageEvent_NewMessage extends MessageEvent {
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MessageEvent_NewMessageImplCopyWith<_$MessageEvent_NewMessageImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$MessageEvent_OfflineNewMessageImplCopyWith<$Res> {
+  factory _$$MessageEvent_OfflineNewMessageImplCopyWith(
+    _$MessageEvent_OfflineNewMessageImpl value,
+    $Res Function(_$MessageEvent_OfflineNewMessageImpl) then,
+  ) = __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String conversationId, MessageInfo message});
+}
+
+/// @nodoc
+class __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<$Res>
+    extends
+        _$MessageEventCopyWithImpl<$Res, _$MessageEvent_OfflineNewMessageImpl>
+    implements _$$MessageEvent_OfflineNewMessageImplCopyWith<$Res> {
+  __$$MessageEvent_OfflineNewMessageImplCopyWithImpl(
+    _$MessageEvent_OfflineNewMessageImpl _value,
+    $Res Function(_$MessageEvent_OfflineNewMessageImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? conversationId = null, Object? message = null}) {
+    return _then(
+      _$MessageEvent_OfflineNewMessageImpl(
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as MessageInfo,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$MessageEvent_OfflineNewMessageImpl
+    extends MessageEvent_OfflineNewMessage {
+  const _$MessageEvent_OfflineNewMessageImpl({
+    required this.conversationId,
+    required this.message,
+  }) : super._();
+
+  @override
+  final String conversationId;
+  @override
+  final MessageInfo message;
+
+  @override
+  String toString() {
+    return 'MessageEvent.offlineNewMessage(conversationId: $conversationId, message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$MessageEvent_OfflineNewMessageImpl &&
+            (identical(other.conversationId, conversationId) ||
+                other.conversationId == conversationId) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, conversationId, message);
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$MessageEvent_OfflineNewMessageImplCopyWith<
+    _$MessageEvent_OfflineNewMessageImpl
+  >
+  get copyWith =>
+      __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<
+        _$MessageEvent_OfflineNewMessageImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(String conversationId, MessageInfo message)
+    newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )
+    revoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    deleted,
+    required TResult Function(String clientMsgId, String error) sendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+  }) {
+    return offlineNewMessage(conversationId, message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    revoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    deleted,
+    TResult? Function(String clientMsgId, String error)? sendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+  }) {
+    return offlineNewMessage?.call(conversationId, message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    revoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
+    TResult Function(String clientMsgId, String error)? sendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    required TResult orElse(),
+  }) {
+    if (offlineNewMessage != null) {
+      return offlineNewMessage(conversationId, message);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
+    required TResult Function(MessageEvent_Revoked value) revoked,
+    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(MessageEvent_Deleted value) deleted,
+    required TResult Function(MessageEvent_SendFailed value) sendFailed,
+    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
+  }) {
+    return offlineNewMessage(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
+    TResult? Function(MessageEvent_Revoked value)? revoked,
+    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(MessageEvent_Deleted value)? deleted,
+    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
+    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
+  }) {
+    return offlineNewMessage?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
+    TResult Function(MessageEvent_Revoked value)? revoked,
+    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(MessageEvent_Deleted value)? deleted,
+    TResult Function(MessageEvent_SendFailed value)? sendFailed,
+    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
+    required TResult orElse(),
+  }) {
+    if (offlineNewMessage != null) {
+      return offlineNewMessage(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class MessageEvent_OfflineNewMessage extends MessageEvent {
+  const factory MessageEvent_OfflineNewMessage({
+    required final String conversationId,
+    required final MessageInfo message,
+  }) = _$MessageEvent_OfflineNewMessageImpl;
+  const MessageEvent_OfflineNewMessage._() : super._();
+
+  String get conversationId;
+  MessageInfo get message;
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$MessageEvent_OfflineNewMessageImplCopyWith<
+    _$MessageEvent_OfflineNewMessageImpl
+  >
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class _$$MessageEvent_OnlineOnlyMessageImplCopyWith<$Res> {
+  factory _$$MessageEvent_OnlineOnlyMessageImplCopyWith(
+    _$MessageEvent_OnlineOnlyMessageImpl value,
+    $Res Function(_$MessageEvent_OnlineOnlyMessageImpl) then,
+  ) = __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({String conversationId, MessageInfo message});
+}
+
+/// @nodoc
+class __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<$Res>
+    extends
+        _$MessageEventCopyWithImpl<$Res, _$MessageEvent_OnlineOnlyMessageImpl>
+    implements _$$MessageEvent_OnlineOnlyMessageImplCopyWith<$Res> {
+  __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl(
+    _$MessageEvent_OnlineOnlyMessageImpl _value,
+    $Res Function(_$MessageEvent_OnlineOnlyMessageImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? conversationId = null, Object? message = null}) {
+    return _then(
+      _$MessageEvent_OnlineOnlyMessageImpl(
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        message: null == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as MessageInfo,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+
+class _$MessageEvent_OnlineOnlyMessageImpl
+    extends MessageEvent_OnlineOnlyMessage {
+  const _$MessageEvent_OnlineOnlyMessageImpl({
+    required this.conversationId,
+    required this.message,
+  }) : super._();
+
+  @override
+  final String conversationId;
+  @override
+  final MessageInfo message;
+
+  @override
+  String toString() {
+    return 'MessageEvent.onlineOnlyMessage(conversationId: $conversationId, message: $message)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$MessageEvent_OnlineOnlyMessageImpl &&
+            (identical(other.conversationId, conversationId) ||
+                other.conversationId == conversationId) &&
+            (identical(other.message, message) || other.message == message));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, conversationId, message);
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$MessageEvent_OnlineOnlyMessageImplCopyWith<
+    _$MessageEvent_OnlineOnlyMessageImpl
+  >
+  get copyWith =>
+      __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<
+        _$MessageEvent_OnlineOnlyMessageImpl
+      >(this, _$identity);
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function(String conversationId, MessageInfo message)
+    newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
+    required TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )
+    revoked,
+    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
+    required TResult Function(String conversationId, List<String> clientMsgIds)
+    deleted,
+    required TResult Function(String clientMsgId, String error) sendFailed,
+    required TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )
+    uploadProgress,
+  }) {
+    return onlineOnlyMessage(conversationId, message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
+    TResult? Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    revoked,
+    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult? Function(String conversationId, List<String> clientMsgIds)?
+    deleted,
+    TResult? Function(String clientMsgId, String error)? sendFailed,
+    TResult? Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+  }) {
+    return onlineOnlyMessage?.call(conversationId, message);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
+    TResult Function(
+      String conversationId,
+      int seq,
+      String clientMsgId,
+      String revokerId,
+      int revokerRole,
+      String revokerNickname,
+      int revokeTime,
+      int sourceMessageSendTime,
+      String sourceMessageSendId,
+      String sourceMessageSenderNickname,
+      int sessionType,
+      bool isAdminRevoke,
+    )?
+    revoked,
+    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
+    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
+    TResult Function(String clientMsgId, String error)? sendFailed,
+    TResult Function(
+      String clientMsgId,
+      int progress,
+      BigInt totalSize,
+      BigInt uploadedSize,
+    )?
+    uploadProgress,
+    required TResult orElse(),
+  }) {
+    if (onlineOnlyMessage != null) {
+      return onlineOnlyMessage(conversationId, message);
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
+    required TResult Function(MessageEvent_Revoked value) revoked,
+    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
+    required TResult Function(MessageEvent_Deleted value) deleted,
+    required TResult Function(MessageEvent_SendFailed value) sendFailed,
+    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
+  }) {
+    return onlineOnlyMessage(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
+    TResult? Function(MessageEvent_Revoked value)? revoked,
+    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult? Function(MessageEvent_Deleted value)? deleted,
+    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
+    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
+  }) {
+    return onlineOnlyMessage?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
+    TResult Function(MessageEvent_Revoked value)? revoked,
+    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
+    TResult Function(MessageEvent_Deleted value)? deleted,
+    TResult Function(MessageEvent_SendFailed value)? sendFailed,
+    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
+    required TResult orElse(),
+  }) {
+    if (onlineOnlyMessage != null) {
+      return onlineOnlyMessage(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class MessageEvent_OnlineOnlyMessage extends MessageEvent {
+  const factory MessageEvent_OnlineOnlyMessage({
+    required final String conversationId,
+    required final MessageInfo message,
+  }) = _$MessageEvent_OnlineOnlyMessageImpl;
+  const MessageEvent_OnlineOnlyMessage._() : super._();
+
+  String get conversationId;
+  MessageInfo get message;
+
+  /// Create a copy of MessageEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$MessageEvent_OnlineOnlyMessageImplCopyWith<
+    _$MessageEvent_OnlineOnlyMessageImpl
+  >
   get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -629,6 +1217,10 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -676,6 +1268,10 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -723,6 +1319,10 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -773,6 +1373,10 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -786,6 +1390,8 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -799,6 +1405,8 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -934,6 +1542,10 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -968,6 +1580,10 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -1002,6 +1618,10 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -1039,6 +1659,10 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -1052,6 +1676,8 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -1065,6 +1691,8 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -1194,6 +1822,10 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -1228,6 +1860,10 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -1262,6 +1898,10 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -1299,6 +1939,10 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -1312,6 +1956,8 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -1325,6 +1971,8 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -1442,6 +2090,10 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -1476,6 +2128,10 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -1510,6 +2166,10 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -1547,6 +2207,10 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -1560,6 +2224,8 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -1573,6 +2239,8 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,
@@ -1720,6 +2388,10 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   TResult when<TResult extends Object?>({
     required TResult Function(String conversationId, MessageInfo message)
     newMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    offlineNewMessage,
+    required TResult Function(String conversationId, MessageInfo message)
+    onlineOnlyMessage,
     required TResult Function(
       String conversationId,
       int seq,
@@ -1754,6 +2426,10 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function(String conversationId, MessageInfo message)? newMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult? Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult? Function(
       String conversationId,
       int seq,
@@ -1788,6 +2464,10 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function(String conversationId, MessageInfo message)? newMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    offlineNewMessage,
+    TResult Function(String conversationId, MessageInfo message)?
+    onlineOnlyMessage,
     TResult Function(
       String conversationId,
       int seq,
@@ -1825,6 +2505,10 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
     required TResult Function(MessageEvent_NewMessage value) newMessage,
+    required TResult Function(MessageEvent_OfflineNewMessage value)
+    offlineNewMessage,
+    required TResult Function(MessageEvent_OnlineOnlyMessage value)
+    onlineOnlyMessage,
     required TResult Function(MessageEvent_Revoked value) revoked,
     required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
     required TResult Function(MessageEvent_Deleted value) deleted,
@@ -1838,6 +2522,8 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
     TResult? Function(MessageEvent_NewMessage value)? newMessage,
+    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult? Function(MessageEvent_Revoked value)? revoked,
     TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult? Function(MessageEvent_Deleted value)? deleted,
@@ -1851,6 +2537,8 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(MessageEvent_NewMessage value)? newMessage,
+    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
+    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
     TResult Function(MessageEvent_Revoked value)? revoked,
     TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
     TResult Function(MessageEvent_Deleted value)? deleted,

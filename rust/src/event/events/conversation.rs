@@ -7,9 +7,9 @@ pub enum ConversationEvent {
     Deleted(Vec<String>),
     New(Vec<LocalConversation>),
     TotalUnreadCountChanged(i64),
-    SyncStarted,
-    SyncFinished,
-    SyncFailed(String),
+    SyncStarted(bool),
+    SyncFinished(bool),
+    SyncFailed { reinstalled: bool, error: String },
     SyncProgress {
         progress: i32,
         message: String,
@@ -33,9 +33,9 @@ impl ConversationEvent {
             ConversationEvent::Deleted(_) => "deleted",
             ConversationEvent::New(_) => "new",
             ConversationEvent::TotalUnreadCountChanged(_) => "total_unread_count_changed",
-            ConversationEvent::SyncStarted => "sync_started",
-            ConversationEvent::SyncFinished => "sync_finished",
-            ConversationEvent::SyncFailed(_) => "sync_failed",
+            ConversationEvent::SyncStarted(_) => "sync_started",
+            ConversationEvent::SyncFinished(_) => "sync_finished",
+            ConversationEvent::SyncFailed { .. } => "sync_failed",
             ConversationEvent::SyncProgress { .. } => "sync_progress",
             ConversationEvent::UserInputStatusChanged { .. } => "user_input_status_changed",
             ConversationEvent::UpdateLatestMessageReadState { .. } => "update_latest_message_read_state",
@@ -49,9 +49,9 @@ pub trait ConversationListener: Send + Sync {
     fn on_deleted(&self, _ids: &[String]) {}
     fn on_new(&self, _conversations: &[LocalConversation]) {}
     fn on_total_unread_count_changed(&self, _count: i64) {}
-    fn on_sync_started(&self) {}
-    fn on_sync_finished(&self) {}
-    fn on_sync_failed(&self, _error: &str) {}
+    fn on_sync_started(&self, _reinstalled: bool) {}
+    fn on_sync_finished(&self, _reinstalled: bool) {}
+    fn on_sync_failed(&self, _reinstalled: bool, _error: &str) {}
     fn on_sync_progress(&self, _progress: i32, _message: &str) {}
     fn on_user_input_status_changed(&self, _conversation_id: &str, _user_id: &str, _platform_ids: &[i32]) {}
     fn on_update_latest_message_read_state(&self, _conversation_id: &str) {}
@@ -65,9 +65,9 @@ pub trait ConversationListenerExt: ConversationListener {
             ConversationEvent::Deleted(ids) => self.on_deleted(&ids),
             ConversationEvent::New(convs) => self.on_new(&convs),
             ConversationEvent::TotalUnreadCountChanged(count) => self.on_total_unread_count_changed(count),
-            ConversationEvent::SyncStarted => self.on_sync_started(),
-            ConversationEvent::SyncFinished => self.on_sync_finished(),
-            ConversationEvent::SyncFailed(error) => self.on_sync_failed(&error),
+            ConversationEvent::SyncStarted(reinstalled) => self.on_sync_started(reinstalled),
+            ConversationEvent::SyncFinished(reinstalled) => self.on_sync_finished(reinstalled),
+            ConversationEvent::SyncFailed { reinstalled, error } => self.on_sync_failed(reinstalled, &error),
             ConversationEvent::SyncProgress { progress, message } => self.on_sync_progress(progress, &message),
             ConversationEvent::UserInputStatusChanged {
                 conversation_id,

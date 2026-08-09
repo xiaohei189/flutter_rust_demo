@@ -645,8 +645,8 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
 
   void _onConversationEvent(ConversationEvent event) {
     event.maybeWhen(
-      syncStarted: () => state = state.copyWith(isSyncingConversations: true, syncProgress: 0),
-      syncFinished: () { state = state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
+      syncStarted: (_) => state = state.copyWith(isSyncingConversations: true, syncProgress: 0),
+      syncFinished: (_) { state = state.copyWith(isSyncingConversations: false, syncProgress: 100); _loadConversations(); },
       syncProgress: (p, _) => state = state.copyWith(isSyncingConversations: true, syncProgress: p),
       totalUnreadCountChanged: (c) {
         appLog.i('[MsgSvc] totalUnreadCountChanged: $c');
@@ -671,7 +671,7 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
         }
         state = state.copyWith(typingUsers: typingUsers);
       },
-      syncFailed: (e) => appLog.i('[MsgSvc] syncFailed: $e'),
+      syncFailed: (reinstalled, e) => appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e'),
       orElse: () {},
     );
   }
@@ -683,6 +683,12 @@ class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
     event.when(
       newMessage: (conversationId, message) {
+        _appendIncomingMessage(conversationId, message);
+      },
+      offlineNewMessage: (conversationId, message) {
+        _appendIncomingMessage(conversationId, message);
+      },
+      onlineOnlyMessage: (conversationId, message) {
         _appendIncomingMessage(conversationId, message);
       },
       revoked: (conversationId, seq, clientMsgId, revokerId, revokerRole,

@@ -5867,8 +5867,12 @@ impl SseDecode for crate::event::events::connection::ConnectionEvent {
                 return crate::event::events::connection::ConnectionEvent::Disconnected(var_field0);
             }
             3 => {
-                let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::event::events::connection::ConnectionEvent::ConnectFailed(var_field0);
+                let mut var_errCode = <i32>::sse_decode(deserializer);
+                let mut var_error = <String>::sse_decode(deserializer);
+                return crate::event::events::connection::ConnectionEvent::ConnectFailed {
+                    err_code: var_errCode,
+                    error: var_error,
+                };
             }
             4 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
@@ -5878,6 +5882,10 @@ impl SseDecode for crate::event::events::connection::ConnectionEvent {
                 return crate::event::events::connection::ConnectionEvent::TokenExpired;
             }
             6 => {
+                let mut var_error = <String>::sse_decode(deserializer);
+                return crate::event::events::connection::ConnectionEvent::TokenInvalid { error: var_error };
+            }
+            7 => {
                 let mut var_attempt = <u32>::sse_decode(deserializer);
                 let mut var_maxAttempts = <u32>::sse_decode(deserializer);
                 return crate::event::events::connection::ConnectionEvent::Reconnecting {
@@ -5885,11 +5893,11 @@ impl SseDecode for crate::event::events::connection::ConnectionEvent {
                     max_attempts: var_maxAttempts,
                 };
             }
-            7 => {
+            8 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
                 return crate::event::events::connection::ConnectionEvent::LoginSuccess(var_field0);
             }
-            8 => {
+            9 => {
                 return crate::event::events::connection::ConnectionEvent::Logout;
             }
             _ => {
@@ -5936,14 +5944,20 @@ impl SseDecode for crate::event::events::conversation::ConversationEvent {
                 return crate::event::events::conversation::ConversationEvent::TotalUnreadCountChanged(var_field0);
             }
             4 => {
-                return crate::event::events::conversation::ConversationEvent::SyncStarted;
+                let mut var_field0 = <bool>::sse_decode(deserializer);
+                return crate::event::events::conversation::ConversationEvent::SyncStarted(var_field0);
             }
             5 => {
-                return crate::event::events::conversation::ConversationEvent::SyncFinished;
+                let mut var_field0 = <bool>::sse_decode(deserializer);
+                return crate::event::events::conversation::ConversationEvent::SyncFinished(var_field0);
             }
             6 => {
-                let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::event::events::conversation::ConversationEvent::SyncFailed(var_field0);
+                let mut var_reinstalled = <bool>::sse_decode(deserializer);
+                let mut var_error = <String>::sse_decode(deserializer);
+                return crate::event::events::conversation::ConversationEvent::SyncFailed {
+                    reinstalled: var_reinstalled,
+                    error: var_error,
+                };
             }
             7 => {
                 let mut var_progress = <i32>::sse_decode(deserializer);
@@ -6781,6 +6795,22 @@ impl SseDecode for crate::event::events::message::MessageEvent {
             }
             1 => {
                 let mut var_conversationId = <String>::sse_decode(deserializer);
+                let mut var_message = <crate::model::message::MessageInfo>::sse_decode(deserializer);
+                return crate::event::events::message::MessageEvent::OfflineNewMessage {
+                    conversation_id: var_conversationId,
+                    message: var_message,
+                };
+            }
+            2 => {
+                let mut var_conversationId = <String>::sse_decode(deserializer);
+                let mut var_message = <crate::model::message::MessageInfo>::sse_decode(deserializer);
+                return crate::event::events::message::MessageEvent::OnlineOnlyMessage {
+                    conversation_id: var_conversationId,
+                    message: var_message,
+                };
+            }
+            3 => {
+                let mut var_conversationId = <String>::sse_decode(deserializer);
                 let mut var_seq = <i64>::sse_decode(deserializer);
                 let mut var_clientMsgId = <String>::sse_decode(deserializer);
                 let mut var_revokerId = <String>::sse_decode(deserializer);
@@ -6807,11 +6837,11 @@ impl SseDecode for crate::event::events::message::MessageEvent {
                     is_admin_revoke: var_isAdminRevoke,
                 };
             }
-            2 => {
+            4 => {
                 let mut var_receipts = <Vec<crate::event::events::message::MessageReceipt>>::sse_decode(deserializer);
                 return crate::event::events::message::MessageEvent::C2CReadReceipt { receipts: var_receipts };
             }
-            3 => {
+            5 => {
                 let mut var_conversationId = <String>::sse_decode(deserializer);
                 let mut var_clientMsgIds = <Vec<String>>::sse_decode(deserializer);
                 return crate::event::events::message::MessageEvent::Deleted {
@@ -6819,7 +6849,7 @@ impl SseDecode for crate::event::events::message::MessageEvent {
                     client_msg_ids: var_clientMsgIds,
                 };
             }
-            4 => {
+            6 => {
                 let mut var_clientMsgId = <String>::sse_decode(deserializer);
                 let mut var_error = <String>::sse_decode(deserializer);
                 return crate::event::events::message::MessageEvent::SendFailed {
@@ -6827,7 +6857,7 @@ impl SseDecode for crate::event::events::message::MessageEvent {
                     error: var_error,
                 };
             }
-            5 => {
+            7 => {
                 let mut var_clientMsgId = <String>::sse_decode(deserializer);
                 let mut var_progress = <u8>::sse_decode(deserializer);
                 let mut var_totalSize = <u64>::sse_decode(deserializer);
@@ -7819,14 +7849,17 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::connection::Connect
             crate::event::events::connection::ConnectionEvent::Connecting => [0.into_dart()].into_dart(),
             crate::event::events::connection::ConnectionEvent::Connected => [1.into_dart()].into_dart(),
             crate::event::events::connection::ConnectionEvent::Disconnected(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::connection::ConnectionEvent::ConnectFailed(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::connection::ConnectionEvent::ConnectFailed { err_code, error } => {
+                [3.into_dart(), err_code.into_into_dart().into_dart(), error.into_into_dart().into_dart()].into_dart()
+            }
             crate::event::events::connection::ConnectionEvent::KickedOffline(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::connection::ConnectionEvent::TokenExpired => [5.into_dart()].into_dart(),
+            crate::event::events::connection::ConnectionEvent::TokenInvalid { error } => [6.into_dart(), error.into_into_dart().into_dart()].into_dart(),
             crate::event::events::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
-                [6.into_dart(), attempt.into_into_dart().into_dart(), max_attempts.into_into_dart().into_dart()].into_dart()
+                [7.into_dart(), attempt.into_into_dart().into_dart(), max_attempts.into_into_dart().into_dart()].into_dart()
             }
-            crate::event::events::connection::ConnectionEvent::LoginSuccess(field0) => [7.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::connection::ConnectionEvent::Logout => [8.into_dart()].into_dart(),
+            crate::event::events::connection::ConnectionEvent::LoginSuccess(field0) => [8.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::connection::ConnectionEvent::Logout => [9.into_dart()].into_dart(),
             _ => {
                 unimplemented!("");
             }
@@ -7866,9 +7899,11 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::conversation::Conve
             crate::event::events::conversation::ConversationEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::conversation::ConversationEvent::New(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::event::events::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => [3.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
-            crate::event::events::conversation::ConversationEvent::SyncStarted => [4.into_dart()].into_dart(),
-            crate::event::events::conversation::ConversationEvent::SyncFinished => [5.into_dart()].into_dart(),
-            crate::event::events::conversation::ConversationEvent::SyncFailed(field0) => [6.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::conversation::ConversationEvent::SyncStarted(field0) => [4.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::conversation::ConversationEvent::SyncFinished(field0) => [5.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::conversation::ConversationEvent::SyncFailed { reinstalled, error } => {
+                [6.into_dart(), reinstalled.into_into_dart().into_dart(), error.into_into_dart().into_dart()].into_dart()
+            }
             crate::event::events::conversation::ConversationEvent::SyncProgress { progress, message } => {
                 [7.into_dart(), progress.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
             }
@@ -8353,6 +8388,12 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::message::MessageEve
             crate::event::events::message::MessageEvent::NewMessage { conversation_id, message } => {
                 [0.into_dart(), conversation_id.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
             }
+            crate::event::events::message::MessageEvent::OfflineNewMessage { conversation_id, message } => {
+                [1.into_dart(), conversation_id.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
+            }
+            crate::event::events::message::MessageEvent::OnlineOnlyMessage { conversation_id, message } => {
+                [2.into_dart(), conversation_id.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
+            }
             crate::event::events::message::MessageEvent::Revoked {
                 conversation_id,
                 seq,
@@ -8367,7 +8408,7 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::message::MessageEve
                 session_type,
                 is_admin_revoke,
             } => [
-                1.into_dart(),
+                3.into_dart(),
                 conversation_id.into_into_dart().into_dart(),
                 seq.into_into_dart().into_dart(),
                 client_msg_id.into_into_dart().into_dart(),
@@ -8382,12 +8423,12 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::message::MessageEve
                 is_admin_revoke.into_into_dart().into_dart(),
             ]
             .into_dart(),
-            crate::event::events::message::MessageEvent::C2CReadReceipt { receipts } => [2.into_dart(), receipts.into_into_dart().into_dart()].into_dart(),
+            crate::event::events::message::MessageEvent::C2CReadReceipt { receipts } => [4.into_dart(), receipts.into_into_dart().into_dart()].into_dart(),
             crate::event::events::message::MessageEvent::Deleted { conversation_id, client_msg_ids } => {
-                [3.into_dart(), conversation_id.into_into_dart().into_dart(), client_msg_ids.into_into_dart().into_dart()].into_dart()
+                [5.into_dart(), conversation_id.into_into_dart().into_dart(), client_msg_ids.into_into_dart().into_dart()].into_dart()
             }
             crate::event::events::message::MessageEvent::SendFailed { client_msg_id, error } => {
-                [4.into_dart(), client_msg_id.into_into_dart().into_dart(), error.into_into_dart().into_dart()].into_dart()
+                [6.into_dart(), client_msg_id.into_into_dart().into_dart(), error.into_into_dart().into_dart()].into_dart()
             }
             crate::event::events::message::MessageEvent::UploadProgress {
                 client_msg_id,
@@ -8395,7 +8436,7 @@ impl flutter_rust_bridge::IntoDart for crate::event::events::message::MessageEve
                 total_size,
                 uploaded_size,
             } => [
-                5.into_dart(),
+                7.into_dart(),
                 client_msg_id.into_into_dart().into_dart(),
                 progress.into_into_dart().into_dart(),
                 total_size.into_into_dart().into_dart(),
@@ -8976,9 +9017,10 @@ impl SseEncode for crate::event::events::connection::ConnectionEvent {
                 <i32>::sse_encode(2, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::event::events::connection::ConnectionEvent::ConnectFailed(field0) => {
+            crate::event::events::connection::ConnectionEvent::ConnectFailed { err_code, error } => {
                 <i32>::sse_encode(3, serializer);
-                <String>::sse_encode(field0, serializer);
+                <i32>::sse_encode(err_code, serializer);
+                <String>::sse_encode(error, serializer);
             }
             crate::event::events::connection::ConnectionEvent::KickedOffline(field0) => {
                 <i32>::sse_encode(4, serializer);
@@ -8987,17 +9029,21 @@ impl SseEncode for crate::event::events::connection::ConnectionEvent {
             crate::event::events::connection::ConnectionEvent::TokenExpired => {
                 <i32>::sse_encode(5, serializer);
             }
-            crate::event::events::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
+            crate::event::events::connection::ConnectionEvent::TokenInvalid { error } => {
                 <i32>::sse_encode(6, serializer);
+                <String>::sse_encode(error, serializer);
+            }
+            crate::event::events::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
+                <i32>::sse_encode(7, serializer);
                 <u32>::sse_encode(attempt, serializer);
                 <u32>::sse_encode(max_attempts, serializer);
             }
             crate::event::events::connection::ConnectionEvent::LoginSuccess(field0) => {
-                <i32>::sse_encode(7, serializer);
+                <i32>::sse_encode(8, serializer);
                 <String>::sse_encode(field0, serializer);
             }
             crate::event::events::connection::ConnectionEvent::Logout => {
-                <i32>::sse_encode(8, serializer);
+                <i32>::sse_encode(9, serializer);
             }
             _ => {
                 unimplemented!("");
@@ -9045,15 +9091,18 @@ impl SseEncode for crate::event::events::conversation::ConversationEvent {
                 <i32>::sse_encode(3, serializer);
                 <i64>::sse_encode(field0, serializer);
             }
-            crate::event::events::conversation::ConversationEvent::SyncStarted => {
+            crate::event::events::conversation::ConversationEvent::SyncStarted(field0) => {
                 <i32>::sse_encode(4, serializer);
+                <bool>::sse_encode(field0, serializer);
             }
-            crate::event::events::conversation::ConversationEvent::SyncFinished => {
+            crate::event::events::conversation::ConversationEvent::SyncFinished(field0) => {
                 <i32>::sse_encode(5, serializer);
+                <bool>::sse_encode(field0, serializer);
             }
-            crate::event::events::conversation::ConversationEvent::SyncFailed(field0) => {
+            crate::event::events::conversation::ConversationEvent::SyncFailed { reinstalled, error } => {
                 <i32>::sse_encode(6, serializer);
-                <String>::sse_encode(field0, serializer);
+                <bool>::sse_encode(reinstalled, serializer);
+                <String>::sse_encode(error, serializer);
             }
             crate::event::events::conversation::ConversationEvent::SyncProgress { progress, message } => {
                 <i32>::sse_encode(7, serializer);
@@ -9667,6 +9716,16 @@ impl SseEncode for crate::event::events::message::MessageEvent {
                 <String>::sse_encode(conversation_id, serializer);
                 <crate::model::message::MessageInfo>::sse_encode(message, serializer);
             }
+            crate::event::events::message::MessageEvent::OfflineNewMessage { conversation_id, message } => {
+                <i32>::sse_encode(1, serializer);
+                <String>::sse_encode(conversation_id, serializer);
+                <crate::model::message::MessageInfo>::sse_encode(message, serializer);
+            }
+            crate::event::events::message::MessageEvent::OnlineOnlyMessage { conversation_id, message } => {
+                <i32>::sse_encode(2, serializer);
+                <String>::sse_encode(conversation_id, serializer);
+                <crate::model::message::MessageInfo>::sse_encode(message, serializer);
+            }
             crate::event::events::message::MessageEvent::Revoked {
                 conversation_id,
                 seq,
@@ -9681,7 +9740,7 @@ impl SseEncode for crate::event::events::message::MessageEvent {
                 session_type,
                 is_admin_revoke,
             } => {
-                <i32>::sse_encode(1, serializer);
+                <i32>::sse_encode(3, serializer);
                 <String>::sse_encode(conversation_id, serializer);
                 <i64>::sse_encode(seq, serializer);
                 <String>::sse_encode(client_msg_id, serializer);
@@ -9696,16 +9755,16 @@ impl SseEncode for crate::event::events::message::MessageEvent {
                 <bool>::sse_encode(is_admin_revoke, serializer);
             }
             crate::event::events::message::MessageEvent::C2CReadReceipt { receipts } => {
-                <i32>::sse_encode(2, serializer);
+                <i32>::sse_encode(4, serializer);
                 <Vec<crate::event::events::message::MessageReceipt>>::sse_encode(receipts, serializer);
             }
             crate::event::events::message::MessageEvent::Deleted { conversation_id, client_msg_ids } => {
-                <i32>::sse_encode(3, serializer);
+                <i32>::sse_encode(5, serializer);
                 <String>::sse_encode(conversation_id, serializer);
                 <Vec<String>>::sse_encode(client_msg_ids, serializer);
             }
             crate::event::events::message::MessageEvent::SendFailed { client_msg_id, error } => {
-                <i32>::sse_encode(4, serializer);
+                <i32>::sse_encode(6, serializer);
                 <String>::sse_encode(client_msg_id, serializer);
                 <String>::sse_encode(error, serializer);
             }
@@ -9715,7 +9774,7 @@ impl SseEncode for crate::event::events::message::MessageEvent {
                 total_size,
                 uploaded_size,
             } => {
-                <i32>::sse_encode(5, serializer);
+                <i32>::sse_encode(7, serializer);
                 <String>::sse_encode(client_msg_id, serializer);
                 <u8>::sse_encode(progress, serializer);
                 <u64>::sse_encode(total_size, serializer);

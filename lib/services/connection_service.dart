@@ -82,7 +82,7 @@ class ConnectionService {
       connected: () => _updateStatus(ConnectionStatus.connected),
       connecting: () => _updateStatus(ConnectionStatus.connecting),
       disconnected: (_) => _updateStatus(ConnectionStatus.disconnected),
-      connectFailed: (_) => _updateStatus(ConnectionStatus.failed),
+      connectFailed: (_, _) => _updateStatus(ConnectionStatus.failed),
       reconnecting: (_, _) => _updateStatus(ConnectionStatus.connecting),
       kickedOffline: (_) => _updateStatus(ConnectionStatus.kickedOffline),
       tokenExpired: () => _updateStatus(ConnectionStatus.tokenExpired),
