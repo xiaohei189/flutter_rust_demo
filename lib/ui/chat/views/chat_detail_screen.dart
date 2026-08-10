@@ -1545,9 +1545,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                               (s) => s.groupReadReceipts,
                             ),
                           ),
-                          cachedCurrentUserProfile: ref
-                              .watch(userProfileProvider)
-                              .profile,
+                          cachedCurrentUserProfile: ref.watch(
+                            messageServiceProvider.select(
+                              (s) => s.loginUserProfile,
+                            ),
+                          ),
                           onMessageVisible: (msg) {
                             // 逐条标记已读（对齐 Go SDK VisibilityDetector 模式）
                             if (!msg.isRead &&

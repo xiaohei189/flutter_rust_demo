@@ -1,10 +1,10 @@
 import '../services/user_service.dart';
-import '../../src/rust/model/user.dart' show UserInfo;
+import '../../domain/models/user_profile.dart';
 import 'friend_repository.dart';
 import 'friend_search_repository.dart';
 
 abstract class UserProfileRepository {
-  Future<UserInfo?> fetchProfile(String userId);
+  Future<UserProfile?> fetchProfile(String userId);
   bool isCurrentUser(String userId);
   Future<bool> isFriend(String userId);
   Future<void> sendFriendRequest(String userId, String reqMsg);
@@ -24,8 +24,9 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   final FriendSearchRepository _friendSearchRepository;
 
   @override
-  Future<UserInfo?> fetchProfile(String userId) {
-    return _userService.fetchUserProfile(userId);
+  Future<UserProfile?> fetchProfile(String userId) async {
+    final profile = await _userService.fetchUserProfile(userId);
+    return profile == null ? null : UserProfileMapping.fromUserInfo(profile);
   }
 
   @override

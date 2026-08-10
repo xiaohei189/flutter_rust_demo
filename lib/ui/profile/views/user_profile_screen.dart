@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/user.dart';
+import '../../../../domain/models/user_profile.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/contacts/views/friend_setup_screen.dart';
@@ -28,7 +29,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
-  UserInfo? _userProfile;
+  UserProfile? _userProfile;
   bool _isLoading = false;
   bool _isFriend = false;
   bool _isSelf = false;
@@ -90,7 +91,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     
     // 总是使用最新的用户信息
     User displayUser = widget.user;
-    UserInfo? displayProfile = _userProfile;
+    UserProfile? displayProfile = _userProfile;
     
     // 如果是当前用户，优先使用 provider 中的信息
     if (userProfileState.profile != null && 

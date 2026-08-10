@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../ui/profile/view_models/user_profile_view_model.dart';
-import '../src/rust/model/user.dart' show UserInfo;
+import '../domain/models/user_profile.dart';
 
 final userProfileProvider =
     NotifierProvider<UserProfileNotifier, UserProfileState>(
@@ -8,7 +8,7 @@ final userProfileProvider =
     );
 
 /// 当前用户资料 Provider（仅返回 profile）
-final currentUserProfileProvider = Provider<UserInfo?>((ref) {
+final currentUserProfileProvider = Provider<UserProfile?>((ref) {
   return ref.watch(userProfileProvider).profile;
 });
 

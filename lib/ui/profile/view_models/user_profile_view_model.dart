@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../domain/models/user_profile.dart';
 import '../../../src/rust/model/user.dart' show UserInfo;
 import '../../core/utils/app_logger.dart';
 import '../../../providers/message_service_provider.dart';
 
 /// 用户资料状态
 class UserProfileState {
-  final UserInfo? profile;
+  final UserProfile? profile;
   final String nickname;
   final String alias;
   final String signature;
@@ -29,7 +30,7 @@ class UserProfileState {
   });
 
   UserProfileState copyWith({
-    UserInfo? profile,
+    UserProfile? profile,
     String? nickname,
     String? alias,
     String? signature,
@@ -111,7 +112,8 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
                 next.loginUserProfile?.nickname ||
             previous?.loginUserProfile?.faceUrl !=
                 next.loginUserProfile?.faceUrl) {
-          final profile = next.loginUserProfile!;
+          final rawProfile = next.loginUserProfile!;
+          final profile = UserProfileMapping.fromUserInfo(rawProfile);
           final exData = UserProfileState.parseEx(profile.remark);
           appLog.i(
             '[UserProfile] 监听器触发: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}',
@@ -212,13 +214,17 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
   }
 
   /// 获取指定用户资料（从 MessageService 缓存）
-  UserInfo? getUserProfile(String userId) {
+  UserProfile? getUserProfile(String userId) {
     // 如果是当前登录用户，直接返回
     if (state.profile?.userId == userId) {
       return state.profile;
     }
-    // 从 MessageService 缓存获取
-    return ref.read(messageServiceProvider.notifier).getUserProfile(userId);
+    final raw = ref.read(messageServiceProvider.notifier).getUserProfile(userId);
+    return raw == null ? null : UserProfileMapping.fromUserInfo(raw);
+  }
+
+  UserProfile? _toUserProfile(UserInfo? raw) {
+    return raw == null ? null : UserProfileMapping.fromUserInfo(raw);
   }
 
   /// 加载当前登录用户资料
@@ -232,7 +238,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
 
       // 直接从 messageServiceProvider 获取登录用户资料
       final messageService = ref.read(messageServiceProvider);
-      final profile = messageService.loginUserProfile;
+      final profile = _toUserProfile(messageService.loginUserProfile);
 
       if (profile != null) {
         final exData = UserProfileState.parseEx(profile.remark);
@@ -267,9 +273,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
         );
       } else {
         // 如果 messageService 中没有登录用户资料，尝试从服务端获取
-        final refreshedProfile = await ref
-            .read(messageServiceProvider.notifier)
-            .refreshLoginUserProfile();
+        final refreshedProfile = _toUserProfile(
+          await ref.read(messageServiceProvider.notifier).refreshLoginUserProfile(),
+        );
         if (refreshedProfile != null) {
           final exData = UserProfileState.parseEx(refreshedProfile.remark);
           // 同样的优先级：保留本地路径
@@ -315,7 +321,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
 
       if (updated != null) {
         state = state.copyWith(
-          profile: updated,
+          profile: _toUserProfile(updated),
           nickname: updated.nickname.trim(),
           isLoading: false,
         );
@@ -347,7 +353,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
 
       if (updated != null) {
         state = state.copyWith(
-          profile: updated,
+          profile: _toUserProfile(updated),
           alias: alias,
           isLoading: false,
         );
@@ -379,7 +385,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
 
       if (updated != null) {
         state = state.copyWith(
-          profile: updated,
+          profile: _toUserProfile(updated),
           signature: signature,
           isLoading: false,
         );
@@ -418,7 +424,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
 
         // 给头像 URL 添加时间戳参数，绕过缓存确保立即生效
         final cacheBustedUrl = _addCacheBuster(updated.faceUrl);
-        final profileWithCacheBuster = UserInfo(
+        final profileWithCacheBuster = UserProfile(
           userId: updated.userId,
           nickname: updated.nickname,
           faceUrl: cacheBustedUrl,
