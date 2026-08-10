@@ -10,7 +10,7 @@ import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart'
 
 import 'router/app_router.dart';
 import 'ui/core/theme/app_theme.dart';
-import 'ui/core/utils/host_config.dart';
+import 'data/config/host_config.dart';
 import 'data/services/im_client.dart';
 import 'data/services/app_lifecycle_service.dart';
 import 'data/services/local_notification_service.dart';

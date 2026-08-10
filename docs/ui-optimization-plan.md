@@ -1,6 +1,6 @@
 # UI 与目录组织优化计划
 
-> 状态：待实施
+> 状态：进行中
 > 范围：Flutter UI 层、目录组织、测试目录镜像
 > 不涉及：Rust SDK、OpenIM 服务端协议、后端接口改动
 
@@ -116,10 +116,10 @@ test/
 
 ### 4.1 A 组：目录与结构清理
 
-- [ ] A1：确认并清理空目录 `lib/screens/`、`lib/domain/models/models/`。
-- [ ] A2：删除或合并未使用的 `lib/ui/profile/views/profile_screen.dart`，确认没有测试或路由引用。
-- [ ] A3：将 `lib/ui/core/main_screen.dart` 移动到应用壳位置，如 `lib/app/main_screen.dart` 或 `lib/ui/shell/main_screen.dart`。
-- [ ] A4：将登录存储、Host 配置等从 `ui/core/utils/` 迁移到 `data/` 或 `app/config/`。
+- [x] A1：确认并清理空目录 `lib/screens/`、`lib/domain/models/models/`。
+- [x] A2：删除或合并未使用的 `lib/ui/profile/views/profile_screen.dart`，确认没有测试或路由引用。
+- [x] A3：将 `lib/ui/core/main_screen.dart` 移动到应用壳位置，如 `lib/app/main_screen.dart` 或 `lib/ui/shell/main_screen.dart`。
+- [x] A4：将登录存储、Host 配置等从 `ui/core/utils/` 迁移到 `data/` 或 `app/config/`。
 - [ ] A5：FRB 生成代码与手写代码隔离，生成代码放入 `lib/generated/rust/` 或 `lib/src/rust/generated/`，并在 AGENTS/README 标注禁止手改。
 - [ ] A6：统一 feature 目录为 `views/ + view_models/ + widgets/`。
 - [ ] A7：明确跨功能页面的 owner：`search_screen.dart`、`scan_screen.dart`、`qr_code_screen.dart` 放到 `ui/shared/` 或指定 feature。

@@ -5,9 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
-import '../../../../data/services/auth_api.dart' show loginAsync, loginWithVerifyCode, sendVerificationCode, kAuthBaseUrl, usedForLogin;
+import '../../../../data/services/auth_api.dart'
+    show
+        loginAsync,
+        loginWithVerifyCode,
+        sendVerificationCode,
+        kAuthBaseUrl,
+        usedForLogin;
 import '../../../../ui/core/utils/app_logger.dart';
-import '../../../../ui/core/utils/login_storage.dart';
+import '../../../../data/services/login_storage.dart';
 import '../../../../providers/message_service_provider.dart';
 
 /// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
@@ -49,8 +55,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  String get _areaCode =>
-      _areaCodeController.text.trim().isEmpty ? '+86' : _areaCodeController.text.trim();
+  String get _areaCode => _areaCodeController.text.trim().isEmpty
+      ? '+86'
+      : _areaCodeController.text.trim();
   String get _phone => _phoneController.text.trim();
 
   Future<void> _sendCode() async {
@@ -91,7 +98,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() {
           _countdown = 0;
           _countdownTimer?.cancel();
-          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          _errorText = e.toString().replaceFirst(
+            RegExp(r'^Exception:?\s*'),
+            '',
+          );
         });
       }
     }
@@ -145,17 +155,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     try {
       appLog.i('[登录] 即将请求验证码登录 HTTP（最多等 30s）');
-      final result = await loginWithVerifyCode(
-        areaCode: _areaCode,
-        phoneNumber: _phone,
-        verifyCode: code,
-        platform: 5,
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception(
-          '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: $kAuthBaseUrl/account/login',
-        ),
-      );
+      final result =
+          await loginWithVerifyCode(
+            areaCode: _areaCode,
+            phoneNumber: _phone,
+            verifyCode: code,
+            platform: 5,
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception(
+              '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: $kAuthBaseUrl/account/login',
+            ),
+          );
       appLog.i('[登录] 验证码登录 HTTP 返回成功');
       if (!mounted) return;
       appLog.i('[登录] 调用 _stopLoadingAndGoToMain');
@@ -178,7 +189,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
     appLog.i('[登录] setState(_loading=false) 已调用');
-    
+
     try {
       // 保存凭证
       await LoginStorage.saveCredentials(
@@ -188,17 +199,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         phoneNumber: _phone,
       );
       appLog.i('[登录] 凭证已保存');
-      
+
       // 初始化 MessageService
       appLog.i('[登录] 开始 MessageService.initialize');
-      await ref.read(messageServiceProvider.notifier).initialize(
-        wsUrl: widget.wsUrl,
-        apiBaseUrl: widget.apiBaseUrl,
-        userId: userId,
-        imToken: imToken,
-      );
+      await ref
+          .read(messageServiceProvider.notifier)
+          .initialize(
+            wsUrl: widget.wsUrl,
+            apiBaseUrl: widget.apiBaseUrl,
+            userId: userId,
+            imToken: imToken,
+          );
       appLog.i('[登录] MessageService.initialize 完成');
-      
+
       if (!mounted) return;
       // 初始化完成后再导航到主页
       context.go(AppRouter.main);
@@ -233,7 +246,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 48),
-                Icon(Icons.chat_bubble_outline, size: 64, color: Colors.blue.shade400),
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: Colors.blue.shade400,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   '欢迎使用',
@@ -309,7 +326,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       SizedBox(
                         width: 120,
                         child: FilledButton.tonal(
-                          onPressed: (_countdown > 0 || _loading) ? null : _sendCode,
+                          onPressed: (_countdown > 0 || _loading)
+                              ? null
+                              : _sendCode,
                           child: _countdown > 0
                               ? Text('${_countdown}s 后重发')
                               : const Text('获取验证码'),
@@ -320,10 +339,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '测试环境：请先点击「获取验证码」，再输入 666666',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                 ] else
                   TextFormField(
@@ -335,7 +351,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                         ),
                         onPressed: () {
                           setState(() => _obscurePassword = !_obscurePassword);

@@ -9,7 +9,7 @@ import '../../../../router/app_router.dart';
 import '../../../../data/services/auth_api.dart'
     show registerWithVerifyCode, sendVerificationCode, usedForRegister;
 import '../../../../ui/core/utils/app_logger.dart';
-import '../../../../ui/core/utils/login_storage.dart';
+import '../../../../data/services/login_storage.dart';
 
 /// 注册页：手机号 + 验证码 + 昵称，注册成功后自动登录。
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -38,10 +38,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Timer? _countdownTimer;
   String? _errorText;
 
-  String get _areaCode =>
-      _areaCodeController.text.trim().isEmpty
-          ? '+86'
-          : _areaCodeController.text.trim();
+  String get _areaCode => _areaCodeController.text.trim().isEmpty
+      ? '+86'
+      : _areaCodeController.text.trim();
   String get _phone => _phoneController.text.trim();
 
   @override
@@ -91,7 +90,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         setState(() {
           _countdown = 0;
           _countdownTimer?.cancel();
-          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          _errorText = e.toString().replaceFirst(
+            RegExp(r'^Exception:?\s*'),
+            '',
+          );
         });
       }
     }
@@ -122,7 +124,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         areaCode: _areaCode,
         phoneNumber: _phone,
       );
-      await ref.read(messageServiceProvider.notifier).initialize(
+      await ref
+          .read(messageServiceProvider.notifier)
+          .initialize(
             wsUrl: widget.wsUrl,
             apiBaseUrl: widget.apiBaseUrl,
             userId: result.userId,
@@ -135,7 +139,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _errorText = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+          _errorText = e.toString().replaceFirst(
+            RegExp(r'^Exception:?\s*'),
+            '',
+          );
         });
       }
     }
@@ -211,7 +218,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     SizedBox(
                       width: 120,
                       child: FilledButton.tonal(
-                        onPressed: (_countdown > 0 || _loading) ? null : _sendCode,
+                        onPressed: (_countdown > 0 || _loading)
+                            ? null
+                            : _sendCode,
                         child: _countdown > 0
                             ? Text('${_countdown}s 后重发')
                             : const Text('获取验证码'),

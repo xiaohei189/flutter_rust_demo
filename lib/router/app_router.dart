@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../ui/auth/views/splash_screen.dart';
 import '../ui/auth/views/login_screen.dart';
-import '../ui/core/main_screen.dart';
+import '../ui/shell/main_screen.dart';
 import '../ui/chat/views/chat_detail_screen.dart';
 import '../ui/chat/views/chat_settings_screen.dart';
 import '../ui/groups/views/group_info_screen.dart';

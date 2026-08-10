@@ -6,7 +6,7 @@ import '../../../../providers/message_service_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/utils/app_logger.dart';
-import '../../../../ui/core/utils/login_storage.dart';
+import '../../../../data/services/login_storage.dart';
 
 /// 启动页：有本地凭证则尝试自动登录并进入主页，否则进入登录页
 class SplashScreen extends ConsumerStatefulWidget {
@@ -38,12 +38,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final credentials = await LoginStorage.loadCredentials();
     if (credentials != null) {
       try {
-        await ref.read(messageServiceProvider.notifier).initialize(
-          wsUrl: widget.wsUrl,
-          apiBaseUrl: widget.apiBaseUrl,
-          userId: credentials.userId,
-          imToken: credentials.imToken,
-        );
+        await ref
+            .read(messageServiceProvider.notifier)
+            .initialize(
+              wsUrl: widget.wsUrl,
+              apiBaseUrl: widget.apiBaseUrl,
+              userId: credentials.userId,
+              imToken: credentials.imToken,
+            );
         if (!mounted) return;
         context.go(AppRouter.main);
         return;
@@ -76,7 +78,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.chat_bubble_outline, size: 80, color: AppTheme.primaryColor),
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 80,
+                color: AppTheme.primaryColor,
+              ),
               SizedBox(height: 16),
               Text(
                 'Flutter 聊天',

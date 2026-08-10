@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../../router/app_router.dart';
-import '../../ui/core/theme/app_theme.dart';
-import '../../ui/core/widgets/user_avatar.dart';
+import '../core/theme/app_theme.dart';
+import '../core/widgets/user_avatar.dart';
 import '../../domain/models/user.dart';
-import '../../ui/chat/views/chat_list_screen.dart';
-import '../../ui/contacts/views/contacts_screen.dart';
+import '../chat/views/chat_list_screen.dart';
+import '../contacts/views/contacts_screen.dart';
 import '../discover/views/discover_screen.dart';
 
 /// 主页面 - 底部 Tab：消息、通讯录、发现、我的
@@ -22,10 +22,30 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   static const _tabs = [
-    (widget: ChatListScreen(), label: '消息', icon: Icons.chat_bubble_outline, activeIcon: Icons.chat_bubble),
-    (widget: ContactsScreen(), label: '通讯录', icon: Icons.people_outline, activeIcon: Icons.people),
-    (widget: DiscoverScreen(), label: '发现', icon: Icons.explore_outlined, activeIcon: Icons.explore),
-    (widget: _MineScreen(), label: '我的', icon: Icons.person_outline, activeIcon: Icons.person),
+    (
+      widget: ChatListScreen(),
+      label: '消息',
+      icon: Icons.chat_bubble_outline,
+      activeIcon: Icons.chat_bubble,
+    ),
+    (
+      widget: ContactsScreen(),
+      label: '通讯录',
+      icon: Icons.people_outline,
+      activeIcon: Icons.people,
+    ),
+    (
+      widget: DiscoverScreen(),
+      label: '发现',
+      icon: Icons.explore_outlined,
+      activeIcon: Icons.explore,
+    ),
+    (
+      widget: _MineScreen(),
+      label: '我的',
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+    ),
   ];
 
   @override
@@ -49,7 +69,10 @@ class _MainScreenState extends State<MainScreen> {
                       ? Badge(
                           label: Text(
                             totalUnread > 99 ? '99+' : '$totalUnread',
-                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
                           ),
                           child: Icon(_tabs[i].icon),
                         )
@@ -58,7 +81,10 @@ class _MainScreenState extends State<MainScreen> {
                       ? Badge(
                           label: Text(
                             totalUnread > 99 ? '99+' : '$totalUnread',
-                            style: const TextStyle(fontSize: 10, color: Colors.white),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
                           ),
                           child: Icon(_tabs[i].activeIcon),
                         )
@@ -87,8 +113,8 @@ class _MineScreen extends ConsumerWidget {
     final nickname = profileState.nickname.isNotEmpty
         ? profileState.nickname
         : (profileState.profile?.userId.isNotEmpty == true
-            ? profileState.profile!.userId
-            : '未登录');
+              ? profileState.profile!.userId
+              : '未登录');
 
     final currentUser = User(
       id: profileState.profile?.userId ?? '',
@@ -224,8 +250,7 @@ class _MineScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                final client =
-                    ref.read(messageServiceProvider.notifier).client;
+                final client = ref.read(messageServiceProvider.notifier).client;
                 await client?.logout();
               } catch (_) {}
               if (context.mounted) {
@@ -284,7 +309,11 @@ class _MenuItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, size: 22, color: iconColor ?? AppTheme.textPrimaryColor),
+              Icon(
+                icon,
+                size: 22,
+                color: iconColor ?? AppTheme.textPrimaryColor,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(

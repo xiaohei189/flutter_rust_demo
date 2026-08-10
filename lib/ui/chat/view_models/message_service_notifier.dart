@@ -27,7 +27,7 @@ import 'package:flutter_rust_demo/src/rust/event/events/group.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/ui/core/utils/app_logger.dart';
-import 'package:flutter_rust_demo/ui/core/utils/login_storage.dart';
+import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/data/services/navigation_service.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';

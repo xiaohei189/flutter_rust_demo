@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 import '../../ui/core/utils/app_logger.dart';
-import '../../ui/core/utils/host_config.dart';
+import '../config/host_config.dart';
 
 /// 认证服务端基础 URL
 String get kAuthBaseUrl => 'http://${getHostAddress()}:10008';
@@ -12,9 +12,10 @@ String get kAuthBaseUrl => 'http://${getHostAddress()}:10008';
 /// 账号服务中间件要求 header 带 operationID（与 openim-sdk-core cmd/sdk 一致）
 String _nextOperationID() {
   final r = Random.secure();
-  return List.generate(16, (_) => r.nextInt(256))
-      .map((e) => e.toRadixString(16).padLeft(2, '0'))
-      .join();
+  return List.generate(
+    16,
+    (_) => r.nextInt(256),
+  ).map((e) => e.toRadixString(16).padLeft(2, '0')).join();
 }
 
 /// 验证码用途：1=注册 2=重置密码 3=登录

@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'app_logger.dart';
+import '../../ui/core/utils/app_logger.dart';
 
 /// 登录凭证本地存储，用于 splash 自动登录与登录页记住账号
 class LoginStorage {
@@ -29,7 +29,10 @@ class LoginStorage {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString(_keyUserId);
     final imToken = prefs.getString(_keyImToken);
-    if (userId == null || userId.isEmpty || imToken == null || imToken.isEmpty) {
+    if (userId == null ||
+        userId.isEmpty ||
+        imToken == null ||
+        imToken.isEmpty) {
       return null;
     }
     return LoginCredentials(
