@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group_member.dart';
+import '../../../../providers/group_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class GroupMemberState {
   final List<GroupMember> members;
@@ -27,21 +29,23 @@ class GroupMemberState {
   }
 }
 
-class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
-  GroupMemberViewModel({
-    required GroupRepository repository,
-    required String groupId,
-  }) : _repository = repository,
-       _groupId = groupId,
-       super(const GroupMemberState());
+class GroupMemberViewModel extends FamilyNotifier<GroupMemberState, String> {
+  @override
+  GroupMemberState build(String groupId) {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadMembers();
+      }
+    });
+    return const GroupMemberState();
+  }
 
-  final GroupRepository _repository;
-  final String _groupId;
+  GroupRepository get _repository => ref.read(groupRepositoryProvider);
 
   Future<void> loadMembers() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final members = await _repository.loadMembers(_groupId);
+      final members = await _repository.loadMembers(arg);
       state = state.copyWith(members: members, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: '加载群成员失败: $e');
@@ -50,7 +54,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> inviteMembers(List<String> memberIds) async {
     try {
-      await _repository.inviteMembers(_groupId, memberIds);
+      await _repository.inviteMembers(arg, memberIds);
       await loadMembers();
       return true;
     } catch (e) {
@@ -61,7 +65,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> kickMembers(List<String> memberIds) async {
     try {
-      await _repository.kickMembers(_groupId, memberIds);
+      await _repository.kickMembers(arg, memberIds);
       await loadMembers();
       return true;
     } catch (e) {
@@ -72,7 +76,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> muteMember(String userId, int mutedSeconds) async {
     try {
-      await _repository.muteMember(_groupId, userId, mutedSeconds);
+      await _repository.muteMember(arg, userId, mutedSeconds);
       await loadMembers();
       return true;
     } catch (e) {
@@ -87,7 +91,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> transferOwner(String newOwnerUserId) async {
     try {
-      await _repository.transferOwner(_groupId, newOwnerUserId);
+      await _repository.transferOwner(arg, newOwnerUserId);
       await loadMembers();
       return true;
     } catch (e) {
@@ -98,7 +102,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> dismissGroup() async {
     try {
-      await _repository.dismissGroup(_groupId);
+      await _repository.dismissGroup(arg);
       return true;
     } catch (e) {
       state = state.copyWith(error: '解散群组失败: $e');
@@ -108,7 +112,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
 
   Future<bool> muteAll(bool isMute) async {
     try {
-      await _repository.muteAll(_groupId, isMute);
+      await _repository.muteAll(arg, isMute);
       await loadMembers();
       return true;
     } catch (e) {
@@ -120,7 +124,7 @@ class GroupMemberViewModel extends StateNotifier<GroupMemberState> {
   Future<bool> setMemberRole(String userId, int roleLevel) async {
     try {
       await _repository.setGroupMemberInfo(
-        _groupId,
+        arg,
         userId,
         roleLevel: roleLevel,
       );

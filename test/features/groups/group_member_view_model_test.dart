@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/domain/models/group_member.dart';
+import 'package:flutter_rust_demo/providers/group_provider.dart';
 import 'package:flutter_rust_demo/ui/groups/view_models/group_member_view_model.dart';
 import 'fake_group_repository.dart';
 
@@ -48,13 +50,21 @@ const _member = GroupMember(
 );
 
 void main() {
+  GroupMemberViewModel buildViewModel(
+    FakeGroupRepository repository,
+    String groupId,
+  ) {
+    final container = ProviderContainer(
+      overrides: [groupRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    return container.read(groupMemberProvider(groupId).notifier);
+  }
+
   group('GroupMemberViewModel', () {
     test('loadMembers 成功时更新成员列表', () async {
       final repository = FakeGroupRepository(members: [_member]);
-      final viewModel = GroupMemberViewModel(
-        repository: repository,
-        groupId: _member.groupId,
-      );
+      final viewModel = buildViewModel(repository, _member.groupId);
 
       await viewModel.loadMembers();
 
@@ -65,10 +75,7 @@ void main() {
 
     test('loadMembers 失败时写入中文错误', () async {
       final repository = FakeGroupRepository(shouldFail: true);
-      final viewModel = GroupMemberViewModel(
-        repository: repository,
-        groupId: 'g1',
-      );
+      final viewModel = buildViewModel(repository, 'g1');
 
       await viewModel.loadMembers();
 
@@ -77,10 +84,7 @@ void main() {
 
     test('kickMembers 成功后重新加载成员列表', () async {
       final repository = FakeGroupRepository(members: [_member]);
-      final viewModel = GroupMemberViewModel(
-        repository: repository,
-        groupId: _member.groupId,
-      );
+      final viewModel = buildViewModel(repository, _member.groupId);
 
       await viewModel.loadMembers();
       final ok = await viewModel.kickMembers([_member.userId]);
@@ -92,10 +96,7 @@ void main() {
 
     test('transferOwner 失败时返回 false 并写入错误', () async {
       final repository = FakeGroupRepository(shouldFail: true);
-      final viewModel = GroupMemberViewModel(
-        repository: repository,
-        groupId: 'g1',
-      );
+      final viewModel = buildViewModel(repository, 'g1');
 
       final ok = await viewModel.transferOwner('u2');
 

@@ -7,7 +7,6 @@ import '../ui/groups/view_models/group_application_view_model.dart';
 import '../ui/groups/view_models/group_list_view_model.dart';
 import '../ui/groups/view_models/group_member_view_model.dart';
 import 'im_providers.dart';
-import 'message_service_provider.dart';
 
 // ==================== 群组列表 Provider ====================
 
@@ -29,22 +28,9 @@ final groupListProvider =
 
 /// 群成员 Provider（Family，按群组 ID）
 final groupMemberProvider =
-    StateNotifierProvider.family<
-      GroupMemberViewModel,
-      GroupMemberState,
-      String
-    >((ref, groupId) {
-      final viewModel = GroupMemberViewModel(
-        repository: ref.watch(groupRepositoryProvider),
-        groupId: groupId,
-      );
-      ref.listen(messageServiceProvider, (prev, next) {
-        if (prev?.groupRevision != next.groupRevision) {
-          viewModel.loadMembers();
-        }
-      });
-      return viewModel;
-    });
+    NotifierProvider.family<GroupMemberViewModel, GroupMemberState, String>(
+      GroupMemberViewModel.new,
+    );
 
 // ==================== 群申请 Provider ====================
 

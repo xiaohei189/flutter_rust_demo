@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../src/rust/constant/enums.dart';
 import '../../../src/rust/model/message.dart' show MessageInfo;
 import '../../../src/rust/model/msg_struct.dart' show MsgStruct;
+import '../../../providers/message_service_provider.dart';
 import 'message_service_notifier.dart';
 
 /// 消息列表状态
@@ -43,29 +44,21 @@ class MessageListState {
 }
 
 /// 消息列表 ViewModel（按会话）
-class MessageListNotifier extends StateNotifier<MessageListState> {
-  MessageListNotifier(this._messageService, this._conversationId)
-      : super(const MessageListState()) {
-    _init();
-  }
-
-  final MessageServiceNotifier _messageService;
-  final String _conversationId;
+class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
+  MessageServiceNotifier? _messageService;
   StreamSubscription<MessageServiceState>? _serviceSubscription;
 
-  void _init() {
-    _syncState();
-    _serviceSubscription = _messageService.stream.listen((_) => _syncState());
-  }
-
   @override
-  void dispose() {
-    _serviceSubscription?.cancel();
-    super.dispose();
+  MessageListState build(String conversationId) {
+    _messageService = ref.read(messageServiceProvider.notifier);
+    _serviceSubscription = _messageService!.stream.listen((_) => _syncState());
+    ref.onDispose(() => _serviceSubscription?.cancel());
+    Future.microtask(_syncState);
+    return const MessageListState();
   }
 
   void _syncState() {
-    final messages = _messageService.getMessages(_conversationId);
+    final messages = _messageService!.getMessages(arg);
     state = state.copyWith(messages: messages);
   }
 
@@ -81,8 +74,8 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
 
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final hasMore = await _messageService.loadHistoryMessages(
-        _conversationId,
+      final hasMore = await _messageService!.loadHistoryMessages(
+        arg,
         count: count,
         startClientMsgId: startClientMsgId,
       );
@@ -102,11 +95,11 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendTextMessage(
+      final result = await _messageService!.sendTextMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
-        conversationId: _conversationId,
+        conversationId: arg,
         groupId: groupId ?? '',
       );
       _addSentMessage(result);
@@ -124,11 +117,11 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendMarkdownMessage(
+      final result = await _messageService!.sendMarkdownMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
-        conversationId: _conversationId,
+        conversationId: arg,
         groupId: groupId ?? '',
       );
       _addSentMessage(result);
@@ -147,12 +140,12 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendAtTextMessage(
+      final result = await _messageService!.sendAtTextMessage(
         recvId: recvId,
         text: text,
         atUserIds: atUserIds,
         sessionType: sessionType,
-        conversationId: _conversationId,
+        conversationId: arg,
         groupId: groupId ?? '',
       );
       _addSentMessage(result);
@@ -164,7 +157,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
   }
 
   void _addSentMessage(MsgStruct result) {
-    _messageService.upsertSentMessage(_conversationId, result);
+    _messageService!.upsertSentMessage(arg, result);
     _syncState();
   }
 
@@ -178,7 +171,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendImageMessage(
+      final result = await _messageService!.sendImageMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -200,7 +193,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendVideoMessage(
+      final result = await _messageService!.sendVideoMessage(
         videoPath: videoPath,
         snapshotPath: snapshotPath,
         sourceId: _sourceId(recvId, groupId),
@@ -223,7 +216,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendSoundMessage(
+      final result = await _messageService!.sendSoundMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -244,7 +237,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendFileMessage(
+      final result = await _messageService!.sendFileMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -266,7 +259,7 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService.sendLocationMessage(
+      final result = await _messageService!.sendLocationMessage(
         description: description,
         latitude: latitude,
         longitude: longitude,
@@ -287,12 +280,12 @@ class MessageListNotifier extends StateNotifier<MessageListState> {
     required SessionType sessionType,
   }) async {
     try {
-      final result = await _messageService.resendMessage(
+      final result = await _messageService!.resendMessage(
         message: message,
         sourceId: sourceId,
         sessionType: sessionType,
       );
-      _messageService.removeMessage(_conversationId, message.clientMsgId);
+      _messageService!.removeMessage(arg, message.clientMsgId);
       _addSentMessage(result);
       return true;
     } catch (e) {

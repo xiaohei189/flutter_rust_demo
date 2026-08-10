@@ -16,7 +16,6 @@ import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../providers/providers.dart';
 import '../../../../data/repositories/chat_aux_repository.dart';
 import '../view_models/message_service_notifier.dart';
-import '../view_models/message_view_model.dart';
 import '../../profile/view_models/user_profile_view_model.dart';
 import '../../../../src/rust/ffi/message_advanced.dart' show sendTyping;
 import '../../../../src/rust/ffi/message.dart' show sendMergerMessage;
@@ -66,7 +65,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   bool _selectMode = false;
   final List<MessageInfo> _selectedMessages = [];
   MessageServiceNotifier? _messageService; // 缓存引用，避免 dispose 时访问 ref
-  StreamSubscription<MessageListState>? _messageListSubscription;
   String _lastMessageListTailId = '';
   DateTime? _lastMarkReadTime; // 防抖：记录上次标记已读时间
   String? _onlineStatusUserId;
@@ -80,10 +78,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _chatAuxRepository = ref.read(chatAuxRepositoryProvider);
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
-    _messageListSubscription = ref
-        .read(messageListProvider(widget.conversationId).notifier)
-        .stream
-        .listen((_) => _onMessageListChanged());
+    ref.listenManual(
+      messageListProvider(widget.conversationId),
+      (_, __) => _onMessageListChanged(),
+    );
     _onMessageListChanged();
     // 设置当前选中的会话
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -201,7 +199,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _unsubscribeOnlineStatus();
-    _messageListSubscription?.cancel();
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
     _loadingNotifier.dispose();
