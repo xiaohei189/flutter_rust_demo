@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 /// 未读数角标：红色小圆点（数字或单纯红点）
 class UnreadCountView extends StatelessWidget {

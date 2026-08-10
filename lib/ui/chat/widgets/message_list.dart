@@ -7,7 +7,7 @@ import '../../../domain/models/user.dart';
 import '../../../src/rust/event/events/message.dart' show GroupReadReceipt;
 import '../../../src/rust/model/message.dart' show MessageInfo;
 import '../../../src/rust/model/user.dart' show UserInfo;
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import 'message_bubble.dart';
 import 'message_skeleton.dart';
 

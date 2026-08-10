@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../providers/message_service_provider.dart';
 import '../../../../router/app_router.dart';
-import '../../../../services/auth_api.dart'
+import '../../../../data/services/auth_api.dart'
     show registerWithVerifyCode, sendVerificationCode, usedForRegister;
 import '../../../../ui/core/utils/app_logger.dart';
 import '../../../../ui/core/utils/login_storage.dart';

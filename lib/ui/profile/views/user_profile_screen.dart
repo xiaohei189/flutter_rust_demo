@@ -6,7 +6,7 @@ import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/contacts/views/friend_setup_screen.dart';
-import '../../../../services/services.dart';
+import '../../../../data/services/services.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../ui/core/utils/app_logger.dart';

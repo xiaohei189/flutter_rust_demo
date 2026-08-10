@@ -2,13 +2,13 @@
 //
 // 使用方式:
 // ```dart
-// import 'package:flutter_rust_demo/services/services.dart';
+// import 'package:flutter_rust_demo/data/services/services.dart';
 // ```
 
 export 'im_client.dart';
 export 'connection_service.dart';
 export 'conversation_service.dart';
-export '../ui/chat/view_models/message_service_notifier.dart';
+export '../../ui/chat/view_models/message_service_notifier.dart';
 export 'user_service.dart';
 export 'navigation_service.dart';
 export 'permission_service.dart';
@@ -26,4 +26,4 @@ export 'network_service.dart';
 export 'group_service.dart';
 export 'friend_service.dart';
 
-export '../src/rust/model/user.dart' show UserInfo;
+export '../../src/rust/model/user.dart' show UserInfo;

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
-import '../../../../services/auth_api.dart' show loginAsync, loginWithVerifyCode, sendVerificationCode, kAuthBaseUrl, usedForLogin;
+import '../../../../data/services/auth_api.dart' show loginAsync, loginWithVerifyCode, sendVerificationCode, kAuthBaseUrl, usedForLogin;
 import '../../../../ui/core/utils/app_logger.dart';
 import '../../../../ui/core/utils/login_storage.dart';
 import '../../../../providers/message_service_provider.dart';

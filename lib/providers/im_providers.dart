@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/services.dart';
+import '../data/services/services.dart';
 import 'message_service_provider.dart';
 
 // ==================== ImClient Provider ====================

@@ -1,4 +1,4 @@
-import '../../services/user_service.dart';
+import '../services/user_service.dart';
 import '../../src/rust/model/user.dart' show UserInfo;
 import 'friend_repository.dart';
 import 'friend_search_repository.dart';

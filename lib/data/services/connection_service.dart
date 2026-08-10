@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../src/rust/event/events/connection.dart';
-import '../ui/core/utils/app_logger.dart';
+import '../../src/rust/event/events/connection.dart';
+import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 
 /// 连接状态枚举

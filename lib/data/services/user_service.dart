@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import '../src/rust/model/user.dart' show UserInfo;
-import '../ui/core/utils/app_logger.dart';
+import '../../src/rust/model/user.dart' show UserInfo;
+import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 
 abstract class UserService {

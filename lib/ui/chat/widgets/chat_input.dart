@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import 'attachment_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 

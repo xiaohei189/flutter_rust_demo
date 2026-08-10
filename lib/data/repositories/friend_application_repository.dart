@@ -1,6 +1,6 @@
 import '../../domain/models/friend_application.dart';
-import '../../services/friend_service.dart';
-import '../../services/im_client.dart';
+import '../services/friend_service.dart';
+import '../services/im_client.dart';
 import '../../src/rust/ffi/client.dart';
 import '../../src/rust/http/friend.dart' show FriendApplyInfo;
 

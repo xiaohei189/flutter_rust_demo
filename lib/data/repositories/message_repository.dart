@@ -1,6 +1,6 @@
 import 'dart:typed_data' show Int32List;
 
-import '../../services/im_client.dart';
+import '../services/im_client.dart';
 import '../../src/rust/client.dart';
 import '../../src/rust/constant/enums.dart' show SessionType;
 import '../../src/rust/ffi/client.dart';

@@ -1,8 +1,8 @@
 import '../../domain/models/group.dart';
 import '../../domain/models/group_application.dart';
 import '../../domain/models/group_member.dart';
-import '../../services/group_service.dart';
-import '../../services/im_client.dart';
+import '../services/group_service.dart';
+import '../services/im_client.dart';
 import '../../src/rust/ffi/client.dart';
 import '../../src/rust/http/group.dart' show GroupApplyInfo;
 import '../../src/rust/model/group.dart' as raw_group;

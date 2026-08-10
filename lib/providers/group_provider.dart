@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/repositories/group_repository.dart';
-import '../services/group_service.dart';
+import '../data/services/group_service.dart';
 import '../ui/groups/view_models/create_group_view_model.dart';
 import '../ui/groups/view_models/group_application_view_model.dart';
 import '../ui/groups/view_models/group_list_view_model.dart';

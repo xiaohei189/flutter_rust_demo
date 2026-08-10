@@ -24,7 +24,7 @@ import '../ui/groups/views/group_applications_screen.dart';
 import '../ui/profile/views/account_settings_screen.dart';
 import '../ui/contacts/views/scan_screen.dart';
 import '../domain/models/user.dart';
-import '../services/navigation_service.dart';
+import '../data/services/navigation_service.dart';
 import '../src/rust/model/local.dart' show LocalConversation;
 
 /// 应用路由配置

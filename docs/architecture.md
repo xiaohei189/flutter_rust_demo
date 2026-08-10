@@ -29,7 +29,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  │ Provider │ │ Provider │ │ /Group Providers │     │
 │  └──────────┘ └──────────┘ └──────────────────┘     │
 ├─────────────────────────────────────────────────────┤
-│  Services (lib/services/)                            │
+│  Services (lib/data/services/)                            │
 │  ┌──────────┐ ┌──────────────┐ ┌────────────────┐   │
 │  │ ImClient │ │ Navigation   │ │ User/Friend/    │   │
 │  │ (单例)   │ │ Service      │ │ Group Services  │   │
@@ -84,7 +84,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 |------|------|
 | `lib/screens/` | 21 个 Flutter 页面 |
 | `lib/ui/core/widgets/` | 18 个可复用 UI 组件 |
-| `lib/services/` | 13 个业务服务（IM 客户端、消息、用户等） |
+| `lib/data/services/` | 13 个业务服务（IM 客户端、消息、用户等） |
 | `lib/providers/` | Riverpod 状态管理 |
 | `lib/data/` | 数据层：Repository 等（好友功能已作为 pilot 落地） |
 | `lib/domain/` | 领域层：领域模型、Use Case |
@@ -109,7 +109,7 @@ lib/
 ├── data/
 │   ├── models/         # API/raw 模型
 │   ├── repositories/   # Repository 实现
-│   └── services/       # API 客户端、本地存储封装
+│   └── data/services/       # API 客户端、本地存储封装
 ├── domain/
 │   ├── models/         # 领域模型
 │   └── use_cases/      # 复杂业务逻辑（按需）
@@ -125,7 +125,7 @@ lib/
     └── discover/
 ```
 
-当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/contacts/`、`lib/ui/groups/`、`lib/ui/chat/`、`lib/ui/auth/`、`lib/ui/profile/`、`lib/ui/discover/`，共享组件、主题和扩展在 `lib/ui/core/`，领域模型在 `lib/domain/models/`。数据层统一走 `lib/data/repositories/`，`MessageServiceNotifier` 位于 `lib/ui/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`，设置与在线状态/文件打开收口到 `SettingsRepository`、`ChatAuxRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
+当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/contacts/`、`lib/ui/groups/`、`lib/ui/chat/`、`lib/ui/auth/`、`lib/ui/profile/`、`lib/ui/discover/`，共享组件、主题和扩展在 `lib/ui/core/`，聊天专属组件在 `lib/ui/chat/widgets/`，领域模型在 `lib/domain/models/`。数据层统一走 `lib/data/repositories/` 与 `lib/data/services/`，`MessageServiceNotifier` 位于 `lib/ui/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`，设置与在线状态/文件打开收口到 `SettingsRepository`、`ChatAuxRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
 
 ### Rust 侧 (`rust/src/`)
 

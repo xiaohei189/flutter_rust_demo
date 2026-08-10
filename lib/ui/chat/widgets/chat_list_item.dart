@@ -7,9 +7,9 @@ import 'package:intl/intl.dart';
 import '../../../domain/models/user.dart';
 import '../../../router/app_router.dart';
 import '../../../src/rust/model/user.dart' show UserInfo;
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../../src/rust/model/local.dart' show LocalConversation;
-import 'user_avatar.dart';
+import '../../core/widgets/user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
 T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {

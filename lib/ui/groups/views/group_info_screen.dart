@@ -6,7 +6,7 @@ import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/profile/views/qr_code_screen.dart';
-import '../../../../services/services.dart';
+import '../../../../data/services/services.dart';
 import '../../../../src/rust/model/local.dart' show LocalConversation;
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';

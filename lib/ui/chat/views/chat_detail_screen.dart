@@ -30,13 +30,13 @@ import '../../../../ui/core/extensions/conversation_extensions.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../src/rust/constant/enums.dart' show SessionType;
 import '../../../../src/rust/model/local.dart' show LocalChatLog, LocalConversation;
-import '../../../../ui/core/widgets/chat_input.dart' show ChatInput, MessageContentType;
-import '../../../../ui/core/widgets/message_list.dart';
-import '../../../../ui/core/widgets/message_action_menu.dart';
+import '../../../../ui/chat/widgets/chat_input.dart' show ChatInput, MessageContentType;
+import '../../../../ui/chat/widgets/message_list.dart';
+import '../../../../ui/chat/widgets/message_action_menu.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../ui/contacts/views/contact_picker_screen.dart';
 import 'merge_message_detail_screen.dart';
-import '../../../../ui/core/widgets/media_viewer.dart';
+import '../../../../ui/chat/widgets/media_viewer.dart';
 
 /// 聊天详情页：顶栏（返回+未读、昵称+在线/成员数、更多）、消息区、底部输入区
 class ChatDetailScreen extends ConsumerStatefulWidget {

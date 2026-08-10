@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/ui/core/widgets/chat_list_item.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/chat_list_item.dart';
 
 void main() {
   group('latestMessagePreview', () {

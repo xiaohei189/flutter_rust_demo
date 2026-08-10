@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import 'group_filter_panel.dart';
-import 'segmented_toggle.dart';
+import '../../core/widgets/segmented_toggle.dart';
 
 /// 分组筛选类型
 typedef GroupFilterCallback = void Function(GroupFilter filter);

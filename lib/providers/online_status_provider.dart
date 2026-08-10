@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/online_status_service.dart';
+import '../data/services/online_status_service.dart';
 import '../src/rust/http/online.dart' show OnlineStatus;
 
 final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(

@@ -1,5 +1,5 @@
-import '../../services/file_open_service.dart';
-import '../../services/online_status_service.dart';
+import '../services/file_open_service.dart';
+import '../services/online_status_service.dart';
 
 abstract class ChatAuxRepository {
   Future<void> subscribeOnlineStatus(List<String> userIds);

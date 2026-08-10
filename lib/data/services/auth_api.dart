@@ -3,8 +3,8 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
-import '../ui/core/utils/app_logger.dart';
-import '../ui/core/utils/host_config.dart';
+import '../../ui/core/utils/app_logger.dart';
+import '../../ui/core/utils/host_config.dart';
 
 /// 认证服务端基础 URL
 String get kAuthBaseUrl => 'http://${getHostAddress()}:10008';

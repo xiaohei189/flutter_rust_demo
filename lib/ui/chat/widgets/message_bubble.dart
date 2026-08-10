@@ -10,9 +10,9 @@ import '../../../router/app_router.dart';
 import '../../../src/rust/event/events/message.dart' show GroupReadReceipt;
 import '../../../src/rust/model/message.dart' show MessageInfo;
 import '../../../src/rust/model/user.dart' show UserInfo;
-import '../../../services/audio_player_service.dart';
-import '../theme/app_theme.dart';
-import 'user_avatar.dart';
+import '../../../data/services/audio_player_service.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/user_avatar.dart';
 
 /// 消息气泡：支持所有消息类型的渲染
 class MessageBubble extends StatelessWidget {
