@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group.dart';
+import '../../../../providers/group_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class GroupListState {
   final List<Group> groups;
@@ -35,15 +37,22 @@ class GroupListState {
   }
 }
 
-class GroupListViewModel extends StateNotifier<GroupListState> {
-  GroupListViewModel({required GroupRepository repository})
-    : _repository = repository,
-      super(const GroupListState());
-
+class GroupListViewModel extends Notifier<GroupListState> {
   static const int _pageSize = 50;
 
-  final GroupRepository _repository;
   int _offset = 0;
+
+  @override
+  GroupListState build() {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadGroups();
+      }
+    });
+    return const GroupListState();
+  }
+
+  GroupRepository get _repository => ref.read(groupRepositoryProvider);
 
   Future<void> loadGroups() async {
     state = state.copyWith(isLoading: true, isLoadingMore: false, error: null);

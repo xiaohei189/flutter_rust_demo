@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/friend_repository.dart';
 import '../../../../domain/models/friend.dart';
+import '../../../../providers/friend_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class FriendListState {
   final List<Friend> friends;
@@ -29,12 +31,18 @@ class FriendListState {
   int get friendCount => friends.length;
 }
 
-class FriendListViewModel extends StateNotifier<FriendListState> {
-  FriendListViewModel({required FriendRepository repository})
-    : _repository = repository,
-      super(const FriendListState());
+class FriendListViewModel extends Notifier<FriendListState> {
+  @override
+  FriendListState build() {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.friendRevision != next.friendRevision) {
+        loadFriends();
+      }
+    });
+    return const FriendListState();
+  }
 
-  final FriendRepository _repository;
+  FriendRepository get _repository => ref.read(friendRepositoryProvider);
 
   Future<void> loadFriends() async {
     state = state.copyWith(isLoading: true, error: null);

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/friend_application_repository.dart';
 import '../../../../domain/models/friend_application.dart';
+import '../../../../providers/friend_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class FriendApplyState {
   final List<FriendApplication> received;
@@ -33,12 +35,19 @@ class FriendApplyState {
   int get unhandledCount => received.length;
 }
 
-class FriendApplyViewModel extends StateNotifier<FriendApplyState> {
-  FriendApplyViewModel({required FriendApplicationRepository repository})
-    : _repository = repository,
-      super(const FriendApplyState());
+class FriendApplyViewModel extends Notifier<FriendApplyState> {
+  @override
+  FriendApplyState build() {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.friendRevision != next.friendRevision) {
+        loadApplications();
+      }
+    });
+    return const FriendApplyState();
+  }
 
-  final FriendApplicationRepository _repository;
+  FriendApplicationRepository get _repository =>
+      ref.read(friendApplicationRepositoryProvider);
 
   Future<void> loadApplications() async {
     state = state.copyWith(isLoading: true, error: null);

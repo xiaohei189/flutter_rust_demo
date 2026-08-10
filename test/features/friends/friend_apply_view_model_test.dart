@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_application_repository.dart';
 import 'package:flutter_rust_demo/domain/models/friend_application.dart';
+import 'package:flutter_rust_demo/providers/friend_provider.dart';
 import 'package:flutter_rust_demo/ui/contacts/view_models/friend_apply_view_model.dart';
 
 class FakeFriendApplicationRepository implements FriendApplicationRepository {
@@ -55,6 +57,18 @@ const _application = FriendApplication(
   reqMsg: '你好',
 );
 
+FriendApplyViewModel buildViewModel(
+  FakeFriendApplicationRepository repository,
+) {
+  final container = ProviderContainer(
+    overrides: [
+      friendApplicationRepositoryProvider.overrideWithValue(repository),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container.read(friendApplyProvider.notifier);
+}
+
 void main() {
   group('FriendApplyViewModel', () {
     test('loadApplications 成功时更新收到和发出列表', () async {
@@ -62,7 +76,7 @@ void main() {
         received: [_application],
         sent: [_application],
       );
-      final viewModel = FriendApplyViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
 
@@ -75,7 +89,7 @@ void main() {
 
     test('loadApplications 失败时写入中文错误', () async {
       final repository = FakeFriendApplicationRepository(shouldFail: true);
-      final viewModel = FriendApplyViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
 
@@ -87,7 +101,7 @@ void main() {
       final repository = FakeFriendApplicationRepository(
         received: [_application],
       );
-      final viewModel = FriendApplyViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
       final ok = await viewModel.acceptApplication(_application.userId);
@@ -99,7 +113,7 @@ void main() {
 
     test('refuseApplication 失败时返回 false 并写入错误', () async {
       final repository = FakeFriendApplicationRepository(shouldFail: true);
-      final viewModel = FriendApplyViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       final ok = await viewModel.refuseApplication(_application.userId);
 

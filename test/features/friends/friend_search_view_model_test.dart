@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_search_repository.dart';
 import 'package:flutter_rust_demo/domain/models/friend_search_result.dart';
+import 'package:flutter_rust_demo/providers/friend_provider.dart';
 import 'package:flutter_rust_demo/ui/contacts/view_models/friend_search_view_model.dart';
 
 class FakeFriendSearchRepository implements FriendSearchRepository {
@@ -42,11 +44,21 @@ const _result = FriendSearchResult(
   relationship: 0,
 );
 
+FriendSearchViewModel buildViewModel(
+  FakeFriendSearchRepository repository,
+) {
+  final container = ProviderContainer(
+    overrides: [friendSearchRepositoryProvider.overrideWithValue(repository)],
+  );
+  addTearDown(container.dispose);
+  return container.read(friendSearchProvider.notifier);
+}
+
 void main() {
   group('FriendSearchViewModel', () {
     test('search 成功时更新结果并结束加载', () async {
       final repository = FakeFriendSearchRepository(results: [_result]);
-      final viewModel = FriendSearchViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.search('张');
 
@@ -57,7 +69,7 @@ void main() {
 
     test('空关键字时清空结果', () async {
       final repository = FakeFriendSearchRepository(results: [_result]);
-      final viewModel = FriendSearchViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.search('   ');
 
@@ -66,7 +78,7 @@ void main() {
 
     test('search 失败时写入中文错误', () async {
       final repository = FakeFriendSearchRepository(shouldFail: true);
-      final viewModel = FriendSearchViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.search('张');
 
@@ -75,7 +87,7 @@ void main() {
 
     test('sendFriendRequest 成功时返回 true', () async {
       final repository = FakeFriendSearchRepository();
-      final viewModel = FriendSearchViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       final ok = await viewModel.sendFriendRequest(_result.userId, '你好');
 

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group_application.dart';
+import '../../../../providers/group_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class GroupApplicationState {
   final List<GroupApplication> received;
@@ -33,12 +35,18 @@ class GroupApplicationState {
   int get unhandledCount => received.where((a) => a.handleResult == 0).length;
 }
 
-class GroupApplicationViewModel extends StateNotifier<GroupApplicationState> {
-  GroupApplicationViewModel({required GroupRepository repository})
-    : _repository = repository,
-      super(const GroupApplicationState());
+class GroupApplicationViewModel extends Notifier<GroupApplicationState> {
+  @override
+  GroupApplicationState build() {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.groupRevision != next.groupRevision) {
+        loadApplications();
+      }
+    });
+    return const GroupApplicationState();
+  }
 
-  final GroupRepository _repository;
+  GroupRepository get _repository => ref.read(groupRepositoryProvider);
 
   Future<void> loadApplications() async {
     state = state.copyWith(isLoading: true, error: null);

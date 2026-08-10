@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/data/repositories/blacklist_repository.dart';
 import 'package:flutter_rust_demo/domain/models/blacklist_user.dart';
+import 'package:flutter_rust_demo/providers/friend_provider.dart';
 import 'package:flutter_rust_demo/ui/contacts/view_models/black_list_view_model.dart';
 
 class FakeBlacklistRepository implements BlacklistRepository {
@@ -38,11 +40,19 @@ class FakeBlacklistRepository implements BlacklistRepository {
 
 const _user = BlacklistUser(userId: 'u1', nickname: '张三', faceUrl: '');
 
+BlackListViewModel buildViewModel(FakeBlacklistRepository repository) {
+  final container = ProviderContainer(
+    overrides: [blackListRepositoryProvider.overrideWithValue(repository)],
+  );
+  addTearDown(container.dispose);
+  return container.read(blackListProvider.notifier);
+}
+
 void main() {
   group('BlackListViewModel', () {
     test('load 成功时更新黑名单用户', () async {
       final repository = FakeBlacklistRepository(users: [_user]);
-      final viewModel = BlackListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.load();
 
@@ -54,7 +64,7 @@ void main() {
 
     test('load 失败时写入中文错误', () async {
       final repository = FakeBlacklistRepository(shouldFail: true);
-      final viewModel = BlackListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.load();
 
@@ -64,7 +74,7 @@ void main() {
 
     test('remove 成功后重新加载列表', () async {
       final repository = FakeBlacklistRepository(users: [_user]);
-      final viewModel = BlackListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.load();
       final ok = await viewModel.remove(_user.userId);
@@ -76,7 +86,7 @@ void main() {
 
     test('remove 失败时返回 false 并写入错误', () async {
       final repository = FakeBlacklistRepository(shouldFail: true);
-      final viewModel = BlackListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       final ok = await viewModel.remove(_user.userId);
 

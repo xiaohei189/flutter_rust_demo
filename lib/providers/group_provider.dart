@@ -21,17 +21,9 @@ final groupRepositoryProvider = Provider<GroupRepository>((ref) {
 
 /// 群组列表 ViewModel Provider
 final groupListProvider =
-    StateNotifierProvider<GroupListViewModel, GroupListState>((ref) {
-      final viewModel = GroupListViewModel(
-        repository: ref.watch(groupRepositoryProvider),
-      );
-      ref.listen(messageServiceProvider, (prev, next) {
-        if (prev?.groupRevision != next.groupRevision) {
-          viewModel.loadGroups();
-        }
-      });
-      return viewModel;
-    });
+    NotifierProvider<GroupListViewModel, GroupListState>(
+      GroupListViewModel.new,
+    );
 
 // ==================== 群成员 Provider ====================
 
@@ -58,26 +50,14 @@ final groupMemberProvider =
 
 /// 群申请列表 Provider
 final groupApplicationProvider =
-    StateNotifierProvider<GroupApplicationViewModel, GroupApplicationState>((
-      ref,
-    ) {
-      final viewModel = GroupApplicationViewModel(
-        repository: ref.watch(groupRepositoryProvider),
-      );
-      ref.listen(messageServiceProvider, (prev, next) {
-        if (prev?.groupRevision != next.groupRevision) {
-          viewModel.loadApplications();
-        }
-      });
-      return viewModel;
-    });
+    NotifierProvider<GroupApplicationViewModel, GroupApplicationState>(
+      GroupApplicationViewModel.new,
+    );
 
 // ==================== 创建群组 Provider ====================
 
 /// 创建群组 Provider
 final createGroupProvider =
-    StateNotifierProvider<CreateGroupViewModel, CreateGroupState>((ref) {
-      return CreateGroupViewModel(
-        repository: ref.watch(groupRepositoryProvider),
-      );
-    });
+    NotifierProvider<CreateGroupViewModel, CreateGroupState>(
+      CreateGroupViewModel.new,
+    );

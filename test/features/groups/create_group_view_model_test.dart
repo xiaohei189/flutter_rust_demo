@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
+import 'package:flutter_rust_demo/providers/group_provider.dart';
 import 'package:flutter_rust_demo/ui/groups/view_models/create_group_view_model.dart';
 import 'fake_group_repository.dart';
 
@@ -31,10 +33,18 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
 }
 
 void main() {
+  CreateGroupViewModel buildViewModel(FakeGroupRepository repository) {
+    final container = ProviderContainer(
+      overrides: [groupRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    return container.read(createGroupProvider.notifier);
+  }
+
   group('CreateGroupViewModel', () {
     test('createGroup 成功时返回创建的群组', () async {
       final repository = FakeGroupRepository();
-      final viewModel = CreateGroupViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
       viewModel.addSelectedMember('u2');
 
       final group = await viewModel.createGroup(groupName: '新群', groupType: 2);
@@ -47,7 +57,7 @@ void main() {
 
     test('没有选择成员时返回 null 并写入错误', () async {
       final repository = FakeGroupRepository();
-      final viewModel = CreateGroupViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       final group = await viewModel.createGroup(groupName: '新群', groupType: 2);
 
@@ -57,7 +67,7 @@ void main() {
 
     test('createGroup 失败时返回 null 并写入中文错误', () async {
       final repository = FakeGroupRepository(shouldFail: true);
-      final viewModel = CreateGroupViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
       viewModel.addSelectedMember('u2');
 
       final group = await viewModel.createGroup(groupName: '新群', groupType: 2);

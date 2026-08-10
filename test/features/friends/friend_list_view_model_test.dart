@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_repository.dart';
 import 'package:flutter_rust_demo/domain/models/friend.dart';
+import 'package:flutter_rust_demo/providers/friend_provider.dart';
 import 'package:flutter_rust_demo/ui/contacts/view_models/friend_list_view_model.dart';
 
 class FakeFriendRepository implements FriendRepository {
@@ -73,10 +75,18 @@ const _friendB = Friend(
 );
 
 void main() {
+  FriendListViewModel buildViewModel(FakeFriendRepository repository) {
+    final container = ProviderContainer(
+      overrides: [friendRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    return container.read(friendListProvider.notifier);
+  }
+
   group('FriendListViewModel', () {
     test('loadFriends 成功时更新列表并结束加载', () async {
       final repository = FakeFriendRepository(friends: [_friendA, _friendB]);
-      final viewModel = FriendListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadFriends();
 
@@ -88,7 +98,7 @@ void main() {
 
     test('loadFriends 失败时写入中文错误', () async {
       final repository = FakeFriendRepository(shouldFail: true);
-      final viewModel = FriendListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadFriends();
 
@@ -98,7 +108,7 @@ void main() {
 
     test('searchFriends 空关键字时重新加载完整列表', () async {
       final repository = FakeFriendRepository(friends: [_friendA, _friendB]);
-      final viewModel = FriendListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadFriends();
       await viewModel.searchFriends('  ');
@@ -109,7 +119,7 @@ void main() {
 
     test('deleteFriend 成功后重新加载列表', () async {
       final repository = FakeFriendRepository(friends: [_friendA, _friendB]);
-      final viewModel = FriendListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadFriends();
       final ok = await viewModel.deleteFriend(_friendA.userId);
@@ -122,7 +132,7 @@ void main() {
 
     test('deleteFriend 失败时返回 false 并写入错误', () async {
       final repository = FakeFriendRepository(shouldFail: true);
-      final viewModel = FriendListViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       final ok = await viewModel.deleteFriend(_friendA.userId);
 

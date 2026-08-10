@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/blacklist_repository.dart';
 import '../../../../domain/models/blacklist_user.dart';
+import '../../../../providers/friend_provider.dart';
+import '../../../../providers/message_service_provider.dart';
 
 class BlackListState {
   final List<BlacklistUser> users;
@@ -29,12 +31,18 @@ class BlackListState {
   int get count => users.length;
 }
 
-class BlackListViewModel extends StateNotifier<BlackListState> {
-  BlackListViewModel({required BlacklistRepository repository})
-    : _repository = repository,
-      super(const BlackListState());
+class BlackListViewModel extends Notifier<BlackListState> {
+  @override
+  BlackListState build() {
+    ref.listen(messageServiceProvider, (prev, next) {
+      if (prev?.friendRevision != next.friendRevision) {
+        load();
+      }
+    });
+    return const BlackListState();
+  }
 
-  final BlacklistRepository _repository;
+  BlacklistRepository get _repository => ref.read(blackListRepositoryProvider);
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/friend_search_repository.dart';
 import '../../../../domain/models/friend_search_result.dart';
+import '../../../../providers/friend_provider.dart';
 
 class FriendSearchState {
   final List<FriendSearchResult> results;
@@ -27,12 +28,12 @@ class FriendSearchState {
   }
 }
 
-class FriendSearchViewModel extends StateNotifier<FriendSearchState> {
-  FriendSearchViewModel({required FriendSearchRepository repository})
-    : _repository = repository,
-      super(const FriendSearchState());
+class FriendSearchViewModel extends Notifier<FriendSearchState> {
+  @override
+  FriendSearchState build() => const FriendSearchState();
 
-  final FriendSearchRepository _repository;
+  FriendSearchRepository get _repository =>
+      ref.read(friendSearchRepositoryProvider);
 
   Future<void> search(String keyword) async {
     if (keyword.trim().isEmpty) {

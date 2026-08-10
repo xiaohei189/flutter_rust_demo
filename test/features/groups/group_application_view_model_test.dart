@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/domain/models/group_application.dart';
+import 'package:flutter_rust_demo/providers/group_provider.dart';
 import 'package:flutter_rust_demo/ui/groups/view_models/group_application_view_model.dart';
 import 'fake_group_repository.dart';
 
@@ -58,13 +60,23 @@ const _application = GroupApplication(
 );
 
 void main() {
+  GroupApplicationViewModel buildViewModel(
+    FakeGroupRepository repository,
+  ) {
+    final container = ProviderContainer(
+      overrides: [groupRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    return container.read(groupApplicationProvider.notifier);
+  }
+
   group('GroupApplicationViewModel', () {
     test('loadApplications 成功时更新收到和发出列表', () async {
       final repository = FakeGroupRepository(
         received: [_application],
         sent: [_application],
       );
-      final viewModel = GroupApplicationViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
 
@@ -77,7 +89,7 @@ void main() {
 
     test('loadApplications 失败时写入中文错误', () async {
       final repository = FakeGroupRepository(shouldFail: true);
-      final viewModel = GroupApplicationViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
 
@@ -86,7 +98,7 @@ void main() {
 
     test('acceptApplication 成功后重新加载列表', () async {
       final repository = FakeGroupRepository(received: [_application]);
-      final viewModel = GroupApplicationViewModel(repository: repository);
+      final viewModel = buildViewModel(repository);
 
       await viewModel.loadApplications();
       final ok = await viewModel.acceptApplication(

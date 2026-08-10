@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group.dart';
+import '../../../../providers/group_provider.dart';
 
 class CreateGroupState {
   final bool isCreating;
@@ -34,12 +35,11 @@ class CreateGroupState {
   }
 }
 
-class CreateGroupViewModel extends StateNotifier<CreateGroupState> {
-  CreateGroupViewModel({required GroupRepository repository})
-    : _repository = repository,
-      super(const CreateGroupState());
+class CreateGroupViewModel extends Notifier<CreateGroupState> {
+  @override
+  CreateGroupState build() => const CreateGroupState();
 
-  final GroupRepository _repository;
+  GroupRepository get _repository => ref.read(groupRepositoryProvider);
 
   void setSelectedMembers(List<String> memberIds) {
     state = state.copyWith(selectedMemberIds: memberIds);
