@@ -10,9 +10,9 @@ final messageRepositoryProvider = Provider<MessageRepository>((ref) {
 
 /// MessageServiceNotifier 的 Provider
 final messageServiceProvider =
-    StateNotifierProvider<MessageServiceNotifier, MessageServiceState>((ref) {
-  return MessageServiceNotifier(repository: ref.watch(messageRepositoryProvider));
-});
+    NotifierProvider<MessageServiceNotifier, MessageServiceState>(
+      MessageServiceNotifier.new,
+    );
 
 /// MessageServiceNotifier 的便捷访问扩展
 extension MessageServiceRef on WidgetRef {

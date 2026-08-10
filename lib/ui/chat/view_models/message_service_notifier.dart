@@ -31,6 +31,7 @@ import 'package:flutter_rust_demo/data/services/navigation_service.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/data/services/online_status_service.dart';
+import 'package:flutter_rust_demo/providers/message_service_provider.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {
@@ -112,18 +113,18 @@ class MessageServiceState {
   }
 }
 
-/// MessageService 的 StateNotifier
-class MessageServiceNotifier extends StateNotifier<MessageServiceState> {
+/// MessageService 的 Notifier
+class MessageServiceNotifier extends Notifier<MessageServiceState> {
   fb.OpenImBridgeClient? _client;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
-  final MessageRepository _repository;
 
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
   final Set<String> _seenClientMsgIds = {};
 
-  MessageServiceNotifier({required MessageRepository repository})
-      : _repository = repository,
-        super(const MessageServiceState());
+  @override
+  MessageServiceState build() => const MessageServiceState();
+
+  MessageRepository get _repository => ref.read(messageRepositoryProvider);
 
   /// 获取客户端实例
   fb.OpenImBridgeClient? get client => _client;

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/providers/message_service_provider.dart';
 import 'fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart';
@@ -26,12 +28,20 @@ MessageInfo _makeMessage(String clientMsgId, int seq, int sendTime) => MessageIn
       ex: '',
     );
 
+MessageServiceNotifier buildNotifier() {
+  final container = ProviderContainer(
+    overrides: [
+      messageRepositoryProvider.overrideWithValue(FakeMessageRepository()),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container.read(messageServiceProvider.notifier);
+}
+
 void main() {
   group('MessageServiceNotifier 新消息事件', () {
     test('收到 newMessage 事件后消息列表自动追加', () {
-      final notifier = MessageServiceNotifier(
-        repository: FakeMessageRepository(),
-      );
+      final notifier = buildNotifier();
       final message = _makeMessage('m1', 1, 1000);
 
       notifier.onMessageEventForTest(
@@ -48,9 +58,7 @@ void main() {
     });
 
     test('重复新消息事件不会重复追加', () {
-      final notifier = MessageServiceNotifier(
-        repository: FakeMessageRepository(),
-      );
+      final notifier = buildNotifier();
       final event = MessageEvent.newMessage(
         conversationId: 'si_user_a_user_b',
         message: _makeMessage('m1', 1, 1000),
@@ -63,9 +71,7 @@ void main() {
     });
 
     test('不同会话的新消息写入各自列表', () {
-      final notifier = MessageServiceNotifier(
-        repository: FakeMessageRepository(),
-      );
+      final notifier = buildNotifier();
 
       notifier.onMessageEventForTest(
         MessageEvent.newMessage(

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../src/rust/constant/enums.dart';
@@ -45,20 +43,18 @@ class MessageListState {
 
 /// 消息列表 ViewModel（按会话）
 class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
-  MessageServiceNotifier? _messageService;
-  StreamSubscription<MessageServiceState>? _serviceSubscription;
-
   @override
   MessageListState build(String conversationId) {
-    _messageService = ref.read(messageServiceProvider.notifier);
-    _serviceSubscription = _messageService!.stream.listen((_) => _syncState());
-    ref.onDispose(() => _serviceSubscription?.cancel());
+    ref.listen(messageServiceProvider, (_, __) => _syncState());
     Future.microtask(_syncState);
     return const MessageListState();
   }
 
+  MessageServiceNotifier get _messageService =>
+      ref.read(messageServiceProvider.notifier);
+
   void _syncState() {
-    final messages = _messageService!.getMessages(arg);
+    final messages = _messageService.getMessages(arg);
     state = state.copyWith(messages: messages);
   }
 
@@ -74,7 +70,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
 
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final hasMore = await _messageService!.loadHistoryMessages(
+      final hasMore = await _messageService.loadHistoryMessages(
         arg,
         count: count,
         startClientMsgId: startClientMsgId,
@@ -95,7 +91,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendTextMessage(
+      final result = await _messageService.sendTextMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
@@ -117,7 +113,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendMarkdownMessage(
+      final result = await _messageService.sendMarkdownMessage(
         recvId: recvId,
         text: text,
         sessionType: sessionType,
@@ -140,7 +136,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendAtTextMessage(
+      final result = await _messageService.sendAtTextMessage(
         recvId: recvId,
         text: text,
         atUserIds: atUserIds,
@@ -157,7 +153,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   }
 
   void _addSentMessage(MsgStruct result) {
-    _messageService!.upsertSentMessage(arg, result);
+    _messageService.upsertSentMessage(arg, result);
     _syncState();
   }
 
@@ -171,7 +167,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendImageMessage(
+      final result = await _messageService.sendImageMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -193,7 +189,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendVideoMessage(
+      final result = await _messageService.sendVideoMessage(
         videoPath: videoPath,
         snapshotPath: snapshotPath,
         sourceId: _sourceId(recvId, groupId),
@@ -216,7 +212,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendSoundMessage(
+      final result = await _messageService.sendSoundMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -237,7 +233,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendFileMessage(
+      final result = await _messageService.sendFileMessage(
         filePath: filePath,
         sourceId: _sourceId(recvId, groupId),
         sessionType: sessionType,
@@ -259,7 +255,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     String? groupId,
   }) async {
     try {
-      final result = await _messageService!.sendLocationMessage(
+      final result = await _messageService.sendLocationMessage(
         description: description,
         latitude: latitude,
         longitude: longitude,
@@ -280,12 +276,12 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required SessionType sessionType,
   }) async {
     try {
-      final result = await _messageService!.resendMessage(
+      final result = await _messageService.resendMessage(
         message: message,
         sourceId: sourceId,
         sessionType: sessionType,
       );
-      _messageService!.removeMessage(arg, message.clientMsgId);
+      _messageService.removeMessage(arg, message.clientMsgId);
       _addSentMessage(result);
       return true;
     } catch (e) {

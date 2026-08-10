@@ -9,7 +9,6 @@ import 'package:flutter_rust_demo/providers/user_profile_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
-import 'fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/local.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart';
@@ -75,11 +74,20 @@ LocalConversation _makeConversation({int unreadCount = 0}) => LocalConversation(
 Widget _buildHost(MessageServiceNotifier service) {
   return ProviderScope(
     overrides: [
-      messageServiceProvider.overrideWith((ref) => service),
+      messageServiceProvider.overrideWith(() => service),
       userProfileProvider.overrideWith(() => UserProfileNotifier()),
     ],
     child: const MaterialApp(home: ChatDetailScreen(conversationId: _convId)),
   );
+}
+
+class TestMessageServiceNotifier extends MessageServiceNotifier {
+  TestMessageServiceNotifier(this.initialState);
+
+  final MessageServiceState initialState;
+
+  @override
+  MessageServiceState build() => initialState;
 }
 
 void main() {
@@ -88,8 +96,8 @@ void main() {
 
   testWidgets('进入会话后渲染会话名和已有消息', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier(repository: FakeMessageRepository());
-    service.state = MessageServiceState(
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation()],
       messages: {
@@ -107,6 +115,7 @@ void main() {
           globalRecvMsgOpt: 0,
         ),
       },
+      ),
     );
 
     await tester.pumpWidget(_buildHost(service));
@@ -119,13 +128,14 @@ void main() {
 
   testWidgets('收到对方新消息后消息列表自动追加', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier(repository: FakeMessageRepository());
-    service.state = MessageServiceState(
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation()],
       messages: {
         _convId: [_makeMessage('m1', '旧消息', 1, 1000, 'user_b')],
       },
+      ),
     );
 
     await tester.pumpWidget(_buildHost(service));
@@ -148,10 +158,11 @@ void main() {
 
   testWidgets('会话未读徽标随未读数变化', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final service = MessageServiceNotifier(repository: FakeMessageRepository());
-    service.state = MessageServiceState(
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
       currentUserId: 'user_a',
       conversations: [_makeConversation(unreadCount: 2)],
+      ),
     );
 
     await tester.pumpWidget(_buildHost(service));
