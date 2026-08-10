@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/services.dart';
+import '../domain/models/conversation.dart';
 import 'message_service_provider.dart';
 
 // ==================== ImClient Provider ====================
@@ -43,22 +44,23 @@ final conversationServiceProvider = Provider<ConversationService>((ref) {
 });
 
 /// 会话列表流 Provider
-final conversationsStreamProvider = StreamProvider<List<dynamic>>((ref) {
+final conversationsStreamProvider = StreamProvider<List<Conversation>>((ref) {
   final service = ref.watch(conversationServiceProvider);
   return service.conversationsStream;
 });
 
 /// 当前会话列表 Provider（从新服务）
-final conversationsFromServiceProvider = Provider<List<dynamic>>((ref) {
+final conversationsFromServiceProvider = Provider<List<Conversation>>((ref) {
   final service = ref.watch(conversationServiceProvider);
   return service.conversations;
 });
 
 /// 会话同步状态流 Provider
-final conversationSyncStatusStreamProvider = StreamProvider<ConversationSyncStatus>((ref) {
-  final service = ref.watch(conversationServiceProvider);
-  return service.syncStatusStream;
-});
+final conversationSyncStatusStreamProvider =
+    StreamProvider<ConversationSyncStatus>((ref) {
+      final service = ref.watch(conversationServiceProvider);
+      return service.syncStatusStream;
+    });
 
 /// 当前会话同步状态 Provider
 final conversationSyncStatusProvider = Provider<ConversationSyncStatus>((ref) {
@@ -92,7 +94,10 @@ final allMessagesProvider = Provider<Map<String, List<dynamic>>>((ref) {
 });
 
 /// 指定会话的消息列表 Provider（Family）
-final messagesProvider = Provider.family<List<dynamic>, String>((ref, conversationId) {
+final messagesProvider = Provider.family<List<dynamic>, String>((
+  ref,
+  conversationId,
+) {
   return ref.watch(messageServiceProvider).messages[conversationId] ?? [];
 });
 
@@ -122,7 +127,10 @@ final userProfilesStreamProvider = StreamProvider<Map<String, UserInfo>>((ref) {
 });
 
 /// 指定用户资料 Provider（Family）（从新服务）
-final userProfileByIdProvider = Provider.family<UserInfo?, String>((ref, userId) {
+final userProfileByIdProvider = Provider.family<UserInfo?, String>((
+  ref,
+  userId,
+) {
   final service = ref.watch(userServiceProvider);
   return service.getUserProfile(userId);
 });
@@ -133,7 +141,7 @@ final userProfileByIdProvider = Provider.family<UserInfo?, String>((ref, userId)
 final selectedConversationIdProvider = StateProvider<String?>((ref) => null);
 
 /// 当前选中的会话
-final selectedConversationProvider = Provider<dynamic>((ref) {
+final selectedConversationProvider = Provider<Conversation?>((ref) {
   final conversationId = ref.watch(selectedConversationIdProvider);
   if (conversationId == null) return null;
 

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../domain/models/conversation.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
-import '../../../../src/rust/model/local.dart' show LocalConversation;
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/chat/widgets/chat_list_header.dart';
 import '../../../../ui/chat/widgets/chat_list_item.dart';
@@ -54,8 +54,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         .length;
   }
 
-  List<LocalConversation> _getFilteredConversations(
-    List<LocalConversation> conversations,
+  List<Conversation> _getFilteredConversations(
+    List<Conversation> conversations,
   ) {
     switch (_activeFilter) {
       case GroupFilter.unread:

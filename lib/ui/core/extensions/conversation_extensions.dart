@@ -1,7 +1,7 @@
+import '../../../domain/models/conversation.dart';
 import '../../../src/rust/constant/enums.dart' show SessionType;
-import '../../../src/rust/model/local.dart' show LocalConversation;
 
-extension LocalConversationX on LocalConversation {
+extension ConversationX on Conversation {
   SessionType get sessionType {
     switch (conversationType) {
       case 1:

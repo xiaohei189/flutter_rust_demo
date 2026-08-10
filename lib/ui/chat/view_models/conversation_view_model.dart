@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../domain/models/conversation.dart';
 import '../../../providers/message_service_provider.dart';
-import '../../../src/rust/model/local.dart' show LocalConversation;
 import 'message_service_notifier.dart';
 
 /// 会话列表状态
 class ConversationListState {
-  final List<LocalConversation> conversations;
+  final List<Conversation> conversations;
   final bool isSyncing;
   final int syncProgress;
   final bool isLoading;
@@ -21,7 +21,7 @@ class ConversationListState {
   });
 
   ConversationListState copyWith({
-    List<LocalConversation>? conversations,
+    List<Conversation>? conversations,
     bool? isSyncing,
     int? syncProgress,
     bool? isLoading,
@@ -36,10 +36,10 @@ class ConversationListState {
     );
   }
 
-  List<LocalConversation> get pinnedConversations =>
+  List<Conversation> get pinnedConversations =>
       conversations.where((c) => c.isPinned).toList();
 
-  List<LocalConversation> get unpinnedConversations =>
+  List<Conversation> get unpinnedConversations =>
       conversations.where((c) => !c.isPinned).toList();
 
   int get totalUnreadCount =>
@@ -50,12 +50,9 @@ class ConversationListState {
 class ConversationListNotifier extends Notifier<ConversationListState> {
   @override
   ConversationListState build() {
-    ref.listen(
-      messageServiceProvider,
-      (_, next) {
-        _syncState(next);
-      },
-    );
+    ref.listen(messageServiceProvider, (_, next) {
+      _syncState(next);
+    });
     Future.microtask(() => _syncState(ref.read(messageServiceProvider)));
     return const ConversationListState();
   }
@@ -78,7 +75,7 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
     }
   }
 
-  LocalConversation? getConversation(String conversationId) {
+  Conversation? getConversation(String conversationId) {
     try {
       return state.conversations.firstWhere(
         (c) => c.conversationId == conversationId,

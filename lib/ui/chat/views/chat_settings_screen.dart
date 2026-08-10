@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
-import '../../../../src/rust/model/local.dart' show LocalConversation;
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 
@@ -26,7 +26,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   late bool _privateChat;
 
   /// 获取会话信息
-  LocalConversation? get _conversation {
+  Conversation? get _conversation {
     // 先尝试从新的 ConversationService 获取
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);
@@ -183,20 +183,24 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
                 setState(() => _muteNotification = v);
                 try {
-                  await ref.read(messageRepositoryProvider).setConversation(
-                    conversationId: widget.conversationId,
-                    recvMsgOpt: v ? 1 : 0,
-                  );
+                  await ref
+                      .read(messageRepositoryProvider)
+                      .setConversation(
+                        conversationId: widget.conversationId,
+                        recvMsgOpt: v ? 1 : 0,
+                      );
                 } catch (_) {}
               }),
               const Divider(height: 1, indent: 16, endIndent: 16),
               _buildSwitchRow('置顶会话', _pinChat, (v) async {
                 setState(() => _pinChat = v);
                 try {
-                  await ref.read(messageRepositoryProvider).setConversationPinned(
-                    conversationId: widget.conversationId,
-                    isPinned: v,
-                  );
+                  await ref
+                      .read(messageRepositoryProvider)
+                      .setConversationPinned(
+                        conversationId: widget.conversationId,
+                        isPinned: v,
+                      );
                 } catch (_) {}
               }),
               if (!_isGroup) ...[
@@ -649,9 +653,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     try {
       await ref
           .read(messageRepositoryProvider)
-          .clearConversationAndDeleteAllMsg(
-            widget.conversationId,
-      );
+          .clearConversationAndDeleteAllMsg(widget.conversationId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -700,11 +702,13 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
     if (nickname == null || nickname.isEmpty) return;
     try {
-      await ref.read(groupRepositoryProvider).setGroupMemberInfo(
-        widget.conversationId,
-        currentUserId,
-        nickname: nickname,
-      );
+      await ref
+          .read(groupRepositoryProvider)
+          .setGroupMemberInfo(
+            widget.conversationId,
+            currentUserId,
+            nickname: nickname,
+          );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -726,9 +730,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   Future<void> _editGroupAnnouncement() async {
     var current = '';
     try {
-      final groups = await ref
-          .read(groupRepositoryProvider)
-          .getGroupsInfo([_groupId]);
+      final groups = await ref.read(groupRepositoryProvider).getGroupsInfo([
+        _groupId,
+      ]);
       current = groups.isNotEmpty ? groups.first.notification : '';
     } catch (_) {
       // 拉取失败时允许直接编辑
@@ -766,10 +770,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     if (value == null || !mounted) return;
 
     try {
-      await ref.read(groupRepositoryProvider).setGroupInfo(
-        _groupId,
-        notification: value,
-      );
+      await ref
+          .read(groupRepositoryProvider)
+          .setGroupInfo(_groupId, notification: value);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

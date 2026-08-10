@@ -1,13 +1,14 @@
 import 'dart:typed_data' show Int32List;
 
 import '../services/im_client.dart';
+import '../../domain/models/conversation.dart';
 import '../../src/rust/client.dart';
 import '../../src/rust/constant/enums.dart' show SessionType;
 import '../../src/rust/ffi/client.dart';
 import '../../src/rust/ffi/message.dart' as ffi_message;
 import '../../src/rust/ffi/message_advanced.dart' as ffi_message_advanced;
 import '../../src/rust/http/message.dart' show RevokeMessageReq;
-import '../../src/rust/model/local.dart' show LocalChatLog, LocalConversation;
+import '../../src/rust/model/local.dart' show LocalChatLog;
 import '../../src/rust/model/msg_struct.dart' show MsgStruct;
 import '../../src/rust/model/user.dart' show UserInfo;
 
@@ -134,7 +135,7 @@ abstract class MessageRepository {
     required String clientMsgId,
   });
 
-  Future<List<LocalConversation>> getConversations();
+  Future<List<Conversation>> getConversations();
 
   Future<void> markConversationMessageAsRead({
     required String conversationId,
@@ -459,8 +460,11 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<List<LocalConversation>> getConversations() {
-    return _client.getConversations();
+  Future<List<Conversation>> getConversations() async {
+    final conversations = await _client.getConversations();
+    return conversations
+        .map(ConversationMapping.fromLocalConversation)
+        .toList();
   }
 
   @override

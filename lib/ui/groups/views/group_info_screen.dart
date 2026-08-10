@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/profile/views/qr_code_screen.dart';
 import '../../../../data/services/services.dart';
-import '../../../../src/rust/model/local.dart' show LocalConversation;
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
@@ -32,7 +32,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   _JoinTimeFilter _joinTimeFilter = _JoinTimeFilter.all;
 
   /// 获取会话信息
-  LocalConversation? get _conversation {
+  Conversation? get _conversation {
     // 先尝试从新的 ConversationService 获取
     final newService = ref.read(conversationServiceProvider);
     var conversation = newService.getConversation(widget.conversationId);

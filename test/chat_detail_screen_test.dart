@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/providers/user_profile_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
-import 'package:flutter_rust_demo/src/rust/model/local.dart';
 import 'package:flutter_rust_demo/src/rust/model/message.dart';
 import 'package:flutter_rust_demo/src/rust/model/user.dart';
 
@@ -44,7 +44,7 @@ MessageInfo _makeMessage(
   ex: '',
 );
 
-LocalConversation _makeConversation({int unreadCount = 0}) => LocalConversation(
+Conversation _makeConversation({int unreadCount = 0}) => Conversation(
   conversationId: _convId,
   conversationType: 1,
   userId: 'user_b',
@@ -98,23 +98,23 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final service = TestMessageServiceNotifier(
       MessageServiceState(
-      currentUserId: 'user_a',
-      conversations: [_makeConversation()],
-      messages: {
-        _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
-      },
-      userProfiles: {
-        'user_a': const UserInfo(
-          userId: 'user_a',
-          nickname: '我',
-          faceUrl: '',
-          gender: 0,
-          telephone: '',
-          email: '',
-          remark: '',
-          globalRecvMsgOpt: 0,
-        ),
-      },
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+        messages: {
+          _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
+        },
+        userProfiles: {
+          'user_a': const UserInfo(
+            userId: 'user_a',
+            nickname: '我',
+            faceUrl: '',
+            gender: 0,
+            telephone: '',
+            email: '',
+            remark: '',
+            globalRecvMsgOpt: 0,
+          ),
+        },
       ),
     );
 
@@ -130,11 +130,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final service = TestMessageServiceNotifier(
       MessageServiceState(
-      currentUserId: 'user_a',
-      conversations: [_makeConversation()],
-      messages: {
-        _convId: [_makeMessage('m1', '旧消息', 1, 1000, 'user_b')],
-      },
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+        messages: {
+          _convId: [_makeMessage('m1', '旧消息', 1, 1000, 'user_b')],
+        },
       ),
     );
 
@@ -160,8 +160,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final service = TestMessageServiceNotifier(
       MessageServiceState(
-      currentUserId: 'user_a',
-      conversations: [_makeConversation(unreadCount: 2)],
+        currentUserId: 'user_a',
+        conversations: [_makeConversation(unreadCount: 2)],
       ),
     );
 

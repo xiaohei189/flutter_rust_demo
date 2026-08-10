@@ -23,9 +23,9 @@ import '../ui/auth/views/register_screen.dart';
 import '../ui/groups/views/group_applications_screen.dart';
 import '../ui/profile/views/account_settings_screen.dart';
 import '../ui/contacts/views/scan_screen.dart';
+import '../domain/models/conversation.dart';
 import '../domain/models/user.dart';
 import '../data/services/navigation_service.dart';
-import '../src/rust/model/local.dart' show LocalConversation;
 
 /// 应用路由配置
 class AppRouter {
@@ -243,7 +243,7 @@ class AppRouter {
   /// 导航到聊天详情页
   static void goToChatDetail(
     BuildContext context,
-    LocalConversation conversation, {
+    Conversation conversation, {
     bool preLoaded = false,
   }) {
     final queryParams = preLoaded ? '?preLoaded=true' : '';
@@ -263,7 +263,7 @@ class AppRouter {
   /// 导航到聊天设置页
   static void goToChatSettings(
     BuildContext context,
-    LocalConversation conversation,
+    Conversation conversation,
   ) {
     context.push('/chat/${conversation.conversationId}/settings');
   }
@@ -277,10 +277,7 @@ class AppRouter {
   }
 
   /// 导航到群组信息页
-  static void goToGroupInfo(
-    BuildContext context,
-    LocalConversation conversation,
-  ) {
+  static void goToGroupInfo(BuildContext context, Conversation conversation) {
     context.push('/group/${conversation.conversationId}/info');
   }
 

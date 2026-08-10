@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
+import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/ui/core/extensions/conversation_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
@@ -39,7 +40,7 @@ class MessageServiceState {
   final bool isSyncingConversations;
   final int syncProgress;
   final String currentUserId;
-  final List<LocalConversation> conversations;
+  final List<Conversation> conversations;
   final Map<String, List<MessageInfo>> messages;
   final Map<String, UserInfo> userProfiles;
   final UserInfo? loginUserProfile;
@@ -80,7 +81,7 @@ class MessageServiceState {
     bool? isSyncingConversations,
     int? syncProgress,
     String? currentUserId,
-    List<LocalConversation>? conversations,
+    List<Conversation>? conversations,
     Map<String, List<MessageInfo>>? messages,
     Map<String, UserInfo>? userProfiles,
     UserInfo? loginUserProfile,
@@ -961,22 +962,19 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   /// 事件驱动更新会话列表（对齐官方 Demo：直接用 ConversationChanged 携带的数据更新，不重载 DB）
   void _applyConversationEvent(List<LocalConversation> incoming) {
     if (incoming.isEmpty) return;
-    final newConversations = List<LocalConversation>.from(state.conversations);
-    for (final conv in incoming) {
+    final newConversations = List<Conversation>.from(state.conversations);
+    for (final raw in incoming) {
+      final conv = ConversationMapping.fromLocalConversation(raw);
       final index = newConversations.indexWhere(
         (c) => c.conversationId == conv.conversationId,
       );
       if (index >= 0) {
         final existing = newConversations[index];
-        final existingTime = existing.latestMsgSendTime.toInt();
-        final convTime = conv.latestMsgSendTime.toInt();
+        final existingTime = existing.latestMsgSendTime;
+        final convTime = conv.latestMsgSendTime;
         final useExisting =
             existing.latestMsg.isNotEmpty && existingTime >= convTime;
-        newConversations[index] = LocalConversation(
-          conversationId: conv.conversationId,
-          conversationType: conv.conversationType,
-          userId: conv.userId,
-          groupId: conv.groupId,
+        newConversations[index] = existing.copyWith(
           showName: conv.showName.isNotEmpty
               ? conv.showName
               : existing.showName,
@@ -1012,7 +1010,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     }
     newConversations.sort((a, b) {
       if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-      return b.latestMsgSendTime.toInt().compareTo(a.latestMsgSendTime.toInt());
+      return b.latestMsgSendTime.compareTo(a.latestMsgSendTime);
     });
     state = state.copyWith(conversations: newConversations);
   }
@@ -1081,9 +1079,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
     try {
       final conversations = await _repository.getConversations();
-      final newConversations = List<LocalConversation>.from(
-        state.conversations,
-      );
+      final newConversations = List<Conversation>.from(state.conversations);
       final dbIds = conversations.map((c) => c.conversationId).toSet();
       newConversations.removeWhere((c) => !dbIds.contains(c.conversationId));
       // 去重：移除 DB 中重复的同 ID 行（兜底 DB 无 UNIQUE 约束的情况）
@@ -1095,15 +1091,11 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         );
         if (index >= 0) {
           final existing = newConversations[index];
-          final existingTime = existing.latestMsgSendTime.toInt();
-          final convTime = conv.latestMsgSendTime.toInt();
+          final existingTime = existing.latestMsgSendTime;
+          final convTime = conv.latestMsgSendTime;
           final useExisting =
               existing.latestMsg.isNotEmpty && existingTime >= convTime;
-          newConversations[index] = LocalConversation(
-            conversationId: conv.conversationId,
-            conversationType: conv.conversationType,
-            userId: conv.userId,
-            groupId: conv.groupId,
+          newConversations[index] = existing.copyWith(
             showName: conv.showName.isNotEmpty
                 ? conv.showName
                 : existing.showName,
@@ -1139,8 +1131,8 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       }
       newConversations.sort((a, b) {
         if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-        final aTime = a.latestMsgSendTime.toInt();
-        final bTime = b.latestMsgSendTime.toInt();
+        final aTime = a.latestMsgSendTime;
+        final bTime = b.latestMsgSendTime;
         return bTime.compareTo(aTime);
       });
       state = state.copyWith(conversations: newConversations);
@@ -1166,7 +1158,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   }
 
   void removeConversation(String conversationId) {
-    final newConversations = List<LocalConversation>.from(state.conversations);
+    final newConversations = List<Conversation>.from(state.conversations);
     newConversations.removeWhere((c) => c.conversationId == conversationId);
     final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
     newMessages.remove(conversationId);
@@ -1202,40 +1194,12 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         sessionType: sessionType,
       );
       // 更新本地会话未读数
-      final newConversations = List<LocalConversation>.from(
-        state.conversations,
-      );
+      final newConversations = List<Conversation>.from(state.conversations);
       final idx = newConversations.indexWhere(
         (c) => c.conversationId == conversationId,
       );
       if (idx >= 0) {
-        final conv = newConversations[idx];
-        newConversations[idx] = LocalConversation(
-          conversationId: conv.conversationId,
-          conversationType: conv.conversationType,
-          userId: conv.userId,
-          groupId: conv.groupId,
-          showName: conv.showName,
-          faceUrl: conv.faceUrl,
-          latestMsg: conv.latestMsg,
-          latestMsgSendTime: conv.latestMsgSendTime,
-          unreadCount: 0,
-          recvMsgOpt: conv.recvMsgOpt,
-          isPinned: conv.isPinned,
-          isPrivateChat: conv.isPrivateChat,
-          burnDuration: conv.burnDuration,
-          groupAtType: conv.groupAtType,
-          isNotInGroup: conv.isNotInGroup,
-          updateUnreadCountTime: conv.updateUnreadCountTime,
-          attachedInfo: conv.attachedInfo,
-          ex: conv.ex,
-          draftText: conv.draftText,
-          draftTextTime: conv.draftTextTime,
-          maxSeq: conv.maxSeq,
-          minSeq: conv.minSeq,
-          isMsgDestruct: conv.isMsgDestruct,
-          msgDestructTime: conv.msgDestructTime,
-        );
+        newConversations[idx] = newConversations[idx].copyWith(unreadCount: 0);
       }
       state = state.copyWith(conversations: newConversations);
 
@@ -1252,40 +1216,16 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态，确保会话列表立即显示草稿
-      final newConversations = List<LocalConversation>.from(
-        state.conversations,
-      );
+      final newConversations = List<Conversation>.from(state.conversations);
       final idx = newConversations.indexWhere(
         (c) => c.conversationId == conversationId,
       );
       if (idx >= 0) {
         final conv = newConversations[idx];
         final now = DateTime.now().millisecondsSinceEpoch;
-        newConversations[idx] = LocalConversation(
-          conversationId: conv.conversationId,
-          conversationType: conv.conversationType,
-          userId: conv.userId,
-          groupId: conv.groupId,
-          showName: conv.showName,
-          faceUrl: conv.faceUrl,
-          latestMsg: conv.latestMsg,
-          latestMsgSendTime: conv.latestMsgSendTime,
-          unreadCount: conv.unreadCount,
-          recvMsgOpt: conv.recvMsgOpt,
-          isPinned: conv.isPinned,
-          isPrivateChat: conv.isPrivateChat,
-          burnDuration: conv.burnDuration,
-          groupAtType: conv.groupAtType,
-          isNotInGroup: conv.isNotInGroup,
-          updateUnreadCountTime: conv.updateUnreadCountTime,
-          attachedInfo: conv.attachedInfo,
-          ex: conv.ex,
+        newConversations[idx] = conv.copyWith(
           draftText: draftText,
           draftTextTime: now,
-          maxSeq: conv.maxSeq,
-          minSeq: conv.minSeq,
-          isMsgDestruct: conv.isMsgDestruct,
-          msgDestructTime: conv.msgDestructTime,
         );
         state = state.copyWith(conversations: newConversations);
       }
@@ -1305,39 +1245,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     if (_client == null) return;
     try {
       // 先同步更新内存状态
-      final newConversations = List<LocalConversation>.from(
-        state.conversations,
-      );
+      final newConversations = List<Conversation>.from(state.conversations);
       final idx = newConversations.indexWhere(
         (c) => c.conversationId == conversationId,
       );
       if (idx >= 0) {
-        final conv = newConversations[idx];
-        newConversations[idx] = LocalConversation(
-          conversationId: conv.conversationId,
-          conversationType: conv.conversationType,
-          userId: conv.userId,
-          groupId: conv.groupId,
-          showName: conv.showName,
-          faceUrl: conv.faceUrl,
-          latestMsg: conv.latestMsg,
-          latestMsgSendTime: conv.latestMsgSendTime,
-          unreadCount: conv.unreadCount,
-          recvMsgOpt: conv.recvMsgOpt,
-          isPinned: conv.isPinned,
-          isPrivateChat: conv.isPrivateChat,
-          burnDuration: conv.burnDuration,
-          groupAtType: conv.groupAtType,
-          isNotInGroup: conv.isNotInGroup,
-          updateUnreadCountTime: conv.updateUnreadCountTime,
-          attachedInfo: conv.attachedInfo,
-          ex: conv.ex,
+        newConversations[idx] = newConversations[idx].copyWith(
           draftText: '',
           draftTextTime: 0,
-          maxSeq: conv.maxSeq,
-          minSeq: conv.minSeq,
-          isMsgDestruct: conv.isMsgDestruct,
-          msgDestructTime: conv.msgDestructTime,
         );
         state = state.copyWith(conversations: newConversations);
       }

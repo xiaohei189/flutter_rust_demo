@@ -1,14 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:intl/intl.dart';
 
+import '../../../domain/models/conversation.dart';
 import '../../../domain/models/user.dart';
 import '../../../router/app_router.dart';
 import '../../../src/rust/model/user.dart' show UserInfo;
 import '../../core/theme/app_theme.dart';
-import '../../../src/rust/model/local.dart' show LocalConversation;
 import '../../core/widgets/user_avatar.dart';
 
 /// 从 map 中取 key（支持 camelCase / snake_case）
@@ -58,9 +57,14 @@ String latestMessagePreview(String latestMsgJson) {
     if (map == null) return '暂无消息';
 
     final contentType = _getKey<int>(map, 'contentType', 'content_type') ?? 0;
-    final senderNickname = _getKey<String>(map, 'senderNickname', 'sender_nickname') ?? '';
+    final senderNickname =
+        _getKey<String>(map, 'senderNickname', 'sender_nickname') ?? '';
     final content = map['content'];
-    final textElem = _getKey<Map<String, dynamic>>(map, 'textElem', 'text_elem');
+    final textElem = _getKey<Map<String, dynamic>>(
+      map,
+      'textElem',
+      'text_elem',
+    );
 
     String body;
     switch (contentType) {
@@ -118,13 +122,15 @@ String latestMessagePreview(String latestMsgJson) {
     }
     return body;
   } catch (_) {
-    return latestMsgJson.length > 60 ? '${latestMsgJson.substring(0, 60)}…' : latestMsgJson;
+    return latestMsgJson.length > 60
+        ? '${latestMsgJson.substring(0, 60)}…'
+        : latestMsgJson;
   }
 }
 
 /// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {
-  final LocalConversation conversation;
+  final Conversation conversation;
   final VoidCallback onTap;
   final bool isSelected;
   final String? currentUserId;
@@ -133,8 +139,10 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onMarkRead;
   final VoidCallback? onHide;
   final UserInfo? cachedUserProfile;
+
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
   final String? currentUserLocalAvatarPath;
+
   /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
   final int? itemIndex;
 
@@ -165,9 +173,9 @@ class ChatListItem extends StatelessWidget {
 
   static const _weekdayZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-  String _formatTime(PlatformInt64? timeMs) {
-    if (timeMs == null || timeMs.toInt() <= 0) return '';
-    final time = DateTime.fromMillisecondsSinceEpoch(timeMs.toInt());
+  String _formatTime(int? timeMs) {
+    if (timeMs == null || timeMs <= 0) return '';
+    final time = DateTime.fromMillisecondsSinceEpoch(timeMs);
     final now = DateTime.now();
     const formatToday = 'HH:mm';
     if (_isSameDay(time, now)) {
@@ -191,7 +199,8 @@ class ChatListItem extends StatelessWidget {
     final cid = conversation.conversationId;
     switch (conversation.conversationType) {
       case 1:
-        if (conversation.userId.isNotEmpty && !_isConversationIdPrefix(conversation.userId)) {
+        if (conversation.userId.isNotEmpty &&
+            !_isConversationIdPrefix(conversation.userId)) {
           return conversation.userId;
         }
         if (cid.startsWith('si_')) {
@@ -206,7 +215,8 @@ class ChatListItem extends StatelessWidget {
         return '未知用户';
       case 2:
       case 3:
-        if (conversation.groupId.isNotEmpty && !_isConversationIdPrefix(conversation.groupId)) {
+        if (conversation.groupId.isNotEmpty &&
+            !_isConversationIdPrefix(conversation.groupId)) {
           return conversation.groupId;
         }
         if (cid.startsWith('sg_')) {
@@ -228,45 +238,71 @@ class ChatListItem extends StatelessWidget {
     String userId;
     String displayName;
     String? avatarUrl;
-    
+
     if (conversation.conversationType == 1) {
       // 单聊：展示对方的信息
-      if (conversation.userId.isNotEmpty && conversation.userId != currentUserId) {
+      if (conversation.userId.isNotEmpty &&
+          conversation.userId != currentUserId) {
         userId = conversation.userId;
-        displayName = cachedUserProfile?.nickname ?? 
-            (conversation.showName.isNotEmpty ? conversation.showName : '用户 $userId');
+        displayName =
+            cachedUserProfile?.nickname ??
+            (conversation.showName.isNotEmpty
+                ? conversation.showName
+                : '用户 $userId');
         avatarUrl = cachedUserProfile?.faceUrl;
-      } else if (currentUserId != null && conversation.conversationId.startsWith('si_')) {
+      } else if (currentUserId != null &&
+          conversation.conversationId.startsWith('si_')) {
         // 从会话ID中解析对方ID
         final parts = conversation.conversationId.substring(3).split('_');
         if (parts.length >= 2) {
           final otherId = parts[0] == currentUserId ? parts[1] : parts[0];
           userId = otherId;
-          displayName = cachedUserProfile?.nickname ?? 
-              (conversation.showName.isNotEmpty ? conversation.showName : '用户 $otherId');
+          displayName =
+              cachedUserProfile?.nickname ??
+              (conversation.showName.isNotEmpty
+                  ? conversation.showName
+                  : '用户 $otherId');
           avatarUrl = cachedUserProfile?.faceUrl;
         } else {
-          userId = conversation.userId.isNotEmpty ? conversation.userId : conversation.conversationId;
-          displayName = conversation.showName.isNotEmpty ? conversation.showName : '未知用户';
-          avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null;
+          userId = conversation.userId.isNotEmpty
+              ? conversation.userId
+              : conversation.conversationId;
+          displayName = conversation.showName.isNotEmpty
+              ? conversation.showName
+              : '未知用户';
+          avatarUrl = conversation.faceUrl.isNotEmpty
+              ? conversation.faceUrl
+              : null;
         }
       } else {
-        userId = conversation.userId.isNotEmpty ? conversation.userId : conversation.conversationId;
-        displayName = conversation.showName.isNotEmpty ? conversation.showName : '未知用户';
-        avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null;
+        userId = conversation.userId.isNotEmpty
+            ? conversation.userId
+            : conversation.conversationId;
+        displayName = conversation.showName.isNotEmpty
+            ? conversation.showName
+            : '未知用户';
+        avatarUrl = conversation.faceUrl.isNotEmpty
+            ? conversation.faceUrl
+            : null;
       }
     } else {
       // 群聊或其他类型：展示群组信息
-      userId = conversation.groupId.isNotEmpty ? conversation.groupId : conversation.conversationId;
-      displayName = conversation.showName.isNotEmpty 
-          ? conversation.showName 
+      userId = conversation.groupId.isNotEmpty
+          ? conversation.groupId
+          : conversation.conversationId;
+      displayName = conversation.showName.isNotEmpty
+          ? conversation.showName
           : _conversationDisplayName;
-      avatarUrl = conversation.faceUrl.isNotEmpty ? conversation.faceUrl : cachedUserProfile?.faceUrl;
+      avatarUrl = conversation.faceUrl.isNotEmpty
+          ? conversation.faceUrl
+          : cachedUserProfile?.faceUrl;
     }
-    
+
     // 优先使用缓存的用户资料头像，其次使用会话头像
-    final finalAvatar = (avatarUrl != null && avatarUrl.isNotEmpty) ? avatarUrl : null;
-    
+    final finalAvatar = (avatarUrl != null && avatarUrl.isNotEmpty)
+        ? avatarUrl
+        : null;
+
     return User(
       id: userId,
       name: displayName,
@@ -276,10 +312,10 @@ class ChatListItem extends StatelessWidget {
   }
 
   /// 展示时间：取草稿时间和最新消息时间中较新的
-  PlatformInt64 get _displayTime {
+  int get _displayTime {
     final draftTime = conversation.draftTextTime;
     final msgTime = conversation.latestMsgSendTime;
-    if (draftTime.toInt() > msgTime.toInt()) return draftTime;
+    if (draftTime > msgTime) return draftTime;
     return msgTime;
   }
 
@@ -300,10 +336,12 @@ class ChatListItem extends StatelessWidget {
   }
 
   bool get _hasDraft => conversation.draftText.isNotEmpty;
+
   /// 免打扰：recvMsgOpt 1=接收但不通知
   bool get _isMuted => conversation.recvMsgOpt == 1;
 
-  bool get _isGroup => conversation.conversationType == 2 || conversation.conversationType == 3;
+  bool get _isGroup =>
+      conversation.conversationType == 2 || conversation.conversationType == 3;
 
   Widget _buildContent(BuildContext context) {
     final user = _getUser();
@@ -313,7 +351,9 @@ class ChatListItem extends StatelessWidget {
     return Material(
       color: isPinned
           ? const Color(0xFFF7F8FA)
-          : (isSelected ? AppTheme.primaryColor.withValues(alpha: 0.06) : Colors.white),
+          : (isSelected
+                ? AppTheme.primaryColor.withValues(alpha: 0.06)
+                : Colors.white),
       child: InkWell(
         onTap: onTap,
         onLongPress: () => _showLongPressMenu(context),
@@ -334,12 +374,23 @@ class ChatListItem extends StatelessWidget {
                           right: -4,
                           top: -4,
                           child: Container(
-                            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
-                              color: _isMuted ? AppTheme.textSecondaryColor : AppTheme.unreadRed,
+                              color: _isMuted
+                                  ? AppTheme.textSecondaryColor
+                                  : AppTheme.unreadRed,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white, width: 1.5),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                             ),
                             alignment: Alignment.center,
                             child: Text(
@@ -377,14 +428,19 @@ class ChatListItem extends StatelessWidget {
                               ),
                             ),
                             if (_isGroup)
-                              const _TagLabel(text: '群聊', color: Color(0xFF4CAF50)),
+                              const _TagLabel(
+                                text: '群聊',
+                                color: Color(0xFF4CAF50),
+                              ),
                             if (_isMuted)
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
                                 child: Icon(
                                   Icons.notifications_off_outlined,
                                   size: 14,
-                                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+                                  color: AppTheme.textSecondaryColor.withValues(
+                                    alpha: 0.6,
+                                  ),
                                 ),
                               ),
                             const SizedBox(width: 8),
@@ -445,7 +501,7 @@ class ChatListItem extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.push_pin_outlined),
-        title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
+              title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
               onTap: () {
                 AppRouter.goBack(ctx);
                 onPinToggle?.call();
@@ -469,8 +525,14 @@ class ChatListItem extends StatelessWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppTheme.unreadRed),
-              title: const Text('删除', style: TextStyle(color: AppTheme.unreadRed)),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: AppTheme.unreadRed,
+              ),
+              title: const Text(
+                '删除',
+                style: TextStyle(color: AppTheme.unreadRed),
+              ),
               onTap: () {
                 AppRouter.goBack(ctx);
                 onDelete?.call();
@@ -494,7 +556,11 @@ class ChatListItem extends StatelessWidget {
           color: AppTheme.unreadRed,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 24),
-          child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+          child: const Icon(
+            Icons.delete_outline,
+            color: Colors.white,
+            size: 28,
+          ),
         ),
         onDismissed: (_) => onDelete!(),
         child: _buildContent(context),

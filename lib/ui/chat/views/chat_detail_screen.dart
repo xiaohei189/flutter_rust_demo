@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
+import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/message_ext.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../providers/providers.dart';
@@ -28,8 +29,9 @@ import '../../../../ui/core/utils/app_logger.dart';
 import '../../../../ui/core/extensions/conversation_extensions.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../src/rust/constant/enums.dart' show SessionType;
-import '../../../../src/rust/model/local.dart' show LocalChatLog, LocalConversation;
-import '../../../../ui/chat/widgets/chat_input.dart' show ChatInput, MessageContentType;
+import '../../../../src/rust/model/local.dart' show LocalChatLog;
+import '../../../../ui/chat/widgets/chat_input.dart'
+    show ChatInput, MessageContentType;
 import '../../../../ui/chat/widgets/message_list.dart';
 import '../../../../ui/chat/widgets/message_action_menu.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
@@ -239,7 +241,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   /// 获取会话信息
-  LocalConversation? get _conversation {
+  Conversation? get _conversation {
     final convState = ref.read(conversationListProvider);
     return convState.conversations
         .where((c) => c.conversationId == widget.conversationId)

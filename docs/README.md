@@ -47,6 +47,7 @@
 |------|------|
 | [docs/conventions.md](./conventions.md) | 命名 / 目录 / 提交等编码规范 |
 | [docs/SDK_PROGRESS.md](./SDK_PROGRESS.md) | SDK 模块实现进度与缺口 |
+| [docs/ui-optimization-plan.md](./ui-optimization-plan.md) | UI 与目录组织优化计划 |
 
 ## 🔬 专项实现说明
 

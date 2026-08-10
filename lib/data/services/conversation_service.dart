@@ -1,7 +1,7 @@
 import 'dart:async';
 
+import '../../domain/models/conversation.dart';
 import '../../src/rust/event/events/conversation.dart';
-import '../../src/rust/model/local.dart' show LocalConversation;
 import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 
@@ -9,10 +9,13 @@ import 'im_client.dart';
 enum ConversationSyncStatus {
   /// 空闲
   idle,
+
   /// 同步中
   syncing,
+
   /// 同步完成
   completed,
+
   /// 同步失败
   failed,
 }
@@ -31,7 +34,7 @@ class ConversationService {
   static ConversationService get instance => _instance;
 
   // 会话列表
-  final List<LocalConversation> _conversations = [];
+  final List<Conversation> _conversations = [];
 
   // 同步状态
   ConversationSyncStatus _syncStatus = ConversationSyncStatus.idle;
@@ -39,7 +42,7 @@ class ConversationService {
 
   // 流控制器
   final _conversationsController =
-      StreamController<List<LocalConversation>>.broadcast();
+      StreamController<List<Conversation>>.broadcast();
   final _syncStatusController =
       StreamController<ConversationSyncStatus>.broadcast();
   final _syncProgressController = StreamController<int>.broadcast();
@@ -50,7 +53,7 @@ class ConversationService {
   ConversationService._internal();
 
   /// 会话列表流
-  Stream<List<LocalConversation>> get conversationsStream =>
+  Stream<List<Conversation>> get conversationsStream =>
       _conversationsController.stream;
 
   /// 同步状态流
@@ -61,8 +64,7 @@ class ConversationService {
   Stream<int> get syncProgressStream => _syncProgressController.stream;
 
   /// 当前会话列表（不可变）
-  List<LocalConversation> get conversations =>
-      List.unmodifiable(_conversations);
+  List<Conversation> get conversations => List.unmodifiable(_conversations);
 
   /// 当前同步状态
   ConversationSyncStatus get syncStatus => _syncStatus;
@@ -74,7 +76,7 @@ class ConversationService {
   bool get isSyncing => _syncStatus == ConversationSyncStatus.syncing;
 
   /// 获取指定会话
-  LocalConversation? getConversation(String conversationId) {
+  Conversation? getConversation(String conversationId) {
     try {
       return _conversations.firstWhere(
         (c) => c.conversationId == conversationId,
@@ -147,7 +149,7 @@ class ConversationService {
   }
 
   /// 更新或添加会话
-  void _updateOrAddConversation(LocalConversation conv) {
+  void _updateOrAddConversation(Conversation conv) {
     final index = _conversations.indexWhere(
       (c) => c.conversationId == conv.conversationId,
     );
@@ -169,7 +171,9 @@ class ConversationService {
 
     try {
       appLog.i('[ConversationService] 开始加载会话列表');
-      final conversations = await client.getConversations();
+      final conversations = (await client.getConversations())
+          .map(ConversationMapping.fromLocalConversation)
+          .toList();
       appLog.i('[ConversationService] 加载到 ${conversations.length} 个会话');
 
       _conversations.clear();
@@ -194,11 +198,11 @@ class ConversationService {
     _conversations.sort((a, b) {
       // 置顶的排在前面
       if (a.isPinned != b.isPinned) {
-      return a.isPinned ? -1 : 1;
+        return a.isPinned ? -1 : 1;
       }
       // 按最后消息时间倒序
-      final aTime = a.latestMsgSendTime.toInt();
-      final bTime = b.latestMsgSendTime.toInt();
+      final aTime = a.latestMsgSendTime;
+      final bTime = b.latestMsgSendTime;
       return bTime.compareTo(aTime);
     });
   }
