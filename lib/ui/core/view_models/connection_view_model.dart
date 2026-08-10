@@ -29,21 +29,17 @@ class AppConnectionState {
 }
 
 /// 连接状态 ViewModel
-class ConnectionNotifier extends StateNotifier<AppConnectionState> {
-  ConnectionNotifier(this._ref) : super(const AppConnectionState()) {
-    _init();
-  }
-
-  final Ref _ref;
-
-  void _init() {
-    _ref.listen(
+class ConnectionNotifier extends Notifier<AppConnectionState> {
+  @override
+  AppConnectionState build() {
+    ref.listen(
       messageServiceProvider,
       (_, next) {
         _syncState(next);
       },
-      fireImmediately: true,
     );
+    Future.microtask(() => _syncState(ref.read(messageServiceProvider)));
+    return const AppConnectionState();
   }
 
   void _syncState(MessageServiceState messageServiceState) {

@@ -3,9 +3,9 @@ import '../ui/profile/view_models/user_profile_view_model.dart';
 import '../src/rust/model/user.dart' show UserInfo;
 
 final userProfileProvider =
-    StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
-  return UserProfileNotifier(ref);
-});
+    NotifierProvider<UserProfileNotifier, UserProfileState>(
+      UserProfileNotifier.new,
+    );
 
 /// 当前用户资料 Provider（仅返回 profile）
 final currentUserProfileProvider = Provider<UserInfo?>((ref) {

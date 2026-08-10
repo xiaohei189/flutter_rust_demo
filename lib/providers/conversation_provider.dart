@@ -6,9 +6,9 @@ import 'message_service_provider.dart';
 
 /// 会话列表 Provider
 final conversationListProvider =
-    StateNotifierProvider<ConversationListNotifier, ConversationListState>((ref) {
-  return ConversationListNotifier(ref);
-});
+    NotifierProvider<ConversationListNotifier, ConversationListState>(
+      ConversationListNotifier.new,
+    );
 
 /// 当前会话列表 Provider（便捷访问）
 final conversationsProvider = Provider<List<LocalConversation>>((ref) {

@@ -76,7 +76,7 @@ Widget _buildHost(MessageServiceNotifier service) {
   return ProviderScope(
     overrides: [
       messageServiceProvider.overrideWith((ref) => service),
-      userProfileProvider.overrideWith((ref) => UserProfileNotifier(ref)),
+      userProfileProvider.overrideWith(() => UserProfileNotifier()),
     ],
     child: const MaterialApp(home: ChatDetailScreen(conversationId: _convId)),
   );

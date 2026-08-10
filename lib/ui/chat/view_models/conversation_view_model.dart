@@ -47,21 +47,17 @@ class ConversationListState {
 }
 
 /// 会话列表 ViewModel
-class ConversationListNotifier extends StateNotifier<ConversationListState> {
-  ConversationListNotifier(this._ref) : super(const ConversationListState()) {
-    _init();
-  }
-
-  final Ref _ref;
-
-  void _init() {
-    _ref.listen(
+class ConversationListNotifier extends Notifier<ConversationListState> {
+  @override
+  ConversationListState build() {
+    ref.listen(
       messageServiceProvider,
       (_, next) {
         _syncState(next);
       },
-      fireImmediately: true,
     );
+    Future.microtask(() => _syncState(ref.read(messageServiceProvider)));
+    return const ConversationListState();
   }
 
   void _syncState(MessageServiceState messageServiceState) {
@@ -75,7 +71,7 @@ class ConversationListNotifier extends StateNotifier<ConversationListState> {
   Future<void> refreshConversations() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _ref.read(messageServiceProvider.notifier).refreshConversations();
+      await ref.read(messageServiceProvider.notifier).refreshConversations();
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: '刷新会话列表失败: $e');

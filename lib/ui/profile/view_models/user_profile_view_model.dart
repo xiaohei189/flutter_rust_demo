@@ -90,19 +90,19 @@ class UserProfileState {
 const _kLocalAvatarPathKey = 'user_local_avatar_path';
 
 /// 用户资料 Notifier
-class UserProfileNotifier extends StateNotifier<UserProfileState> {
-  UserProfileNotifier(this._ref) : super(const UserProfileState()) {
+class UserProfileNotifier extends Notifier<UserProfileState> {
+  @override
+  UserProfileState build() {
     _init();
+    return const UserProfileState();
   }
-
-  final Ref _ref;
 
   void _init() {
     // 先加载本地头像路径（从 SharedPreferences 恢复）
-    _loadLocalAvatarPathSync();
+    Future.microtask(_loadLocalAvatarPathSync);
 
     // 监听 messageServiceProvider 的状态变化
-    _ref.listen(messageServiceProvider, (previous, next) {
+    ref.listen(messageServiceProvider, (previous, next) {
       if (next.isConnected && next.loginUserProfile != null) {
         // 当 loginUserProfile 变化时直接更新状态
         if (previous?.loginUserProfile?.userId !=
@@ -133,7 +133,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
           );
         }
       }
-    }, fireImmediately: true);
+    });
   }
 
   /// 同步加载本地头像路径（使用 cachedValue 避免重复读取）
@@ -218,7 +218,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       return state.profile;
     }
     // 从 MessageService 缓存获取
-    return _ref.read(messageServiceProvider.notifier).getUserProfile(userId);
+    return ref.read(messageServiceProvider.notifier).getUserProfile(userId);
   }
 
   /// 加载当前登录用户资料
@@ -231,7 +231,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       final localPath = prefs.getString(_kLocalAvatarPathKey);
 
       // 直接从 messageServiceProvider 获取登录用户资料
-      final messageService = _ref.read(messageServiceProvider);
+      final messageService = ref.read(messageServiceProvider);
       final profile = messageService.loginUserProfile;
 
       if (profile != null) {
@@ -267,7 +267,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         );
       } else {
         // 如果 messageService 中没有登录用户资料，尝试从服务端获取
-        final refreshedProfile = await _ref
+        final refreshedProfile = await ref
             .read(messageServiceProvider.notifier)
             .refreshLoginUserProfile();
         if (refreshedProfile != null) {
@@ -309,7 +309,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final updated = await _ref
+      final updated = await ref
           .read(messageServiceProvider.notifier)
           .updateLoginUserProfile(nickname: nickname);
 
@@ -341,7 +341,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         alias: alias,
       );
 
-      final updated = await _ref
+      final updated = await ref
           .read(messageServiceProvider.notifier)
           .updateLoginUserProfile(ex: newEx);
 
@@ -373,7 +373,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         signature: signature,
       );
 
-      final updated = await _ref
+      final updated = await ref
           .read(messageServiceProvider.notifier)
           .updateLoginUserProfile(ex: newEx);
 
@@ -399,7 +399,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final updated = await _ref
+      final updated = await ref
           .read(messageServiceProvider.notifier)
           .updateLoginUserProfile(faceUrl: imageUrl);
 
