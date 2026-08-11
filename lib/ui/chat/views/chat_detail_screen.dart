@@ -1,17 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../../../domain/models/conversation.dart';
-import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
@@ -21,12 +13,12 @@ import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../providers/providers.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
-import '../../../ui/core/utils/app_logger.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/widgets/contact_pick_item.dart';
 import '../../profile/view_models/user_profile_view_model.dart';
 import '../view_models/chat_detail_view_model.dart';
 import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
+import '../widgets/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/message_action_menu.dart';
@@ -59,6 +51,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   bool _bodyReady = false;
   String _lastMessageListTailId = '';
   ChatDetailViewModel? _viewModel;
+  late final ChatMediaActions _mediaActions;
 
   @override
   void initState() {
@@ -66,6 +59,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     WidgetsBinding.instance.addObserver(this);
     _viewModel = ref.read(
       chatDetailViewModelProvider(widget.conversationId).notifier,
+    );
+    _mediaActions = ChatMediaActions(
+      viewModel: _viewModel!,
+      onError: _showError,
+      onScrollToBottom: _scrollToBottom,
+      preLoaded: widget.preLoaded,
     );
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
@@ -353,254 +352,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked == null) return;
-    final ok = await _viewModel?.sendImage(picked.path) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '发送图片失败');
-    if (!widget.preLoaded) _scrollToBottom();
-  }
+  Future<void> _pickImage() => _mediaActions.pickImage(context);
 
-  Future<void> _pickFromCamera() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera);
-    if (picked == null) return;
-    final ok = await _viewModel?.sendImage(picked.path) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '发送图片失败');
-    if (!widget.preLoaded) _scrollToBottom();
-  }
+  Future<void> _pickFromCamera() => _mediaActions.pickFromCamera(context);
 
-  Future<void> _pickLocation() async {
-    double? latitude;
-    double? longitude;
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        var permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.whileInUse ||
-            permission == LocationPermission.always) {
-          final position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-            ),
-          );
-          latitude = position.latitude;
-          longitude = position.longitude;
-        }
-      }
-    } catch (_) {
-      // 定位失败时仍允许手动填写坐标
-    }
+  Future<void> _pickLocation() => _mediaActions.pickLocation(context);
 
-    final location = await _askLocation(
-      latitude: latitude,
-      longitude: longitude,
-    );
-    if (location == null || !mounted) return;
-    final ok =
-        await _viewModel?.sendLocation(
-          description: location.description,
-          latitude: location.latitude,
-          longitude: location.longitude,
-        ) ??
-        false;
-    if (!ok) _showError(_chatState.errorText ?? '发送位置失败');
-    if (!widget.preLoaded) _scrollToBottom();
-  }
+  Future<void> _pickFile() => _mediaActions.pickFile(context);
 
-  Future<({String description, double latitude, double longitude})?>
-  _askLocation({double? latitude, double? longitude}) async {
-    final descriptionController = TextEditingController(text: '当前位置');
-    final latitudeController = TextEditingController(
-      text: latitude?.toStringAsFixed(6) ?? '',
-    );
-    final longitudeController = TextEditingController(
-      text: longitude?.toStringAsFixed(6) ?? '',
-    );
+  Future<void> _pickVideo() => _mediaActions.pickVideo(context);
 
-    final result =
-        await showDialog<
-          ({String description, double latitude, double longitude})
-        >(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('发送位置'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: '位置描述',
-                      hintText: '当前位置',
-                    ),
-                  ),
-                  TextField(
-                    controller: latitudeController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: '纬度'),
-                  ),
-                  TextField(
-                    controller: longitudeController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: '经度'),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () {
-                  final lat = double.tryParse(latitudeController.text.trim());
-                  final lon = double.tryParse(longitudeController.text.trim());
-                  if (lat == null || lon == null) {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(content: Text('请输入有效的纬度和经度')),
-                    );
-                    return;
-                  }
-                  Navigator.of(dialogContext).pop((
-                    description: descriptionController.text.trim().isEmpty
-                        ? '当前位置'
-                        : descriptionController.text.trim(),
-                    latitude: lat,
-                    longitude: lon,
-                  ));
-                },
-                child: const Text('发送'),
-              ),
-            ],
-          ),
-        );
+  Future<void> _sendVoiceMessage(int duration, String filePath) =>
+      _mediaActions.sendVoiceMessage(duration, filePath);
 
-    descriptionController.dispose();
-    latitudeController.dispose();
-    longitudeController.dispose();
-    return result;
-  }
-
-  Future<void> _pickFile() async {
-    try {
-      final result = await FilePicker.platform.pickFiles();
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
-      if (file.path == null) return;
-      final ok = await _viewModel?.sendFile(file.path!) ?? false;
-      if (!ok) _showError(_chatState.errorText ?? '发送文件失败');
-      if (!widget.preLoaded) _scrollToBottom();
-    } catch (e) {
-      appLog.e('发送文件失败: $e');
-    }
-  }
-
-  Future<void> _pickVideo() async {
-    try {
-      final picker = ImagePicker();
-      final video = await picker.pickVideo(source: ImageSource.gallery);
-      if (video == null) return;
-
-      var duration = 0;
-      var snapshotPath = '';
-      try {
-        final controller = VideoPlayerController.file(File(video.path));
-        await controller.initialize();
-        duration = controller.value.duration.inSeconds;
-        await controller.dispose();
-        final tempDir = await getTemporaryDirectory();
-        snapshotPath =
-            (await VideoThumbnail.thumbnailFile(
-              video: video.path,
-              thumbnailPath:
-                  '${tempDir.path}/video_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
-              imageFormat: ImageFormat.JPEG,
-              maxHeight: 720,
-              quality: 80,
-            )) ??
-            '';
-      } catch (_) {
-        // 时长或缩略图解析失败不阻塞发送
-      }
-
-      final ok =
-          await _viewModel?.sendVideo(
-            videoPath: video.path,
-            snapshotPath: snapshotPath,
-            duration: duration,
-          ) ??
-          false;
-      if (!ok) _showError(_chatState.errorText ?? '发送视频失败');
-      if (!widget.preLoaded) _scrollToBottom();
-    } catch (e) {
-      appLog.e('发送视频失败: $e');
-    }
-  }
-
-  Future<void> _sendVoiceMessage(int duration, String filePath) async {
-    final ok = await _viewModel?.sendVoice(filePath, duration) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '发送语音失败');
-    if (!widget.preLoaded) _scrollToBottom();
-  }
-
-  Future<void> _sendCardMessage() async {
-    try {
-      final friends = await _viewModel?.loadFriendsForPicker() ?? const [];
-      if (!mounted) return;
-      if (friends.isEmpty) {
-        _showError('暂无好友可选');
-        return;
-      }
-      final selected = await showModalBottomSheet<Friend>(
-        context: context,
-        backgroundColor: Colors.white,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        builder: (sheetContext) => SafeArea(
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: friends.length,
-            itemBuilder: (_, index) {
-              final friend = friends[index];
-              return ListTile(
-                leading: UserAvatar(
-                  user: User(
-                    id: friend.userId,
-                    name: friend.nickname,
-                    avatar: friend.faceUrl.isNotEmpty ? friend.faceUrl : null,
-                  ),
-                  radius: 20,
-                ),
-                title: Text(
-                  friend.remark.isNotEmpty ? friend.remark : friend.nickname,
-                ),
-                subtitle: Text('ID: ${friend.userId}'),
-                onTap: () => Navigator.of(sheetContext).pop(friend),
-              );
-            },
-          ),
-        ),
-      );
-      if (selected == null || !mounted) return;
-      final ok = await _viewModel?.sendCard(selected) ?? false;
-      if (!ok) _showError(_chatState.errorText ?? '发送名片失败');
-      if (!widget.preLoaded) _scrollToBottom();
-    } catch (e) {
-      appLog.e('发送名片失败: $e');
-    }
-  }
+  Future<void> _sendCardMessage() => _mediaActions.sendCardMessage(context);
 
   Future<void> _revokeMessage(dynamic msg) async {
     final ok = await _viewModel?.revokeMessage(msg as MessageInfo) ?? false;

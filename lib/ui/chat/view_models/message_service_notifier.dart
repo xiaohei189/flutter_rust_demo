@@ -35,86 +35,7 @@ import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/data/services/online_status_service.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
-
-/// MessageService 的状态类
-class MessageServiceState {
-  final bool isConnected;
-  final bool isSyncingConversations;
-  final int syncProgress;
-  final String currentUserId;
-  final List<Conversation> conversations;
-  final Map<String, List<MessageInfo>> messages;
-  final Map<String, UserInfo> userProfiles;
-  final UserInfo? loginUserProfile;
-  final bool isInitializing;
-  final int totalUnreadCount;
-  final int friendRevision;
-  final int groupRevision;
-
-  /// 各会话当前正在输入的用户（conversationId -> userId）
-  final Map<String, String> typingUsers;
-
-  /// 各消息上传进度（clientMsgId -> 0-100）
-  final Map<String, int> uploadProgress;
-
-  /// 群聊已读统计（msgId -> 回执）
-  final Map<String, GroupReadReceipt> groupReadReceipts;
-
-  const MessageServiceState({
-    this.isConnected = false,
-    this.isSyncingConversations = false,
-    this.syncProgress = 0,
-    this.currentUserId = '',
-    this.conversations = const [],
-    this.messages = const {},
-    this.userProfiles = const {},
-    this.loginUserProfile,
-    this.isInitializing = false,
-    this.totalUnreadCount = 0,
-    this.friendRevision = 0,
-    this.groupRevision = 0,
-    this.typingUsers = const {},
-    this.uploadProgress = const {},
-    this.groupReadReceipts = const {},
-  });
-
-  MessageServiceState copyWith({
-    bool? isConnected,
-    bool? isSyncingConversations,
-    int? syncProgress,
-    String? currentUserId,
-    List<Conversation>? conversations,
-    Map<String, List<MessageInfo>>? messages,
-    Map<String, UserInfo>? userProfiles,
-    UserInfo? loginUserProfile,
-    bool? isInitializing,
-    int? totalUnreadCount,
-    int? friendRevision,
-    int? groupRevision,
-    Map<String, String>? typingUsers,
-    Map<String, int>? uploadProgress,
-    Map<String, GroupReadReceipt>? groupReadReceipts,
-  }) {
-    return MessageServiceState(
-      isConnected: isConnected ?? this.isConnected,
-      isSyncingConversations:
-          isSyncingConversations ?? this.isSyncingConversations,
-      syncProgress: syncProgress ?? this.syncProgress,
-      currentUserId: currentUserId ?? this.currentUserId,
-      conversations: conversations ?? this.conversations,
-      messages: messages ?? this.messages,
-      userProfiles: userProfiles ?? this.userProfiles,
-      loginUserProfile: loginUserProfile ?? this.loginUserProfile,
-      isInitializing: isInitializing ?? this.isInitializing,
-      totalUnreadCount: totalUnreadCount ?? this.totalUnreadCount,
-      friendRevision: friendRevision ?? this.friendRevision,
-      groupRevision: groupRevision ?? this.groupRevision,
-      typingUsers: typingUsers ?? this.typingUsers,
-      uploadProgress: uploadProgress ?? this.uploadProgress,
-      groupReadReceipts: groupReadReceipts ?? this.groupReadReceipts,
-    );
-  }
-}
+import 'message_service_helpers.dart';
 
 /// MessageService 的 Notifier
 class MessageServiceNotifier extends Notifier<MessageServiceState> {
@@ -134,14 +55,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
   MessageServiceState get currentState => state;
-
-  /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
-  static int _normalizeSendTime(int t) {
-    if (t <= 0) return DateTime.now().millisecondsSinceEpoch;
-    // 如果小于 2000-01-01 的毫秒时间戳，认为是秒级
-    if (t < 946684800000) return t * 1000;
-    return t;
-  }
 
   /// 获取指定会话的消息列表
   List<MessageInfo> getMessages(String conversationId) {
@@ -169,10 +82,10 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       contentType: result.contentType,
       content: result.content,
       seq: result.seq,
-      sendTime: _normalizeSendTime(result.sendTime.toInt()),
+      sendTime: normalizeMessageSendTime(result.sendTime.toInt()),
       createTime: result.createTime > 0
           ? result.createTime
-          : _normalizeSendTime(result.sendTime.toInt()),
+          : normalizeMessageSendTime(result.sendTime.toInt()),
       status: result.status,
       isRead: false,
       attachedInfo: '',

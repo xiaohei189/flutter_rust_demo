@@ -331,5 +331,9 @@ flutter test test
   - 新增 `message_parts/`，文本/Markdown/媒体/名片/合并/位置/引用分别独立。
 - [x] P3-B：`ChatInput` 拆附件面板、格式栏、快捷操作区。
   - 表情面板拆为 `EmojiPanel`，Markdown 格式栏拆为 `MarkdownFormatBar`。
-- [ ] P3-C：`ChatDetailScreen` 剩余媒体、多选、转发面板继续拆分。
+- [x] P3-C：`ChatDetailScreen` 剩余媒体、多选、转发面板继续拆分。
+  - 媒体选择、位置、文件、视频、语音、名片操作拆入 `ChatMediaActions`。
+  - 多选栏、转发选择、媒体查看器已由独立组件承载。
 - [ ] P3-D：`MessageServiceNotifier` 按连接、消息、会话、群组职责拆分。
+  - 已完成：`MessageServiceState` 独立文件、时间规范化独立 helper。
+  - 待完成：消息/会话/连接方法职责级拆分。

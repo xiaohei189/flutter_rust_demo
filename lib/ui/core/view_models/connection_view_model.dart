@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../chat/providers/message_service_provider.dart';
-import '../../chat/view_models/message_service_notifier.dart';
 
 /// 连接状态（避免与 Flutter 的 ConnectionState 冲突）
 class AppConnectionState {

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/conversation.dart';
 import '../providers/message_service_provider.dart';
 import '../utils/conversation_display.dart';
-import 'message_service_notifier.dart';
 
 /// 会话列表状态
 class ConversationListState {
