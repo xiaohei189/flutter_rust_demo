@@ -1,9 +1,68 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
-import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../../data/services/services.dart';
 import 'message_service_provider.dart';
 import '../view_models/conversation_view_model.dart';
+
+/// 会话服务实例 Provider
+final conversationServiceProvider = Provider<ConversationService>((ref) {
+  return ConversationService.instance;
+});
+
+/// 会话列表流 Provider
+final conversationsStreamProvider = StreamProvider<List<Conversation>>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.conversationsStream;
+});
+
+/// 当前会话列表 Provider（从新服务）
+final conversationsFromServiceProvider = Provider<List<Conversation>>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.conversations;
+});
+
+/// 会话同步状态流 Provider
+final conversationSyncStatusStreamProvider =
+    StreamProvider<ConversationSyncStatus>((ref) {
+      final service = ref.watch(conversationServiceProvider);
+      return service.syncStatusStream;
+    });
+
+/// 当前会话同步状态 Provider
+final conversationSyncStatusProvider = Provider<ConversationSyncStatus>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.syncStatus;
+});
+
+/// 是否正在同步会话 Provider
+final isSyncingConversationsProvider = Provider<bool>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.isSyncing;
+});
+
+/// 同步进度流 Provider
+final syncProgressStreamProvider = StreamProvider<int>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.syncProgressStream;
+});
+
+/// 当前同步进度 Provider
+final syncProgressProvider = Provider<int>((ref) {
+  final service = ref.watch(conversationServiceProvider);
+  return service.syncProgress;
+});
+
+/// 当前选中的会话 ID
+final selectedConversationIdProvider = StateProvider<String?>((ref) => null);
+
+/// 当前选中的会话
+final selectedConversationProvider = Provider<Conversation?>((ref) {
+  final conversationId = ref.watch(selectedConversationIdProvider);
+  if (conversationId == null) return null;
+  final service = ref.watch(conversationServiceProvider);
+  return service.getConversation(conversationId);
+});
 
 /// 会话列表 Provider
 final conversationListProvider =

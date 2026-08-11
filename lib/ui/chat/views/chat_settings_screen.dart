@@ -1,13 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
@@ -21,90 +23,32 @@ class ChatSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
-  late bool _muteNotification;
-  late bool _pinChat;
-  late bool _privateChat;
-
-  /// 获取会话信息
-  Conversation? get _conversation {
-    // 先尝试从新的 ConversationService 获取
-    final newService = ref.read(conversationServiceProvider);
-    var conversation = newService.getConversation(widget.conversationId);
-    if (conversation != null) return conversation;
-
-    // 如果新服务没有，尝试从旧的 conversationListProvider 获取
-    final oldState = ref.read(conversationListProvider);
-    conversation = oldState.conversations
-        .where((c) => c.conversationId == widget.conversationId)
-        .firstOrNull;
-    return conversation;
-  }
-
-  bool get _isGroup {
-    final conversation = _conversation;
-    if (conversation == null) return false;
-    return conversation.conversationType == 2 ||
-        conversation.conversationType == 3;
-  }
-
-  String get _groupId {
-    final conversation = _conversation;
-    if (conversation == null) return widget.conversationId;
-    return conversation.groupId.isNotEmpty
-        ? conversation.groupId
-        : widget.conversationId;
-  }
-
-  String get _displayName {
-    final conversation = _conversation;
-    if (conversation == null) return '未知';
-    return conversation.showName.isNotEmpty
-        ? conversation.showName
-        : _isGroup
-        ? '群聊'
-        : '用户';
-  }
-
-  User get _chatUser {
-    final conversation = _conversation;
-    if (conversation == null) {
-      return User(id: widget.conversationId, name: '未知', avatar: null);
-    }
-    return User(
-      id: conversation.userId.isNotEmpty
-          ? conversation.userId
-          : conversation.groupId,
-      name: _displayName,
-      avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
-    );
-  }
+  late final ChatSettingsViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    final conversation = _conversation;
+    _viewModel = ref.read(
+      chatSettingsViewModelProvider(widget.conversationId).notifier,
+    );
+    final conversation = _viewModel.conversation;
     if (conversation != null) {
-      _muteNotification = conversation.recvMsgOpt == 1;
-      _pinChat = conversation.isPinned;
-      _privateChat = conversation.isPrivateChat;
-    } else {
-      _muteNotification = false;
-      _pinChat = false;
-      _privateChat = false;
+      _viewModel.initialize(conversation);
     }
-    // 群聊时加载真实群成员
-    if (_isGroup) {
+    if (_viewModel.isGroup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref
-            .read(groupMemberProvider(widget.conversationId).notifier)
-            .loadMembers();
+        unawaited(_viewModel.loadGroupMembers());
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final conversation = _conversation;
+    final settings = ref.watch(
+      chatSettingsViewModelProvider(widget.conversationId),
+    );
+    final conversation = _viewModel.conversation;
+    final isGroup = _viewModel.isGroup;
 
     if (conversation == null) {
       return Scaffold(
@@ -136,18 +80,18 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 顶部：成员区域 ----
           SettingsCard(
             children: [
-              if (_isGroup) ..._buildGroupHeader() else ..._buildSingleHeader(),
+              if (isGroup) ..._buildGroupHeader() else ..._buildSingleHeader(),
             ],
           ),
 
           // ---- 群成员（仅群聊） ----
-          if (_isGroup) ...[
+          if (isGroup) ...[
             const SizedBox(height: 8),
             SettingsCard(children: _buildGroupMembers()),
           ],
 
           // ---- 应用 ----
-          if (_isGroup) ...[
+          if (isGroup) ...[
             const SizedBox(height: 8),
             SettingsCard(
               children: [
@@ -182,51 +126,21 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             children: [
               SettingsSwitchRow(
                 title: '消息免打扰',
-                value: _muteNotification,
-                onChanged: (v) async {
-                  setState(() => _muteNotification = v);
-                  try {
-                    await ref
-                        .read(messageRepositoryProvider)
-                        .setConversation(
-                          conversationId: widget.conversationId,
-                          recvMsgOpt: v ? 1 : 0,
-                        );
-                  } catch (_) {}
-                },
+                value: settings.muteNotification,
+                onChanged: _setMuteNotification,
               ),
               const Divider(height: 1, indent: 16, endIndent: 16),
               SettingsSwitchRow(
                 title: '置顶会话',
-                value: _pinChat,
-                onChanged: (v) async {
-                  setState(() => _pinChat = v);
-                  try {
-                    await ref
-                        .read(messageRepositoryProvider)
-                        .setConversationPinned(
-                          conversationId: widget.conversationId,
-                          isPinned: v,
-                        );
-                  } catch (_) {}
-                },
+                value: settings.pinChat,
+                onChanged: _setPinChat,
               ),
-              if (!_isGroup) ...[
+              if (!isGroup) ...[
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 SettingsSwitchRow(
                   title: '私聊（阅后即焚）',
-                  value: _privateChat,
-                  onChanged: (v) async {
-                    setState(() => _privateChat = v);
-                    try {
-                      await ref
-                          .read(messageRepositoryProvider)
-                          .setConversationPrivate(
-                            conversationId: widget.conversationId,
-                            isPrivate: v,
-                          );
-                    } catch (_) {}
-                  },
+                  value: settings.privateChat,
+                  onChanged: _setPrivateChat,
                 ),
               ],
             ],
@@ -241,7 +155,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
 
           // ---- 退出群组（仅群聊） ----
-          if (_isGroup) ...[
+          if (isGroup) ...[
             const SizedBox(height: 8),
             SettingsCard(
               children: [
@@ -315,14 +229,14 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            UserAvatar(user: _chatUser, radius: 28),
+            UserAvatar(user: _viewModel.chatUser, radius: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _displayName,
+                    _viewModel.displayName,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -356,7 +270,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   List<Widget> _buildGroupHeader() {
     final memberCount = ref
-        .watch(groupMemberProvider(widget.conversationId))
+        .watch(groupMemberProvider(_viewModel.groupId))
         .members
         .length;
 
@@ -365,14 +279,14 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            UserAvatar(user: _chatUser, radius: 28),
+            UserAvatar(user: _viewModel.chatUser, radius: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _displayName,
+                    _viewModel.displayName,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
@@ -405,7 +319,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   List<Widget> _buildGroupMembers() {
-    final memberState = ref.watch(groupMemberProvider(widget.conversationId));
+    final memberState = ref.watch(groupMemberProvider(_viewModel.groupId));
     final members = memberState.members;
 
     return [
@@ -461,6 +375,28 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
+  Future<void> _setMuteNotification(bool value) async {
+    await _viewModel.setMuteNotification(value);
+    if (mounted) _showError(_viewModel.currentState.error);
+  }
+
+  Future<void> _setPinChat(bool value) async {
+    await _viewModel.setPinChat(value);
+    if (mounted) _showError(_viewModel.currentState.error);
+  }
+
+  Future<void> _setPrivateChat(bool value) async {
+    await _viewModel.setPrivateChat(value);
+    if (mounted) _showError(_viewModel.currentState.error);
+  }
+
+  void _showError(String? message) {
+    if (message == null || message.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   Future<void> _handleQuitGroup() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -485,23 +421,18 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     if (confirmed != true) return;
 
-    try {
-      await ref.read(groupRepositoryProvider).quitGroup(widget.conversationId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已退出群组'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('退出群组失败: $e')));
-      }
+    final ok = await _viewModel.quitGroup();
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('已退出群组'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.of(context).pop();
+    } else {
+      _showError(_viewModel.currentState.error ?? '退出群组失败');
     }
   }
 
@@ -530,31 +461,22 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     if (confirmed != true) return;
 
-    try {
-      await ref
-          .read(messageRepositoryProvider)
-          .clearConversationAndDeleteAllMsg(widget.conversationId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('聊天记录已清空'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('清空聊天记录失败: $e')));
-      }
+    final ok = await _viewModel.clearHistory();
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('聊天记录已清空'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '清空聊天记录失败');
     }
   }
 
   /// 修改自己在群里的昵称
   Future<void> _editGroupNickname() async {
-    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
-    if (currentUserId.isEmpty) return;
     final controller = TextEditingController();
     final nickname = await showDialog<String>(
       context: context,
@@ -580,43 +502,26 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         ],
       ),
     );
+    controller.dispose();
     if (nickname == null || nickname.isEmpty) return;
-    try {
-      await ref
-          .read(groupRepositoryProvider)
-          .setGroupMemberInfo(
-            widget.conversationId,
-            currentUserId,
-            nickname: nickname,
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群昵称已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('更新失败: $e')));
-      }
+
+    final ok = await _viewModel.updateGroupNickname(nickname);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群昵称已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '更新失败');
     }
   }
 
   /// 编辑群公告
   Future<void> _editGroupAnnouncement() async {
-    var current = '';
-    try {
-      final groups = await ref.read(groupRepositoryProvider).getGroupsInfo([
-        _groupId,
-      ]);
-      current = groups.isNotEmpty ? groups.first.notification : '';
-    } catch (_) {
-      // 拉取失败时允许直接编辑
-    }
+    final current = await _viewModel.currentGroupAnnouncement();
     if (!mounted) return;
 
     final controller = TextEditingController(text: current);
@@ -649,33 +554,24 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     controller.dispose();
     if (value == null || !mounted) return;
 
-    try {
-      await ref
-          .read(groupRepositoryProvider)
-          .setGroupInfo(_groupId, notification: value);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群公告已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('群公告更新失败: $e')));
-      }
+    final ok = await _viewModel.updateGroupAnnouncement(value);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群公告已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '群公告更新失败');
     }
   }
 
   /// 显示邀请成员对话框
   void _showInviteMemberDialog() {
     final selectedIds = <String>[];
-
-    // 先加载好友列表
-    ref.read(friendListProvider.notifier).loadFriends();
+    unawaited(_viewModel.loadInviteFriends());
 
     showModalBottomSheet(
       context: context,
@@ -814,9 +710,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   /// 邀请成员加入群组
   Future<void> _inviteMembers(List<String> memberIds) async {
-    final ok = await ref
-        .read(groupMemberProvider(widget.conversationId).notifier)
-        .inviteMembers(memberIds);
+    final ok = await _viewModel.inviteMembers(memberIds);
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -826,9 +720,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('邀请成员失败')));
+      _showError(_viewModel.currentState.error ?? '邀请成员失败');
     }
   }
 }

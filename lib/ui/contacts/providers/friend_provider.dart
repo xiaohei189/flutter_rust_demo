@@ -8,6 +8,7 @@ import '../../../data/repositories/user_profile_repository.dart';
 import '../../../data/services/friend_service.dart';
 import '../../../data/services/user_service.dart';
 import '../../../providers/im_providers.dart';
+import '../../profile/providers/user_profile_provider.dart';
 import '../view_models/black_list_view_model.dart';
 import '../view_models/friend_apply_view_model.dart';
 import '../view_models/friend_list_view_model.dart';
