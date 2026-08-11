@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-import '../../../data/repositories/chat_aux_repository.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
@@ -27,7 +26,6 @@ import '../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/widgets/contact_pick_item.dart';
 import '../../profile/view_models/user_profile_view_model.dart';
 import '../view_models/chat_detail_view_model.dart';
-import '../view_models/message_service_notifier.dart';
 import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
@@ -60,16 +58,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       GlobalKey<MessageListState>();
   bool _bodyReady = false;
   String _lastMessageListTailId = '';
-  MessageServiceNotifier? _messageService;
-  ChatAuxRepository? _chatAuxRepository;
   ChatDetailViewModel? _viewModel;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _messageService = ref.read(messageServiceProvider.notifier);
-    _chatAuxRepository = ref.read(chatAuxRepositoryProvider);
     _viewModel = ref.read(
       chatDetailViewModelProvider(widget.conversationId).notifier,
     );
@@ -136,8 +130,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final lastId = last.clientMsgId;
     if (lastId == _lastMessageListTailId) return;
     _lastMessageListTailId = lastId;
-    final isOwnMessage =
-        _messageService?.currentState.currentUserId == last.sendId;
+    final isOwnMessage = _viewModel?.currentUserId == last.sendId;
     if (!isOwnMessage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _scrollToBottom();
@@ -563,12 +556,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _sendCardMessage() async {
     try {
-      final friendState = ref.read(friendListProvider);
-      if (friendState.friends.isEmpty) {
-        await ref.read(friendListProvider.notifier).loadFriends();
-      }
+      final friends = await _viewModel?.loadFriendsForPicker() ?? const [];
       if (!mounted) return;
-      final friends = ref.read(friendListProvider).friends;
       if (friends.isEmpty) {
         _showError('暂无好友可选');
         return;
@@ -727,8 +716,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
     try {
       final ok =
-          await _chatAuxRepository?.openFile(source: source, fileName: name) ??
-          false;
+          await _viewModel?.openFile(source: source, fileName: name) ?? false;
       if (!ok && mounted) {
         _showError('没有可打开该文件的应用，可尝试保存后打开');
       }

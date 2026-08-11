@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
-import 'package:markdown/markdown.dart' as md;
 
-import '../../../domain/models/message.dart';
 import '../../../domain/extensions/message_ext.dart';
+import '../../../domain/models/message.dart';
 import '../../../domain/models/user.dart';
-import '../../../router/app_router.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../generated/rust/model/user.dart' show UserInfo;
-import '../../../data/services/audio_player_service.dart';
+import '../../../router/app_router.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_image.dart';
 import '../../core/widgets/user_avatar.dart';
+import 'message_parts/media_message_content.dart';
+import 'message_parts/quote_message_content.dart';
+import 'message_parts/rich_message_content.dart';
+import 'message_parts/text_message_content.dart';
 
-/// 消息气泡：支持所有消息类型的渲染
+/// 消息气泡：负责统一布局，内容按类型委托给独立组件。
 class MessageBubble extends StatelessWidget {
   static final DateFormat _timeFormat = DateFormat('HH:mm');
   static final DateFormat _monthDayFormat = DateFormat('MM月dd日');
@@ -86,7 +86,6 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 系统消息（撤回等）：居中显示，无头像、无气泡背景
     if (message.messageType == MessageType.system) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -108,7 +107,6 @@ class MessageBubble extends StatelessWidget {
     final senderUser = _buildSenderUser();
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    // 消息气泡内容
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -126,9 +124,8 @@ class MessageBubble extends StatelessWidget {
       child: _buildMessageContent(context, isFromMe),
     );
 
-    // 引用消息预览
     final quotePreview = message.messageType == MessageType.quote
-        ? _buildQuotePreview(context, screenWidth, isFromMe)
+        ? QuoteMessagePreview(message: message, isFromMe: isFromMe)
         : const SizedBox.shrink();
 
     return Padding(
@@ -139,7 +136,6 @@ class MessageBubble extends StatelessWidget {
             ? CrossAxisAlignment.end
             : CrossAxisAlignment.start,
         children: [
-          // 引用预览 + 气泡 + 头像（同一行）
           Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -180,7 +176,6 @@ class MessageBubble extends StatelessWidget {
               ],
             ],
           ),
-          // 时间+状态（头像下方）
           Padding(
             padding: EdgeInsets.only(
               left: isFromMe ? 0 : 44,
@@ -226,10 +221,8 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  /// 构建消息状态图标（飞书风格）
   Widget _buildStatusIcon() {
     final status = MessageSendStatus.fromValue(message.status);
-    // 发送中：显示转圈
     if (status == MessageSendStatus.sending) {
       return SizedBox(
         width: 16,
@@ -240,11 +233,9 @@ class MessageBubble extends StatelessWidget {
         ),
       );
     }
-    // 发送失败：显示错误图标
     if (status == MessageSendStatus.sendFailed) {
       return const Icon(Icons.error_outline, size: 16, color: Colors.red);
     }
-    // 已读：绿色实心圆 + 白色 ✓（飞书风格）
     if (message.isRead) {
       return Container(
         width: 16,
@@ -256,647 +247,68 @@ class MessageBubble extends StatelessWidget {
         child: const Icon(Icons.done, size: 11, color: Colors.white),
       );
     }
-    // 已发送（未读）：灰色 ✓
     if (status == MessageSendStatus.sendSuccess) {
       return Icon(Icons.done, size: 16, color: Colors.grey.shade400);
     }
     return const SizedBox.shrink();
   }
 
-  /// 根据消息类型构建消息内容
   Widget _buildMessageContent(BuildContext context, bool isFromMe) {
-    final textColor = isFromMe
-        ? Colors.white
-        : context.appColors.bubbleOtherText;
-
     return switch (message.messageType) {
-      MessageType.image => _buildImageMessage(context),
-      MessageType.video => _buildVideoMessage(context),
-      MessageType.audio => _buildAudioMessage(context, isFromMe),
-      MessageType.file => _buildFileMessage(context, isFromMe),
-      MessageType.card => _buildCardMessage(context, isFromMe),
-      MessageType.merge => _buildMergeMessage(context, isFromMe),
-      MessageType.quote => _buildQuoteMessage(context, isFromMe),
-      MessageType.at => _buildAtMessage(context, isFromMe),
-      MessageType.face => _buildFaceMessage(context),
-      MessageType.location => _buildLocationMessage(context, isFromMe),
-      MessageType.custom => _buildCustomMessage(context, isFromMe),
-      MessageType.system => _buildSystemMessage(context),
-      MessageType.markdown => _buildMarkdownMessage(context, isFromMe),
-      // text, advancedText
-      _ => Text(
-        message.displayText,
-        style: TextStyle(color: textColor, fontSize: 16),
+      MessageType.image => ImageMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+        uploadProgress: uploadProgress,
       ),
+      MessageType.video => VideoMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+        uploadProgress: uploadProgress,
+      ),
+      MessageType.audio => AudioMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.file => FileMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+        uploadProgress: uploadProgress,
+      ),
+      MessageType.card => CardMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.merge => MergeMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.quote => QuoteMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.at => AtMessageContent(message: message, isFromMe: isFromMe),
+      MessageType.face => FaceMessageContent(message: message),
+      MessageType.location => LocationMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.custom => CustomMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      MessageType.system => SystemMessageContent(message: message),
+      MessageType.markdown => MarkdownMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+      ),
+      _ => TextMessageContent(message: message, isFromMe: isFromMe),
     };
-  }
-
-  // ===== Markdown 消息 =====
-  Widget _buildMarkdownMessage(BuildContext context, bool isFromMe) {
-    final textColor = isFromMe
-        ? Colors.white
-        : context.appColors.bubbleOtherText;
-    final linkColor = isFromMe ? Colors.white70 : context.appColors.primary;
-    final codeBgColor = isFromMe
-        ? Colors.white.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.06);
-
-    return MarkdownBody(
-      data: message.displayText,
-      selectable: true,
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-      styleSheet: MarkdownStyleSheet(
-        p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
-        h1: TextStyle(
-          color: textColor,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-        ),
-        h2: TextStyle(
-          color: textColor,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-        h3: TextStyle(
-          color: textColor,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-        h4: TextStyle(
-          color: textColor,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-        h5: TextStyle(
-          color: textColor,
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
-        h6: TextStyle(
-          color: textColor,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-        strong: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-        em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
-        code: TextStyle(
-          color: textColor,
-          fontSize: 14,
-          fontFamily: 'monospace',
-          backgroundColor: codeBgColor,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: codeBgColor,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        codeblockPadding: const EdgeInsets.all(8),
-        blockquoteDecoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(color: linkColor.withValues(alpha: 0.5), width: 3),
-          ),
-        ),
-        blockquotePadding: const EdgeInsets.only(left: 12),
-        a: TextStyle(color: linkColor, decoration: TextDecoration.underline),
-        listBullet: TextStyle(color: textColor, fontSize: 16),
-        tableHead: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-        tableBody: TextStyle(color: textColor, fontSize: 14),
-        tableBorder: TableBorder.all(
-          color: textColor.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-    );
-  }
-
-  // ===== 图片消息 =====
-  Widget _withUploadProgress(BuildContext context, Widget child) {
-    final progress = uploadProgress;
-    if (!_isFromMe || progress == null || progress >= 100) return child;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        child,
-        const SizedBox(height: 6),
-        SizedBox(
-          width: 150,
-          child: LinearProgressIndicator(
-            value: progress / 100,
-            minHeight: 3,
-            backgroundColor: Colors.white24,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageMessage(BuildContext context) {
-    final source = message.displayImageSource;
-    if (source.isEmpty) {
-      return const Icon(Icons.broken_image, size: 120, color: Colors.grey);
-    }
-    return _withUploadProgress(
-      context,
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: AppImage(
-          source: source,
-          width: 150,
-          height: 150,
-          fit: BoxFit.cover,
-          cacheWidth: 300,
-        ),
-      ),
-    );
-  }
-
-  // ===== 视频消息 =====
-  Widget _buildVideoMessage(BuildContext context) {
-    final snap = message.videoSnapshotPath;
-    return _withUploadProgress(
-      context,
-      Stack(
-        alignment: Alignment.center,
-        children: [
-          if (snap.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: AppImage(
-                source: snap,
-                width: 150,
-                height: 120,
-                fit: BoxFit.cover,
-                cacheWidth: 300,
-              ),
-            )
-          else
-            Container(
-              width: 150,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          const Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
-          if (message.videoDurationString != '0:00')
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  message.videoDurationString,
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 语音消息 =====
-  Widget _buildAudioMessage(BuildContext context, bool isFromMe) {
-    return GestureDetector(
-      onTap: () {
-        if (message.soundSource.isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('语音地址为空，无法播放')));
-          return;
-        }
-        audioPlayerService.play(message.soundSource);
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.play_circle_outline,
-            size: 24,
-            color: isFromMe ? Colors.white : context.appColors.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            message.audioDurationString,
-            style: TextStyle(
-              color: isFromMe
-                  ? Colors.white
-                  : context.appColors.bubbleOtherText,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 文件消息 =====
-  Widget _buildFileMessage(BuildContext context, bool isFromMe) {
-    final ext = message.fileExtension.toLowerCase();
-    final iconData = switch (ext) {
-      'pdf' => Icons.picture_as_pdf,
-      'doc' || 'docx' => Icons.description,
-      'xls' || 'xlsx' => Icons.table_chart,
-      'ppt' || 'pptx' => Icons.slideshow,
-      'zip' || 'rar' => Icons.folder_zip,
-      _ => Icons.insert_drive_file,
-    };
-    final iconColor = isFromMe ? Colors.white70 : context.appColors.primary;
-
-    return _withUploadProgress(
-      context,
-      Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(iconData, size: 36, color: iconColor),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  message.fileName.isNotEmpty ? message.fileName : '未知文件',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isFromMe
-                        ? Colors.white
-                        : context.appColors.bubbleOtherText,
-                    fontSize: 14,
-                  ),
-                ),
-                if (message.fileSizeString.isNotEmpty)
-                  Text(
-                    message.fileSizeString,
-                    style: TextStyle(
-                      color: isFromMe
-                          ? Colors.white70
-                          : context.appColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 名片消息 =====
-  Widget _buildCardMessage(BuildContext context, bool isFromMe) {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundImage: (message.cardFaceUrl).isNotEmpty
-                    ? NetworkImage(message.cardFaceUrl)
-                    : null,
-                child: message.cardFaceUrl.isEmpty
-                    ? Text(
-                        (message.cardNickname).isNotEmpty
-                            ? message.cardNickname[0]
-                            : '?',
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      message.cardNickname.isNotEmpty
-                          ? message.cardNickname
-                          : '未知用户',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isFromMe
-                            ? Colors.white
-                            : context.appColors.bubbleOtherText,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      message.cardUserId,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: isFromMe
-                            ? Colors.white70
-                            : context.appColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Divider(
-            color: (isFromMe ? Colors.white30 : Colors.grey.shade200),
-            height: 12,
-          ),
-          Text(
-            '个人名片',
-            style: TextStyle(
-              color: isFromMe
-                  ? Colors.white70
-                  : context.appColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 合并转发消息 =====
-  Widget _buildMergeMessage(BuildContext context, bool isFromMe) {
-    final title = message.mergeTitle.isNotEmpty ? message.mergeTitle : '聊天记录';
-    final previews = message.mergeSenderNicknames;
-    final count = message.mergeMessageCount;
-
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: isFromMe
-                  ? Colors.white
-                  : context.appColors.bubbleOtherText,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          // 分隔线
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            height: 0.5,
-            color: (isFromMe ? Colors.white24 : Colors.grey.shade300),
-          ),
-          // 摘要预览（sender: content 格式，最多 5 条）
-          ...previews
-              .take(5)
-              .map(
-                (text) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isFromMe
-                          ? Colors.white70
-                          : context.appColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-          const SizedBox(height: 4),
-          // 消息条数
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$count条消息',
-              style: TextStyle(
-                color: isFromMe
-                    ? Colors.white54
-                    : context.appColors.textSecondary,
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 引用消息预览 =====
-  Widget _buildQuotePreview(
-    BuildContext context,
-    double screenWidth,
-    bool isFromMe,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
-      decoration: BoxDecoration(
-        color: isFromMe
-            ? Colors.white.withValues(alpha: 0.15)
-            : Colors.grey.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (message.quoteSenderNickname.isNotEmpty)
-            Text(
-              message.quoteSenderNickname,
-              style: TextStyle(
-                color: isFromMe ? Colors.white70 : context.appColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          if (message.quoteReplyContent.isNotEmpty)
-            Text(
-              message.quoteReplyContent,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isFromMe
-                    ? Colors.white60
-                    : context.appColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ===== 引用消息主体 =====
-  Widget _buildQuoteMessage(BuildContext context, bool isFromMe) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildQuotePreview(context, MediaQuery.sizeOf(context).width, isFromMe),
-        Text(
-          message.quoteText.isNotEmpty
-              ? message.quoteText
-              : message.displayText,
-          style: TextStyle(
-            color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ===== @ 消息 =====
-  Widget _buildAtMessage(BuildContext context, bool isFromMe) {
-    final text = message.displayText;
-    final nicknames = message.atNicknames;
-    if (nicknames.isEmpty) {
-      return Text(
-        text,
-        style: TextStyle(
-          color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
-          fontSize: 16,
-        ),
-      );
-    }
-    // 简单实现：高亮 @昵称 部分
-    return Text(
-      text,
-      style: TextStyle(
-        color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
-        fontSize: 16,
-      ),
-    );
-  }
-
-  // ===== 表情消息 =====
-  Widget _buildFaceMessage(BuildContext context) {
-    // 大号 emoji 展示
-    return Text(
-      message.displayText.isNotEmpty ? message.displayText : '😀',
-      style: const TextStyle(fontSize: 48),
-    );
-  }
-
-  // ===== 位置消息 =====
-  Widget _buildLocationMessage(BuildContext context, bool isFromMe) {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.location_on,
-                size: 20,
-                color: isFromMe ? Colors.white : context.appColors.primary,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  message.locationName.isNotEmpty ? message.locationName : '位置',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isFromMe
-                        ? Colors.white
-                        : context.appColors.bubbleOtherText,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (message.locationDesc.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              message.locationDesc,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isFromMe
-                    ? Colors.white70
-                    : context.appColors.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ===== 自定义消息 =====
-  Widget _buildCustomMessage(BuildContext context, bool isFromMe) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isFromMe
-            ? Colors.white.withValues(alpha: 0.15)
-            : Colors.grey.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        message.displayText.isNotEmpty ? message.displayText : '[自定义消息]',
-        style: TextStyle(
-          color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-
-  // ===== 系统消息（撤回等） =====
-  Widget _buildSystemMessage(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: context.appColors.textSecondary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        message.displayText,
-        style: TextStyle(color: context.appColors.textSecondary, fontSize: 12),
-        textAlign: TextAlign.center,
-      ),
-    );
   }
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
     AppRouter.goToUserProfile(context, userId: user.id, user: user);
   }
 
-  /// 格式化消息时间（包含日期+时间）
   String _formatMessageTime(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

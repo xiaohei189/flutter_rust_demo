@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../domain/models/conversation.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -15,6 +12,7 @@ import '../../../../ui/chat/widgets/conversation_title_bar.dart';
 import '../../../../ui/chat/widgets/group_filter_panel.dart';
 import '../../../../ui/profile/views/profile_drawer_screen.dart';
 import '../../core/view_models/connection_view_model.dart';
+import '../view_models/chat_list_view_model.dart';
 import '../view_models/conversation_view_model.dart';
 
 /// 会话列表页（参考飞书风格）
@@ -26,76 +24,33 @@ class ChatListScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
-  Timer? _delayRefreshTimer;
-  GroupFilter _activeFilter = GroupFilter.all;
+  late final ChatListViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    // 延迟 3 秒检查：列表仍空则主动刷新一次
-    _delayRefreshTimer = Timer(const Duration(seconds: 3), () {
-      final conversations = ref.read(conversationListProvider).conversations;
-      if (mounted && conversations.isEmpty) {
-        ref.read(conversationListProvider.notifier).refreshConversations();
-      }
-    });
+    _viewModel = ref.read(chatListViewModelProvider.notifier);
   }
-
-  @override
-  void dispose() {
-    _delayRefreshTimer?.cancel();
-    super.dispose();
-  }
-
-  int get _groupChatCount {
-    final conversations = ref.read(conversationListProvider).conversations;
-    return conversations
-        .where((c) => c.conversationType == 2 || c.conversationType == 3)
-        .length;
-  }
-
-  List<Conversation> _getFilteredConversations(
-    List<Conversation> conversations,
-  ) {
-    switch (_activeFilter) {
-      case GroupFilter.unread:
-        return conversations.where((c) => c.unreadCount > 0).toList();
-      case GroupFilter.singleChat:
-        return conversations.where((c) => c.conversationType == 1).toList();
-      case GroupFilter.groupChat:
-        return conversations
-            .where((c) => c.conversationType == 2 || c.conversationType == 3)
-            .toList();
-      case GroupFilter.flagged:
-      case GroupFilter.atMe:
-      case GroupFilter.done:
-        return [];
-      case GroupFilter.all:
-        return conversations;
-    }
-  }
-
-  bool get _isQuickTab =>
-      _activeFilter == GroupFilter.all ||
-      _activeFilter == GroupFilter.unread ||
-      _activeFilter == GroupFilter.flagged;
 
   void _openGroupFilterPanel() {
     final conversationState = ref.read(conversationListProvider);
+    final activeFilter = ref.read(chatListViewModelProvider).activeFilter;
     final totalUnread = conversationState.totalUnreadCount;
     final totalMessages = conversationState.conversations.length;
-    final groupCount = _groupChatCount;
+    final groupCount = _viewModel.groupChatCount(
+      conversationState.conversations,
+    );
 
     Navigator.of(context).push(
       LeftSlideRoute(
         child: GroupFilterPanel(
-          activeFilter: _activeFilter,
+          activeFilter: activeFilter,
           totalMessages: totalMessages,
           unreadCount: totalUnread,
           groupCount: groupCount,
           onSelect: (filter) {
             AppRouter.goBack(context);
-            setState(() => _activeFilter = filter);
+            _viewModel.setFilter(filter);
           },
         ),
       ),
@@ -109,8 +64,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final connectionState = ref.watch(connectionProvider);
     final userProfileState = ref.watch(userProfileProvider);
     final cachedUserProfiles = ref.watch(conversationUserProfilesProvider);
+    final listState = ref.watch(chatListViewModelProvider);
+    final activeFilter = listState.activeFilter;
 
-    final conversations = _getFilteredConversations(
+    final conversations = _viewModel.filteredConversations(
       conversationState.conversations,
     );
     final totalUnread = conversationState.totalUnreadCount;
@@ -120,7 +77,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       appBar: ConversationTitleBar(
         currentUserId: userProfileState.profile?.userId ?? '',
         nickname: userProfileState.profile?.nickname,
-        avatarUrl: ref.read(userProfileProvider.notifier).getDisplayAvatarUrl(),
+        avatarUrl: _viewModel.displayAvatarUrl,
         isSyncing: conversationState.isSyncing,
         isConnected: connectionState.isConnected,
         syncProgress: conversationState.syncProgress,
@@ -138,8 +95,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         onSearchTap: () {
           AppRouter.goToSearch(context);
         },
-        onRefresh: () =>
-            ref.read(conversationListProvider.notifier).refreshConversations(),
+        onRefresh: _viewModel.refreshConversations,
         onAddFriend: () => AppRouter.goToAddContact(context),
         onAddGroup: () => AppRouter.goToSearch(context),
         onCreateGroup: () => AppRouter.goToCreateGroup(context),
@@ -152,23 +108,19 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       body: Column(
         children: [
           ChatListHeader(
-            activeFilter: _activeFilter,
+            activeFilter: activeFilter,
             totalUnreadCount: totalUnread,
-            isQuickTab: _isQuickTab,
+            isQuickTab: _viewModel.isQuickTab(activeFilter),
             isSyncing: conversationState.isSyncing,
             syncProgress: conversationState.syncProgress,
-            onFilterChange: (filter) {
-              setState(() => _activeFilter = filter);
-            },
+            onFilterChange: _viewModel.setFilter,
             onOpenGroupFilter: _openGroupFilterPanel,
           ),
           Divider(height: 1, color: colors.divider),
           Expanded(
             child: RefreshIndicator(
               color: colors.primary,
-              onRefresh: () => ref
-                  .read(conversationListProvider.notifier)
-                  .refreshConversations(),
+              onRefresh: _viewModel.refreshConversations,
               child: conversations.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -215,31 +167,25 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                             AppRouter.goToChatDetail(context, conversation);
                           },
                           onDelete: () async {
-                            await ref
-                                .read(messageServiceProvider.notifier)
-                                .deleteConversation(
-                                  conversation.conversationId,
-                                );
+                            await _viewModel.deleteConversation(
+                              conversation.conversationId,
+                            );
                           },
                           onPinToggle: () async {
-                            await ref
-                                .read(messageServiceProvider.notifier)
-                                .toggleConversationPin(
-                                  conversation.conversationId,
-                                  !conversation.isPinned,
-                                );
+                            await _viewModel.toggleConversationPin(
+                              conversation.conversationId,
+                              !conversation.isPinned,
+                            );
                           },
                           onMarkRead: () async {
-                            await ref
-                                .read(messageServiceProvider.notifier)
-                                .markConversationMessageAsRead(
-                                  conversation.conversationId,
-                                );
+                            await _viewModel.markConversationMessageAsRead(
+                              conversation.conversationId,
+                            );
                           },
                           onHide: () async {
-                            await ref
-                                .read(messageServiceProvider.notifier)
-                                .hideConversation(conversation.conversationId);
+                            await _viewModel.hideConversation(
+                              conversation.conversationId,
+                            );
                           },
                         );
                       },
@@ -256,25 +202,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     AppConnectionState connectionState,
   ) {
     final colors = context.appColors;
-    final label = _activeFilter == GroupFilter.all
-        ? '消息'
-        : _activeFilter == GroupFilter.unread
-        ? '未读'
-        : _activeFilter == GroupFilter.flagged
-        ? '标记'
-        : _activeFilter == GroupFilter.atMe
-        ? '@我'
-        : _activeFilter == GroupFilter.singleChat
-        ? '单聊'
-        : _activeFilter == GroupFilter.groupChat
-        ? '群组'
-        : '已完成';
+    final activeFilter = ref.read(chatListViewModelProvider).activeFilter;
+    final label = _viewModel.emptyStateLabel(activeFilter);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            _activeFilter == GroupFilter.unread
+            activeFilter == GroupFilter.unread
                 ? Icons.done_all
                 : Icons.chat_bubble_outline,
             size: 64,
@@ -282,10 +217,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _activeFilter == GroupFilter.all ? '暂无会话' : '「$label」中没有会话',
+            activeFilter == GroupFilter.all ? '暂无会话' : '「$label」中没有会话',
             style: TextStyle(fontSize: 16, color: colors.textSecondary),
           ),
-          if (_activeFilter == GroupFilter.all) ...[
+          if (activeFilter == GroupFilter.all) ...[
             const SizedBox(height: 8),
             Text(
               connectionState.isConnected ? '等待接收消息...' : 'WebSocket 未连接',

@@ -1,11 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../providers/providers.dart';
-import '../../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/utils/app_logger.dart';
+import '../view_models/friend_setup_view_model.dart';
 
 /// 好友设置页面
 ///
@@ -25,58 +26,23 @@ class FriendSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
-  bool _isMuted = false;
-  bool _isPinned = false;
-  bool _isBlacklisted = false;
-  bool _isLoading = false;
-  String? _conversationId;
+  late final FriendSetupViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    setState(() => _isLoading = true);
-    try {
-      final client = ref.read(messageServiceProvider.notifier).client;
-      if (client == null) return;
-
-      // 获取单聊会话 ID
-      final convId = await client.getConversationIdBySessionType(
-        sourceId: widget.userId,
-        sessionType: SessionType.singleChat,
-      );
-      _conversationId = convId;
-
-      // 从会话列表中查找该会话的设置
-      final conversations = ref.read(conversationsProvider);
-      final conv = conversations
-          .where((c) => c.conversationId == convId)
-          .firstOrNull;
-
-      if (conv != null) {
-        _isMuted = conv.recvMsgOpt == 1;
-        _isPinned = conv.isPinned;
-      }
-
-      // 检查黑名单
-      _isBlacklisted = await client.isInBlacklist(userId: widget.userId);
-    } catch (e) {
-      appLog.e('[FriendSetupScreen] 加载好友设置失败: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    _viewModel = ref.read(friendSetupViewModelProvider(widget.userId).notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_viewModel.load());
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(friendSetupViewModelProvider(widget.userId));
     return Scaffold(
       appBar: AppBar(title: const Text('好友设置'), elevation: 0),
-      body: _isLoading
+      body: settings.isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
@@ -98,14 +64,14 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
                 // 消息免打扰
                 _buildSwitchItem(
                   title: '消息免打扰',
-                  value: _isMuted,
+                  value: settings.isMuted,
                   onChanged: _toggleMute,
                 ),
 
                 // 置顶聊天
                 _buildSwitchItem(
                   title: '置顶聊天',
-                  value: _isPinned,
+                  value: settings.isPinned,
                   onChanged: _togglePin,
                 ),
 
@@ -114,7 +80,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
                 // 加入黑名单
                 _buildSwitchItem(
                   title: '加入黑名单',
-                  value: _isBlacklisted,
+                  value: settings.isBlacklisted,
                   onChanged: _toggleBlacklist,
                   isDestructive: true,
                 ),
@@ -227,6 +193,12 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
     );
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   /// 显示设置备注对话框
   void _showRemarkDialog() {
     final controller = TextEditingController();
@@ -276,76 +248,33 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
   /// 更新备注
   Future<void> _updateRemark(String remark) async {
-    try {
-      await ref
-          .read(friendRepositoryProvider)
-          .updateFriends(widget.userId, remark: remark);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('备注已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      appLog.e('[FriendSetupScreen] 更新备注失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('更新备注失败: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    final ok = await _viewModel.updateRemark(remark);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('备注已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '更新备注失败');
     }
   }
 
   /// 切换消息免打扰
   Future<void> _toggleMute(bool value) async {
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null || _conversationId == null) return;
-
-    try {
-      await client.setConversation(
-        conversationId: _conversationId!,
-        recvMsgOpt: value ? 1 : 0,
-      );
-      setState(() => _isMuted = value);
-    } catch (e) {
-      appLog.e('[FriendSetupScreen] 设置消息免打扰失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('设置失败: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    final ok = await _viewModel.setMuted(value);
+    if (mounted && !ok) {
+      _showError(_viewModel.currentState.error ?? '设置失败');
     }
   }
 
   /// 切换置顶聊天
   Future<void> _togglePin(bool value) async {
-    final client = ref.read(messageServiceProvider.notifier).client;
-    if (client == null || _conversationId == null) return;
-
-    try {
-      await client.setConversationPinned(
-        conversationId: _conversationId!,
-        isPinned: value,
-      );
-      setState(() => _isPinned = value);
-    } catch (e) {
-      appLog.e('[FriendSetupScreen] 设置置顶聊天失败: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('设置失败: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    final ok = await _viewModel.setPinned(value);
+    if (mounted && !ok) {
+      _showError(_viewModel.currentState.error ?? '设置失败');
     }
   }
 
@@ -376,12 +305,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
       if (confirmed != true) return;
     }
 
-    final ok = value
-        ? await ref.read(blackListProvider.notifier).add(widget.userId)
-        : await ref.read(blackListProvider.notifier).remove(widget.userId);
+    final ok = await _viewModel.setBlacklisted(value);
     if (!mounted) return;
     if (ok) {
-      setState(() => _isBlacklisted = value);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(value ? '已加入黑名单' : '已移出黑名单'),
@@ -389,9 +315,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('操作失败')));
+      _showError(_viewModel.currentState.error ?? '操作失败');
     }
   }
 
@@ -417,9 +341,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
     if (confirmed != true) return;
 
-    final ok = await ref
-        .read(friendListProvider.notifier)
-        .deleteFriend(widget.userId);
+    final ok = await _viewModel.deleteFriend();
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -432,9 +354,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
         context.pop();
       }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('删除失败')));
+      _showError(_viewModel.currentState.error ?? '删除失败');
     }
   }
 }

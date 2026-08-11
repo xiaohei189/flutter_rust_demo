@@ -308,9 +308,12 @@ flutter test test
   - 群资料编辑、群成员管理、转让、解散等 Repository 调用迁移到 ViewModel。
   - Screen 只保留成员筛选、对话框、SnackBar 与布局。
   - 补充 ViewModel 单元测试。
-- [ ] P0-C：`FriendSetupScreen` 拆掉直接 FFI/MessageService 访问。
+- [x] P0-C：`FriendSetupScreen` 拆掉直接 FFI/MessageService 访问。
   - 好友关系、拉黑、会话定位等操作下沉到 Repository / ViewModel。
-- [ ] P0-D：`ChatListScreen`、`ContactPickerScreen`、`ChatDetailScreen` 残留编排收敛。
+- [x] P0-D：`ChatListScreen`、`ContactPickerScreen`、`ChatDetailScreen` 残留编排收敛。
+  - `ChatListScreen` 筛选与会话操作迁入 `ChatListViewModel`。
+  - `ContactPickerScreen` 加载、过滤、选中迁入 `ContactPickerViewModel`。
+  - `ChatDetailScreen` 好友选择与文件打开迁入 `ChatDetailViewModel`。
 
 ### 11.2 P1：设计系统与本地化
 
@@ -324,7 +327,9 @@ flutter test test
 
 ### 11.4 P3：大文件拆分
 
-- [ ] P3-A：`MessageBubble` 按消息类型拆分。
-- [ ] P3-B：`ChatInput` 拆附件面板、格式栏、快捷操作区。
+- [x] P3-A：`MessageBubble` 按消息类型拆分。
+  - 新增 `message_parts/`，文本/Markdown/媒体/名片/合并/位置/引用分别独立。
+- [x] P3-B：`ChatInput` 拆附件面板、格式栏、快捷操作区。
+  - 表情面板拆为 `EmojiPanel`，Markdown 格式栏拆为 `MarkdownFormatBar`。
 - [ ] P3-C：`ChatDetailScreen` 剩余媒体、多选、转发面板继续拆分。
 - [ ] P3-D：`MessageServiceNotifier` 按连接、消息、会话、群组职责拆分。

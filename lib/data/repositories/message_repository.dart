@@ -137,6 +137,13 @@ abstract class MessageRepository {
 
   Future<List<Conversation>> getConversations();
 
+  Future<String> getConversationIdBySessionType({
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<bool> isInBlacklist(String userId);
+
   Future<void> markConversationMessageAsRead({
     required String conversationId,
     required SessionType sessionType,
@@ -465,6 +472,22 @@ class MessageRepositoryImpl implements MessageRepository {
     return conversations
         .map(ConversationMapping.fromLocalConversation)
         .toList();
+  }
+
+  @override
+  Future<String> getConversationIdBySessionType({
+    required String sourceId,
+    required SessionType sessionType,
+  }) {
+    return _client.getConversationIdBySessionType(
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  @override
+  Future<bool> isInBlacklist(String userId) {
+    return _client.isInBlacklist(userId: userId);
   }
 
   @override

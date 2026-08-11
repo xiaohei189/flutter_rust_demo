@@ -7,7 +7,9 @@ import 'package:record/record.dart';
 
 import '../../core/theme/app_theme.dart';
 import 'attachment_panel.dart';
+import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'markdown_format_bar.dart';
 
 /// 消息内容类型
 enum MessageContentType { text, markdown }
@@ -70,90 +72,6 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
-
-  /// 常用 emoji 列表
-  static const List<String> _commonEmojis = [
-    '😀',
-    '😃',
-    '😄',
-    '😁',
-    '😆',
-    '😅',
-    '🤣',
-    '😂',
-    '🙂',
-    '🙃',
-    '😉',
-    '😊',
-    '😇',
-    '🥰',
-    '😍',
-    '🤩',
-    '😘',
-    '😗',
-    '😚',
-    '😙',
-    '🥲',
-    '😋',
-    '😛',
-    '😜',
-    '🤪',
-    '😝',
-    '🤑',
-    '🤗',
-    '🤭',
-    '🤫',
-    '🤔',
-    '🤐',
-    '🤨',
-    '😐',
-    '😑',
-    '😶',
-    '😏',
-    '😒',
-    '🙄',
-    '😬',
-    '😮',
-    '😯',
-    '😲',
-    '😳',
-    '🥺',
-    '😦',
-    '😧',
-    '😨',
-    '😰',
-    '😥',
-    '😢',
-    '😭',
-    '😱',
-    '😖',
-    '😣',
-    '😞',
-    '😓',
-    '😩',
-    '😫',
-    '🥱',
-    '😤',
-    '😡',
-    '😠',
-    '🤬',
-    '👍',
-    '👎',
-    '👏',
-    '🙏',
-    '💪',
-    '❤️',
-    '🔥',
-    '⭐',
-    '🎉',
-    '🎊',
-    '💯',
-    '✅',
-    '❌',
-    '⚡',
-    '🌟',
-    '💫',
-  ];
 
   @override
   void initState() {
@@ -470,7 +388,14 @@ class _ChatInputState extends State<ChatInput> {
               ],
             ),
           ),
-          if (_activePanel == _InputPanel.emoji) _buildEmojiPanel(),
+          if (_activePanel == _InputPanel.emoji)
+            EmojiPanel(
+              onEmojiSelected: _insertEmoji,
+              onClose: () {
+                _closeAllPanels();
+                _focusNode.requestFocus();
+              },
+            ),
           if (_activePanel == _InputPanel.attachment)
             AttachmentPanel(
               items: _attachmentItems,
@@ -614,81 +539,10 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 第二层（Markdown 模式）：格式按钮栏，替换普通工具栏
   Widget _buildFormatBar() {
-    return SizedBox(
-      height: 44,
-      child: Row(
-        children: [
-          _formatBtn('B', '粗体', () => _handleFormat(MarkdownFormat.bold)),
-          _formatBtn(
-            'I',
-            '斜体',
-            () => _handleFormat(MarkdownFormat.italic),
-            italic: true,
-          ),
-          _formatBtn(
-            'S',
-            '删除线',
-            () => _handleFormat(MarkdownFormat.strikethrough),
-            strikethrough: true,
-          ),
-          _formatBtn('H', '标题', () => _handleFormat(MarkdownFormat.heading)),
-          _formatBtn(
-            '<>',
-            '行内代码',
-            () => _handleFormat(MarkdownFormat.inlineCode),
-            mono: true,
-          ),
-          _formatBtn('"', '引用', () => _handleFormat(MarkdownFormat.quote)),
-          _formatBtn('•', '列表', () => _handleFormat(MarkdownFormat.bulletList)),
-          _formatBtn('🔗', '链接', () => _handleFormat(MarkdownFormat.link)),
-          const Spacer(),
-          // 返回普通工具栏
-          _buildToolbarIcon(
-            icon: Icons.text_fields,
-            tooltip: '关闭 Markdown',
-            active: true,
-            onTap: () => setState(() => _isMarkdownMode = false),
-          ),
-          _buildSendButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _formatBtn(
-    String label,
-    String tooltip,
-    VoidCallback onTap, {
-    bool italic = false,
-    bool strikethrough = false,
-    bool mono = false,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
-          child: SizedBox(
-            width: 36,
-            height: 44,
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: context.appColors.textPrimary.withValues(alpha: 0.7),
-                  fontFamily: mono ? 'monospace' : null,
-                  fontStyle: italic ? FontStyle.italic : null,
-                  decoration: strikethrough ? TextDecoration.lineThrough : null,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return MarkdownFormatBar(
+      onFormat: _handleFormat,
+      onClose: () => setState(() => _isMarkdownMode = false),
+      trailing: _buildSendButton(),
     );
   }
 
@@ -766,118 +620,6 @@ class _ChatInputState extends State<ChatInput> {
           ),
         );
       },
-    );
-  }
-
-  // ==================== 表情面板（飞书风格：最常使用 + 默认表情） ====================
-
-  Widget _buildEmojiPanel() {
-    const recentCount = 16;
-    final recentEmojis = _commonEmojis.take(recentCount).toList();
-    final defaultEmojis = _commonEmojis.skip(recentCount).toList();
-
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 260),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: context.appColors.divider, width: 0.5),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '最常使用',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  _buildEmojiGrid(recentEmojis),
-                  const SizedBox(height: 8),
-                  Text(
-                    '默认表情',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  _buildEmojiGrid(defaultEmojis),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-          SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Icon(
-                  Icons.add,
-                  size: 20,
-                  color: context.appColors.textSecondary,
-                ),
-                Icon(
-                  Icons.emoji_emotions_outlined,
-                  size: 20,
-                  color: context.appColors.primary,
-                ),
-                Icon(
-                  Icons.favorite_border,
-                  size: 20,
-                  color: context.appColors.textSecondary,
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.keyboard,
-                    size: 20,
-                    color: context.appColors.textSecondary,
-                  ),
-                  onPressed: () {
-                    _closeAllPanels();
-                    _focusNode.requestFocus();
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmojiGrid(List<String> emojis) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 8,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-      ),
-      itemCount: emojis.length,
-      itemBuilder: (_, i) => InkWell(
-        onTap: () => _insertEmoji(emojis[i]),
-        child: Center(
-          child: Text(emojis[i], style: const TextStyle(fontSize: 22)),
-        ),
-      ),
     );
   }
 

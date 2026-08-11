@@ -14,6 +14,7 @@ import '../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
+import '../../contacts/providers/friend_provider.dart';
 import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../../profile/providers/user_profile_provider.dart';
 import '../providers/message_provider.dart';
@@ -403,6 +404,28 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
       return true;
     } catch (e) {
       state = state.copyWith(errorText: '发送名片失败: $e');
+      return false;
+    }
+  }
+
+  Future<List<Friend>> loadFriendsForPicker() async {
+    final state = ref.read(friendListProvider);
+    if (state.friends.isEmpty && !state.isLoading) {
+      await ref.read(friendListProvider.notifier).loadFriends();
+    }
+    return ref.read(friendListProvider).friends;
+  }
+
+  Future<bool> openFile({
+    required String source,
+    required String fileName,
+  }) async {
+    try {
+      return await ref
+          .read(chatAuxRepositoryProvider)
+          .openFile(source: source, fileName: fileName);
+    } catch (e) {
+      state = state.copyWith(errorText: '打开文件失败: $e');
       return false;
     }
   }
