@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
@@ -36,6 +35,7 @@ import 'package:flutter_rust_demo/data/services/local_notification_service.dart'
 import 'package:flutter_rust_demo/data/services/online_status_service.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'message_service_helpers.dart';
+import 'message_service_reducer.dart';
 
 /// MessageService 的 Notifier
 class MessageServiceNotifier extends Notifier<MessageServiceState> {
@@ -668,15 +668,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   }
 
   void _applyGroupReadReceipts(List<GroupReadReceipt> receipts) {
-    if (receipts.isEmpty) return;
-    final updated = Map<String, GroupReadReceipt>.from(state.groupReadReceipts);
-    for (final receipt in receipts) {
-      updated[receipt.msgId] = receipt;
-    }
-    state = state.copyWith(
-      groupReadReceipts: updated,
-      groupRevision: state.groupRevision + 1,
-    );
+    state = MessageServiceReducer.applyGroupReadReceipts(state, receipts);
   }
 
   void _onMessageEvent(MessageEvent event) {
@@ -761,13 +753,11 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 移除指定消息（用于重发成功后替换旧的失败消息）。
   void removeMessage(String conversationId, String clientMsgId) {
-    final current = state.messages[conversationId];
-    if (current == null) return;
-    final updated = current.where((m) => m.clientMsgId != clientMsgId).toList();
-    if (updated.length == current.length) return;
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
-    newMessages[conversationId] = updated;
-    state = state.copyWith(messages: newMessages);
+    state = MessageServiceReducer.removeMessage(
+      state,
+      conversationId,
+      clientMsgId,
+    );
   }
 
   void _applyRevoked({
@@ -777,157 +767,44 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String revokerNickname,
     required String sourceMessageSenderNickname,
   }) {
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
-    final list = newMessages[conversationId];
-    if (list == null || list.isEmpty) return;
-
-    final nickname = revokerNickname.isNotEmpty
-        ? revokerNickname
-        : sourceMessageSenderNickname;
-    final revokedContent = jsonEncode({
-      'content': '${nickname.isEmpty ? '对方' : nickname} 撤回了一条消息',
-      'revokerNickname': nickname,
-    });
-    final idx = list.indexWhere(
-      (m) => m.clientMsgId == clientMsgId || m.seq.toInt() == seq,
+    state = MessageServiceReducer.applyRevoked(
+      state,
+      conversationId: conversationId,
+      seq: seq,
+      clientMsgId: clientMsgId,
+      revokerNickname: revokerNickname,
+      sourceMessageSenderNickname: sourceMessageSenderNickname,
     );
-    if (idx >= 0) {
-      final updated = List<MessageInfo>.from(list);
-      updated[idx] = updated[idx].copyMessageInfo(
-        content: revokedContent,
-        contentType: 2101,
-        status: 4,
-      );
-      newMessages[conversationId] = updated;
-      state = state.copyWith(messages: newMessages);
-    }
   }
 
   void _applyReadReceipts(List<MessageReceipt> receipts) {
-    final msgIds = receipts.expand((r) => r.msgIds).toSet();
-    if (msgIds.isEmpty) return;
-
-    final newMessages = <String, List<MessageInfo>>{};
-    var changed = false;
-    for (final entry in state.messages.entries) {
-      final list = entry.value;
-      if (!list.any((m) => msgIds.contains(m.clientMsgId))) {
-        newMessages[entry.key] = list;
-        continue;
-      }
-      newMessages[entry.key] = list
-          .map(
-            (m) => msgIds.contains(m.clientMsgId)
-                ? m.copyMessageInfo(isRead: true)
-                : m,
-          )
-          .toList();
-      changed = true;
-    }
-    if (changed) {
-      state = state.copyWith(messages: newMessages);
-    }
+    state = MessageServiceReducer.applyReadReceipts(state, receipts);
   }
 
   void _applyDeleted(String conversationId, List<String> clientMsgIds) {
-    final ids = clientMsgIds.toSet();
-    final current = state.messages[conversationId];
-    if (current == null || ids.isEmpty) return;
-    final updated = current.where((m) => !ids.contains(m.clientMsgId)).toList();
-    if (updated.length == current.length) return;
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
-    newMessages[conversationId] = updated;
-    state = state.copyWith(messages: newMessages);
+    state = MessageServiceReducer.applyDeleted(
+      state,
+      conversationId,
+      clientMsgIds,
+    );
   }
 
   void _applySendFailed(String clientMsgId, String error) {
     appLog.w('[MsgSvc] sendFailed: clientMsgId=$clientMsgId error=$error');
-    final newMessages = <String, List<MessageInfo>>{};
-    var changed = false;
-    for (final entry in state.messages.entries) {
-      final list = entry.value;
-      final idx = list.indexWhere((m) => m.clientMsgId == clientMsgId);
-      if (idx < 0) {
-        newMessages[entry.key] = list;
-        continue;
-      }
-      final updated = List<MessageInfo>.from(list);
-      updated[idx] = updated[idx].copyMessageInfo(status: 3);
-      newMessages[entry.key] = updated;
-      changed = true;
-    }
-    if (changed) {
-      final progress = Map<String, int>.from(state.uploadProgress)
-        ..remove(clientMsgId);
-      state = state.copyWith(messages: newMessages, uploadProgress: progress);
-    }
+    state = MessageServiceReducer.applySendFailed(state, clientMsgId);
   }
 
   void _applyUploadProgress(String clientMsgId, int progress) {
-    final nextProgress = progress.clamp(0, 100);
-    final uploadProgress = Map<String, int>.from(state.uploadProgress);
-    if (nextProgress >= 100) {
-      uploadProgress.remove(clientMsgId);
-    } else {
-      uploadProgress[clientMsgId] = nextProgress;
-    }
-    state = state.copyWith(uploadProgress: uploadProgress);
+    state = MessageServiceReducer.applyUploadProgress(
+      state,
+      clientMsgId,
+      progress,
+    );
   }
 
   /// 事件驱动更新会话列表（对齐官方 Demo：直接用 ConversationChanged 携带的数据更新，不重载 DB）
   void _applyConversationEvent(List<LocalConversation> incoming) {
-    if (incoming.isEmpty) return;
-    final newConversations = List<Conversation>.from(state.conversations);
-    for (final raw in incoming) {
-      final conv = ConversationMapping.fromLocalConversation(raw);
-      final index = newConversations.indexWhere(
-        (c) => c.conversationId == conv.conversationId,
-      );
-      if (index >= 0) {
-        final existing = newConversations[index];
-        final existingTime = existing.latestMsgSendTime;
-        final convTime = conv.latestMsgSendTime;
-        final useExisting =
-            existing.latestMsg.isNotEmpty && existingTime >= convTime;
-        newConversations[index] = existing.copyWith(
-          showName: conv.showName.isNotEmpty
-              ? conv.showName
-              : existing.showName,
-          faceUrl: conv.faceUrl.isNotEmpty ? conv.faceUrl : existing.faceUrl,
-          latestMsg: useExisting ? existing.latestMsg : conv.latestMsg,
-          latestMsgSendTime: useExisting
-              ? existing.latestMsgSendTime
-              : conv.latestMsgSendTime,
-          unreadCount: conv.unreadCount,
-          recvMsgOpt: conv.recvMsgOpt,
-          isPinned: conv.isPinned,
-          isPrivateChat: conv.isPrivateChat,
-          burnDuration: conv.burnDuration,
-          groupAtType: conv.groupAtType,
-          isNotInGroup: conv.isNotInGroup,
-          updateUnreadCountTime: conv.updateUnreadCountTime,
-          attachedInfo: conv.attachedInfo,
-          ex: conv.ex,
-          draftText: existing.draftText.isNotEmpty
-              ? existing.draftText
-              : conv.draftText,
-          draftTextTime: existing.draftTextTime > 0
-              ? existing.draftTextTime
-              : conv.draftTextTime,
-          maxSeq: conv.maxSeq,
-          minSeq: conv.minSeq,
-          isMsgDestruct: conv.isMsgDestruct,
-          msgDestructTime: conv.msgDestructTime,
-        );
-      } else {
-        newConversations.add(conv);
-      }
-    }
-    newConversations.sort((a, b) {
-      if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-      return b.latestMsgSendTime.compareTo(a.latestMsgSendTime);
-    });
-    state = state.copyWith(conversations: newConversations);
+    state = MessageServiceReducer.applyConversationEvent(state, incoming);
   }
 
   /// 测试入口：等价于 SDK 消息事件流回调
@@ -946,14 +823,11 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         ),
       );
     }
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
-    final list = newMessages.putIfAbsent(conversationId, () => []);
-    final exists = list.any((m) => m.clientMsgId == message.clientMsgId);
-    if (!exists) {
-      list.add(message);
-    }
-    newMessages[conversationId] = List<MessageInfo>.from(list);
-    state = state.copyWith(messages: newMessages);
+    state = MessageServiceReducer.appendIncomingMessage(
+      state,
+      conversationId,
+      message,
+    );
   }
 
   void _onUserEvent(UserEvent event) {
