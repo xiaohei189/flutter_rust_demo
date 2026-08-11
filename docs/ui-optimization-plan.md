@@ -334,7 +334,7 @@ flutter test test
 - [x] P3-C：`ChatDetailScreen` 剩余媒体、多选、转发面板继续拆分。
   - 媒体选择、位置、文件、视频、语音、名片操作拆入 `ChatMediaActions`。
   - 多选栏、转发选择、媒体查看器已由独立组件承载。
-- [ ] P3-D：`MessageServiceNotifier` 按连接、消息、会话、群组职责拆分。
+- [x] P3-D：`MessageServiceNotifier` 按连接、消息、会话、群组职责拆分。
   - 已完成：`MessageServiceState` 独立文件、时间规范化独立 helper。
   - 已完成：消息/会话状态变更抽成 `MessageServiceReducer` 并补单测。
-  - 待完成：连接/会话等 IO 方法职责级拆分。
+  - 已完成：连接、会话、社交（好友/群组/用户）IO 拆成独立 controller。
