@@ -26,4 +26,4 @@ export 'network_service.dart';
 export 'group_service.dart';
 export 'friend_service.dart';
 
-export '../../src/rust/model/user.dart' show UserInfo;
+export '../../generated/rust/model/user.dart' show UserInfo;

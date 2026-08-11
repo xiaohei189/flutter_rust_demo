@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/friend_search_repository.dart';
 import '../../../../domain/models/friend_search_result.dart';
-import '../../../../providers/friend_provider.dart';
+import '../providers/friend_provider.dart';
 
 class FriendSearchState {
   final List<FriendSearchResult> results;

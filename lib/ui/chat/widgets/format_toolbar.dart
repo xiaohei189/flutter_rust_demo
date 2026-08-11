@@ -22,21 +22,16 @@ class FormatToolbar extends StatelessWidget {
   final MarkdownFormatCallback onFormat;
   final VoidCallback? onClose;
 
-  const FormatToolbar({
-    super.key,
-    required this.onFormat,
-    this.onClose,
-  });
+  const FormatToolbar({super.key, required this.onFormat, this.onClose});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       height: AppTheme.formatBarHeight,
-      decoration: const BoxDecoration(
-        color: AppTheme.formatBarBg,
-        border: Border(
-          top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        color: colors.formatBarBackground,
+        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
       ),
       child: Row(
         children: [
@@ -45,16 +40,26 @@ class FormatToolbar extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-                _buildButton(MarkdownFormat.bold, 'B', '粗体'),
-                _buildButton(MarkdownFormat.italic, 'I', '斜体'),
-                _buildButton(MarkdownFormat.strikethrough, 'S', '删除线',
-                    strikethrough: true),
-                _buildButton(MarkdownFormat.heading, 'H', '标题'),
-                _buildButton(MarkdownFormat.inlineCode, '<>', '行内代码',
-                    monospace: true),
-                _buildButton(MarkdownFormat.quote, '"', '引用'),
-                _buildButton(MarkdownFormat.bulletList, '•', '列表'),
-                _buildButton(MarkdownFormat.link, '🔗', '链接'),
+                _buildButton(context, MarkdownFormat.bold, 'B', '粗体'),
+                _buildButton(context, MarkdownFormat.italic, 'I', '斜体'),
+                _buildButton(
+                  context,
+                  MarkdownFormat.strikethrough,
+                  'S',
+                  '删除线',
+                  strikethrough: true,
+                ),
+                _buildButton(context, MarkdownFormat.heading, 'H', '标题'),
+                _buildButton(
+                  context,
+                  MarkdownFormat.inlineCode,
+                  '<>',
+                  '行内代码',
+                  monospace: true,
+                ),
+                _buildButton(context, MarkdownFormat.quote, '"', '引用'),
+                _buildButton(context, MarkdownFormat.bulletList, '•', '列表'),
+                _buildButton(context, MarkdownFormat.link, '🔗', '链接'),
               ],
             ),
           ),
@@ -67,7 +72,7 @@ class FormatToolbar extends StatelessWidget {
                 icon: const Icon(Icons.close, size: 16),
                 onPressed: onClose,
                 padding: EdgeInsets.zero,
-                color: AppTheme.textSecondaryColor,
+                color: colors.textSecondary,
               ),
             ),
         ],
@@ -76,12 +81,14 @@ class FormatToolbar extends StatelessWidget {
   }
 
   Widget _buildButton(
+    BuildContext context,
     MarkdownFormat format,
     String label,
     String tooltip, {
     bool strikethrough = false,
     bool monospace = false,
   }) {
+    final colors = context.appColors;
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -96,10 +103,10 @@ class FormatToolbar extends StatelessWidget {
             child: strikethrough
                 ? Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor,
+                      color: colors.textPrimary,
                       decoration: TextDecoration.lineThrough,
                     ),
                   )
@@ -108,7 +115,7 @@ class FormatToolbar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor,
+                      color: colors.textPrimary,
                       fontFamily: monospace ? 'monospace' : null,
                     ),
                   ),

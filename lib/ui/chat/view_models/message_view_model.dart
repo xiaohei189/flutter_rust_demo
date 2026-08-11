@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../src/rust/constant/enums.dart';
-import '../../../src/rust/model/message.dart' show MessageInfo;
-import '../../../src/rust/model/msg_struct.dart' show MsgStruct;
-import '../../../providers/message_service_provider.dart';
+import '../../../generated/rust/constant/enums.dart';
+import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../generated/rust/model/msg_struct.dart' show MsgStruct;
+import '../providers/message_service_provider.dart';
 import 'message_service_notifier.dart';
 
 /// 消息列表状态
@@ -34,8 +34,7 @@ class MessageListState {
     );
   }
 
-  MessageInfo? get latestMessage =>
-      messages.isNotEmpty ? messages.last : null;
+  MessageInfo? get latestMessage => messages.isNotEmpty ? messages.last : null;
 
   MessageInfo? get earliestMessage =>
       messages.isNotEmpty ? messages.first : null;

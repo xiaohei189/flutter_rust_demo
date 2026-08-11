@@ -7,6 +7,8 @@ import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../../../ui/core/widgets/state_views.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../view_models/friend_list_view_model.dart';
 
 /// 好友列表页面
@@ -19,20 +21,12 @@ class FriendListScreen extends ConsumerStatefulWidget {
 
 class _FriendListScreenState extends ConsumerState<FriendListScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(friendListProvider.notifier).loadFriends();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final friendState = ref.watch(friendListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('好友列表'),
+        title: Text(AppLocalizations.of(context)?.friendListTitle ?? '好友列表'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -50,12 +44,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
     }
 
     if (friendState.friends.isEmpty) {
-      return const Center(
-        child: Text(
-          '暂无好友',
-          style: TextStyle(fontSize: 16, color: Color(0xFF8E8E93)),
-        ),
-      );
+      return const EmptyState(icon: Icons.person_off_outlined, title: '暂无好友');
     }
 
     return ListView.builder(

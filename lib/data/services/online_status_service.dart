@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import '../../src/rust/ffi/client.dart' as fb;
-import '../../src/rust/http/online.dart' show OnlineStatus;
+import '../../generated/rust/ffi/client.dart' as fb;
+import '../../generated/rust/http/online.dart' show OnlineStatus;
 import '../../ui/core/utils/app_logger.dart';
 
 class OnlineStatusService {

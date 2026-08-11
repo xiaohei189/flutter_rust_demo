@@ -8,11 +8,7 @@ class AttachmentItem {
   final String label;
   final VoidCallback? onTap;
 
-  const AttachmentItem({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  const AttachmentItem({required this.icon, required this.label, this.onTap});
 }
 
 /// 附件 Grid 面板：在输入区上方展开，4 列宫格布局
@@ -20,21 +16,16 @@ class AttachmentPanel extends StatelessWidget {
   final List<AttachmentItem> items;
   final VoidCallback? onItemTap;
 
-  const AttachmentPanel({
-    super.key,
-    required this.items,
-    this.onItemTap,
-  });
+  const AttachmentPanel({super.key, required this.items, this.onItemTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: const BoxDecoration(
-        color: AppTheme.attachmentPanelBg,
-        border: Border(
-          top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
-        ),
+      decoration: BoxDecoration(
+        color: colors.attachmentBackground,
+        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
       ),
       child: Wrap(
         spacing: 12,
@@ -45,6 +36,7 @@ class AttachmentPanel extends StatelessWidget {
   }
 
   Widget _buildItem(BuildContext context, AttachmentItem item) {
+    final colors = context.appColors;
     final enabled = item.onTap != null;
     return SizedBox(
       width: 72,
@@ -53,7 +45,7 @@ class AttachmentPanel extends StatelessWidget {
           item.onTap?.call();
           onItemTap?.call();
         },
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -62,16 +54,14 @@ class AttachmentPanel extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: enabled
-                    ? AppTheme.primaryColor.withValues(alpha: 0.08)
-                    : AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
+                    ? colors.primary.withValues(alpha: 0.08)
+                    : colors.background,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: Icon(
                 item.icon,
                 size: 28,
-                color: enabled
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondaryColor,
+                color: enabled ? colors.primary : colors.textSecondary,
               ),
             ),
             const SizedBox(height: 6),
@@ -80,8 +70,8 @@ class AttachmentPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: enabled
-                    ? AppTheme.textPrimaryColor
-                    : AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                    ? colors.textPrimary
+                    : colors.textSecondary.withValues(alpha: 0.5),
               ),
             ),
           ],

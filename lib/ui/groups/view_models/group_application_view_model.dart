@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group_application.dart';
-import '../../../../providers/group_provider.dart';
-import '../../../../providers/message_service_provider.dart';
+import '../providers/group_provider.dart';
+import '../../chat/providers/message_service_provider.dart';
 
 class GroupApplicationState {
   final List<GroupApplication> received;
@@ -36,10 +36,18 @@ class GroupApplicationState {
 }
 
 class GroupApplicationViewModel extends Notifier<GroupApplicationState> {
+  bool _hasLoaded = false;
+
   @override
   GroupApplicationState build() {
     ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision) {
+      if (prev?.groupRevision != next.groupRevision && _hasLoaded) {
+        loadApplications();
+      }
+    });
+    Future.microtask(() {
+      if (!_hasLoaded) {
+        _hasLoaded = true;
         loadApplications();
       }
     });

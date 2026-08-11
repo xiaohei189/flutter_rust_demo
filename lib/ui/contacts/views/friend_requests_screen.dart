@@ -6,6 +6,7 @@ import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// 好友申请页面
 ///
@@ -22,19 +23,16 @@ class FriendRequestsScreen extends ConsumerStatefulWidget {
 
 class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(friendApplyProvider.notifier).loadApplications();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = ref.watch(friendApplyProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('好友申请'), elevation: 0),
+      appBar: AppBar(
+        title: Text(
+          AppLocalizations.of(context)?.friendRequestsTitle ?? '好友申请',
+        ),
+        elevation: 0,
+      ),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -69,15 +67,15 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   Widget _buildSectionHeader(String title, {required int count}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      color: AppTheme.backgroundColor,
+      color: context.appColors.background,
       child: Row(
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor,
+              color: context.appColors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -85,14 +83,14 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.appColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '$count',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.primaryColor,
+                  color: context.appColors.primary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -126,10 +124,10 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
               children: [
                 Text(
                   apply.nickname,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textPrimaryColor,
+                    color: context.appColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -138,9 +136,9 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     apply.reqMsg!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -165,7 +163,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         return TextButton(
           onPressed: () => _showHandleDialog(apply.userId),
           style: TextButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: context.appColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             minimumSize: Size.zero,
@@ -187,9 +185,12 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         );
       case 2:
         // 已拒绝
-        return const Text(
+        return Text(
           '已拒绝',
-          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
+          style: TextStyle(
+            fontSize: 13,
+            color: context.appColors.textSecondary,
+          ),
         );
       default:
         return const SizedBox.shrink();
@@ -220,10 +221,10 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
               children: [
                 Text(
                   apply.nickname,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textPrimaryColor,
+                    color: context.appColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -232,9 +233,9 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     apply.reqMsg!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -256,9 +257,12 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
     switch (apply.handleResult) {
       case 0:
         // 等待验证
-        return const Text(
+        return Text(
           '等待验证',
-          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
+          style: TextStyle(
+            fontSize: 13,
+            color: context.appColors.textSecondary,
+          ),
         );
       case 1:
         // 已同意
@@ -272,9 +276,12 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         );
       case 2:
         // 已拒绝
-        return const Text(
+        return Text(
           '已拒绝',
-          style: TextStyle(fontSize: 13, color: AppTheme.textSecondaryColor),
+          style: TextStyle(
+            fontSize: 13,
+            color: context.appColors.textSecondary,
+          ),
         );
       default:
         return const SizedBox.shrink();
@@ -289,9 +296,9 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: AppTheme.textSecondaryColor,
+            color: context.appColors.textSecondary,
           ),
         ),
       ),
@@ -319,9 +326,9 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
               if (!mounted) return;
               _showApplyFeedback(ok, '已拒绝好友申请', '拒绝好友申请失败');
             },
-            child: const Text(
+            child: Text(
               '拒绝',
-              style: TextStyle(color: AppTheme.textSecondaryColor),
+              style: TextStyle(color: context.appColors.textSecondary),
             ),
           ),
           TextButton(

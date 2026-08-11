@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group.dart';
-import '../../../../providers/group_provider.dart';
+import '../providers/group_provider.dart';
 
 class CreateGroupState {
   final bool isCreating;

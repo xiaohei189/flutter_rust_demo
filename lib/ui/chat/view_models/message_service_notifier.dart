@@ -6,33 +6,35 @@ import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/ui/core/extensions/conversation_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/src/rust/ffi/client.dart' as fb;
-import 'package:flutter_rust_demo/src/rust/ffi/message_advanced.dart'
+import 'package:flutter_rust_demo/generated/rust/ffi/client.dart' as fb;
+import 'package:flutter_rust_demo/generated/rust/ffi/message_advanced.dart'
     show sendMessage;
-import 'package:flutter_rust_demo/src/rust/model/msg_struct.dart'
+import 'package:flutter_rust_demo/generated/rust/model/msg_struct.dart'
     show MsgStruct;
-import 'package:flutter_rust_demo/src/rust/client/config.dart';
-import 'package:flutter_rust_demo/src/rust/constant/enums.dart';
-import 'package:flutter_rust_demo/src/rust/model/user.dart' show UserInfo;
-import 'package:flutter_rust_demo/src/rust/model/local.dart'
+import 'package:flutter_rust_demo/generated/rust/client/config.dart';
+import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
+import 'package:flutter_rust_demo/generated/rust/model/user.dart' show UserInfo;
+import 'package:flutter_rust_demo/generated/rust/model/local.dart'
     show LocalChatLog, LocalConversation;
-import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart' show initLogger;
-import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/domain/models/message_ext.dart'
+import 'package:flutter_rust_demo/generated/rust/ffi/ffi_init.dart'
+    show initLogger;
+import 'package:flutter_rust_demo/generated/rust/model/message.dart'
+    show MessageInfo;
+import 'package:flutter_rust_demo/domain/extensions/message_ext.dart'
     show MessageInfoExt, sortMessagesByTime;
-import 'package:flutter_rust_demo/src/rust/event/events/connection.dart';
-import 'package:flutter_rust_demo/src/rust/event/events/conversation.dart';
-import 'package:flutter_rust_demo/src/rust/event/events/friend.dart';
-import 'package:flutter_rust_demo/src/rust/event/events/group.dart';
-import 'package:flutter_rust_demo/src/rust/event/events/message.dart';
-import 'package:flutter_rust_demo/src/rust/event/events/user.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/connection.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/conversation.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/friend.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/group.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
+import 'package:flutter_rust_demo/generated/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/ui/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/data/services/navigation_service.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/data/services/online_status_service.dart';
-import 'package:flutter_rust_demo/providers/message_service_provider.dart';
+import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 
 /// MessageService 的状态类
 class MessageServiceState {

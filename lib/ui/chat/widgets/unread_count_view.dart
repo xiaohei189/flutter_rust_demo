@@ -5,11 +5,7 @@ import '../../core/theme/app_theme.dart';
 
 /// 未读数角标：红色小圆点（数字或单纯红点）
 class UnreadCountView extends StatelessWidget {
-  const UnreadCountView({
-    super.key,
-    this.count = 0,
-    this.size = 18,
-  });
+  const UnreadCountView({super.key, this.count = 0, this.size = 18});
 
   final int count;
   final double size;
@@ -18,6 +14,7 @@ class UnreadCountView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
     final text = count > 99 ? '99+' : '$count';
+    final colors = context.appColors;
     return Container(
       alignment: Alignment.center,
       constraints: BoxConstraints(
@@ -26,7 +23,7 @@ class UnreadCountView extends StatelessWidget {
         maxWidth: count > 99 ? size * 1.8 : size,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.unreadRed,
+        color: colors.danger,
         shape: count > 99 ? BoxShape.rectangle : BoxShape.circle,
         borderRadius: count > 99 ? BorderRadius.circular(size / 2) : null,
       ),

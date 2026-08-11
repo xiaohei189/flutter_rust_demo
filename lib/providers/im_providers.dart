@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/services.dart';
 import '../domain/models/conversation.dart';
-import 'message_service_provider.dart';
+import '../ui/chat/providers/message_service_provider.dart';
 
 // ==================== ImClient Provider ====================
 

@@ -6,6 +6,8 @@ import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../../../ui/core/widgets/state_views.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// 黑名单页面：展示已拉黑用户，支持移出黑名单。
 class BlacklistScreen extends ConsumerStatefulWidget {
@@ -16,14 +18,6 @@ class BlacklistScreen extends ConsumerStatefulWidget {
 }
 
 class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(blackListProvider.notifier).load();
-    });
-  }
-
   Future<void> _removeBlack(String userId, String nickname) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -59,9 +53,9 @@ class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
     final state = ref.watch(blackListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
-        title: const Text('黑名单'),
+        title: Text(AppLocalizations.of(context)?.blacklistTitle ?? '黑名单'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
@@ -70,13 +64,13 @@ class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.users.isEmpty
-          ? const Center(child: Text('黑名单为空'))
+          ? const EmptyState(icon: Icons.block_outlined, title: '黑名单为空')
           : ListView.separated(
               itemCount: state.users.length,
-              separatorBuilder: (_, __) => const Divider(
+              separatorBuilder: (_, __) => Divider(
                 height: 1,
                 indent: 64,
-                color: AppTheme.dividerColor,
+                color: context.appColors.divider,
               ),
               itemBuilder: (_, i) {
                 final user = state.users[i];
@@ -100,9 +94,9 @@ class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
                   ),
                   trailing: TextButton(
                     onPressed: () => _removeBlack(user.userId, user.nickname),
-                    child: const Text(
+                    child: Text(
                       '移出',
-                      style: TextStyle(color: AppTheme.primaryColor),
+                      style: TextStyle(color: context.appColors.primary),
                     ),
                   ),
                   onTap: () => AppRouter.goToUserProfile(

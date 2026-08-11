@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../src/rust/event/events/connection.dart';
+import '../../generated/rust/event/events/connection.dart';
 import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 

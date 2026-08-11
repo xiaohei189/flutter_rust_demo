@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter_rust_demo/src/rust/frb_generated.dart';
-import 'package:flutter_rust_demo/src/rust/ffi/ffi_init.dart'
+import 'package:flutter_rust_demo/generated/rust/frb_generated.dart';
+import 'package:flutter_rust_demo/generated/rust/ffi/ffi_init.dart'
     show setLogDirectory;
 
 import 'router/app_router.dart';
@@ -15,8 +16,9 @@ import 'data/services/im_client.dart';
 import 'data/services/app_lifecycle_service.dart';
 import 'data/services/local_notification_service.dart';
 import 'data/services/locale_service.dart';
-import 'src/rust/ffi/global.dart' show setAppBackgroundStatus;
+import 'generated/rust/ffi/global.dart' show setAppBackgroundStatus;
 import 'ui/core/widgets/app_lock_gate.dart';
+import 'l10n/app_localizations.dart';
 
 /// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
@@ -78,7 +80,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final background = state != AppLifecycleState.resumed;
     AppLifecycleService.instance.update(background: background);
     try {
-      setAppBackgroundStatus(isBackground: background);
+      unawaited(
+        setAppBackgroundStatus(isBackground: background).catchError((_) {}),
+      );
     } catch (_) {
       // SDK 未初始化时忽略前后台状态
     }
@@ -95,18 +99,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleService.instance.locale,
         builder: (context, locale, _) => MaterialApp.router(
-          title: 'Flutter 聊天应用',
+          onGenerateTitle: (context) =>
+              AppLocalizations.of(context)?.appTitle ?? 'Flutter 聊天应用',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
           locale: locale,
-          supportedLocales: const [Locale('zh'), Locale('en')],
+          supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
+            AppLocalizations.delegate,
           ],
-          builder: (context, child) =>
-              AppLockGate(child: child ?? const SizedBox.shrink()),
+          builder: (context, child) => MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: AppLockGate(child: child ?? const SizedBox.shrink()),
+          ),
           routerConfig: router,
         ),
       ),

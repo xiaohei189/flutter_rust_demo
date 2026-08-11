@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../providers/user_profile_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../../../../router/app_router.dart';
-import 'my_profile_screen.dart';
-import 'qr_code_screen.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../domain/models/user.dart';
 import '../view_models/user_profile_view_model.dart';
+import '../widgets/drawer_menu_item.dart';
 
 /// 个人资料左侧抽屉（参考飞书风格）
 /// 从左侧滑入，占满屏幕高度，宽度约 80%
@@ -75,6 +74,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.appColors;
     final panelWidth = MediaQuery.of(context).size.width * 0.82;
     final state = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
@@ -92,7 +92,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
             child: Container(
               width: panelWidth,
               height: double.infinity,
-              color: Colors.white,
+              color: colors.surface,
               child: SafeArea(
                 child: Column(
                   children: [
@@ -112,12 +112,8 @@ class ProfileDrawerScreen extends ConsumerWidget {
                           onOpenMyProfile!();
                           return;
                         }
-                        // 用 Navigator.push 推入同一栈，抽屉保持在下方不动
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const MyProfileScreen(),
-                          ),
-                        );
+                        // 用 GoRouter push 推入同一栈，抽屉保持在下方不动
+                        AppRouter.goToMyProfile(context);
                       },
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 12, 14, 4),
@@ -126,10 +122,10 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 currentUser.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimaryColor,
+                                  color: colors.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -138,29 +134,26 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             // QR 码独立热区
                             Material(
-                              color: Colors.grey.withValues(alpha: 0.1),
+                              color: colors.surfaceMuted,
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(8),
                                 onTap: () {
                                   if (currentUser.id.isNotEmpty) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => QrCodeScreen(
-                                          title: '我的二维码',
-                                          data: currentUser.id,
-                                          subtitle: currentUser.name,
-                                        ),
-                                      ),
+                                    AppRouter.goToQrCode(
+                                      context,
+                                      title: '我的二维码',
+                                      data: currentUser.id,
+                                      subtitle: currentUser.name,
                                     );
                                   }
                                 },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
                                   child: Icon(
                                     Icons.qr_code_2,
                                     size: 22,
-                                    color: AppTheme.textPrimaryColor,
+                                    color: colors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -169,7 +162,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             Icon(
                               Icons.chevron_right,
                               size: 22,
-                              color: AppTheme.textSecondaryColor.withValues(
+                              color: colors.textSecondary.withValues(
                                 alpha: 0.4,
                               ),
                             ),
@@ -186,9 +179,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                           signature,
                           style: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textSecondaryColor.withValues(
-                              alpha: 0.7,
-                            ),
+                            color: colors.textSecondary.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -199,7 +190,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                       child: ListView(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         children: [
-                          _MenuItem(
+                          DrawerMenuItem(
                             icon: Icons.person_outline,
                             label: '我的个人名片',
                             onTap: () {
@@ -207,29 +198,25 @@ class ProfileDrawerScreen extends ConsumerWidget {
                                 onOpenMyProfile!();
                                 return;
                               }
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const MyProfileScreen(),
-                                ),
-                              );
+                              AppRouter.goToMyProfile(context);
                             },
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: Divider(height: 24),
                           ),
-                          _MenuItem(
+                          DrawerMenuItem(
                             icon: Icons.headset_mic_outlined,
                             label: '帮助与客服',
                             onTap: () => _showAbout(context),
                           ),
-                          _MenuItem(
+                          DrawerMenuItem(
                             icon: Icons.devices_outlined,
                             label: '登录设备',
                             trailing: '1',
                             onTap: () => _showDevices(context),
                           ),
-                          _MenuItem(
+                          DrawerMenuItem(
                             icon: Icons.settings_outlined,
                             label: '设置',
                             onTap: () => AppRouter.goToAccountSettings(context),
@@ -241,58 +228,6 @@ class ProfileDrawerScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MenuItem extends StatelessWidget {
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.trailing,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final String? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, size: 24, color: AppTheme.textPrimaryColor),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textPrimaryColor,
-                  ),
-                ),
-              ),
-              if (trailing != null) ...[
-                Text(
-                  trailing!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(width: 4),
-              ],
-            ],
           ),
         ),
       ),

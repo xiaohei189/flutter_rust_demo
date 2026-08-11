@@ -4,18 +4,24 @@ import 'package:intl/intl.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../../../domain/models/message.dart';
-import '../../../domain/models/message_ext.dart';
+import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
 import '../../../router/app_router.dart';
-import '../../../src/rust/event/events/message.dart' show GroupReadReceipt;
-import '../../../src/rust/model/message.dart' show MessageInfo;
-import '../../../src/rust/model/user.dart' show UserInfo;
+import '../../../generated/rust/event/events/message.dart'
+    show GroupReadReceipt;
+import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../../data/services/audio_player_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_image.dart';
 import '../../core/widgets/user_avatar.dart';
 
 /// 消息气泡：支持所有消息类型的渲染
 class MessageBubble extends StatelessWidget {
+  static final DateFormat _timeFormat = DateFormat('HH:mm');
+  static final DateFormat _monthDayFormat = DateFormat('MM月dd日');
+  static final DateFormat _fullDateFormat = DateFormat('yyyy年MM月dd日');
+
   final MessageInfo message;
   final User otherUser;
   final String? currentUserId;
@@ -87,8 +93,8 @@ class MessageBubble extends StatelessWidget {
         child: Center(
           child: Text(
             message.displayText,
-            style: const TextStyle(
-              color: AppTheme.textSecondaryColor,
+            style: TextStyle(
+              color: context.appColors.textSecondary,
               fontSize: 12,
             ),
             textAlign: TextAlign.center,
@@ -100,15 +106,16 @@ class MessageBubble extends StatelessWidget {
     final isFromMe = _isFromMe;
     final timeText = _formatMessageTime(message.sendDateTime);
     final senderUser = _buildSenderUser();
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
     // 消息气泡内容
     final bubble = Container(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.65,
-      ),
+      constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isFromMe ? AppTheme.myMessageColor : AppTheme.otherMessageColor,
+        color: isFromMe
+            ? context.appColors.bubbleMine
+            : context.appColors.bubbleOther,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -121,7 +128,7 @@ class MessageBubble extends StatelessWidget {
 
     // 引用消息预览
     final quotePreview = message.messageType == MessageType.quote
-        ? _buildQuotePreview(context, isFromMe)
+        ? _buildQuotePreview(context, screenWidth, isFromMe)
         : const SizedBox.shrink();
 
     return Padding(
@@ -187,7 +194,9 @@ class MessageBubble extends StatelessWidget {
                   timeText,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                    color: context.appColors.textSecondary.withValues(
+                      alpha: 0.8,
+                    ),
                   ),
                 ),
                 if (isFromMe) ...[const SizedBox(width: 4), _buildStatusIcon()],
@@ -206,9 +215,9 @@ class MessageBubble extends StatelessWidget {
               ),
               child: Text(
                 '已读 ${groupReadReceipt!.hasReadCount}/${groupReadReceipt!.groupMemberCount}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppTheme.textSecondaryColor,
+                  color: context.appColors.textSecondary,
                 ),
               ),
             ),
@@ -256,7 +265,9 @@ class MessageBubble extends StatelessWidget {
 
   /// 根据消息类型构建消息内容
   Widget _buildMessageContent(BuildContext context, bool isFromMe) {
-    final textColor = isFromMe ? Colors.white : AppTheme.otherMessageTextColor;
+    final textColor = isFromMe
+        ? Colors.white
+        : context.appColors.bubbleOtherText;
 
     return switch (message.messageType) {
       MessageType.image => _buildImageMessage(context),
@@ -282,8 +293,10 @@ class MessageBubble extends StatelessWidget {
 
   // ===== Markdown 消息 =====
   Widget _buildMarkdownMessage(BuildContext context, bool isFromMe) {
-    final textColor = isFromMe ? Colors.white : AppTheme.otherMessageTextColor;
-    final linkColor = isFromMe ? Colors.white70 : AppTheme.primaryColor;
+    final textColor = isFromMe
+        ? Colors.white
+        : context.appColors.bubbleOtherText;
+    final linkColor = isFromMe ? Colors.white70 : context.appColors.primary;
     final codeBgColor = isFromMe
         ? Colors.white.withValues(alpha: 0.15)
         : Colors.black.withValues(alpha: 0.06);
@@ -385,23 +398,13 @@ class MessageBubble extends StatelessWidget {
       context,
       ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: source.startsWith('http')
-            ? Image.network(
-                source,
-                width: 150,
-                height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.broken_image, size: 60),
-              )
-            : Image.asset(
-                source,
-                width: 150,
-                height: 150,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.broken_image, size: 60),
-              ),
+        child: AppImage(
+          source: source,
+          width: 150,
+          height: 150,
+          fit: BoxFit.cover,
+          cacheWidth: 300,
+        ),
       ),
     );
   }
@@ -417,19 +420,13 @@ class MessageBubble extends StatelessWidget {
           if (snap.isNotEmpty)
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: snap.startsWith('http')
-                  ? Image.network(
-                      snap,
-                      width: 150,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    )
-                  : Image.asset(
-                      snap,
-                      width: 150,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
+              child: AppImage(
+                source: snap,
+                width: 150,
+                height: 120,
+                fit: BoxFit.cover,
+                cacheWidth: 300,
+              ),
             )
           else
             Container(
@@ -480,13 +477,15 @@ class MessageBubble extends StatelessWidget {
           Icon(
             Icons.play_circle_outline,
             size: 24,
-            color: isFromMe ? Colors.white : AppTheme.primaryColor,
+            color: isFromMe ? Colors.white : context.appColors.primary,
           ),
           const SizedBox(width: 8),
           Text(
             message.audioDurationString,
             style: TextStyle(
-              color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+              color: isFromMe
+                  ? Colors.white
+                  : context.appColors.bubbleOtherText,
               fontSize: 16,
             ),
           ),
@@ -506,7 +505,7 @@ class MessageBubble extends StatelessWidget {
       'zip' || 'rar' => Icons.folder_zip,
       _ => Icons.insert_drive_file,
     };
-    final iconColor = isFromMe ? Colors.white70 : AppTheme.primaryColor;
+    final iconColor = isFromMe ? Colors.white70 : context.appColors.primary;
 
     return _withUploadProgress(
       context,
@@ -527,7 +526,7 @@ class MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     color: isFromMe
                         ? Colors.white
-                        : AppTheme.otherMessageTextColor,
+                        : context.appColors.bubbleOtherText,
                     fontSize: 14,
                   ),
                 ),
@@ -537,7 +536,7 @@ class MessageBubble extends StatelessWidget {
                     style: TextStyle(
                       color: isFromMe
                           ? Colors.white70
-                          : AppTheme.textSecondaryColor,
+                          : context.appColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -590,7 +589,7 @@ class MessageBubble extends StatelessWidget {
                       style: TextStyle(
                         color: isFromMe
                             ? Colors.white
-                            : AppTheme.otherMessageTextColor,
+                            : context.appColors.bubbleOtherText,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -602,7 +601,7 @@ class MessageBubble extends StatelessWidget {
                       style: TextStyle(
                         color: isFromMe
                             ? Colors.white70
-                            : AppTheme.textSecondaryColor,
+                            : context.appColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -618,7 +617,9 @@ class MessageBubble extends StatelessWidget {
           Text(
             '个人名片',
             style: TextStyle(
-              color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
+              color: isFromMe
+                  ? Colors.white70
+                  : context.appColors.textSecondary,
               fontSize: 12,
             ),
           ),
@@ -650,7 +651,9 @@ class MessageBubble extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+              color: isFromMe
+                  ? Colors.white
+                  : context.appColors.bubbleOtherText,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -674,7 +677,7 @@ class MessageBubble extends StatelessWidget {
                     style: TextStyle(
                       color: isFromMe
                           ? Colors.white70
-                          : AppTheme.textSecondaryColor,
+                          : context.appColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -687,7 +690,9 @@ class MessageBubble extends StatelessWidget {
             child: Text(
               '$count条消息',
               style: TextStyle(
-                color: isFromMe ? Colors.white54 : AppTheme.textSecondaryColor,
+                color: isFromMe
+                    ? Colors.white54
+                    : context.appColors.textSecondary,
                 fontSize: 11,
               ),
             ),
@@ -698,13 +703,15 @@ class MessageBubble extends StatelessWidget {
   }
 
   // ===== 引用消息预览 =====
-  Widget _buildQuotePreview(BuildContext context, bool isFromMe) {
+  Widget _buildQuotePreview(
+    BuildContext context,
+    double screenWidth,
+    bool isFromMe,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.75,
-      ),
+      constraints: BoxConstraints(maxWidth: screenWidth * 0.75),
       decoration: BoxDecoration(
         color: isFromMe
             ? Colors.white.withValues(alpha: 0.15)
@@ -719,7 +726,7 @@ class MessageBubble extends StatelessWidget {
             Text(
               message.quoteSenderNickname,
               style: TextStyle(
-                color: isFromMe ? Colors.white70 : AppTheme.primaryColor,
+                color: isFromMe ? Colors.white70 : context.appColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -730,7 +737,9 @@ class MessageBubble extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isFromMe ? Colors.white60 : AppTheme.textSecondaryColor,
+                color: isFromMe
+                    ? Colors.white60
+                    : context.appColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -745,13 +754,13 @@ class MessageBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildQuotePreview(context, isFromMe),
+        _buildQuotePreview(context, MediaQuery.sizeOf(context).width, isFromMe),
         Text(
           message.quoteText.isNotEmpty
               ? message.quoteText
               : message.displayText,
           style: TextStyle(
-            color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+            color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
             fontSize: 16,
           ),
         ),
@@ -767,7 +776,7 @@ class MessageBubble extends StatelessWidget {
       return Text(
         text,
         style: TextStyle(
-          color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+          color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
           fontSize: 16,
         ),
       );
@@ -776,7 +785,7 @@ class MessageBubble extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+        color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
         fontSize: 16,
       ),
     );
@@ -809,7 +818,7 @@ class MessageBubble extends StatelessWidget {
               Icon(
                 Icons.location_on,
                 size: 20,
-                color: isFromMe ? Colors.white : AppTheme.primaryColor,
+                color: isFromMe ? Colors.white : context.appColors.primary,
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -820,7 +829,7 @@ class MessageBubble extends StatelessWidget {
                   style: TextStyle(
                     color: isFromMe
                         ? Colors.white
-                        : AppTheme.otherMessageTextColor,
+                        : context.appColors.bubbleOtherText,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -835,7 +844,9 @@ class MessageBubble extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isFromMe ? Colors.white70 : AppTheme.textSecondaryColor,
+                color: isFromMe
+                    ? Colors.white70
+                    : context.appColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -858,7 +869,7 @@ class MessageBubble extends StatelessWidget {
       child: Text(
         message.displayText.isNotEmpty ? message.displayText : '[自定义消息]',
         style: TextStyle(
-          color: isFromMe ? Colors.white : AppTheme.otherMessageTextColor,
+          color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
           fontSize: 14,
         ),
       ),
@@ -870,15 +881,12 @@ class MessageBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.textSecondaryColor.withValues(alpha: 0.15),
+        color: context.appColors.textSecondary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         message.displayText,
-        style: const TextStyle(
-          color: AppTheme.textSecondaryColor,
-          fontSize: 12,
-        ),
+        style: TextStyle(color: context.appColors.textSecondary, fontSize: 12),
         textAlign: TextAlign.center,
       ),
     );
@@ -894,7 +902,7 @@ class MessageBubble extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final msgDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
     final diff = today.difference(msgDay).inDays;
-    final timeStr = DateFormat('HH:mm').format(dateTime);
+    final timeStr = _timeFormat.format(dateTime);
 
     if (diff == 0) {
       return timeStr;
@@ -904,9 +912,9 @@ class MessageBubble extends StatelessWidget {
       const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       return '${weekdays[dateTime.weekday - 1]} $timeStr';
     } else if (now.year == dateTime.year) {
-      return '${DateFormat('MM月dd日').format(dateTime)} $timeStr';
+      return '${_monthDayFormat.format(dateTime)} $timeStr';
     } else {
-      return '${DateFormat('yyyy年MM月dd日').format(dateTime)} $timeStr';
+      return '${_fullDateFormat.format(dateTime)} $timeStr';
     }
   }
 }

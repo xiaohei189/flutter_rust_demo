@@ -3,8 +3,7 @@ import 'package:flutter/widget_previews.dart';
 
 import '../theme/app_theme.dart';
 
-/// 区块标题组件
-/// 用于卡片内部的区块分隔标题
+/// 区块标题组件，用于卡片内部的区块分隔标题。
 class SectionTitle extends StatelessWidget {
   const SectionTitle({
     super.key,
@@ -23,18 +22,19 @@ class SectionTitle extends StatelessWidget {
       padding: padding,
       child: Text(
         title,
-        style: style ??
+        style:
+            style ??
             TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+              color: context.appColors.textSecondary.withValues(alpha: 0.8),
             ),
       ),
     );
   }
 }
 
-/// 带图标的区块标题组件
+/// 带图标的区块标题组件。
 class SectionTitleWithIcon extends StatelessWidget {
   const SectionTitleWithIcon({
     super.key,
@@ -51,22 +51,19 @@ class SectionTitleWithIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: padding,
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: iconColor ?? AppTheme.primaryColor,
-          ),
+          Icon(icon, size: 16, color: iconColor ?? colors.primary),
           const SizedBox(width: 6),
           Text(
             title,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+              color: colors.textSecondary.withValues(alpha: 0.8),
             ),
           ),
         ],

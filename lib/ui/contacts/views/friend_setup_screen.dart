@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../providers/providers.dart';
-import '../../../../src/rust/constant/enums.dart' show SessionType;
+import '../../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/utils/app_logger.dart';
 
@@ -40,8 +40,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
     try {
-      final client =
-          ref.read(messageServiceProvider.notifier).client;
+      final client = ref.read(messageServiceProvider.notifier).client;
       if (client == null) return;
 
       // 获取单聊会话 ID
@@ -53,13 +52,13 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
       // 从会话列表中查找该会话的设置
       final conversations = ref.read(conversationsProvider);
-      final conv = conversations.where(
-        (c) => c.conversationId == convId,
-      ).firstOrNull;
+      final conv = conversations
+          .where((c) => c.conversationId == convId)
+          .firstOrNull;
 
       if (conv != null) {
         _isMuted = conv.recvMsgOpt == 1;
-    _isPinned = conv.isPinned;
+        _isPinned = conv.isPinned;
       }
 
       // 检查黑名单
@@ -76,10 +75,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('好友设置'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('好友设置'), elevation: 0),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -89,10 +85,10 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
                 // 设置备注
                 _buildSettingItem(
                   title: '设置备注',
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.arrow_forward_ios,
                     size: 14,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                   onTap: _showRemarkDialog,
                 ),
@@ -126,10 +122,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
                 const SizedBox(height: 24),
 
                 // 删除好友
-                _buildDangerButton(
-                  title: '删除好友',
-                  onTap: _confirmDeleteFriend,
-                ),
+                _buildDangerButton(title: '删除好友', onTap: _confirmDeleteFriend),
 
                 const SizedBox(height: 40),
               ],
@@ -153,9 +146,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: AppTheme.textPrimaryColor,
+                  color: context.appColors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -186,7 +179,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
                 fontSize: 16,
                 color: isDestructive
                     ? const Color(0xFFFF3B30)
-                    : AppTheme.textPrimaryColor,
+                    : context.appColors.textPrimary,
               ),
             ),
             const Spacer(),
@@ -195,7 +188,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
               onChanged: onChanged,
               activeThumbColor: isDestructive
                   ? const Color(0xFFFF3B30)
-                  : AppTheme.primaryColor,
+                  : context.appColors.primary,
             ),
           ],
         ),
@@ -246,13 +239,11 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
           controller: controller,
           decoration: InputDecoration(
             hintText: '请输入备注名称',
-            hintStyle: const TextStyle(
-              color: AppTheme.textSecondaryColor,
+            hintStyle: TextStyle(
+              color: context.appColors.textSecondary,
               fontSize: 14,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 10,
@@ -286,10 +277,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
   /// 更新备注
   Future<void> _updateRemark(String remark) async {
     try {
-      await ref.read(friendRepositoryProvider).updateFriends(
-        widget.userId,
-        remark: remark,
-      );
+      await ref
+          .read(friendRepositoryProvider)
+          .updateFriends(widget.userId, remark: remark);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -313,8 +303,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
   /// 切换消息免打扰
   Future<void> _toggleMute(bool value) async {
-    final client =
-        ref.read(messageServiceProvider.notifier).client;
+    final client = ref.read(messageServiceProvider.notifier).client;
     if (client == null || _conversationId == null) return;
 
     try {
@@ -338,8 +327,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
 
   /// 切换置顶聊天
   Future<void> _togglePin(bool value) async {
-    final client =
-        ref.read(messageServiceProvider.notifier).client;
+    final client = ref.read(messageServiceProvider.notifier).client;
     if (client == null || _conversationId == null) return;
 
     try {
@@ -421,10 +409,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              '删除',
-              style: TextStyle(color: Color(0xFFFF3B30)),
-            ),
+            child: const Text('删除', style: TextStyle(color: Color(0xFFFF3B30))),
           ),
         ],
       ),

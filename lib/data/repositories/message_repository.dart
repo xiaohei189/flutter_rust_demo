@@ -2,15 +2,15 @@ import 'dart:typed_data' show Int32List;
 
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
-import '../../src/rust/client.dart';
-import '../../src/rust/constant/enums.dart' show SessionType;
-import '../../src/rust/ffi/client.dart';
-import '../../src/rust/ffi/message.dart' as ffi_message;
-import '../../src/rust/ffi/message_advanced.dart' as ffi_message_advanced;
-import '../../src/rust/http/message.dart' show RevokeMessageReq;
-import '../../src/rust/model/local.dart' show LocalChatLog;
-import '../../src/rust/model/msg_struct.dart' show MsgStruct;
-import '../../src/rust/model/user.dart' show UserInfo;
+import '../../generated/rust/client.dart';
+import '../../generated/rust/constant/enums.dart' show SessionType;
+import '../../generated/rust/ffi/client.dart';
+import '../../generated/rust/ffi/message.dart' as ffi_message;
+import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
+import '../../generated/rust/http/message.dart' show RevokeMessageReq;
+import '../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
+import '../../generated/rust/model/user.dart' show UserInfo;
 
 abstract class MessageRepository {
   Future<List<UserInfo>> getUsersInfo(List<String> userIds);

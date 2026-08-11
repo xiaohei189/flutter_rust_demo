@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
+import 'package:flutter_rust_demo/ui/core/theme/app_theme.dart';
 
 /// 消息状态指示器组件
 class MessageStatusIndicator extends StatelessWidget {
   final MessageSendStatus status;
   final VoidCallback? onRetry;
 
-  const MessageStatusIndicator({
-    super.key,
-    required this.status,
-    this.onRetry,
-  });
+  const MessageStatusIndicator({super.key, required this.status, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     switch (status) {
       case MessageSendStatus.sending:
         return SizedBox(
@@ -21,9 +19,7 @@ class MessageStatusIndicator extends StatelessWidget {
           height: 16,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.grey.shade400,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(colors.textSecondary),
           ),
         );
 
@@ -33,11 +29,7 @@ class MessageStatusIndicator extends StatelessWidget {
       case MessageSendStatus.sendFailed:
         return GestureDetector(
           onTap: onRetry,
-          child: const Icon(
-            Icons.error_outline,
-            size: 18,
-            color: Colors.red,
-          ),
+          child: Icon(Icons.error_outline, size: 18, color: colors.danger),
         );
 
       case MessageSendStatus.hasDeleted:

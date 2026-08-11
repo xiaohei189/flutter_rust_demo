@@ -340,7 +340,7 @@ log: 删除 bridge 适配层日志，只保留源头 [SEND] 日志
 - `prefer_single_quotes: true`
 - `prefer_const_constructors: true`
 - `avoid_print: true`
-- 生成代码排除：`lib/src/rust/**`
+- 生成代码排除：`lib/generated/rust/**`
 
 ### Rust (`rustfmt.toml`)
 

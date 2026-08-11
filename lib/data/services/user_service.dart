@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../src/rust/model/user.dart' show UserInfo;
+import '../../generated/rust/model/user.dart' show UserInfo;
 import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 

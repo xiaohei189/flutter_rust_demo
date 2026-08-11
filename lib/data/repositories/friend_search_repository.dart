@@ -1,8 +1,8 @@
 import '../../domain/models/friend_search_result.dart';
 import '../services/friend_service.dart';
 import '../services/im_client.dart';
-import '../../src/rust/ffi/client.dart';
-import '../../src/rust/http/friend.dart' show SearchFriendItem;
+import '../../generated/rust/ffi/client.dart';
+import '../../generated/rust/http/friend.dart' show SearchFriendItem;
 
 abstract class FriendSearchRepository {
   Future<List<FriendSearchResult>> search(String keyword);

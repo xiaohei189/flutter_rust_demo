@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-import '../../../domain/models/message_ext.dart';
+import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
-import '../../../src/rust/event/events/message.dart' show GroupReadReceipt;
-import '../../../src/rust/model/message.dart' show MessageInfo;
-import '../../../src/rust/model/user.dart' show UserInfo;
+import '../../../generated/rust/event/events/message.dart'
+    show GroupReadReceipt;
+import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../core/theme/app_theme.dart';
 import 'message_bubble.dart';
 import 'message_skeleton.dart';
 
 /// 消息列表组件
-/// 显示聊天消息列表，支持加载更多、空状态、加载状态
-class MessageList extends StatelessWidget {
+/// 显示聊天消息列表，支持加载更多、空状态、加载状态与消息定位。
+class MessageList extends StatefulWidget {
   const MessageList({
     super.key,
     required this.messages,
@@ -48,12 +49,44 @@ class MessageList extends StatelessWidget {
   final Map<String, GroupReadReceipt>? groupReadReceipts;
 
   @override
+  State<MessageList> createState() => MessageListState();
+}
+
+class MessageListState extends State<MessageList> {
+  final Map<String, GlobalKey> _messageKeys = {};
+  static const int _maxMessageKeys = 300;
+
+  void _pruneMessageKeys(List<MessageInfo> messages) {
+    if (_messageKeys.length <= _maxMessageKeys) return;
+    final recentIds = messages
+        .skip(messages.length - _maxMessageKeys)
+        .map((m) => m.clientMsgId)
+        .toSet();
+    _messageKeys.removeWhere((id, _) => !recentIds.contains(id));
+  }
+
+  /// 滚动到指定消息并尽量居中显示。
+  void scrollToMessage(String clientMsgId) {
+    final key = _messageKeys[clientMsgId];
+    final targetContext = key?.currentContext;
+    if (targetContext == null) return;
+    Scrollable.ensureVisible(
+      targetContext,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      alignment: 0.5,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading && messages.isEmpty) {
+    final colors = context.appColors;
+    _pruneMessageKeys(widget.messages);
+    if (widget.isLoading && widget.messages.isEmpty) {
       return const MessageSkeleton();
     }
 
-    if (messages.isEmpty) {
+    if (widget.messages.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -61,15 +94,12 @@ class MessageList extends StatelessWidget {
             Icon(
               Icons.chat_bubble_outline,
               size: 64,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+              color: colors.textSecondary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '暂无消息',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondaryColor,
-              ),
+              style: TextStyle(fontSize: 16, color: colors.textSecondary),
             ),
           ],
         ),
@@ -77,56 +107,60 @@ class MessageList extends StatelessWidget {
     }
 
     const useReverse = true;
-    final itemCount = messages.length + (isLoading ? 1 : 0);
+    final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
+    final dateLabels = _buildDateLabels(widget.messages);
 
     return ListView.builder(
-      controller: scrollController,
+      controller: widget.scrollController,
       reverse: useReverse,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (isLoading && index == messages.length) {
-          return const Center(
+        if (widget.isLoading && index == widget.messages.length) {
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              padding: const EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(color: colors.primary),
             ),
           );
         }
 
-        final messageIndex = messages.length - 1 - index;
-        if (messageIndex < 0 || messageIndex >= messages.length) {
+        final messageIndex = widget.messages.length - 1 - index;
+        if (messageIndex < 0 || messageIndex >= widget.messages.length) {
           return const SizedBox.shrink();
         }
 
-        final message = messages[messageIndex];
-        final showDateSeparator = _shouldShowDateSeparator(
-          messages,
-          messageIndex,
+        final message = widget.messages[messageIndex];
+        final dateLabel = dateLabels[messageIndex];
+        final messageKey = _messageKeys.putIfAbsent(
+          message.clientMsgId,
+          () => GlobalKey(),
         );
-
         final selected =
-            selectMode && selectedClientMsgIds.contains(message.clientMsgId);
+            widget.selectMode &&
+            widget.selectedClientMsgIds.contains(message.clientMsgId);
 
         return Column(
+          key: messageKey,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (showDateSeparator) _buildDateSeparator(message.sendDateTime),
+            if (dateLabel != null) _buildDateSeparator(context, dateLabel),
             Stack(
               children: [
                 _VisibleMessageBubble(
                   message: message,
-                  otherUser: otherUser,
-                  currentUserId: currentUserId,
-                  cachedSenderProfile: cachedSenderProfiles?[message.sendId],
-                  cachedCurrentUserProfile: cachedCurrentUserProfile,
-                  onLongPress: onMessageLongPress,
-                  onVisible: onMessageVisible,
-                  onTap: onMessageTap,
-                  uploadProgress: uploadProgress,
-                  groupReadReceipts: groupReadReceipts,
+                  otherUser: widget.otherUser,
+                  currentUserId: widget.currentUserId,
+                  cachedSenderProfile:
+                      widget.cachedSenderProfiles?[message.sendId],
+                  cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
+                  onLongPress: widget.onMessageLongPress,
+                  onVisible: widget.onMessageVisible,
+                  onTap: widget.onMessageTap,
+                  uploadProgress: widget.uploadProgress,
+                  groupReadReceipts: widget.groupReadReceipts,
                 ),
-                if (selectMode)
+                if (widget.selectMode)
                   Positioned(
                     right: 4,
                     top: 4,
@@ -135,9 +169,7 @@ class MessageList extends StatelessWidget {
                           ? Icons.check_circle
                           : Icons.radio_button_unchecked,
                       size: 20,
-                      color: selected
-                          ? AppTheme.primaryColor
-                          : AppTheme.textSecondaryColor,
+                      color: selected ? colors.primary : colors.textSecondary,
                     ),
                   ),
               ],
@@ -148,67 +180,56 @@ class MessageList extends StatelessWidget {
     );
   }
 
-  /// 判断是否应该显示日期分隔符
-  bool _shouldShowDateSeparator(List<MessageInfo> messages, int index) {
-    if (index == 0) return true;
+  /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
+  static List<String?> _buildDateLabels(List<MessageInfo> messages) {
+    final labels = List<String?>.filled(messages.length, null);
+    final now = DateTime.now();
+    for (var i = 0; i < messages.length; i++) {
+      final current = messages[i].sendDateTime;
+      if (i == 0 || !_isSameDate(current, messages[i - 1].sendDateTime)) {
+        labels[i] = _formatDateLabel(current, now);
+      }
+    }
+    return labels;
+  }
 
-    final currentMsg = messages[index];
-    final prevMsg = messages[index - 1];
+  static bool _isSameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
-    final currentDate = DateFormat(
-      'yyyy-MM-dd',
-    ).format(currentMsg.sendDateTime);
-    final prevDate = DateFormat('yyyy-MM-dd').format(prevMsg.sendDateTime);
-
-    return currentDate != prevDate;
+  static String _formatDateLabel(DateTime dateTime, DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    final msgDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final diff = today.difference(msgDate).inDays;
+    if (diff == 0) return '今天';
+    if (diff == 1) return '昨天';
+    final weekStart = today.subtract(Duration(days: now.weekday - 1));
+    if (!dateTime.isBefore(weekStart)) {
+      const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      return weekdays[dateTime.weekday - 1];
+    }
+    if (now.year == dateTime.year) {
+      return DateFormat('MM月dd日').format(dateTime);
+    }
+    return DateFormat('yyyy年MM月dd日').format(dateTime);
   }
 
   /// 构建日期分隔符
-  Widget _buildDateSeparator(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateFormat('yyyy-MM-dd').format(now);
-    final msgDate = DateFormat('yyyy-MM-dd').format(dateTime);
-
-    String dateText;
-    if (today == msgDate) {
-      dateText = '今天';
-    } else {
-      final yesterday = now.subtract(const Duration(days: 1));
-      final yesterdayStr = DateFormat('yyyy-MM-dd').format(yesterday);
-      if (yesterdayStr == msgDate) {
-        dateText = '昨天';
-      } else {
-        // 判断是否在同一周
-        final weekStart = now.subtract(Duration(days: now.weekday - 1));
-        if (dateTime.isAfter(weekStart) ||
-            dateTime.isAtSameMomentAs(weekStart)) {
-          final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-          dateText = weekdays[dateTime.weekday - 1];
-        } else {
-          // 判断是否在同一年
-          if (now.year == dateTime.year) {
-            dateText = DateFormat('MM月dd日').format(dateTime);
-          } else {
-            dateText = DateFormat('yyyy年MM月dd日').format(dateTime);
-          }
-        }
-      }
-    }
-
+  Widget _buildDateSeparator(BuildContext context, String dateText) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.textSecondaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: colors.textSecondary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           ),
           child: Text(
             dateText,
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+              color: colors.textSecondary.withValues(alpha: 0.6),
             ),
           ),
         ),

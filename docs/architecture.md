@@ -36,7 +36,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  └──────────┘ └──────────────┘ └────────────────┘   │
 ├─────────────────────────────────────────────────────┤
 │  flutter_rust_bridge (FFI)                           │
-│  lib/src/rust/ ← 自动生成 → rust/src/api/            │
+│  lib/generated/rust/ ← 自动生成 → rust/src/api/      │
 ├─────────────────────────────────────────────────────┤
 │  Rust SDK (rust/src/)                                │
 │  ┌────────────────────────────────────────────────┐ │
@@ -94,7 +94,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 | `lib/ui/core/theme/` | AppTheme 颜色/样式 |
 | `lib/ui/core/utils/` | 工具类（日志、存储） |
 | `lib/ui/core/extensions/` | 扩展方法 |
-| `lib/src/rust/` | flutter_rust_bridge 自动生成的 Dart 绑定 |
+| `lib/generated/rust/` | flutter_rust_bridge 自动生成的 Dart 绑定 |
 
 ### 目标目录结构（渐进迁移）
 

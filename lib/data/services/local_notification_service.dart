@@ -22,6 +22,11 @@ class LocalNotificationService {
         requestBadgePermission: true,
         requestSoundPermission: true,
       ),
+      windows: WindowsInitializationSettings(
+        appName: 'Flutter Rust Demo',
+        appUserModelId: 'OpenIM.FlutterRustDemo',
+        guid: '9B2B9A1A-9C3E-4C4A-9B7D-2A2B2C2D2E2F',
+      ),
     );
     await _plugin.initialize(settings: settings);
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -58,6 +63,7 @@ class LocalNotificationService {
         priority: Priority.high,
       ),
       iOS: DarwinNotificationDetails(),
+      windows: WindowsNotificationDetails(),
     );
     final id = DateTime.now().millisecondsSinceEpoch.remainder(1 << 30);
     await _plugin.show(

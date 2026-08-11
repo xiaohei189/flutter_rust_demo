@@ -2,7 +2,7 @@ import '../../domain/models/blacklist_user.dart';
 import '../services/friend_service.dart';
 import '../services/im_client.dart';
 import '../services/user_service.dart';
-import '../../src/rust/ffi/client.dart';
+import '../../generated/rust/ffi/client.dart';
 
 abstract class BlacklistRepository {
   Future<List<BlacklistUser>> load();

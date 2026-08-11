@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
-import '../../../../ui/contacts/views/friend_setup_screen.dart';
 import '../../../../data/services/services.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../ui/core/utils/app_logger.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../view_models/user_profile_view_model.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
@@ -47,7 +48,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
     try {
       final userProfileState = ref.read(userProfileProvider);
-      if (userProfileState.profile != null && 
+      if (userProfileState.profile != null &&
           userProfileState.profile!.userId == widget.user.id) {
         _userProfile = userProfileState.profile;
         _exData = UserProfileState.parseEx(_userProfile?.remark);
@@ -88,13 +89,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     // 获取最新的用户信息
     final userProfileState = ref.watch(userProfileProvider);
     final notifier = ref.read(userProfileProvider.notifier);
-    
+
     // 总是使用最新的用户信息
     User displayUser = widget.user;
     UserProfile? displayProfile = _userProfile;
-    
+
     // 如果是当前用户，优先使用 provider 中的信息
-    if (userProfileState.profile != null && 
+    if (userProfileState.profile != null &&
         userProfileState.profile!.userId == widget.user.id) {
       displayProfile = userProfileState.profile;
       final avatarUrl = notifier.getDisplayAvatarUrl();
@@ -105,11 +106,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         status: widget.user.status,
       );
     }
-    
+
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        title: const Text('个人信息'),
+        title: Text(AppLocalizations.of(context)?.userProfileTitle ?? '个人信息'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 22),
           onPressed: () => AppRouter.goBack(context),
@@ -125,7 +127,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -134,16 +136,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       const SizedBox(height: 16),
                       Text(
                         displayUser.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimaryColor,
+                          color: colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () {
-                          Clipboard.setData(ClipboardData(text: displayUser.id));
+                          Clipboard.setData(
+                            ClipboardData(text: displayUser.id),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('已复制 ID'),
@@ -157,21 +161,24 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           children: [
                             Text(
                               'ID: ${displayUser.id}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: AppTheme.textSecondaryColor,
+                                color: colors.textSecondary,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Icon(
                               Icons.copy_outlined,
                               size: 14,
-                              color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
+                              color: colors.textSecondary.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      if (displayUser.status != null && displayUser.status!.isNotEmpty) ...[
+                      if (displayUser.status != null &&
+                          displayUser.status!.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           displayUser.status!,
@@ -179,7 +186,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                             fontSize: 13,
                             color: displayUser.status == '在线'
                                 ? const Color(0xFF34C759)
-                                : AppTheme.textSecondaryColor,
+                                : colors.textSecondary,
                           ),
                         ),
                       ],
@@ -191,30 +198,39 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     children: [
-                      _buildInfoRow('用户名称', displayProfile?.nickname ?? displayUser.name),
+                      _buildInfoRow(
+                        context,
+                        '用户名称',
+                        displayProfile?.nickname ?? displayUser.name,
+                      ),
                       _buildDivider(),
-                      _buildInfoRow('用户 ID', displayUser.id),
-                      if (_exData['alias'] != null && _exData['alias']!.isNotEmpty) ...[
+                      _buildInfoRow(context, '用户 ID', displayUser.id),
+                      if (_exData['alias'] != null &&
+                          _exData['alias']!.isNotEmpty) ...[
                         _buildDivider(),
-                        _buildInfoRow('别名', _exData['alias']!),
+                        _buildInfoRow(context, '别名', _exData['alias']!),
                       ],
-                      if (_exData['signature'] != null && _exData['signature']!.isNotEmpty) ...[
+                      if (_exData['signature'] != null &&
+                          _exData['signature']!.isNotEmpty) ...[
                         _buildDivider(),
-                        _buildInfoRow('个性签名', _exData['signature']!),
+                        _buildInfoRow(context, '个性签名', _exData['signature']!),
                       ],
-                      if (displayProfile != null && displayProfile.remark.isNotEmpty && 
-                          _exData['alias'] == null && _exData['signature'] == null) ...[
+                      if (displayProfile != null &&
+                          displayProfile.remark.isNotEmpty &&
+                          _exData['alias'] == null &&
+                          _exData['signature'] == null) ...[
                         _buildDivider(),
-                        _buildInfoRow('备注信息', displayProfile.remark),
+                        _buildInfoRow(context, '备注信息', displayProfile.remark),
                       ],
-                      if (displayUser.avatar != null && displayUser.avatar!.isNotEmpty) ...[
+                      if (displayUser.avatar != null &&
+                          displayUser.avatar!.isNotEmpty) ...[
                         _buildDivider(),
-                        _buildInfoRow('头像状态', '已设置'),
+                        _buildInfoRow(context, '头像状态', '已设置'),
                       ],
                     ],
                   ),
@@ -225,12 +241,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       children: [
-                        _buildInfoRow('消息接收设置', _formatRecvMsgOpt(displayProfile.globalRecvMsgOpt)),
+                        _buildInfoRow(
+                          context,
+                          '消息接收设置',
+                          _formatRecvMsgOpt(displayProfile.globalRecvMsgOpt),
+                        ),
                       ],
                     ),
                   ),
@@ -240,7 +260,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -258,7 +278,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -275,13 +295,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           Icons.settings_outlined,
                           '好友设置',
                           () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => FriendSetupScreen(
-                                  userId: widget.user.id,
-                                ),
-                              ),
-                            );
+                            context.push('/friend-setup/${widget.user.id}');
                           },
                         ),
                       ],
@@ -291,7 +305,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -324,26 +338,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppTheme.textSecondaryColor,
-            ),
+            style: TextStyle(fontSize: 15, color: colors.textSecondary),
           ),
           const Spacer(),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppTheme.textPrimaryColor,
-              ),
+              style: TextStyle(fontSize: 15, color: colors.textPrimary),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
@@ -360,6 +369,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     String label,
     VoidCallback onTap,
   ) {
+    final colors = context.appColors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -367,20 +377,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AppTheme.primaryColor),
+            Icon(icon, size: 22, color: colors.primary),
             const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppTheme.primaryColor,
-              ),
-            ),
+            Text(label, style: TextStyle(fontSize: 15, color: colors.primary)),
             const Spacer(),
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+              color: colors.textSecondary.withValues(alpha: 0.5),
             ),
           ],
         ),
@@ -419,10 +423,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 try {
                   await ref
                       .read(userProfileRepositoryProvider)
-                      .sendFriendRequest(
-                        widget.user.id,
-                        reqMsg,
-                      );
+                      .sendFriendRequest(widget.user.id, reqMsg);
                   if (mounted) {
                     setState(() => _isFriend = true);
                   }

@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../providers/message_service_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/utils/app_logger.dart';
-import '../../../../data/services/login_storage.dart';
+import '../providers/auth_provider.dart';
 
 /// 启动页：有本地凭证则尝试自动登录并进入主页，否则进入登录页
 class SplashScreen extends ConsumerStatefulWidget {
@@ -35,65 +33,45 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!mounted) return;
 
-    final credentials = await LoginStorage.loadCredentials();
-    if (credentials != null) {
-      try {
-        await ref
-            .read(messageServiceProvider.notifier)
-            .initialize(
-              wsUrl: widget.wsUrl,
-              apiBaseUrl: widget.apiBaseUrl,
-              userId: credentials.userId,
-              imToken: credentials.imToken,
-            );
-        if (!mounted) return;
-        context.go(AppRouter.main);
-        return;
-      } catch (e) {
-        appLog.w('自动登录失败，跳转登录页: $e');
-        await LoginStorage.clearCredentials();
-      }
-    }
-
+    final ok = await ref
+        .read(authViewModelProvider.notifier)
+        .autoLogin(wsUrl: widget.wsUrl, apiBaseUrl: widget.apiBaseUrl);
     if (!mounted) return;
-    context.go(AppRouter.login);
+
+    context.go(ok ? AppRouter.main : AppRouter.login);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          color: AppTheme.backgroundColor,
+          color: colors.background,
           gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryColor.withValues(alpha: 0.08),
-              Colors.white,
-            ],
+            colors: [colors.primary.withValues(alpha: 0.08), colors.surface],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.chat_bubble_outline,
-                size: 80,
-                color: AppTheme.primaryColor,
-              ),
-              SizedBox(height: 16),
+              // ignore: prefer_const_constructors
+              Icon(Icons.chat_bubble_outline, size: 80, color: colors.primary),
+              const SizedBox(height: 16),
+              // ignore: prefer_const_constructors
               Text(
                 'Flutter 聊天',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimaryColor,
+                  color: colors.textPrimary,
                 ),
               ),
-              SizedBox(height: 32),
-              CircularProgressIndicator(color: AppTheme.primaryColor),
+              const SizedBox(height: 32),
+              CircularProgressIndicator(color: colors.primary),
             ],
           ),
         ),

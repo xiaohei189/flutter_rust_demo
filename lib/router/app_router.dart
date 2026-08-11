@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,10 +7,12 @@ import '../ui/auth/views/login_screen.dart';
 import '../ui/shell/main_screen.dart';
 import '../ui/chat/views/chat_detail_screen.dart';
 import '../ui/chat/views/chat_settings_screen.dart';
+import '../ui/chat/views/merge_message_detail_screen.dart';
+import '../ui/chat/widgets/media_viewer.dart';
 import '../ui/groups/views/group_info_screen.dart';
 import '../ui/profile/views/my_profile_screen.dart'
     show MyProfileScreen, ProfileFieldEditScreen;
-import '../ui/contacts/views/search_screen.dart';
+import '../ui/shared/views/search_screen.dart';
 import '../ui/profile/views/user_profile_screen.dart';
 import '../ui/contacts/views/friend_list_screen.dart';
 import '../ui/contacts/views/friend_requests_screen.dart';
@@ -22,9 +25,11 @@ import '../ui/contacts/views/blacklist_screen.dart';
 import '../ui/auth/views/register_screen.dart';
 import '../ui/groups/views/group_applications_screen.dart';
 import '../ui/profile/views/account_settings_screen.dart';
-import '../ui/contacts/views/scan_screen.dart';
+import '../ui/shared/views/scan_screen.dart';
+import '../ui/shared/views/qr_code_screen.dart';
 import '../domain/models/conversation.dart';
 import '../domain/models/user.dart';
+import '../generated/rust/model/message.dart' show MessageInfo;
 import '../data/services/navigation_service.dart';
 
 /// 应用路由配置
@@ -53,7 +58,7 @@ class AppRouter {
     return GoRouter(
       navigatorKey: _rootNavigatorKey,
       initialLocation: splash,
-      debugLogDiagnostics: true,
+      debugLogDiagnostics: kDebugMode,
       routes: [
         // 启动页
         GoRoute(
@@ -126,10 +131,10 @@ class AppRouter {
         GoRoute(
           path: userProfile,
           builder: (context, state) {
-            final user = state.extra as User?;
-            if (user == null) {
-              return const Scaffold(body: Center(child: Text('用户信息不存在')));
-            }
+            final userId = state.pathParameters['id'] ?? 'unknown';
+            final user =
+                state.extra as User? ??
+                User(id: userId, name: userId, avatar: null, status: null);
             return UserProfileScreen(user: user, isCurrentUser: false);
           },
         ),
@@ -177,11 +182,52 @@ class AppRouter {
           path: '/contact-picker',
           builder: (context, state) {
             final mode = state.uri.queryParameters['mode'] ?? 'forward';
+            final title = state.uri.queryParameters['title'] ?? '';
             final multiSelect = mode == 'group';
             return ContactPickerScreen(
               multiSelect: multiSelect,
-              title: multiSelect ? '选择群成员' : '选择联系人',
+              title: title.isNotEmpty
+                  ? title
+                  : (multiSelect ? '选择群成员' : '选择联系人'),
             );
+          },
+        ),
+        GoRoute(
+          path: '/qr',
+          builder: (context, state) {
+            final query = state.uri.queryParameters;
+            return QrCodeScreen(
+              title: query['title'] ?? '二维码',
+              data: query['data'] ?? '',
+              subtitle: query['subtitle'],
+            );
+          },
+        ),
+        GoRoute(
+          path: '/merge-message',
+          builder: (context, state) {
+            final message = state.extra as MessageInfo?;
+            if (message == null) {
+              return const Scaffold(body: Center(child: Text('消息不存在')));
+            }
+            return MergeMessageDetailScreen(message: message);
+          },
+        ),
+        GoRoute(
+          path: '/media/image',
+          builder: (context, state) {
+            final query = state.uri.queryParameters;
+            return ImagePreviewScreen(
+              source: query['source'] ?? '',
+              suggestedName: query['name'] ?? 'image.jpg',
+            );
+          },
+        ),
+        GoRoute(
+          path: '/media/video',
+          builder: (context, state) {
+            final source = state.uri.queryParameters['source'] ?? '';
+            return VideoPreviewScreen(source: source);
           },
         ),
         // 黑名单页
@@ -329,6 +375,39 @@ class AppRouter {
 
   static void goToScan(BuildContext context) {
     context.push('/scan');
+  }
+
+  static Future<T?> goToQrCode<T>(
+    BuildContext context, {
+    required String title,
+    required String data,
+    String? subtitle,
+  }) {
+    final subtitleQuery = subtitle == null
+        ? ''
+        : '&subtitle=${Uri.encodeQueryComponent(subtitle)}';
+    return context.push<T>(
+      '/qr?title=${Uri.encodeQueryComponent(title)}'
+      '&data=${Uri.encodeQueryComponent(data)}$subtitleQuery',
+    );
+  }
+
+  static Future<T?> goToMergeMessage<T>(
+    BuildContext context,
+    MessageInfo message,
+  ) {
+    return context.push<T>('/merge-message', extra: message);
+  }
+
+  static Future<T?> goToContactPicker<T>(
+    BuildContext context, {
+    required String title,
+    String mode = 'forward',
+  }) {
+    return context.push<T>(
+      '/contact-picker?mode=$mode'
+      '&title=${Uri.encodeQueryComponent(title)}',
+    );
   }
 
   /// 导航到账号设置页

@@ -33,7 +33,7 @@
 
 ### 步骤 4：在 Flutter 端调用 Rust 方法
 
-1. 在 `lib/src/rust/api` 目录下创建 `file.dart` 文件
+1. 在 `lib/generated/rust/ffi` 目录下创建 `file.dart` 文件
 2. 实现 `uploadFile` 方法，调用 Rust 端的方法
 3. 在 `my_profile_screen.dart` 中使用此方法上传头像
 
@@ -81,7 +81,7 @@ pub async fn upload_file(file_path: String, file_name: String) -> Result<String,
 ### Flutter 端代码示例：
 
 ```dart
-// lib/src/rust/api/file.dart
+// lib/generated/rust/ffi/file.dart
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import '../frb_generated.dart';
 

@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../domain/models/user_profile.dart';
-import '../../../src/rust/model/user.dart' show UserInfo;
+import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../core/utils/app_logger.dart';
-import '../../../providers/message_service_provider.dart';
+import '../../chat/providers/message_service_provider.dart';
 
 /// 用户资料状态
 class UserProfileState {
@@ -219,7 +219,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
     if (state.profile?.userId == userId) {
       return state.profile;
     }
-    final raw = ref.read(messageServiceProvider.notifier).getUserProfile(userId);
+    final raw = ref
+        .read(messageServiceProvider.notifier)
+        .getUserProfile(userId);
     return raw == null ? null : UserProfileMapping.fromUserInfo(raw);
   }
 
@@ -274,7 +276,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
       } else {
         // 如果 messageService 中没有登录用户资料，尝试从服务端获取
         final refreshedProfile = _toUserProfile(
-          await ref.read(messageServiceProvider.notifier).refreshLoginUserProfile(),
+          await ref
+              .read(messageServiceProvider.notifier)
+              .refreshLoginUserProfile(),
         );
         if (refreshedProfile != null) {
           final exData = UserProfileState.parseEx(refreshedProfile.remark);

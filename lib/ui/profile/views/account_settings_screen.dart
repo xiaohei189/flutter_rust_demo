@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// 账号设置页：全局免打扰、本地通知、应用锁、生物识别、语言、关于。
 class AccountSettingsScreen extends ConsumerStatefulWidget {
@@ -44,13 +45,16 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final profile = ref.watch(userProfileProvider).profile;
     final globalMute = profile?.globalRecvMsgOpt == 1;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        title: const Text('账号设置'),
+        title: Text(
+          AppLocalizations.of(context)?.accountSettingsTitle ?? '账号设置',
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
@@ -59,6 +63,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       body: ListView(
         children: [
           _buildSection(
+            context,
             children: [
               SwitchListTile(
                 title: const Text('全局消息免打扰'),
@@ -66,9 +71,9 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                 value: globalMute,
                 onChanged: (v) async {
                   try {
-                    await ref.read(messageRepositoryProvider).setGlobalMsgRecvOpt(
-                      globalRecvOpt: v ? 1 : 0,
-                    );
+                    await ref
+                        .read(messageRepositoryProvider)
+                        .setGlobalMsgRecvOpt(globalRecvOpt: v ? 1 : 0);
                     await ref
                         .read(messageServiceProvider.notifier)
                         .refreshLoginUserProfile();
@@ -96,6 +101,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             ],
           ),
           _buildSection(
+            context,
             children: [
               SwitchListTile(
                 title: const Text('应用锁'),
@@ -122,18 +128,20 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             ],
           ),
           _buildSection(
+            context,
             children: [
               ListTile(
                 title: const Text('语言'),
                 trailing: Text(
                   _localeCode == 'en' ? 'English' : '简体中文',
-                  style: const TextStyle(color: AppTheme.textSecondaryColor),
+                  style: TextStyle(color: colors.textSecondary),
                 ),
                 onTap: _changeLanguage,
               ),
             ],
           ),
           _buildSection(
+            context,
             children: [
               ListTile(
                 leading: const Icon(Icons.info_outline),
@@ -149,11 +157,12 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     );
   }
 
-  Widget _buildSection({required List<Widget> children}) {
+  Widget _buildSection(BuildContext context, {required List<Widget> children}) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: Material(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
         child: Column(children: children),
       ),
@@ -260,9 +269,10 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   }
 
   Future<void> _changeLanguage() async {
+    final colors = context.appColors;
     final selected = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -273,14 +283,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             ListTile(
               title: const Text('简体中文'),
               trailing: _localeCode == 'zh'
-                  ? const Icon(Icons.check, color: AppTheme.primaryColor)
+                  ? Icon(Icons.check, color: colors.primary)
                   : null,
               onTap: () => Navigator.of(sheetContext).pop('zh'),
             ),
             ListTile(
               title: const Text('English'),
               trailing: _localeCode == 'en'
-                  ? const Icon(Icons.check, color: AppTheme.primaryColor)
+                  ? Icon(Icons.check, color: colors.primary)
                   : null,
               onTap: () => Navigator.of(sheetContext).pop('en'),
             ),

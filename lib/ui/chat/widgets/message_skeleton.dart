@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
+
 /// 消息加载时的骨架屏
 class MessageSkeleton extends StatelessWidget {
   const MessageSkeleton({super.key});
@@ -37,13 +39,14 @@ class SkeletonBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Align(
       alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         width: width,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFE8E8E8),
+          color: colors.surfaceMuted,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),

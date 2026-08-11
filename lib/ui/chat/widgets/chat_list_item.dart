@@ -6,127 +6,10 @@ import 'package:intl/intl.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/user.dart';
 import '../../../router/app_router.dart';
-import '../../../src/rust/model/user.dart' show UserInfo;
+import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
-
-/// 从 map 中取 key（支持 camelCase / snake_case）
-T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {
-  if (map.containsKey(camel) && map[camel] != null) return map[camel] as T?;
-  if (map.containsKey(snake) && map[snake] != null) return map[snake] as T?;
-  return null;
-}
-
-/// 从 content 中解析出可读字符串（可能是 String / int 列表 bytes / Map）。
-String _contentToDisplay(dynamic content) {
-  if (content == null) return '';
-  if (content is String) return content.trim();
-  if (content is List) {
-    try {
-      return utf8.decode(content.cast<int>()).trim();
-    } catch (_) {
-      return '';
-    }
-  }
-  if (content is Map<String, dynamic>) {
-    // 嵌套 text.content 结构
-    final text = content['text'];
-    if (text is Map<String, dynamic> && text['content'] != null) {
-      return text['content'].toString().trim();
-    }
-    // 直接 content 字段
-    if (content['content'] != null) return content['content'].toString().trim();
-    // 回退：尝试取第一个字符串值，避免输出原始 Map
-    for (final v in content.values) {
-      if (v is String && v.isNotEmpty) return v;
-    }
-  }
-  return content.toString().trim();
-}
-
-/// 从 latestMsg JSON 中解析出用于列表展示的文案（仅展示消息内容，不展示整段 JSON）
-String latestMessagePreview(String latestMsgJson) {
-  if (latestMsgJson.isEmpty) return '暂无消息';
-  final trimmed = latestMsgJson.trim();
-  if (trimmed.isEmpty) return '暂无消息';
-  if (!trimmed.startsWith('{')) {
-    return trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed;
-  }
-  try {
-    final map = jsonDecode(latestMsgJson) as Map<String, dynamic>?;
-    if (map == null) return '暂无消息';
-
-    final contentType = _getKey<int>(map, 'contentType', 'content_type') ?? 0;
-    final senderNickname =
-        _getKey<String>(map, 'senderNickname', 'sender_nickname') ?? '';
-    final content = map['content'];
-    final textElem = _getKey<Map<String, dynamic>>(
-      map,
-      'textElem',
-      'text_elem',
-    );
-
-    String body;
-    switch (contentType) {
-      case 101:
-        body = '';
-        if (textElem != null) {
-          final c = textElem['content'];
-          if (c != null) body = _contentToDisplay(c);
-        }
-        if (body.isEmpty && content != null) body = _contentToDisplay(content);
-        if (body.isEmpty) body = '文本';
-        break;
-      case 102:
-        body = '[图片]';
-        break;
-      case 103:
-        body = '[语音]';
-        break;
-      case 104:
-        body = '[视频]';
-        break;
-      case 105:
-        body = '[文件]';
-        break;
-      case 106:
-        body = '[@消息]';
-        break;
-      case 107:
-        body = '[引用]';
-        break;
-      case 108:
-        body = '[位置]';
-        break;
-      case 109:
-        body = '[自定义]';
-        break;
-      case 110:
-        body = '[撤回]';
-        break;
-      default:
-        if (contentType > 0) {
-          body = '[$contentType]';
-        } else {
-          body = _contentToDisplay(content);
-          if (body.isEmpty && textElem != null) {
-            body = _contentToDisplay(textElem['content']);
-          }
-          if (body.isEmpty) body = '暂无消息';
-        }
-    }
-
-    if (body.isEmpty) body = '暂无消息';
-    if (senderNickname.isNotEmpty && body != '暂无消息') {
-      return '$senderNickname: $body';
-    }
-    return body;
-  } catch (_) {
-    return latestMsgJson.length > 60
-        ? '${latestMsgJson.substring(0, 60)}…'
-        : latestMsgJson;
-  }
-}
+import '../utils/conversation_display.dart';
 
 /// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {
@@ -143,6 +26,10 @@ class ChatListItem extends StatelessWidget {
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
   final String? currentUserLocalAvatarPath;
 
+  /// 已缓存的最近消息预览与展示时间，避免列表项重复解析。
+  final String? previewText;
+  final String? timeText;
+
   /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
   final int? itemIndex;
 
@@ -158,6 +45,8 @@ class ChatListItem extends StatelessWidget {
     this.onHide,
     this.cachedUserProfile,
     this.currentUserLocalAvatarPath,
+    this.previewText,
+    this.timeText,
     this.itemIndex,
   });
 
@@ -331,7 +220,7 @@ class ChatListItem extends StatelessWidget {
         return conversation.draftText;
       }
     }
-    final preview = latestMessagePreview(conversation.latestMsg);
+    final preview = previewText ?? latestMessagePreview(conversation.latestMsg);
     return preview;
   }
 
@@ -344,16 +233,17 @@ class ChatListItem extends StatelessWidget {
       conversation.conversationType == 2 || conversation.conversationType == 3;
 
   Widget _buildContent(BuildContext context) {
+    final colors = context.appColors;
     final user = _getUser();
     final unread = conversation.unreadCount;
     final isPinned = conversation.isPinned;
 
     return Material(
       color: isPinned
-          ? const Color(0xFFF7F8FA)
+          ? colors.surfaceMuted
           : (isSelected
-                ? AppTheme.primaryColor.withValues(alpha: 0.06)
-                : Colors.white),
+                ? colors.primary.withValues(alpha: 0.06)
+                : colors.surface),
       child: InkWell(
         onTap: onTap,
         onLongPress: () => _showLongPressMenu(context),
@@ -384,19 +274,19 @@ class ChatListItem extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: _isMuted
-                                  ? AppTheme.textSecondaryColor
-                                  : AppTheme.unreadRed,
+                                  ? colors.textSecondary
+                                  : colors.danger,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white,
+                                color: colors.surface,
                                 width: 1.5,
                               ),
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               unread > 99 ? '99+' : '$unread',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.surface,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -418,8 +308,8 @@ class ChatListItem extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 user.name,
-                                style: const TextStyle(
-                                  color: AppTheme.textPrimaryColor,
+                                style: TextStyle(
+                                  color: colors.textPrimary,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 16,
                                 ),
@@ -438,19 +328,19 @@ class ChatListItem extends StatelessWidget {
                                 child: Icon(
                                   Icons.notifications_off_outlined,
                                   size: 14,
-                                  color: AppTheme.textSecondaryColor.withValues(
+                                  color: colors.textSecondary.withValues(
                                     alpha: 0.6,
                                   ),
                                 ),
                               ),
                             const SizedBox(width: 8),
                             Text(
-                              _formatTime(_displayTime),
+                              timeText ?? _formatTime(_displayTime),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: unread > 0
-                                    ? AppTheme.primaryColor
-                                    : AppTheme.textSecondaryColor,
+                                    ? colors.primary
+                                    : colors.textSecondary,
                               ),
                             ),
                           ],
@@ -461,15 +351,15 @@ class ChatListItem extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           text: TextSpan(
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.textSecondaryColor,
+                              color: colors.textSecondary,
                             ),
                             children: [
                               if (_hasDraft)
-                                const TextSpan(
+                                TextSpan(
                                   text: '[草稿] ',
-                                  style: TextStyle(color: AppTheme.draftOrange),
+                                  style: TextStyle(color: colors.warning),
                                 ),
                               TextSpan(text: _contentPreview),
                             ],
@@ -482,9 +372,9 @@ class ChatListItem extends StatelessWidget {
               ),
             ),
             // 底部分割线（缩进到头像之后）
-            const Padding(
-              padding: EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: Color(0xFFF0F0F0)),
+            Padding(
+              padding: const EdgeInsets.only(left: 68),
+              child: Divider(height: 1, color: colors.divider),
             ),
           ],
         ),
@@ -493,6 +383,7 @@ class ChatListItem extends StatelessWidget {
   }
 
   void _showLongPressMenu(BuildContext context) {
+    final colors = context.appColors;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -525,14 +416,8 @@ class ChatListItem extends StatelessWidget {
                 },
               ),
             ListTile(
-              leading: const Icon(
-                Icons.delete_outline,
-                color: AppTheme.unreadRed,
-              ),
-              title: const Text(
-                '删除',
-                style: TextStyle(color: AppTheme.unreadRed),
-              ),
+              leading: Icon(Icons.delete_outline, color: colors.danger),
+              title: Text('删除', style: TextStyle(color: colors.danger)),
               onTap: () {
                 AppRouter.goBack(ctx);
                 onDelete?.call();
@@ -546,6 +431,7 @@ class ChatListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     if (onDelete != null) {
       return Dismissible(
         key: ValueKey<String>(
@@ -553,14 +439,10 @@ class ChatListItem extends StatelessWidget {
         ),
         direction: DismissDirection.endToStart,
         background: Container(
-          color: AppTheme.unreadRed,
+          color: colors.danger,
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.only(right: 24),
-          child: const Icon(
-            Icons.delete_outline,
-            color: Colors.white,
-            size: 28,
-          ),
+          child: Icon(Icons.delete_outline, color: colors.surface, size: 28),
         ),
         onDismissed: (_) => onDelete!(),
         child: _buildContent(context),

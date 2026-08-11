@@ -25,6 +25,7 @@ class GroupFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final panelWidth = MediaQuery.of(context).size.width * 0.80;
 
     return GestureDetector(
@@ -38,7 +39,7 @@ class GroupFilterPanel extends StatelessWidget {
             child: Container(
               width: panelWidth,
               height: double.infinity,
-              color: Colors.white,
+              color: colors.surface,
               child: SafeArea(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,12 +48,12 @@ class GroupFilterPanel extends StatelessWidget {
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             '分组',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimaryColor,
+                              color: colors.textPrimary,
                             ),
                           ),
                           const Spacer(),
@@ -61,7 +62,7 @@ class GroupFilterPanel extends StatelessWidget {
                             child: Icon(
                               Icons.tune,
                               size: 20,
-                              color: AppTheme.textSecondaryColor.withValues(
+                              color: colors.textSecondary.withValues(
                                 alpha: 0.6,
                               ),
                             ),
@@ -75,24 +76,28 @@ class GroupFilterPanel extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         children: [
                           _buildItem(
+                            context,
                             icon: Icons.chat_bubble_outline,
                             label: '消息',
                             count: totalMessages,
                             filter: GroupFilter.all,
                           ),
                           _buildItem(
+                            context,
                             icon: Icons.mark_email_unread,
                             label: '未读',
                             count: unreadCount,
                             filter: GroupFilter.unread,
                           ),
                           _buildItem(
+                            context,
                             icon: Icons.person_outline,
                             label: '单聊',
                             count: totalMessages - groupCount,
                             filter: GroupFilter.singleChat,
                           ),
                           _buildItem(
+                            context,
                             icon: Icons.group_outlined,
                             label: '群组',
                             count: groupCount,
@@ -111,12 +116,14 @@ class GroupFilterPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildItem({
+  Widget _buildItem(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required int count,
     required GroupFilter filter,
   }) {
+    final colors = context.appColors;
     final isActive = activeFilter == filter;
     return Material(
       color: Colors.transparent,
@@ -129,9 +136,7 @@ class GroupFilterPanel extends StatelessWidget {
               Icon(
                 icon,
                 size: 24,
-                color: isActive
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondaryColor,
+                color: isActive ? colors.primary : colors.textSecondary,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -140,9 +145,7 @@ class GroupFilterPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                    color: isActive
-                        ? AppTheme.primaryColor
-                        : AppTheme.textPrimaryColor,
+                    color: isActive ? colors.primary : colors.textPrimary,
                   ),
                 ),
               ),
@@ -151,13 +154,10 @@ class GroupFilterPanel extends StatelessWidget {
                   '$count',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isActive
-                        ? AppTheme.primaryColor
-                        : AppTheme.textSecondaryColor,
+                    color: isActive ? colors.primary : colors.textSecondary,
                   ),
                 ),
-              if (isActive)
-                const Icon(Icons.check, size: 20, color: AppTheme.primaryColor),
+              if (isActive) Icon(Icons.check, size: 20, color: colors.primary),
             ],
           ),
         ),

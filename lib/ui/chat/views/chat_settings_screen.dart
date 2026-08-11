@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/conversation.dart';
-import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../widgets/settings_components.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
 class ChatSettingsScreen extends ConsumerStatefulWidget {
@@ -108,7 +108,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
     if (conversation == null) {
       return Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: context.appColors.background,
         appBar: AppBar(
           title: const Text('设置'),
           leading: IconButton(
@@ -121,7 +121,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
         title: const Text('设置'),
         leading: IconButton(
@@ -134,7 +134,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           const SizedBox(height: 8),
 
           // ---- 顶部：成员区域 ----
-          _buildCard(
+          SettingsCard(
             children: [
               if (_isGroup) ..._buildGroupHeader() else ..._buildSingleHeader(),
             ],
@@ -143,15 +143,15 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 群成员（仅群聊） ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
-            _buildCard(children: _buildGroupMembers()),
+            SettingsCard(children: _buildGroupMembers()),
           ],
 
           // ---- 应用 ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
-            _buildCard(
+            SettingsCard(
               children: [
-                _buildSectionTitle('群应用'),
+                const SettingsSectionTitle(title: '群应用'),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   child: Row(
@@ -159,7 +159,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                       _buildAppIcon(
                         Icons.campaign_outlined,
                         '群公告',
-                        AppTheme.primaryColor,
+                        context.appColors.primary,
                         onTap: _editGroupAnnouncement,
                       ),
                     ],
@@ -168,79 +168,93 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            _buildCard(
+            SettingsCard(
               children: [
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                _buildNavRow('群昵称', onTap: _editGroupNickname),
+                SettingsNavRow(title: '群昵称', onTap: _editGroupNickname),
               ],
             ),
           ],
 
           // ---- 开关设置区 ----
           const SizedBox(height: 8),
-          _buildCard(
+          SettingsCard(
             children: [
-              _buildSwitchRow('消息免打扰', _muteNotification, (v) async {
-                setState(() => _muteNotification = v);
-                try {
-                  await ref
-                      .read(messageRepositoryProvider)
-                      .setConversation(
-                        conversationId: widget.conversationId,
-                        recvMsgOpt: v ? 1 : 0,
-                      );
-                } catch (_) {}
-              }),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              _buildSwitchRow('置顶会话', _pinChat, (v) async {
-                setState(() => _pinChat = v);
-                try {
-                  await ref
-                      .read(messageRepositoryProvider)
-                      .setConversationPinned(
-                        conversationId: widget.conversationId,
-                        isPinned: v,
-                      );
-                } catch (_) {}
-              }),
-              if (!_isGroup) ...[
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                _buildSwitchRow('私聊（阅后即焚）', _privateChat, (v) async {
-                  setState(() => _privateChat = v);
+              SettingsSwitchRow(
+                title: '消息免打扰',
+                value: _muteNotification,
+                onChanged: (v) async {
+                  setState(() => _muteNotification = v);
                   try {
                     await ref
                         .read(messageRepositoryProvider)
-                        .setConversationPrivate(
+                        .setConversation(
                           conversationId: widget.conversationId,
-                          isPrivate: v,
+                          recvMsgOpt: v ? 1 : 0,
                         );
                   } catch (_) {}
-                }),
+                },
+              ),
+              const Divider(height: 1, indent: 16, endIndent: 16),
+              SettingsSwitchRow(
+                title: '置顶会话',
+                value: _pinChat,
+                onChanged: (v) async {
+                  setState(() => _pinChat = v);
+                  try {
+                    await ref
+                        .read(messageRepositoryProvider)
+                        .setConversationPinned(
+                          conversationId: widget.conversationId,
+                          isPinned: v,
+                        );
+                  } catch (_) {}
+                },
+              ),
+              if (!_isGroup) ...[
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                SettingsSwitchRow(
+                  title: '私聊（阅后即焚）',
+                  value: _privateChat,
+                  onChanged: (v) async {
+                    setState(() => _privateChat = v);
+                    try {
+                      await ref
+                          .read(messageRepositoryProvider)
+                          .setConversationPrivate(
+                            conversationId: widget.conversationId,
+                            isPrivate: v,
+                          );
+                    } catch (_) {}
+                  },
+                ),
               ],
             ],
           ),
 
           // ---- 清空聊天记录 ----
           const SizedBox(height: 8),
-          _buildCard(
-            children: [_buildNavRow('清空聊天记录', onTap: _handleClearChatHistory)],
+          SettingsCard(
+            children: [
+              SettingsNavRow(title: '清空聊天记录', onTap: _handleClearChatHistory),
+            ],
           ),
 
           // ---- 退出群组（仅群聊） ----
           if (_isGroup) ...[
             const SizedBox(height: 8),
-            _buildCard(
+            SettingsCard(
               children: [
                 InkWell(
                   onTap: () => _handleQuitGroup(),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     child: Center(
                       child: Text(
                         '退出群组',
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppTheme.unreadRed,
+                          color: context.appColors.danger,
                         ),
                       ),
                     ),
@@ -271,16 +285,18 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 children: [
                   Text(
                     '会话 ID: ${conversation.conversationId}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 4),
                   Icon(
                     Icons.copy_outlined,
                     size: 12,
-                    color: AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+                    color: context.appColors.textSecondary.withValues(
+                      alpha: 0.6,
+                    ),
                   ),
                 ],
               ),
@@ -289,33 +305,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCard({required List<Widget> children}) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.textSecondaryColor,
-        ),
       ),
     );
   }
@@ -344,16 +333,18 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                     '在线',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                      color: context.appColors.textSecondary.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.chevron_right,
-                color: AppTheme.textSecondaryColor,
+                color: context.appColors.textSecondary,
               ),
               onPressed: () {},
             ),
@@ -392,16 +383,18 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                     memberCount > 0 ? '群聊 · $memberCount 人' : '群聊',
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.8),
+                      color: context.appColors.textSecondary.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.chevron_right,
-                color: AppTheme.textSecondaryColor,
+                color: context.appColors.textSecondary,
               ),
               onPressed: () {},
             ),
@@ -416,8 +409,8 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final members = memberState.members;
 
     return [
-      _buildSectionTitle(
-        '群成员${memberState.isLoading ? '' : ' (${members.length})'}',
+      SettingsSectionTitle(
+        title: '群成员${memberState.isLoading ? '' : ' (${members.length})'}',
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -425,71 +418,12 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           spacing: 12,
           runSpacing: 12,
           children: [
-            for (final member in members) _buildRealMemberAvatar(member),
-            _buildAddMemberButton(),
+            for (final member in members) RealMemberAvatar(member: member),
+            AddMemberButton(onTap: _showInviteMemberDialog),
           ],
         ),
       ),
     ];
-  }
-
-  Widget _buildRealMemberAvatar(GroupMember member) {
-    final displayName = member.nickname.isNotEmpty
-        ? member.nickname
-        : member.userId;
-    final user = User(
-      id: member.userId,
-      name: displayName,
-      avatar: member.faceUrl.isNotEmpty ? member.faceUrl : null,
-    );
-
-    return Column(
-      children: [
-        UserAvatar(user: user, radius: 20),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: 48,
-          child: Text(
-            displayName,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppTheme.textSecondaryColor,
-            ),
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddMemberButton() {
-    return GestureDetector(
-      onTap: () => _showInviteMemberDialog(),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.dividerColor),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.add,
-              color: AppTheme.textSecondaryColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '添加',
-            style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildAppIcon(
@@ -516,9 +450,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             const SizedBox(height: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textPrimaryColor,
+                color: context.appColors.textPrimary,
               ),
             ),
           ],
@@ -527,60 +461,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
-  Widget _buildNavRow(String title, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppTheme.textPrimaryColor,
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchRow(
-    String title,
-    bool value,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppTheme.textPrimaryColor,
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppTheme.primaryColor,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 退出群组
   Future<void> _handleQuitGroup() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -594,9 +474,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               '退出',
-              style: TextStyle(color: AppTheme.unreadRed),
+              style: TextStyle(color: context.appColors.danger),
             ),
           ),
         ],
@@ -639,9 +519,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               '清空',
-              style: TextStyle(color: AppTheme.unreadRed),
+              style: TextStyle(color: context.appColors.danger),
             ),
           ),
         ],
@@ -845,8 +725,8 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                                   '确定 (${selectedIds.length})',
                                   style: TextStyle(
                                     color: selectedIds.isEmpty
-                                        ? AppTheme.textSecondaryColor
-                                        : AppTheme.primaryColor,
+                                        ? context.appColors.textSecondary
+                                        : context.appColors.primary,
                                   ),
                                 ),
                               ),
@@ -860,11 +740,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                           child: friendState.isLoading
                               ? const Center(child: CircularProgressIndicator())
                               : friendState.friends.isEmpty
-                              ? const Center(
+                              ? Center(
                                   child: Text(
                                     '暂无好友',
                                     style: TextStyle(
-                                      color: AppTheme.textSecondaryColor,
+                                      color: context.appColors.textSecondary,
                                     ),
                                   ),
                                 )
@@ -896,7 +776,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                                       ),
                                       trailing: Checkbox(
                                         value: isSelected,
-                                        activeColor: AppTheme.primaryColor,
+                                        activeColor: context.appColors.primary,
                                         onChanged: (checked) {
                                           setSheetState(() {
                                             if (checked == true) {

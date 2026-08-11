@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
-import '../../../providers/message_service_provider.dart';
+import '../providers/message_service_provider.dart';
+import '../utils/conversation_display.dart';
 import 'message_service_notifier.dart';
 
 /// 会话列表状态
@@ -11,6 +12,8 @@ class ConversationListState {
   final int syncProgress;
   final bool isLoading;
   final String? error;
+  final Map<String, String> previews;
+  final Map<String, String> timeTexts;
 
   const ConversationListState({
     this.conversations = const [],
@@ -18,6 +21,8 @@ class ConversationListState {
     this.syncProgress = 0,
     this.isLoading = false,
     this.error,
+    this.previews = const {},
+    this.timeTexts = const {},
   });
 
   ConversationListState copyWith({
@@ -26,6 +31,8 @@ class ConversationListState {
     int? syncProgress,
     bool? isLoading,
     String? error,
+    Map<String, String>? previews,
+    Map<String, String>? timeTexts,
   }) {
     return ConversationListState(
       conversations: conversations ?? this.conversations,
@@ -33,6 +40,8 @@ class ConversationListState {
       syncProgress: syncProgress ?? this.syncProgress,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      previews: previews ?? this.previews,
+      timeTexts: timeTexts ?? this.timeTexts,
     );
   }
 
@@ -58,10 +67,26 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
   }
 
   void _syncState(MessageServiceState messageServiceState) {
+    final previews = <String, String>{};
+    final timeTexts = <String, String>{};
+    for (final conversation in messageServiceState.conversations) {
+      previews[conversation.conversationId] = latestMessagePreview(
+        conversation.latestMsg,
+      );
+      final displayTime =
+          conversation.draftTextTime > conversation.latestMsgSendTime
+          ? conversation.draftTextTime
+          : conversation.latestMsgSendTime;
+      timeTexts[conversation.conversationId] = formatConversationTime(
+        displayTime,
+      );
+    }
     state = state.copyWith(
       conversations: messageServiceState.conversations,
       isSyncing: messageServiceState.isSyncingConversations,
       syncProgress: messageServiceState.syncProgress,
+      previews: previews,
+      timeTexts: timeTexts,
     );
   }
 

@@ -6,6 +6,7 @@ import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 
 /// 群申请页面：处理收到的入群申请，查看我发出的申请。
@@ -49,9 +50,11 @@ class _GroupApplicationsScreenState
     final state = ref.watch(groupApplicationProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
-        title: const Text('群申请'),
+        title: Text(
+          AppLocalizations.of(context)?.groupApplicationsTitle ?? '群申请',
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
@@ -86,15 +89,15 @@ class _GroupApplicationsScreenState
   Widget _buildSectionHeader(String title, {required int count}) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      color: AppTheme.backgroundColor,
+      color: context.appColors.background,
       child: Row(
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor,
+              color: context.appColors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -102,14 +105,14 @@ class _GroupApplicationsScreenState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.appColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 '$count',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.primaryColor,
+                  color: context.appColors.primary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -151,9 +154,9 @@ class _GroupApplicationsScreenState
                   '申请加入群：${apply.groupId}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
                 if (apply.reason.isNotEmpty)
@@ -161,9 +164,9 @@ class _GroupApplicationsScreenState
                     apply.reason,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
               ],
@@ -180,9 +183,9 @@ class _GroupApplicationsScreenState
                 ),
                 TextButton(
                   onPressed: () => _handle(apply, false),
-                  child: const Text(
+                  child: Text(
                     '拒绝',
-                    style: TextStyle(color: AppTheme.unreadRed),
+                    style: TextStyle(color: context.appColors.danger),
                   ),
                 ),
               ],
@@ -190,9 +193,9 @@ class _GroupApplicationsScreenState
           else
             Text(
               apply.handleResult == 1 ? '已接受' : '已拒绝',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textSecondaryColor,
+                color: context.appColors.textSecondary,
               ),
             ),
         ],
@@ -232,9 +235,9 @@ class _GroupApplicationsScreenState
                       : apply.handleResult == 1
                       ? '已通过'
                       : '已拒绝',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                 ),
               ],
@@ -252,7 +255,7 @@ class _GroupApplicationsScreenState
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(color: AppTheme.textSecondaryColor),
+          style: TextStyle(color: context.appColors.textSecondary),
         ),
       ),
     );

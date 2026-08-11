@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/friend_application_repository.dart';
 import '../../../../domain/models/friend_application.dart';
-import '../../../../providers/friend_provider.dart';
-import '../../../../providers/message_service_provider.dart';
+import '../providers/friend_provider.dart';
+import '../../chat/providers/message_service_provider.dart';
 
 class FriendApplyState {
   final List<FriendApplication> received;
@@ -36,10 +36,18 @@ class FriendApplyState {
 }
 
 class FriendApplyViewModel extends Notifier<FriendApplyState> {
+  bool _hasLoaded = false;
+
   @override
   FriendApplyState build() {
     ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.friendRevision != next.friendRevision) {
+      if (prev?.friendRevision != next.friendRevision && _hasLoaded) {
+        loadApplications();
+      }
+    });
+    Future.microtask(() {
+      if (!_hasLoaded) {
+        _hasLoaded = true;
         loadApplications();
       }
     });

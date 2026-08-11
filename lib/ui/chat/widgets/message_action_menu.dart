@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_rust_demo/domain/models/message_ext.dart';
-import 'package:flutter_rust_demo/src/rust/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
+import 'package:flutter_rust_demo/generated/rust/model/message.dart'
+    show MessageInfo;
 import 'package:flutter_rust_demo/ui/core/theme/app_theme.dart';
 
 /// 消息操作回调
@@ -63,18 +64,13 @@ class _MessageActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: colors.cardShadow,
       ),
       child: SafeArea(
         child: Column(
@@ -82,23 +78,20 @@ class _MessageActionSheet extends StatelessWidget {
           children: [
             // 操作项
             ..._buildActionItems(context),
-            const Divider(height: 1, color: AppTheme.dividerColor),
+            Divider(height: 1, color: colors.divider),
             // 取消按钮
             InkWell(
               onTap: () => Navigator.of(context).pop(),
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(12),
               ),
-              child: const SizedBox(
+              child: SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: Center(
                   child: Text(
                     '取消',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textPrimaryColor,
-                    ),
+                    style: TextStyle(fontSize: 16, color: colors.textPrimary),
                   ),
                 ),
               ),
@@ -174,6 +167,7 @@ class _MessageActionSheet extends StatelessWidget {
   }
 
   Widget _buildActionItem(BuildContext context, _ActionItem item) {
+    final colors = context.appColors;
     return InkWell(
       onTap: item.onTap,
       child: SizedBox(
@@ -185,18 +179,14 @@ class _MessageActionSheet extends StatelessWidget {
             Icon(
               item.icon,
               size: 22,
-              color: item.isDestructive
-                  ? AppTheme.unreadRed
-                  : AppTheme.textPrimaryColor,
+              color: item.isDestructive ? colors.danger : colors.textPrimary,
             ),
             const SizedBox(width: 12),
             Text(
               item.label,
               style: TextStyle(
                 fontSize: 15,
-                color: item.isDestructive
-                    ? AppTheme.unreadRed
-                    : AppTheme.textPrimaryColor,
+                color: item.isDestructive ? colors.danger : colors.textPrimary,
               ),
             ),
           ],
@@ -236,9 +226,9 @@ class _MessageActionSheet extends StatelessWidget {
               Navigator.of(ctx).pop();
               actions.onDelete(message);
             },
-            child: const Text(
+            child: Text(
               '删除',
-              style: TextStyle(color: AppTheme.unreadRed),
+              style: TextStyle(color: context.appColors.danger),
             ),
           ),
         ],

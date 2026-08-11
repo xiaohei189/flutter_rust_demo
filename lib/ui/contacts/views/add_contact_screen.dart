@@ -63,14 +63,14 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                     focusNode: _searchFocusNode,
                     decoration: InputDecoration(
                       hintText: '输入用户 ID 搜索',
-                      hintStyle: const TextStyle(
-                        color: AppTheme.textSecondaryColor,
+                      hintStyle: TextStyle(
+                        color: context.appColors.textSecondary,
                         fontSize: 15,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search,
                         size: 20,
-                        color: AppTheme.textSecondaryColor,
+                        color: context.appColors.textSecondary,
                       ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -83,7 +83,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                             )
                           : null,
                       filled: true,
-                      fillColor: AppTheme.backgroundColor,
+                      fillColor: context.appColors.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide.none,
@@ -101,7 +101,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: _onSearch,
-                  icon: const Icon(Icons.search, color: AppTheme.primaryColor),
+                  icon: Icon(Icons.search, color: context.appColors.primary),
                 ),
               ],
             ),
@@ -151,10 +151,10 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               children: [
                 Text(
                   item.nickname,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textPrimaryColor,
+                    color: context.appColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -163,9 +163,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                   const SizedBox(height: 2),
                   Text(
                     '备注: ${item.remark}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -181,9 +181,9 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
             style: TextButton.styleFrom(
               backgroundColor: isSelf
                   ? Colors.grey.shade200
-                  : AppTheme.primaryColor,
+                  : context.appColors.primary,
               foregroundColor: isSelf
-                  ? AppTheme.textSecondaryColor
+                  ? context.appColors.textSecondary
                   : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               minimumSize: Size.zero,
@@ -210,12 +210,15 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
           Icon(
             Icons.person_add_outlined,
             size: 64,
-            color: AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+            color: context.appColors.textSecondary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '输入用户 ID 搜索好友',
-            style: TextStyle(fontSize: 15, color: AppTheme.textSecondaryColor),
+            style: TextStyle(
+              fontSize: 15,
+              color: context.appColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -243,8 +246,8 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               controller: reqMsgController,
               decoration: InputDecoration(
                 hintText: '请输入验证消息',
-                hintStyle: const TextStyle(
-                  color: AppTheme.textSecondaryColor,
+                hintStyle: TextStyle(
+                  color: context.appColors.textSecondary,
                   fontSize: 14,
                 ),
                 border: OutlineInputBorder(

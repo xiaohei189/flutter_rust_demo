@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../view_models/create_group_view_model.dart';
 
@@ -51,9 +52,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
-        title: const Text('创建群组'),
+        title: Text(AppLocalizations.of(context)?.createGroupTitle ?? '创建群组'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.of(context).pop(),
@@ -77,9 +78,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: AppTheme.textPrimaryColor,
+                        color: context.appColors.textPrimary,
                       ),
                     ),
                   ),
@@ -93,10 +94,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: Text(
                           '选择成员 (${createGroupState.selectedMemberIds.length})',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textSecondaryColor,
+                            color: context.appColors.textSecondary,
                           ),
                         ),
                       ),
@@ -112,33 +113,33 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                           ),
                         )
                       else
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: Text(
                             '暂未选择成员',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.textSecondaryColor,
+                              color: context.appColors.textSecondary,
                             ),
                           ),
                         ),
                       InkWell(
                         onTap: _showAddMemberDialog,
-                        child: const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.person_add_outlined,
                                 size: 20,
-                                color: AppTheme.primaryColor,
+                                color: context.appColors.primary,
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
                                 '添加成员',
                                 style: TextStyle(
                                   fontSize: 15,
-                                  color: AppTheme.primaryColor,
+                                  color: context.appColors.primary,
                                 ),
                               ),
                             ],
@@ -155,18 +156,18 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.error_outline,
-                            color: AppTheme.unreadRed,
+                            color: context.appColors.danger,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               createGroupState.error!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: AppTheme.unreadRed,
+                                color: context.appColors.danger,
                               ),
                             ),
                           ),
@@ -189,14 +190,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       ? null
                       : _handleCreateGroup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: context.appColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    disabledBackgroundColor: AppTheme.primaryColor.withValues(
-                      alpha: 0.5,
-                    ),
+                    disabledBackgroundColor: context.appColors.primary
+                        .withValues(alpha: 0.5),
                   ),
                   child: createGroupState.isCreating
                       ? const SizedBox(
@@ -244,16 +244,16 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     return InputChip(
       avatar: CircleAvatar(
         radius: 12,
-        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+        backgroundColor: context.appColors.primary.withValues(alpha: 0.1),
         backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
             ? NetworkImage(avatarUrl)
             : null,
         child: avatarUrl == null || avatarUrl.isEmpty
             ? Text(
                 displayName.substring(0, 1),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: AppTheme.primaryColor,
+                  color: context.appColors.primary,
                 ),
               )
             : null,
@@ -327,7 +327,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: AppTheme.backgroundColor,
+                          fillColor: context.appColors.background,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -350,11 +350,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       child: friendState.isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : friendState.friends.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 '暂无好友',
                                 style: TextStyle(
-                                  color: AppTheme.textSecondaryColor,
+                                  color: context.appColors.textSecondary,
                                 ),
                               ),
                             )
@@ -386,14 +386,14 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                   ),
                                   subtitle: Text(
                                     'ID: ${friend.userId}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: AppTheme.textSecondaryColor,
+                                      color: context.appColors.textSecondary,
                                     ),
                                   ),
                                   trailing: Checkbox(
                                     value: isSelected,
-                                    activeColor: AppTheme.primaryColor,
+                                    activeColor: context.appColors.primary,
                                     onChanged: (checked) {
                                       final notifier = ref.read(
                                         createGroupProvider.notifier,
@@ -461,7 +461,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: context.appColors.primary,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

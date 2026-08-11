@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../../domain/models/conversation.dart';
-import '../../src/rust/event/events/conversation.dart';
+import '../../generated/rust/event/events/conversation.dart';
 import '../../ui/core/utils/app_logger.dart';
 import 'im_client.dart';
 

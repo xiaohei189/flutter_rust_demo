@@ -1,22 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../data/services/auth_api.dart' show usedForLogin;
 import '../../../../router/app_router.dart';
-import '../../../../data/services/auth_api.dart'
-    show
-        loginAsync,
-        loginWithVerifyCode,
-        sendVerificationCode,
-        kAuthBaseUrl,
-        usedForLogin;
-import '../../../../ui/core/utils/app_logger.dart';
-import '../../../../data/services/login_storage.dart';
-import '../../../../providers/message_service_provider.dart';
+import '../providers/auth_provider.dart';
+import '../../../ui/core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
-/// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐
+/// 登录页：支持密码登录与验证码登录，与 openim-flutter-demo 对齐。
+/// 业务逻辑由 [AuthViewModel] 负责，页面只做表单与导航。
 class LoginScreen extends ConsumerStatefulWidget {
   final String wsUrl;
   final String apiBaseUrl;
@@ -39,15 +32,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _codeController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _loading = false;
   bool _isVerifyCodeLogin = false; // false=密码登录 true=验证码登录
-  int _countdown = 0; // 获取验证码倒计时秒数
-  Timer? _countdownTimer;
-  String? _errorText;
 
   @override
   void dispose() {
-    _countdownTimer?.cancel();
     _areaCodeController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
@@ -61,168 +49,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String get _phone => _phoneController.text.trim();
 
   Future<void> _sendCode() async {
-    if (_phone.isEmpty) {
-      setState(() => _errorText = '请先输入手机号');
-      return;
-    }
-    if (_countdown > 0) return;
-    setState(() {
-      _errorText = null;
-      _countdown = 60;
-    });
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      setState(() {
-        if (_countdown <= 1) {
-          _countdown = 0;
-          t.cancel();
-        } else {
-          _countdown--;
-        }
-      });
-    });
-    try {
-      await sendVerificationCode(
-        areaCode: _areaCode,
-        phoneNumber: _phone,
-        usedFor: usedForLogin,
-      );
-      if (mounted) setState(() => _errorText = null);
-    } catch (e, st) {
-      appLog.e('发送验证码失败', e, st);
-      if (mounted) {
-        setState(() {
-          _countdown = 0;
-          _countdownTimer?.cancel();
-          _errorText = e.toString().replaceFirst(
-            RegExp(r'^Exception:?\s*'),
-            '',
-          );
-        });
-      }
-    }
+    await ref
+        .read(authViewModelProvider.notifier)
+        .sendCode(
+          areaCode: _areaCode,
+          phoneNumber: _phone,
+          usedFor: usedForLogin,
+        );
   }
 
   Future<void> _loginWithPassword() async {
-    final password = _passwordController.text.trim();
-    if (_phone.isEmpty || password.isEmpty) {
-      setState(() => _errorText = '请输入手机号和密码');
-      return;
-    }
-    appLog.i('[登录] 密码登录开始');
-    setState(() {
-      _loading = true;
-      _errorText = null;
-    });
-    try {
-      appLog.i('[登录] 即将请求密码登录 HTTP');
-      final resp = await loginAsync(
-        areaCode: _areaCode,
-        phoneNumber: _phone,
-        password: password,
-        platform: 5,
-      );
-      appLog.i('[登录] 密码登录 HTTP 返回成功');
-      if (!mounted) return;
-      appLog.i('[登录] 调用 _stopLoadingAndGoToMain');
-      _stopLoadingAndGoToMain(resp.userId, resp.imToken);
-    } catch (e, st) {
-      appLog.e('[登录] 密码登录失败', e, st);
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          final msg = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
-          _errorText = '$msg\n请求地址: $kAuthBaseUrl/account/login';
-        });
-      }
+    final ok = await ref
+        .read(authViewModelProvider.notifier)
+        .loginWithPassword(
+          areaCode: _areaCode,
+          phoneNumber: _phone,
+          password: _passwordController.text.trim(),
+          wsUrl: widget.wsUrl,
+          apiBaseUrl: widget.apiBaseUrl,
+        );
+    if (ok && mounted) {
+      context.go(AppRouter.main);
     }
   }
 
   Future<void> _loginWithVerifyCode() async {
-    final code = _codeController.text.trim();
-    if (_phone.isEmpty || code.isEmpty) {
-      setState(() => _errorText = '请输入手机号和验证码');
-      return;
-    }
-    appLog.i('[登录] 验证码登录开始');
-    setState(() {
-      _loading = true;
-      _errorText = null;
-    });
-    try {
-      appLog.i('[登录] 即将请求验证码登录 HTTP（最多等 30s）');
-      final result =
-          await loginWithVerifyCode(
-            areaCode: _areaCode,
-            phoneNumber: _phone,
-            verifyCode: code,
-            platform: 5,
-          ).timeout(
-            const Duration(seconds: 30),
-            onTimeout: () => throw Exception(
-              '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: $kAuthBaseUrl/account/login',
-            ),
-          );
-      appLog.i('[登录] 验证码登录 HTTP 返回成功');
-      if (!mounted) return;
-      appLog.i('[登录] 调用 _stopLoadingAndGoToMain');
-      _stopLoadingAndGoToMain(result.userId, result.imToken);
-    } catch (e, st) {
-      appLog.e('[登录] 验证码登录失败', e, st);
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          final msg = e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
-          _errorText = '$msg\n请求地址: $kAuthBaseUrl/account/login';
-        });
-      }
-    }
-  }
-
-  /// 保存凭证并初始化 MessageService，然后跳转主界面
-  void _stopLoadingAndGoToMain(String userId, String imToken) async {
-    appLog.i('[登录] _stopLoadingAndGoToMain 开始');
-    if (!mounted) return;
-    setState(() => _loading = false);
-    appLog.i('[登录] setState(_loading=false) 已调用');
-
-    try {
-      // 保存凭证
-      await LoginStorage.saveCredentials(
-        userId: userId,
-        imToken: imToken,
-        areaCode: _areaCode,
-        phoneNumber: _phone,
-      );
-      appLog.i('[登录] 凭证已保存');
-
-      // 初始化 MessageService
-      appLog.i('[登录] 开始 MessageService.initialize');
-      await ref
-          .read(messageServiceProvider.notifier)
-          .initialize(
-            wsUrl: widget.wsUrl,
-            apiBaseUrl: widget.apiBaseUrl,
-            userId: userId,
-            imToken: imToken,
-          );
-      appLog.i('[登录] MessageService.initialize 完成');
-
-      if (!mounted) return;
-      // 初始化完成后再导航到主页
+    final ok = await ref
+        .read(authViewModelProvider.notifier)
+        .loginWithVerifyCode(
+          areaCode: _areaCode,
+          phoneNumber: _phone,
+          verifyCode: _codeController.text.trim(),
+          wsUrl: widget.wsUrl,
+          apiBaseUrl: widget.apiBaseUrl,
+        );
+    if (ok && mounted) {
       context.go(AppRouter.main);
-      appLog.i('[登录] 导航到主页已调用');
-    } catch (e) {
-      appLog.e('[登录] 初始化失败: $e');
-      if (mounted) {
-        setState(() {
-          _errorText = '初始化失败: $e';
-        });
-      }
     }
   }
 
@@ -236,6 +98,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authViewModelProvider);
+    final loading = authState.isLoading;
+    final countdown = authState.countdown;
+    final errorText = authState.errorText;
+    final colors = context.appColors;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -249,15 +117,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Icon(
                   Icons.chat_bubble_outline,
                   size: 64,
-                  color: Colors.blue.shade400,
+                  color: colors.primary,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '欢迎使用',
+                  AppLocalizations.of(context)?.loginTitle ?? '欢迎使用',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade700,
+                    color: colors.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -269,10 +137,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   selected: {_isVerifyCodeLogin},
                   onSelectionChanged: (s) {
-                    setState(() {
-                      _isVerifyCodeLogin = s.first;
-                      _errorText = null;
-                    });
+                    setState(() => _isVerifyCodeLogin = s.first);
+                    ref.read(authViewModelProvider.notifier).clearError();
                   },
                 ),
                 const SizedBox(height: 24),
@@ -300,7 +166,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.phone,
-                        onChanged: (_) => setState(() => _errorText = null),
+                        onChanged: (_) => ref
+                            .read(authViewModelProvider.notifier)
+                            .clearError(),
                       ),
                     ),
                   ],
@@ -319,18 +187,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
-                          onChanged: (_) => setState(() => _errorText = null),
+                          onChanged: (_) => ref
+                              .read(authViewModelProvider.notifier)
+                              .clearError(),
                         ),
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
                         width: 120,
                         child: FilledButton.tonal(
-                          onPressed: (_countdown > 0 || _loading)
+                          onPressed: (countdown > 0 || loading)
                               ? null
                               : _sendCode,
-                          child: _countdown > 0
-                              ? Text('${_countdown}s 后重发')
+                          child: countdown > 0
+                              ? Text('$countdown s 后重发')
                               : const Text('获取验证码'),
                         ),
                       ),
@@ -339,7 +209,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '测试环境：请先点击「获取验证码」，再输入 666666',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
                   ),
                 ] else
                   TextFormField(
@@ -360,22 +230,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                       ),
                     ),
-                    onChanged: (_) => setState(() => _errorText = null),
+                    onChanged: (_) =>
+                        ref.read(authViewModelProvider.notifier).clearError(),
                   ),
-                if (_errorText != null) ...[
+                if (errorText != null) ...[
                   const SizedBox(height: 12),
                   Text(
-                    _errorText!,
-                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                    errorText,
+                    style: TextStyle(color: colors.danger, fontSize: 13),
                   ),
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _loading ? null : _login,
+                  onPressed: loading ? null : _login,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: _loading
+                  child: loading
                       ? const SizedBox(
                           height: 22,
                           width: 22,
@@ -399,10 +270,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        setState(() {
-                          _isVerifyCodeLogin = true;
-                          _errorText = null;
-                        });
+                        setState(() => _isVerifyCodeLogin = true);
+                        ref.read(authViewModelProvider.notifier).clearError();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('当前为验证码登录，获取验证码后即可登录'),

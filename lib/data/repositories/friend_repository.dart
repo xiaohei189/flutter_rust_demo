@@ -1,9 +1,9 @@
 import '../../domain/models/friend.dart';
 import '../services/friend_service.dart';
 import '../services/im_client.dart';
-import '../../src/rust/ffi/client.dart';
-import '../../src/rust/http/friend.dart' show SearchFriendItem;
-import '../../src/rust/model/friend.dart' show FriendInfo;
+import '../../generated/rust/ffi/client.dart';
+import '../../generated/rust/http/friend.dart' show SearchFriendItem;
+import '../../generated/rust/model/friend.dart' show FriendInfo;
 
 abstract class FriendRepository {
   Future<List<Friend>> loadFriends();

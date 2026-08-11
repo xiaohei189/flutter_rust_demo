@@ -36,7 +36,9 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   }
 
   Future<void> _load() async {
-    final enabled = await ref.read(settingsRepositoryProvider).isAppLockEnabled();
+    final enabled = await ref
+        .read(settingsRepositoryProvider)
+        .isAppLockEnabled();
     if (mounted) {
       setState(() {
         _enabled = enabled;
@@ -83,8 +85,9 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
       return widget.child;
     }
 
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -92,11 +95,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.lock_outline,
-                  size: 72,
-                  color: AppTheme.primaryColor,
-                ),
+                Icon(Icons.lock_outline, size: 72, color: colors.primary),
                 const SizedBox(height: 16),
                 const Text(
                   '输入 PIN 解锁',
@@ -113,7 +112,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
                   decoration: InputDecoration(
                     hintText: '4-6 位数字',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: colors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,

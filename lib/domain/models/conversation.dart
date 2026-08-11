@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../src/rust/model/local.dart' show LocalConversation;
+import '../../generated/rust/model/local.dart' show LocalConversation;
 
 part 'conversation.freezed.dart';
 

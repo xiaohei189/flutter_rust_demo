@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/conversation.dart';
 import '../../../../providers/providers.dart';
@@ -12,8 +14,6 @@ import '../../../../ui/chat/widgets/chat_list_item.dart';
 import '../../../../ui/chat/widgets/conversation_title_bar.dart';
 import '../../../../ui/chat/widgets/group_filter_panel.dart';
 import '../../../../ui/profile/views/profile_drawer_screen.dart';
-import '../../../../ui/profile/views/my_profile_screen.dart';
-import '../../../../ui/contacts/views/scan_screen.dart';
 import '../../core/view_models/connection_view_model.dart';
 import '../view_models/conversation_view_model.dart';
 
@@ -104,9 +104,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final conversationState = ref.watch(conversationListProvider);
     final connectionState = ref.watch(connectionProvider);
     final userProfileState = ref.watch(userProfileProvider);
+    final cachedUserProfiles = ref.watch(conversationUserProfilesProvider);
 
     final conversations = _getFilteredConversations(
       conversationState.conversations,
@@ -114,7 +116,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final totalUnread = conversationState.totalUnreadCount;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: colors.background,
       appBar: ConversationTitleBar(
         currentUserId: userProfileState.profile?.userId ?? '',
         nickname: userProfileState.profile?.nickname,
@@ -127,28 +129,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             LeftSlideRoute(
               child: ProfileDrawerScreen(
                 onOpenMyProfile: () {
-                  Navigator.of(context).pushReplacement(
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const MyProfileScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                            return SlideTransition(
-                              position:
-                                  Tween<Offset>(
-                                    begin: const Offset(1, 0),
-                                    end: Offset.zero,
-                                  ).animate(
-                                    CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.easeOutCubic,
-                                    ),
-                                  ),
-                              child: child,
-                            );
-                          },
-                    ),
-                  );
+                  AppRouter.goToMyProfile(context);
                 },
               ),
             ),
@@ -163,9 +144,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         onAddGroup: () => AppRouter.goToSearch(context),
         onCreateGroup: () => AppRouter.goToCreateGroup(context),
         onScan: () async {
-          final raw = await Navigator.of(
-            context,
-          ).push<String>(MaterialPageRoute(builder: (_) => const ScanScreen()));
+          final raw = await context.push<String>('/scan');
           if (raw == null || !mounted) return;
           _handleScanResult(raw);
         },
@@ -183,10 +162,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             },
             onOpenGroupFilter: _openGroupFilterPanel,
           ),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          Divider(height: 1, color: colors.divider),
           Expanded(
             child: RefreshIndicator(
-              color: AppTheme.primaryColor,
+              color: colors.primary,
               onRefresh: () => ref
                   .read(conversationListProvider.notifier)
                   .refreshConversations(),
@@ -204,7 +183,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                       ],
                     )
                   : ListView.builder(
-                      key: ValueKey<int>(conversations.length),
+                      key: const PageStorageKey<String>('conversation_list'),
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.zero,
                       itemCount: conversations.length,
@@ -218,9 +197,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                         final otherUserProfile =
                             otherUserId != null &&
                                 otherUserId != userProfileState.profile?.userId
-                            ? ref
-                                  .read(messageServiceProvider.notifier)
-                                  .getUserProfile(otherUserId)
+                            ? cachedUserProfiles[otherUserId]
                             : null;
                         return ChatListItem(
                           key: ValueKey<String>(conversation.conversationId),
@@ -228,6 +205,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           cachedUserProfile: otherUserProfile,
                           currentUserLocalAvatarPath:
                               userProfileState.localAvatarPath,
+                          previewText: conversationState
+                              .previews[conversation.conversationId],
+                          timeText: conversationState
+                              .timeTexts[conversation.conversationId],
                           itemIndex: index,
                           currentUserId: userProfileState.profile?.userId,
                           onTap: () {
@@ -274,6 +255,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     ConversationListState conversationState,
     AppConnectionState connectionState,
   ) {
+    final colors = context.appColors;
     final label = _activeFilter == GroupFilter.all
         ? '消息'
         : _activeFilter == GroupFilter.unread
@@ -296,15 +278,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 ? Icons.done_all
                 : Icons.chat_bubble_outline,
             size: 64,
-            color: AppTheme.textSecondaryColor.withValues(alpha: 0.4),
+            color: colors.textSecondary.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
           Text(
             _activeFilter == GroupFilter.all ? '暂无会话' : '「$label」中没有会话',
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppTheme.textSecondaryColor,
-            ),
+            style: TextStyle(fontSize: 16, color: colors.textSecondary),
           ),
           if (_activeFilter == GroupFilter.all) ...[
             const SizedBox(height: 8),
@@ -312,7 +291,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               connectionState.isConnected ? '等待接收消息...' : 'WebSocket 未连接',
               style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
+                color: colors.textSecondary.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -323,9 +302,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
 
   void _handleScanResult(String raw) {
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('暂不支持打开链接: $raw')));
+      _showUnsupportedUrlDialog(raw);
       return;
     }
     if (raw.startsWith('g_') || raw.startsWith('sg_')) {
@@ -333,5 +310,34 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     } else {
       AppRouter.goToUserProfile(context, userId: raw);
     }
+  }
+
+  void _showUnsupportedUrlDialog(String url) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('扫描到链接'),
+        content: SelectableText(url),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('已复制链接'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('复制链接'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
   }
 }

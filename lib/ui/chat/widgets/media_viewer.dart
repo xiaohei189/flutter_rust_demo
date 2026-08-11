@@ -3,10 +3,12 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_image.dart';
 
 bool _isRemote(String source) =>
     source.startsWith('http://') || source.startsWith('https://');
@@ -16,11 +18,9 @@ Future<void> openImagePreview(
   required String source,
   required String suggestedName,
 }) async {
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) =>
-          _ImagePreviewScreen(source: source, suggestedName: suggestedName),
-    ),
+  await context.push<void>(
+    '/media/image?source=${Uri.encodeQueryComponent(source)}'
+    '&name=${Uri.encodeQueryComponent(suggestedName)}',
   );
 }
 
@@ -34,10 +34,8 @@ Future<void> openVideoPreview(
     ).showSnackBar(const SnackBar(content: Text('视频地址为空，无法播放')));
     return;
   }
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => _VideoPreviewScreen(source: source),
-    ),
+  await context.push<void>(
+    '/media/video?source=${Uri.encodeQueryComponent(source)}',
   );
 }
 
@@ -88,8 +86,9 @@ Future<void> saveMessageMedia(
   }
 }
 
-class _ImagePreviewScreen extends StatelessWidget {
-  const _ImagePreviewScreen({
+class ImagePreviewScreen extends StatelessWidget {
+  const ImagePreviewScreen({
+    super.key,
     required this.source,
     required this.suggestedName,
   });
@@ -99,19 +98,15 @@ class _ImagePreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = _isRemote(source)
-        ? Image.network(
-            source,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) =>
-                const Icon(Icons.broken_image, size: 96, color: Colors.white54),
-          )
-        : Image.file(
-            File(source),
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) =>
-                const Icon(Icons.broken_image, size: 96, color: Colors.white54),
-          );
+    final image = AppImage(
+      source: source,
+      fit: BoxFit.contain,
+      errorWidget: const Icon(
+        Icons.broken_image,
+        size: 96,
+        color: Colors.white54,
+      ),
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -140,16 +135,16 @@ class _ImagePreviewScreen extends StatelessWidget {
   }
 }
 
-class _VideoPreviewScreen extends StatefulWidget {
-  const _VideoPreviewScreen({required this.source});
+class VideoPreviewScreen extends StatefulWidget {
+  const VideoPreviewScreen({super.key, required this.source});
 
   final String source;
 
   @override
-  State<_VideoPreviewScreen> createState() => _VideoPreviewScreenState();
+  State<VideoPreviewScreen> createState() => _VideoPreviewScreenState();
 }
 
-class _VideoPreviewScreenState extends State<_VideoPreviewScreen> {
+class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   VideoPlayerController? _controller;
   bool _initializing = true;
   String? _error;
@@ -243,8 +238,8 @@ class _VideoPreviewScreenState extends State<_VideoPreviewScreen> {
             child: VideoProgressIndicator(
               controller,
               allowScrubbing: true,
-              colors: const VideoProgressColors(
-                playedColor: AppTheme.primaryColor,
+              colors: VideoProgressColors(
+                playedColor: context.appColors.primary,
                 bufferedColor: Colors.white38,
                 backgroundColor: Colors.white24,
               ),

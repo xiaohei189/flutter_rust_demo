@@ -6,12 +6,13 @@ import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
-import '../../../../ui/profile/views/qr_code_screen.dart';
 import '../../../../data/services/services.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../widgets/group_member_section.dart';
 
 enum _JoinTimeFilter { all, today, week, month }
 
@@ -91,7 +92,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
 
     if (conversation == null) {
       return Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: context.appColors.background,
         appBar: AppBar(
           title: const Text('群信息'),
           leading: IconButton(
@@ -132,9 +133,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     final isOwner = currentMember?.roleLevel == 3;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
-        title: const Text('群信息'),
+        title: Text(AppLocalizations.of(context)?.groupInfoTitle ?? '群信息'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
@@ -156,7 +157,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 14,
-                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                      color: context.appColors.textSecondary.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ],
                 ),
@@ -186,106 +189,19 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
           // 群成员
-          CardLayout(
-            children: [
-              ListRow(
-                label: '群成员',
-                trailing: Text(
-                  memberState.isLoading
-                      ? '加载中...'
-                      : '${memberState.members.length}人',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-              ),
-              const ListDivider(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-                child: TextField(
-                  onChanged: (value) => setState(() => _memberKeyword = value),
-                  decoration: InputDecoration(
-                    hintText: '搜索群成员',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    filled: true,
-                    fillColor: AppTheme.backgroundColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
-              const ListDivider(),
-              if (memberState.isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (visibleMembers.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: Text('没有匹配的成员')),
-                )
-              else
-                ...visibleMembers.map(
-                  (m) => ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    leading: UserAvatar(
-                      user: User(
-                        id: m.userId,
-                        name: m.nickname,
-                        avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
-                      ),
-                      radius: 18,
-                    ),
-                    title: Text(
-                      m.nickname.isNotEmpty ? m.nickname : m.userId,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      _roleName(m.roleLevel),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                    onTap: () => _showMemberActions(m),
-                  ),
-                ),
-              const ListDivider(),
-              ListRow(
-                label: '群主和管理员',
-                trailing: Text(
-                  '${memberState.members.where((m) => m.roleLevel >= 2).length}人',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                onTap: _showOwnerAdminList,
-              ),
-              const ListDivider(),
-              ListRow(
-                label: '按加入时间筛选',
-                trailing: Text(
-                  _joinTimeFilterLabel,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ),
-                onTap: _showJoinTimeFilter,
-              ),
-            ],
+          GroupMemberSection(
+            members: visibleMembers,
+            keyword: _memberKeyword,
+            isLoading: memberState.isLoading,
+            ownerAdminCount: memberState.members
+                .where((m) => m.roleLevel >= 2)
+                .length,
+            joinTimeFilterLabel: _joinTimeFilterLabel,
+            onKeywordChanged: (value) => setState(() => _memberKeyword = value),
+            onMemberTap: _showMemberActions,
+            onOwnerAdminTap: _showOwnerAdminList,
+            onJoinTimeFilterTap: _showJoinTimeFilter,
           ),
           if (isOwner) ...[
             const SizedBox(height: 12),
@@ -293,20 +209,20 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               children: [
                 ListRow(
                   label: '全员禁言',
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.volume_off_outlined,
                     size: 20,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                   onTap: () => _showGroupManageSheet(),
                 ),
                 const ListDivider(),
                 ListRow(
                   label: '转让群主',
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.swap_horiz,
                     size: 20,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                   onTap: _transferOwner,
                 ),
@@ -327,25 +243,26 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                     Icon(
                       Icons.qr_code_2,
                       size: 22,
-                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.7),
+                      color: context.appColors.textSecondary.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 14,
-                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                      color: context.appColors.textSecondary.withValues(
+                        alpha: 0.5,
+                      ),
                     ),
                   ],
                 ),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => QrCodeScreen(
-                        title: '群二维码',
-                        data: _groupId,
-                        subtitle: _groupName,
-                      ),
-                    ),
+                  AppRouter.goToQrCode(
+                    context,
+                    title: '群二维码',
+                    data: _groupId,
+                    subtitle: _groupName,
                   );
                 },
               ),
@@ -554,10 +471,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                   _JoinTimeFilter.month => '近 30 天',
                 }),
                 trailing: _joinTimeFilter == filter
-                    ? const Icon(
+                    ? Icon(
                         Icons.check,
                         size: 20,
-                        color: AppTheme.primaryColor,
+                        color: context.appColors.primary,
                       )
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(filter),
@@ -586,9 +503,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               '踢出',
-              style: TextStyle(color: AppTheme.unreadRed),
+              style: TextStyle(color: context.appColors.danger),
             ),
           ),
         ],
@@ -702,13 +619,13 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               onTap: () => Navigator.of(ctx).pop('transfer'),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline,
-                color: AppTheme.unreadRed,
+                color: context.appColors.danger,
               ),
-              title: const Text(
+              title: Text(
                 '解散群组',
-                style: TextStyle(color: AppTheme.unreadRed),
+                style: TextStyle(color: context.appColors.danger),
               ),
               onTap: () => Navigator.of(ctx).pop('dismiss'),
             ),
@@ -814,9 +731,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
+            child: Text(
               '解散',
-              style: TextStyle(color: AppTheme.unreadRed),
+              style: TextStyle(color: context.appColors.danger),
             ),
           ),
         ],
@@ -910,7 +827,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           decoration: InputDecoration(
             hintText: '请输入$title',
             filled: true,
-            fillColor: AppTheme.backgroundColor,
+            fillColor: context.appColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,

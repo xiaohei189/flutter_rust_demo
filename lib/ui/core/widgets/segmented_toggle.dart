@@ -3,7 +3,7 @@ import 'package:flutter/widget_previews.dart';
 
 import '../theme/app_theme.dart';
 
-/// 分段控制器：灰底圆角容器，白色滑块平滑滑动
+/// 分段控制器：灰底圆角容器，当前主题色滑块平滑滑动。
 class SegmentedToggle extends StatelessWidget {
   const SegmentedToggle({
     super.key,
@@ -18,11 +18,12 @@ class SegmentedToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final count = segments.length;
     return Container(
       height: 34,
       decoration: BoxDecoration(
-        color: const Color(0xFFEDEDED),
+        color: colors.surfaceMuted,
         borderRadius: BorderRadius.circular(17),
       ),
       padding: const EdgeInsets.all(2),
@@ -36,13 +37,19 @@ class SegmentedToggle extends StatelessWidget {
               maintainState: true,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: List.generate(count, (i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    segments[i],
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                children: List.generate(
+                  count,
+                  (i) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      segments[i],
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                )),
+                ),
               ),
             ),
             Positioned.fill(
@@ -60,7 +67,7 @@ class SegmentedToggle extends StatelessWidget {
                         width: segWidth,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: colors.surface,
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
@@ -81,8 +88,8 @@ class SegmentedToggle extends StatelessWidget {
                                         ? FontWeight.w600
                                         : FontWeight.normal,
                                     color: isSelected
-                                        ? AppTheme.primaryColor
-                                        : AppTheme.textSecondaryColor,
+                                        ? colors.primary
+                                        : colors.textSecondary,
                                   ),
                                 ),
                               ),

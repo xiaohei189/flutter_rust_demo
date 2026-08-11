@@ -50,8 +50,9 @@ class ChatListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
-      color: Colors.white,
+      color: colors.surface,
       padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
       child: Row(
         children: [
@@ -61,14 +62,10 @@ class ChatListHeader extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F0F0),
+                color: colors.surfaceMuted,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.tune,
-                size: 18,
-                color: AppTheme.textPrimaryColor,
-              ),
+              child: Icon(Icons.tune, size: 18, color: colors.textPrimary),
             ),
           ),
           const SizedBox(width: 10),
@@ -82,8 +79,8 @@ class ChatListHeader extends StatelessWidget {
               selectedIndex: activeFilter == GroupFilter.all
                   ? 0
                   : activeFilter == GroupFilter.unread
-                      ? 1
-                      : 2,
+                  ? 1
+                  : 2,
               onChanged: (i) {
                 switch (i) {
                   case 0:
@@ -102,9 +99,12 @@ class ChatListHeader extends StatelessWidget {
             GestureDetector(
               onTap: () => onFilterChange(GroupFilter.all),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                  color: colors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -112,18 +112,14 @@ class ChatListHeader extends StatelessWidget {
                   children: [
                     Text(
                       _activeFilterLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: colors.primary,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
-                      Icons.close,
-                      size: 14,
-                      color: AppTheme.primaryColor,
-                    ),
+                    Icon(Icons.close, size: 14, color: colors.primary),
                   ],
                 ),
               ),

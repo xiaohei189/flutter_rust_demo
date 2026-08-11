@@ -1,8 +1,8 @@
 import '../../domain/models/friend_application.dart';
 import '../services/friend_service.dart';
 import '../services/im_client.dart';
-import '../../src/rust/ffi/client.dart';
-import '../../src/rust/http/friend.dart' show FriendApplyInfo;
+import '../../generated/rust/ffi/client.dart';
+import '../../generated/rust/http/friend.dart' show FriendApplyInfo;
 
 abstract class FriendApplicationRepository {
   Future<({List<FriendApplication> received, List<FriendApplication> sent})>

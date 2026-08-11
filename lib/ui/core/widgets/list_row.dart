@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// 列表行组件
-/// 通用的列表项布局：左侧前导图标 + 标签、中间 Spacer、右侧尾随内容/箭头
-/// 支持点击、自定义前导/尾随组件、值文本样式
+/// 通用的列表行布局：左侧前导图标 + 标签、中间 Spacer、右侧尾随内容/箭头。
 class ListRow extends StatelessWidget {
   const ListRow({
     super.key,
@@ -31,22 +29,17 @@ class ListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: padding,
         child: Row(
           children: [
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: 12),
-            ],
+            if (leading != null) ...[leading!, const SizedBox(width: 12)],
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textPrimaryColor,
-              ),
+              style: TextStyle(fontSize: 16, color: colors.textPrimary),
             ),
             const Spacer(),
             if (trailing != null) ...[
@@ -56,16 +49,13 @@ class ListRow extends StatelessWidget {
                 value!,
                 style: TextStyle(
                   fontSize: 15,
-                  color: valueColor ?? AppTheme.textSecondaryColor,
+                  color: valueColor ?? colors.textSecondary,
                 ),
               ),
             ] else if (placeholder != null) ...[
               Text(
                 placeholder!,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppTheme.textSecondaryColor,
-                ),
+                style: TextStyle(fontSize: 15, color: colors.textSecondary),
               ),
             ],
             if (showArrow) ...[
@@ -75,7 +65,7 @@ class ListRow extends StatelessWidget {
                 child: Icon(
                   Icons.chevron_right,
                   size: 22,
-                  color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                  color: colors.textSecondary.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -86,8 +76,7 @@ class ListRow extends StatelessWidget {
   }
 }
 
-/// 双行列表项组件
-/// 用于需要显示标签和较长值的场景，如群名称、群描述
+/// 双行列表项，用于标签 + 较长值场景。
 class TwoLineListRow extends StatelessWidget {
   const TwoLineListRow({
     super.key,
@@ -106,6 +95,7 @@ class TwoLineListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -115,10 +105,7 @@ class TwoLineListRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                color: AppTheme.textPrimaryColor,
-              ),
+              style: TextStyle(fontSize: 16, color: colors.textPrimary),
             ),
             const Spacer(),
             Expanded(
@@ -129,8 +116,8 @@ class TwoLineListRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   color: value.isNotEmpty
-                      ? AppTheme.textSecondaryColor
-                      : AppTheme.textSecondaryColor.withValues(alpha: 0.6),
+                      ? colors.textSecondary
+                      : colors.textSecondary.withValues(alpha: 0.6),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -142,7 +129,7 @@ class TwoLineListRow extends StatelessWidget {
               child: Icon(
                 Icons.chevron_right,
                 size: 22,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                color: colors.textSecondary.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -152,8 +139,7 @@ class TwoLineListRow extends StatelessWidget {
   }
 }
 
-/// 导航行组件
-/// 带箭头的可点击行，用于页面跳转
+/// 带箭头的可点击行，用于页面跳转。
 class NavRow extends StatelessWidget {
   const NavRow({
     super.key,
@@ -177,8 +163,7 @@ class NavRow extends StatelessWidget {
   }
 }
 
-/// 开关行组件
-/// 标签 + Switch 组合
+/// 标签 + Switch 组合。
 class SwitchRow extends StatelessWidget {
   const SwitchRow({
     super.key,
@@ -195,23 +180,21 @@ class SwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: padding,
       child: Row(
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppTheme.textPrimaryColor,
-            ),
+            style: TextStyle(fontSize: 16, color: colors.textPrimary),
           ),
           const Spacer(),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
-            activeThumbColor: AppTheme.primaryColor,
+            activeTrackColor: colors.primary.withValues(alpha: 0.5),
+            activeThumbColor: colors.primary,
           ),
         ],
       ),
@@ -219,8 +202,7 @@ class SwitchRow extends StatelessWidget {
   }
 }
 
-/// 分隔线组件
-/// 统一的列表分隔线样式
+/// 统一的列表分隔线样式。
 class ListDivider extends StatelessWidget {
   const ListDivider({
     super.key,
@@ -235,16 +217,11 @@ class ListDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: height,
-      indent: indent,
-      endIndent: endIndent,
-    );
+    return Divider(height: height, indent: indent, endIndent: endIndent);
   }
 }
 
-/// 危险操作行组件
-/// 红色文字的居中按钮，用于退出、删除等操作
+/// 危险操作行：红色文字居中按钮。
 class DangerActionRow extends StatelessWidget {
   const DangerActionRow({
     super.key,
@@ -266,10 +243,7 @@ class DangerActionRow extends StatelessWidget {
         child: Center(
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              color: AppTheme.unreadRed,
-            ),
+            style: TextStyle(fontSize: 15, color: context.appColors.danger),
           ),
         ),
       ),

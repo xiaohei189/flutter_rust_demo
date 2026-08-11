@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/blacklist_repository.dart';
 import '../../../../domain/models/blacklist_user.dart';
-import '../../../../providers/friend_provider.dart';
-import '../../../../providers/message_service_provider.dart';
+import '../providers/friend_provider.dart';
+import '../../chat/providers/message_service_provider.dart';
 
 class BlackListState {
   final List<BlacklistUser> users;
@@ -32,10 +32,18 @@ class BlackListState {
 }
 
 class BlackListViewModel extends Notifier<BlackListState> {
+  bool _hasLoaded = false;
+
   @override
   BlackListState build() {
     ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.friendRevision != next.friendRevision) {
+      if (prev?.friendRevision != next.friendRevision && _hasLoaded) {
+        load();
+      }
+    });
+    Future.microtask(() {
+      if (!_hasLoaded) {
+        _hasLoaded = true;
         load();
       }
     });

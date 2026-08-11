@@ -41,7 +41,7 @@ Riverpod 状态管理 (lib/providers/)
     ↕
 Dart 服务层 (lib/services/)
     ↕
-flutter_rust_bridge FFI (lib/src/rust/ ←→ rust/src/api/)
+flutter_rust_bridge FFI (lib/generated/rust/ ←→ rust/src/api/)
     ↕
 Rust SDK 入口 (rust/src/sdk/)
     ↕

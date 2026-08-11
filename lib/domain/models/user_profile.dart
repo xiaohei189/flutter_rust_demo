@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../src/rust/model/user.dart' show UserInfo;
+import '../../generated/rust/model/user.dart' show UserInfo;
 
 part 'user_profile.freezed.dart';
 

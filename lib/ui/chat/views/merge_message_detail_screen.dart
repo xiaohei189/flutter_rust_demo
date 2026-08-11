@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../../../domain/models/message_ext.dart';
-import '../../../../src/rust/model/message.dart' show MessageInfo;
+import '../../../../domain/extensions/message_ext.dart';
+import '../../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../../ui/core/theme/app_theme.dart';
 
 /// 合并转发消息详情页
@@ -15,6 +15,7 @@ class MergeMessageDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final json = message.parsedContent;
     final title = json['title'] as String? ?? '聊天记录';
     final subMessages = _parseSubMessages(json);
@@ -22,8 +23,8 @@ class MergeMessageDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title, style: const TextStyle(fontSize: 16)),
-        backgroundColor: AppTheme.scaffoldBackgroundColor,
-        foregroundColor: AppTheme.otherMessageTextColor,
+        backgroundColor: colors.background,
+        foregroundColor: colors.bubbleOtherText,
         elevation: 0.5,
       ),
       body: subMessages.isEmpty
@@ -33,7 +34,7 @@ class MergeMessageDetailScreen extends StatelessWidget {
               itemCount: subMessages.length,
               itemBuilder: (context, index) {
                 final sub = subMessages[index];
-                return _buildSubMessageItem(sub);
+                return _buildSubMessageItem(context, sub);
               },
             ),
     );
@@ -83,7 +84,8 @@ class MergeMessageDetailScreen extends StatelessWidget {
     };
   }
 
-  Widget _buildSubMessageItem(_SubMessage sub) {
+  Widget _buildSubMessageItem(BuildContext context, _SubMessage sub) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -91,19 +93,16 @@ class MergeMessageDetailScreen extends StatelessWidget {
         children: [
           Text(
             '${sub.senderNickname}：',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppTheme.otherMessageTextColor,
+              color: colors.bubbleOtherText,
             ),
           ),
           Expanded(
             child: Text(
               sub.content,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondaryColor,
-              ),
+              style: TextStyle(fontSize: 14, color: colors.textSecondary),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),

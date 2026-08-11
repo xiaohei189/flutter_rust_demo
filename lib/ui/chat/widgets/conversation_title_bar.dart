@@ -7,7 +7,8 @@ import '../../core/theme/app_theme.dart';
 /// 会话列表顶部栏（参考飞书风格）
 /// 左侧：用户头像 + 昵称/用户名
 /// 右侧：搜索图标 + 「+」按钮
-class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidget {
+class ConversationTitleBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const ConversationTitleBar({
     super.key,
     required this.currentUserId,
@@ -59,7 +60,9 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
 
   /// 判断是否为本地文件路径
   bool _isLocalPath(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('ftp://')) {
+    if (path.startsWith('http://') ||
+        path.startsWith('https://') ||
+        path.startsWith('ftp://')) {
       return false;
     }
     if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
@@ -84,10 +87,11 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return AppBar(
       toolbarHeight: 56,
       titleSpacing: 0,
-      backgroundColor: Colors.white,
+      backgroundColor: colors.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
@@ -104,13 +108,13 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
                 children: [
                   CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    backgroundColor: colors.primary.withValues(alpha: 0.15),
                     backgroundImage: _getAvatarImage(),
                     child: avatarUrl == null || avatarUrl!.isEmpty
                         ? Text(
                             _avatarInitial,
-                            style: const TextStyle(
-                              color: AppTheme.primaryColor,
+                            style: TextStyle(
+                              color: colors.primary,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -124,19 +128,16 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
                     children: [
                       Text(
                         _displayName,
-                        style: const TextStyle(
-                          color: AppTheme.textPrimaryColor,
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       if (!isConnected)
-                        const Text(
+                        Text(
                           '连接失败',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.unreadRed,
-                          ),
+                          style: TextStyle(fontSize: 11, color: colors.danger),
                         ),
                     ],
                   ),
@@ -145,18 +146,22 @@ class ConversationTitleBar extends StatelessWidget implements PreferredSizeWidge
             ),
             const Spacer(),
             // 右侧：搜索 + 加号
-            IconButton(
-              icon: const Icon(Icons.search, size: 26),
-              color: AppTheme.textPrimaryColor,
-              onPressed: onSearchTap,
-              style: IconButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(40, 40),
+            Semantics(
+              label: '搜索',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.search, size: 26),
+                color: colors.textPrimary,
+                onPressed: onSearchTap,
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(40, 40),
+                ),
               ),
             ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.add_circle_outline, size: 26),
-              color: Colors.white,
+              color: colors.surface,
               onSelected: (value) {
                 switch (value) {
                   case 'add_friend':

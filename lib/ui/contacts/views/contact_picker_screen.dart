@@ -4,23 +4,8 @@ import '../../../../domain/models/friend.dart';
 import '../../../../domain/models/group.dart';
 import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/widgets/user_avatar.dart';
-import '../../../../domain/models/user.dart';
-
-/// 联系人选择结果项
-class ContactPickItem {
-  final String id;
-  final String name;
-  final String avatarUrl;
-  final bool isGroup;
-
-  const ContactPickItem({
-    required this.id,
-    required this.name,
-    required this.avatarUrl,
-    required this.isGroup,
-  });
-}
+import '../widgets/contact_pick_item.dart';
+import '../widgets/contact_picker_list.dart';
 
 /// 通用联系人选择页面
 /// 支持单选（转发）和多选（建群）模式
@@ -165,7 +150,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
     final isLoading = friendState.isLoading || groupState.isLoading;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: context.appColors.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 22),
@@ -178,8 +163,8 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
               onPressed: _confirmSelection,
               child: Text(
                 '确定(${_selectedIds.length})',
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
+                style: TextStyle(
+                  color: context.appColors.primary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -195,7 +180,14 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _buildContactList(filteredFriends, filteredGroups),
+                : ContactPickerList(
+                    friends: filteredFriends,
+                    groups: filteredGroups,
+                    keyword: _keyword,
+                    multiSelect: widget.multiSelect,
+                    selectedIds: _selectedIds,
+                    onToggle: _toggleSelection,
+                  ),
           ),
         ],
       ),
@@ -216,10 +208,10 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
         onChanged: (v) => setState(() => _keyword = v),
         decoration: InputDecoration(
           hintText: '搜索联系人/群组',
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search,
             size: 20,
-            color: AppTheme.textSecondaryColor,
+            color: context.appColors.textSecondary,
           ),
           suffixIcon: _keyword.isNotEmpty
               ? IconButton(
@@ -235,13 +227,13 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: AppTheme.backgroundColor,
+          fillColor: context.appColors.background,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 10,
           ),
-          hintStyle: const TextStyle(
-            color: AppTheme.textSecondaryColor,
+          hintStyle: TextStyle(
+            color: context.appColors.textSecondary,
             fontSize: 14,
           ),
         ),
@@ -250,223 +242,13 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
     );
   }
 
-  /// 联系人列表
-  Widget _buildContactList(List<Friend> friends, List<Group> groups) {
-    final hasFriends = friends.isNotEmpty;
-    final hasGroups = groups.isNotEmpty;
-
-    if (!hasFriends && !hasGroups) {
-      return Center(
-        child: Text(
-          _keyword.isEmpty ? '暂无联系人' : '未找到匹配结果',
-          style: const TextStyle(
-            color: AppTheme.textSecondaryColor,
-            fontSize: 15,
-          ),
-        ),
-      );
-    }
-
-    return ListView(
-      children: [
-        // 我的好友
-        if (hasFriends) ...[
-          _buildSectionHeader('我的好友', friends.length),
-          ...friends.map((f) => _buildFriendItem(f)),
-        ],
-        // 我的群组
-        if (hasGroups) ...[
-          _buildSectionHeader('我的群组', groups.length),
-          ...groups.map((g) => _buildGroupItem(g)),
-        ],
-        // 底部间距
-        const SizedBox(height: 80),
-      ],
-    );
-  }
-
-  /// 分区标题
-  Widget _buildSectionHeader(String title, int count) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.textSecondaryColor,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '$count',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 好友列表项
-  Widget _buildFriendItem(Friend friend) {
-    final id = friend.userId;
-    final displayName = friend.remark.isNotEmpty
-        ? friend.remark
-        : friend.nickname;
-    final isSelected = _selectedIds.contains(id);
-
-    return InkWell(
-      onTap: () => _toggleSelection(
-        ContactPickItem(
-          id: id,
-          name: displayName,
-          avatarUrl: friend.faceUrl,
-          isGroup: false,
-        ),
-      ),
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            UserAvatar(
-              user: User(
-                id: id,
-                name: displayName,
-                avatar: friend.faceUrl.isNotEmpty ? friend.faceUrl : null,
-              ),
-              radius: 22,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  if (friend.remark.isNotEmpty)
-                    Text(
-                      friend.nickname,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (widget.multiSelect)
-              Checkbox(
-                value: isSelected,
-                onChanged: (_) => _toggleSelection(
-                  ContactPickItem(
-                    id: id,
-                    name: displayName,
-                    avatarUrl: friend.faceUrl,
-                    isGroup: false,
-                  ),
-                ),
-                activeColor: AppTheme.primaryColor,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 群组列表项
-  Widget _buildGroupItem(Group group) {
-    final id = group.groupId;
-    final isSelected = _selectedIds.contains(id);
-
-    return InkWell(
-      onTap: () => _toggleSelection(
-        ContactPickItem(
-          id: id,
-          name: group.groupName,
-          avatarUrl: group.faceUrl,
-          isGroup: true,
-        ),
-      ),
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            UserAvatar(
-              user: User(
-                id: id,
-                name: group.groupName,
-                avatar: group.faceUrl.isNotEmpty ? group.faceUrl : null,
-              ),
-              radius: 22,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    group.groupName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  Text(
-                    '${group.memberCount}人',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (widget.multiSelect)
-              Checkbox(
-                value: isSelected,
-                onChanged: (_) => _toggleSelection(
-                  ContactPickItem(
-                    id: id,
-                    name: group.groupName,
-                    avatarUrl: group.faceUrl,
-                    isGroup: true,
-                  ),
-                ),
-                activeColor: AppTheme.primaryColor,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// 多选模式底部栏
   Widget _buildBottomBar() {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
+          top: BorderSide(color: context.appColors.divider, width: 0.5),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -480,9 +262,9 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
           // 已选数量
           Text(
             '已选 ${_selectedIds.length} 项',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: AppTheme.textSecondaryColor,
+              color: context.appColors.textSecondary,
             ),
           ),
           const Spacer(),
@@ -490,9 +272,9 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
           ElevatedButton(
             onPressed: _selectedIds.isEmpty ? null : _confirmSelection,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: context.appColors.primary,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppTheme.primaryColor.withValues(
+              disabledBackgroundColor: context.appColors.primary.withValues(
                 alpha: 0.5,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),

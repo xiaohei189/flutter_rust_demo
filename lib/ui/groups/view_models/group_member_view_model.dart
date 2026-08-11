@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group_member.dart';
-import '../../../../providers/group_provider.dart';
-import '../../../../providers/message_service_provider.dart';
+import '../providers/group_provider.dart';
+import '../../chat/providers/message_service_provider.dart';
 
 class GroupMemberState {
   final List<GroupMember> members;
@@ -123,11 +123,7 @@ class GroupMemberViewModel extends FamilyNotifier<GroupMemberState, String> {
 
   Future<bool> setMemberRole(String userId, int roleLevel) async {
     try {
-      await _repository.setGroupMemberInfo(
-        arg,
-        userId,
-        roleLevel: roleLevel,
-      );
+      await _repository.setGroupMemberInfo(arg, userId, roleLevel: roleLevel);
       await loadMembers();
       return true;
     } catch (e) {

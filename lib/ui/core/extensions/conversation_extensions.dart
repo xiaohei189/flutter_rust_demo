@@ -1,5 +1,5 @@
 import '../../../domain/models/conversation.dart';
-import '../../../src/rust/constant/enums.dart' show SessionType;
+import '../../../generated/rust/constant/enums.dart' show SessionType;
 
 extension ConversationX on Conversation {
   SessionType get sessionType {

@@ -123,7 +123,7 @@ lib/
 │           ├── 文字样式
 │           └── lightTheme
 │
-└── 📁 src/rust/                 # Rust 桥接（已有）
+└── 📁 generated/rust/           # Rust 桥接（已有）
     └── ...                      # flutter_rust_bridge 生成的代码
 ```
 
@@ -316,6 +316,5 @@ tests/
 ---
 
 **该架构为初始骨架，可根据实际需求扩展和优化。**
-
 
 

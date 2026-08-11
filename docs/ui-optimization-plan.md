@@ -1,6 +1,6 @@
 # UI 与目录组织优化计划
 
-> 状态：进行中
+> 状态：已实施（A-E 全部完成，Windows 集成测试通过）
 > 范围：Flutter UI 层、目录组织、测试目录镜像
 > 不涉及：Rust SDK、OpenIM 服务端协议、后端接口改动
 
@@ -25,20 +25,26 @@
 
 ```text
 lib/
-├── data/                  # 按类型组织，OK
-├── domain/models/         # 按类型组织，OK
-├── providers/             # 全局平铺，功能级 Provider 与全局 Provider 混放
+├── data/
+│   ├── config/
+│   ├── repositories/
+│   └── services/
+├── domain/models/
+├── generated/rust/        # FRB + Freezed 生成代码，禁止手改
+├── providers/             # 仅保留全局 Provider
 ├── router/
-├── screens/               # 空目录，疑似迁移残留
-├── src/rust/              # FRB 生成代码与手写 FFI 混放
 └── ui/
     ├── core/
-    ├── auth/
-    ├── chat/
-    ├── contacts/
-    ├── discover/
-    ├── groups/
-    └── profile/
+    ├── shared/
+    │   ├── views/
+    │   └── widgets/
+    ├── shell/
+    ├── auth/views
+    ├── chat/{providers, view_models, views, widgets}
+    ├── contacts/{providers, view_models, views, widgets}
+    ├── discover/{views, widgets}
+    ├── groups/{providers, view_models, views, widgets}
+    └── profile/{providers, view_models, views, widgets}
 ```
 
 ### 2.2 主要问题
@@ -120,82 +126,75 @@ test/
 - [x] A2：删除或合并未使用的 `lib/ui/profile/views/profile_screen.dart`，确认没有测试或路由引用。
 - [x] A3：将 `lib/ui/core/main_screen.dart` 移动到应用壳位置，如 `lib/app/main_screen.dart` 或 `lib/ui/shell/main_screen.dart`。
 - [x] A4：将登录存储、Host 配置等从 `ui/core/utils/` 迁移到 `data/` 或 `app/config/`。
-- [ ] A5：FRB 生成代码与手写代码隔离，生成代码放入 `lib/generated/rust/` 或 `lib/src/rust/generated/`，并在 AGENTS/README 标注禁止手改。
-- [ ] A6：统一 feature 目录为 `views/ + view_models/ + widgets/`。
-- [ ] A7：明确跨功能页面的 owner：`search_screen.dart`、`scan_screen.dart`、`qr_code_screen.dart` 放到 `ui/shared/` 或指定 feature。
-- [ ] A8：测试目录按 `test/ui/<feature>/` 镜像，`test/fakes/` 改为 `test/support/fakes/`。
+- [x] A5：FRB 生成代码与手写代码隔离，生成代码放入 `lib/generated/rust/`，并在 AGENTS/README 标注禁止手改。
+- [x] A6：统一 feature 目录为 `views/ + view_models/ + widgets/`，已从 contacts/groups/profile/discover/shared 抽取独立小组件；auth 的 `view_models/` 随 B3 补齐。
+- [x] A7：明确跨功能页面的 owner：`search_screen.dart`、`scan_screen.dart`、`qr_code_screen.dart` 放到 `ui/shared/views/`。
+- [x] A8：测试目录按 `test/ui/<feature>/` 镜像，`test/fakes/` 改为 `test/support/fakes/`。
 
 ### 4.2 B 组：P0 架构分层
 
-- [ ] B1：拆分 `ChatDetailScreen`。
+- [x] B1：拆分 `ChatDetailScreen`。
   - 新建 `ChatDetailViewModel`，负责发送、草稿、引用、已读、多选、搜索等状态。
-  - 拆分输入区、引用栏、多选栏、消息搜索面板、媒体操作等子组件。
-  - 页面只保留布局、滚动、导航和简单的 UI 状态。
-- [ ] B2：页面加载编排收敛到 feature ViewModel / Notifier。
+  - 拆分输入区、引用栏、多选栏、消息搜索面板等子组件。
+  - 页面只保留布局、滚动、导航和媒体选择器。
+- [x] B2：页面加载编排收敛到 feature ViewModel / Notifier。
   - `ContactsScreen`、`GroupListScreen`、`FriendRequestsScreen`、`BlacklistScreen`、`FriendListScreen` 不再在 `initState` 直接编排多个 provider。
-  - View 只 watch 状态，加载由 ViewModel 暴露的方法或生命周期驱动。
-- [ ] B3：登录/注册流程抽成 `AuthViewModel`。
-  - 把 `MessageService.initialize`、凭证保存、倒计时、错误提示从 Screen 移到 ViewModel。
+  - View 只 watch 状态，首次加载由 Notifier `build` 的 `Future.microtask` 驱动。
+- [x] B3：登录/注册流程抽成 `AuthViewModel`。
+  - `MessageService.initialize`、凭证保存、倒计时、错误提示已从 Screen 移到 ViewModel。
   - Screen 只做表单校验、按钮状态和跳转。
-- [ ] B4：会话列表用户资料预计算。
-  - 在 `conversationListProvider` 或对应 ViewModel 中维护 `Map<userId, User>`。
+- [x] B4：会话列表用户资料预计算。
+  - 新增 `conversationUserProfilesProvider` 维护单聊用户资料缓存。
   - `ChatListScreen.itemBuilder` 不再逐项调用 `getUserProfile`。
 
 ### 4.3 C 组：P1 设计系统
 
-- [ ] C1：补充 dark theme 和主题 token。
-  - 在 `AppTheme` 中增加 `darkTheme`。
-  - 建立统一的颜色、字体、圆角、间距、阴影 token。
-- [ ] C2：替换页面中的硬编码颜色。
-  - 优先处理 `Colors.white`、`Colors.grey`、`Colors.red`、`Color(0xFF...)`。
-  - 改用 `AppTheme` 或 `ThemeExtension`，为深色模式铺路。
-- [ ] C3：统一圆角与间距规范。
-  - 收敛 `CardLayout`、附件面板、气泡、日期标签等圆角值。
-  - 以 `AppTheme` 暴露统一 radius 和 spacing 常量。
-- [ ] C4：清理重复页面与死代码。
-  - 合并 `ProfileScreen` 与 `MainScreen._MineScreen` 的职责，删除未使用页面。
+- [x] C1：补充 dark theme 和主题 token。
+  - 已完成：`AppTheme.darkTheme`、语义色板 `AppColors`、颜色/字体/圆角/间距/阴影 token，入口已接入 `ThemeMode.system`。
+- [x] C2：替换页面中的硬编码颜色。
+  - 已把 `AppTheme.*` 颜色常量全面切换到 `context.appColors.*`，覆盖核心组件、主界面、聊天页、通讯录、群组、个人资料、登录注册、搜索等。
+  - 保留气泡/媒体/角标上的功能性白黑对比色（如蓝底白字、媒体查看器黑底）。
+- [x] C3：统一圆角与间距规范。
+  - `AppTheme.radiusSm/Md/Lg` 与 `spacingXs/Sm/Md/Lg/Xl` 已建立，CardLayout、附件面板、日期标签、筛选栏等核心组件已使用。
+  - 气泡大圆角保留为消息视觉特征，不强行改为小圆角。
+- [x] C4：清理重复页面与死代码。
+  - 已删除未使用的 `ProfileScreen`，`MainScreen._MineScreen` 作为唯一“我的”入口。
 
 ### 4.4 D 组：P2 性能
 
-- [ ] D1：会话列表 key 修复。
-  - 移除 `ValueKey<int>(conversations.length)`。
-  - 列表外层使用稳定 key，列表项使用 `conversationId` 作为 key。
-- [ ] D2：消息预览与日期缓存。
-  - `latestMessagePreview` 不再在每次 build 中重新解析 JSON。
-  - 会话/消息模型或 Notifier 中缓存预览文本、格式化时间。
-  - `MessageList` 的日期分隔符预计算，避免每个消息重复 `DateFormat`。
-- [ ] D3：统一图片组件。
-  - 新增共享图片组件，支持占位、错误态、`loadingBuilder`、`frameBuilder`、`cacheWidth`。
-  - 替换 `MessageBubble`、`MediaViewer`、`UserAvatar` 中的裸 `Image.network` / `NetworkImage`。
-  - 评估是否引入 `cached_network_image` 作为统一缓存方案。
-- [ ] D4：聊天记录搜索防抖。
-  - `onChanged: _search` 增加 300-400ms 防抖。
-  - 增加请求序号或取消机制，丢弃过期响应。
+- [x] D1：会话列表 key 修复。
+  - 移除 `ValueKey<int>(conversations.length)`，改用稳定 `PageStorageKey`。
+- [x] D2：消息预览与日期缓存。
+  - `latestMessagePreview` 与时间格式化抽到 `conversation_display.dart`，并由 `ConversationListNotifier` 统一缓存。
+  - `MessageList` 日期分隔符一次预计算，不再逐消息重复 `DateFormat`。
+- [x] D3：统一图片组件。
+  - 新增 `AppImage`，支持网络/本地/asset、占位、错误态与 `cacheWidth`。
+  - 替换 `MessageBubble`、`MediaViewer`、`UserAvatar` 中的裸图片加载。
+- [x] D4：聊天记录搜索防抖。
+  - `ChatMessageSearchSheet` 与全局 `SearchScreen` 均增加 300ms 防抖和过期响应丢弃。
 
 ### 4.5 E 组：P3 UX、无障碍与导航
 
-- [ ] E1：聊天页标题点击行为。
-  - 实现 `ChatDetailScreen` 标题点击进入聊天设置或查找聊天记录。
-- [ ] E2：系统返回处理。
-  - 为 `ChatDetailScreen` 增加 `PopScope`，系统返回时保存草稿、标记已读、退订在线状态。
-- [ ] E3：搜索结果跳转。
-  - 搜索结果的点击从 `AlertDialog` 改为定位到消息上下文。
-- [ ] E4：扫码链接处理。
-  - 明确“暂不支持打开链接”的行为：支持 URL 预览/打开，或从 UI 隐藏该入口。
-- [ ] E5：统一空态、加载态、错误态。
-  - 建立 `EmptyState`、`ErrorState`、`SkeletonList` 等共享组件。
-  - 通讯录、群组、好友等页面统一使用。
-- [ ] E6：无障碍基础。
-  - 为图标按钮补充 `Semantics` 标签。
-  - 检查 10-12px 小字与固定尺寸组件在系统大字号下的溢出。
-  - 全局设置合理的 textScale 上限。
-- [ ] E7：本地化基础。
-  - 引入 `flutter_localizations` + `intl`，准备 arb 文件。
-  - 当前硬编码中文文案逐步迁移到 `l10n`。
-- [ ] E8：导航一致性。
-  - 统一使用 GoRouter，替换零散的 `Navigator.push` / `PageRouteBuilder`。
+- [x] E1：聊天页标题点击行为。
+  - `ChatDetailScreen` 标题点击进入聊天设置。
+- [x] E2：系统返回处理。
+  - `ChatDetailScreen` 已增加 `PopScope`，系统返回时保存草稿、标记已读、退订在线状态。
+- [x] E3：搜索结果跳转。
+  - `MessageList` 支持按 `clientMsgId` 定位，搜索结果点击后关闭面板并滚动到对应消息。
+- [x] E4：扫码链接处理。
+  - 扫码链接改为“复制链接”对话框，不再显示“暂不支持”。
+- [x] E5：统一空态、加载态、错误态。
+  - 新增 `EmptyState`/`ErrorState` 共享组件，已用于好友、黑名单、群组等页面。
+- [x] E6：无障碍基础。
+  - 全局设置 `MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3)`，降低大字号溢出风险。
+- [x] E7：本地化基础。
+  - 已加入 `l10n.yaml`、`app_en.arb`/`app_zh.arb`，启用 `generate: true` 并接入 `AppLocalizations`。
+  - 已迁移应用标题、底部 Tab、登录/注册标题；其余文案按模块持续迁移。
+- [x] E8：导航一致性。
+  - 生产环境关闭 `debugLogDiagnostics`，改为 `kDebugMode` 控制。
   - `/profile/user/:id` 支持纯 ID 深链，不依赖 `extra` 传对象。
-  - 生产环境关闭 `debugLogDiagnostics`。
+  - 新增 `/qr`、`/merge-message`、`/media/image`、`/media/video` 路由，联系人选择器支持 title 参数。
+  - 主要业务导航与媒体全屏预览已统一到 GoRouter。
 
 ## 5. 实施顺序
 
@@ -282,3 +281,14 @@ flutter test test
 - `docs/conventions.md`
 - `docs/architecture.md`
 - `.agents/skills/flutter-apply-architecture-best-practices/SKILL.md`
+
+## 10. 追加优化进度
+
+- [x] P0-1：SearchScreen 拆分 SearchViewModel 并补测试。
+- [x] P0-2：拆分 shell 的“我的”页与菜单组件。
+- [x] P0-3：拆分 contact_picker / chat_settings / group_info 大文件。
+- [x] P1-1：MessageList 消息 key 缓存淘汰。
+- [x] P1-2：图片磁盘缓存与气泡时间/宽度缓存。
+- [x] P1-3：常见页面标题与搜索文案迁移到 l10n。
+- [x] P2：补充共享组件 widget 测试与核心图标按钮 Semantics。
+- [x] P3：按阶段整理提交与文档状态。

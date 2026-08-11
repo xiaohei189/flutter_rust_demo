@@ -491,17 +491,17 @@ class _ChatInputState extends State<ChatInput> {
       textInputAction: TextInputAction.send,
       style: TextStyle(
         fontSize: 16,
-        color: AppTheme.textPrimaryColor,
+        color: context.appColors.textPrimary,
         fontFamily: _isMarkdownMode ? 'monospace' : null,
       ),
       decoration: InputDecoration(
         hintText: _isMarkdownMode ? 'Markdown...' : '输入消息...',
-        hintStyle: const TextStyle(
-          color: AppTheme.textSecondaryColor,
+        hintStyle: TextStyle(
+          color: context.appColors.textSecondary,
           fontSize: 16,
         ),
         filled: true,
-        fillColor: AppTheme.feishuInputBg,
+        fillColor: context.appColors.inputBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -527,7 +527,7 @@ class _ChatInputState extends State<ChatInput> {
               icon: Icon(
                 _inputExpanded ? Icons.zoom_in_map : Icons.zoom_out_map,
                 size: 18,
-                color: AppTheme.textSecondaryColor,
+                color: context.appColors.textSecondary,
               ),
               onPressed: () => setState(() => _inputExpanded = !_inputExpanded),
               padding: EdgeInsets.zero,
@@ -679,7 +679,7 @@ class _ChatInputState extends State<ChatInput> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimaryColor.withValues(alpha: 0.7),
+                  color: context.appColors.textPrimary.withValues(alpha: 0.7),
                   fontFamily: mono ? 'monospace' : null,
                   fontStyle: italic ? FontStyle.italic : null,
                   decoration: strikethrough ? TextDecoration.lineThrough : null,
@@ -705,21 +705,25 @@ class _ChatInputState extends State<ChatInput> {
     final hasLongPress = onLongPressStart != null;
     final btn = Tooltip(
       message: tooltip,
-      child: SizedBox(
-        width: 44,
-        height: 44,
-        child: IconButton(
-          icon: Icon(
-            icon,
-            size: 24,
-            color: enabled
-                ? (active
-                      ? AppTheme.primaryColor
-                      : AppTheme.textPrimaryColor.withValues(alpha: 0.7))
-                : AppTheme.textSecondaryColor.withValues(alpha: 0.3),
+      child: Semantics(
+        label: tooltip,
+        button: true,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: IconButton(
+            icon: Icon(
+              icon,
+              size: 24,
+              color: enabled
+                  ? (active
+                        ? context.appColors.primary
+                        : context.appColors.textPrimary.withValues(alpha: 0.7))
+                  : context.appColors.textSecondary.withValues(alpha: 0.3),
+            ),
+            onPressed: hasLongPress ? null : (enabled ? onTap : null),
+            padding: EdgeInsets.zero,
           ),
-          onPressed: hasLongPress ? null : (enabled ? onTap : null),
-          padding: EdgeInsets.zero,
         ),
       ),
     );
@@ -749,15 +753,15 @@ class _ChatInputState extends State<ChatInput> {
             decoration: BoxDecoration(
               color: enabled
                   ? (_isMarkdownMode
-                        ? AppTheme.textSecondaryColor
-                        : AppTheme.primaryColor)
-                  : AppTheme.backgroundColor,
+                        ? context.appColors.textSecondary
+                        : context.appColors.primary)
+                  : context.appColors.background,
               borderRadius: BorderRadius.circular(22),
             ),
             child: Icon(
               Icons.arrow_forward,
               size: 22,
-              color: enabled ? Colors.white : AppTheme.textSecondaryColor,
+              color: enabled ? Colors.white : context.appColors.textSecondary,
             ),
           ),
         );
@@ -774,10 +778,10 @@ class _ChatInputState extends State<ChatInput> {
 
     return Container(
       constraints: const BoxConstraints(maxHeight: 260),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppTheme.dividerColor, width: 0.5),
+          top: BorderSide(color: context.appColors.divider, width: 0.5),
         ),
       ),
       child: Column(
@@ -790,21 +794,21 @@ class _ChatInputState extends State<ChatInput> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     '最常使用',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   _buildEmojiGrid(recentEmojis),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '默认表情',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondaryColor,
+                      color: context.appColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -819,26 +823,26 @@ class _ChatInputState extends State<ChatInput> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                const Icon(
+                Icon(
                   Icons.add,
                   size: 20,
-                  color: AppTheme.textSecondaryColor,
+                  color: context.appColors.textSecondary,
                 ),
-                const Icon(
+                Icon(
                   Icons.emoji_emotions_outlined,
                   size: 20,
-                  color: AppTheme.primaryColor,
+                  color: context.appColors.primary,
                 ),
-                const Icon(
+                Icon(
                   Icons.favorite_border,
                   size: 20,
-                  color: AppTheme.textSecondaryColor,
+                  color: context.appColors.textSecondary,
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.keyboard,
                     size: 20,
-                    color: AppTheme.textSecondaryColor,
+                    color: context.appColors.textSecondary,
                   ),
                   onPressed: () {
                     _closeAllPanels();

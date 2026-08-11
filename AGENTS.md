@@ -5,6 +5,7 @@
 This repository is an OpenIM instant messaging client built with Flutter + Rust (`flutter_rust_bridge`).
 
 - `lib/` - Flutter UI and Dart services: screens, widgets, Riverpod providers, and models.
+- `lib/generated/rust/` - flutter_rust_bridge 与 Freezed 自动生成代码，禁止手改，由 codegen/build_runner 重新生成。
 - `rust/` - Rust SDK core, layered as `api/` (FFI) -> `sdk/` -> `core/` -> `domain/` + `infra/`.
 - `rust/tests/` - Rust integration suites and JSON fixtures used by offline mock tests.
 - `test/` and `integration_test/` - Flutter unit/widget and integration tests.

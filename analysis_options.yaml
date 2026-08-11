@@ -12,7 +12,7 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     # Rust 生成的代码，排除分析
-    - lib/src/rust/**
+    - lib/generated/rust/**
     # Cargokit 独立子包，有自身 pubspec，根目录分析会缺依赖
     - rust_builder/**
   language:
