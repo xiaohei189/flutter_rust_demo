@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +7,7 @@ import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../view_models/account_settings_view_model.dart';
 
 /// 账号设置页：全局免打扰、本地通知、应用锁、生物识别、语言、关于。
 class AccountSettingsScreen extends ConsumerStatefulWidget {
@@ -16,36 +19,21 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
-  bool _appLockEnabled = false;
-  bool _biometricEnabled = false;
-  bool _notificationsEnabled = true;
-  String _localeCode = 'zh';
+  late final AccountSettingsViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final settings = ref.read(settingsRepositoryProvider);
-    final appLock = await settings.isAppLockEnabled();
-    final biometric = await settings.isBiometricEnabled();
-    final notifications = await settings.isNotificationsEnabled();
-    final localeCode = await settings.getLocaleCode();
-    if (mounted) {
-      setState(() {
-        _appLockEnabled = appLock;
-        _biometricEnabled = biometric;
-        _notificationsEnabled = notifications;
-        _localeCode = localeCode;
-      });
-    }
+    _viewModel = ref.read(accountSettingsViewModelProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_viewModel.load());
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final settings = ref.watch(accountSettingsViewModelProvider);
     final profile = ref.watch(userProfileProvider).profile;
     final globalMute = profile?.globalRecvMsgOpt == 1;
 
@@ -69,34 +57,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                 title: const Text('全局消息免打扰'),
                 subtitle: const Text('开启后不再接收任何新消息提醒'),
                 value: globalMute,
-                onChanged: (v) async {
-                  try {
-                    await ref
-                        .read(messageRepositoryProvider)
-                        .setGlobalMsgRecvOpt(globalRecvOpt: v ? 1 : 0);
-                    await ref
-                        .read(messageServiceProvider.notifier)
-                        .refreshLoginUserProfile();
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('设置失败: $e')));
-                    }
-                  }
-                },
+                onChanged: _setGlobalMute,
               ),
               const Divider(height: 1, indent: 16, endIndent: 16),
               SwitchListTile(
                 title: const Text('新消息本地通知'),
                 subtitle: const Text('后台收到新消息时显示系统通知'),
-                value: _notificationsEnabled,
-                onChanged: (v) async {
-                  setState(() => _notificationsEnabled = v);
-                  await ref
-                      .read(settingsRepositoryProvider)
-                      .setNotificationsEnabled(v);
-                },
+                value: settings.notificationsEnabled,
+                onChanged: _setNotificationsEnabled,
               ),
             ],
           ),
@@ -106,15 +74,15 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               SwitchListTile(
                 title: const Text('应用锁'),
                 subtitle: const Text('重新打开应用时输入 PIN 解锁'),
-                value: _appLockEnabled,
+                value: settings.appLockEnabled,
                 onChanged: _toggleAppLock,
               ),
-              if (_appLockEnabled) ...[
+              if (settings.appLockEnabled) ...[
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 SwitchListTile(
                   title: const Text('生物识别解锁'),
                   subtitle: const Text('使用指纹或面容 ID 解锁'),
-                  value: _biometricEnabled,
+                  value: settings.biometricEnabled,
                   onChanged: _toggleBiometric,
                 ),
               ],
@@ -133,7 +101,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
               ListTile(
                 title: const Text('语言'),
                 trailing: Text(
-                  _localeCode == 'en' ? 'English' : '简体中文',
+                  settings.localeCode == 'en' ? 'English' : '简体中文',
                   style: TextStyle(color: colors.textSecondary),
                 ),
                 onTap: _changeLanguage,
@@ -169,14 +137,34 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     );
   }
 
+  Future<void> _setGlobalMute(bool value) async {
+    final ok = await _viewModel.setGlobalMute(value);
+    if (mounted && !ok) {
+      _showError(_viewModel.currentState.error ?? '设置失败');
+    }
+  }
+
+  Future<void> _setNotificationsEnabled(bool value) async {
+    final ok = await _viewModel.setNotificationsEnabled(value);
+    if (mounted && !ok) {
+      _showError(_viewModel.currentState.error ?? '设置失败');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   Future<void> _toggleAppLock(bool enabled) async {
     if (enabled) {
       final pin = await _askPin();
       if (pin == null) return;
-      final settings = ref.read(settingsRepositoryProvider);
-      await settings.savePin(pin);
-      await settings.setAppLockEnabled(true);
-      setState(() => _appLockEnabled = true);
+      final ok = await _viewModel.enableAppLock(pin);
+      if (mounted && !ok) {
+        _showError(_viewModel.currentState.error ?? '开启应用锁失败');
+      }
     } else {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -196,11 +184,10 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
         ),
       );
       if (confirmed != true) return;
-      await ref.read(settingsRepositoryProvider).setAppLockEnabled(false);
-      setState(() {
-        _appLockEnabled = false;
-        _biometricEnabled = false;
-      });
+      final ok = await _viewModel.disableAppLock();
+      if (mounted && !ok) {
+        _showError(_viewModel.currentState.error ?? '关闭应用锁失败');
+      }
     }
   }
 
@@ -248,23 +235,15 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
 
   Future<void> _toggleBiometric(bool enabled) async {
     if (enabled) {
-      final settings = ref.read(settingsRepositoryProvider);
-      final canUse = await settings.canUseBiometrics();
-      if (!canUse) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('当前设备不支持生物识别')));
-        }
-        return;
+      final ok = await _viewModel.enableBiometric();
+      if (mounted && !ok) {
+        _showError(_viewModel.currentState.error ?? '开启生物识别失败');
       }
-      final ok = await settings.authenticateWithBiometrics();
-      if (!ok) return;
-      await settings.setBiometricEnabled(true);
-      setState(() => _biometricEnabled = true);
     } else {
-      await ref.read(settingsRepositoryProvider).setBiometricEnabled(false);
-      setState(() => _biometricEnabled = false);
+      final ok = await _viewModel.disableBiometric();
+      if (mounted && !ok) {
+        _showError(_viewModel.currentState.error ?? '关闭生物识别失败');
+      }
     }
   }
 
@@ -282,14 +261,14 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
           children: [
             ListTile(
               title: const Text('简体中文'),
-              trailing: _localeCode == 'zh'
+              trailing: _viewModel.currentState.localeCode == 'zh'
                   ? Icon(Icons.check, color: colors.primary)
                   : null,
               onTap: () => Navigator.of(sheetContext).pop('zh'),
             ),
             ListTile(
               title: const Text('English'),
-              trailing: _localeCode == 'en'
+              trailing: _viewModel.currentState.localeCode == 'en'
                   ? Icon(Icons.check, color: colors.primary)
                   : null,
               onTap: () => Navigator.of(sheetContext).pop('en'),
@@ -299,10 +278,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       ),
     );
     if (selected == null) return;
-    await ref.read(settingsRepositoryProvider).setLocale(selected);
-    if (mounted) {
-      setState(() => _localeCode = selected);
-    }
+    await _viewModel.setLocale(selected);
   }
 
   void _showPasswordUnavailable() {

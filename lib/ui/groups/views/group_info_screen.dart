@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +14,7 @@ import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../view_models/group_info_view_model.dart';
 import '../widgets/group_member_section.dart';
 
 enum _JoinTimeFilter { all, today, week, month }
@@ -27,68 +30,31 @@ class GroupInfoScreen extends ConsumerStatefulWidget {
 }
 
 class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
-  late String _groupName;
-  late String _groupDescription;
+  late final GroupInfoViewModel _viewModel;
   String _memberKeyword = '';
   _JoinTimeFilter _joinTimeFilter = _JoinTimeFilter.all;
 
-  /// 获取会话信息
-  Conversation? get _conversation {
-    // 先尝试从新的 ConversationService 获取
-    final newService = ref.read(conversationServiceProvider);
-    var conversation = newService.getConversation(widget.conversationId);
-    if (conversation != null) return conversation;
-
-    // 如果新服务没有，尝试从旧的 conversationListProvider 获取
-    final oldState = ref.read(conversationListProvider);
-    conversation = oldState.conversations
-        .where((c) => c.conversationId == widget.conversationId)
-        .firstOrNull;
-    return conversation;
-  }
-
-  String get _groupId {
-    final conversation = _conversation;
-    if (conversation == null) return widget.conversationId;
-    return conversation.groupId.isNotEmpty
-        ? conversation.groupId
-        : conversation.conversationId;
-  }
-
-  User get _groupUser {
-    final conversation = _conversation;
-    if (conversation == null) {
-      return User(id: widget.conversationId, name: '未知群组', avatar: null);
-    }
-    return User(
-      id: _groupId,
-      name: _groupName,
-      avatar: conversation.faceUrl.isNotEmpty ? conversation.faceUrl : null,
-    );
-  }
+  Conversation? get _conversation => _viewModel.conversation;
+  String get _groupId => _viewModel.groupId;
+  User get _groupUser => _viewModel.groupUser;
 
   @override
   void initState() {
     super.initState();
-    final conversation = _conversation;
-    if (conversation != null) {
-      _groupName = conversation.showName.isNotEmpty
-          ? conversation.showName
-          : '群聊';
-    } else {
-      _groupName = '群聊';
-    }
-    _groupDescription = '暂无描述';
+    _viewModel = ref.read(
+      groupInfoViewModelProvider(widget.conversationId).notifier,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(groupMemberProvider(_groupId).notifier).loadMembers();
-      }
+      unawaited(_viewModel.load());
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final conversation = _conversation;
+    final groupInfo = ref.watch(
+      groupInfoViewModelProvider(widget.conversationId),
+    );
 
     if (conversation == null) {
       return Scaffold(
@@ -168,22 +134,22 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               const ListDivider(),
               TwoLineListRow(
                 label: '群名称',
-                value: _groupName,
+                value: groupInfo.groupName,
                 onTap: () => _editField(
                   title: '修改群名称',
-                  initialValue: _groupName,
+                  initialValue: groupInfo.groupName,
                   onSave: _saveGroupName,
                 ),
               ),
               const ListDivider(),
               TwoLineListRow(
                 label: '群描述',
-                value: _groupDescription,
+                value: groupInfo.groupDescription,
                 onTap: () => _editField(
                   title: '修改群描述',
-                  initialValue: _groupDescription == '暂无描述'
+                  initialValue: groupInfo.groupDescription == '暂无描述'
                       ? ''
-                      : _groupDescription,
+                      : groupInfo.groupDescription,
                   onSave: _saveGroupDescription,
                 ),
               ),
@@ -262,7 +228,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                     context,
                     title: '群二维码',
                     data: _groupId,
-                    subtitle: _groupName,
+                    subtitle: groupInfo.groupName,
                   );
                 },
               ),
@@ -282,14 +248,16 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     };
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   Future<void> _showMemberActions(GroupMember member) async {
-    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
-    final members = ref.read(groupMemberProvider(_groupId)).members;
-    final currentMember = members
-        .where((m) => m.userId == currentUserId)
-        .firstOrNull;
-    final canManage = currentMember != null && currentMember.roleLevel >= 2;
-    final isOwner = currentMember?.roleLevel == 3;
+    final currentUserId = _viewModel.currentUserId;
+    final canManage = _viewModel.canManage;
+    final isOwner = _viewModel.isOwner;
 
     if (!canManage || member.userId == currentUserId) {
       return;
@@ -364,9 +332,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _setAdmin(GroupMember member, bool isAdmin) async {
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .setMemberRole(member.userId, isAdmin ? 2 : 1);
+    final ok = await _viewModel.setAdmin(member.userId, isAdmin);
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -376,18 +342,14 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('设置管理员失败')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_viewModel.currentState.error ?? '设置管理员失败')),
+      );
     }
   }
 
   void _showOwnerAdminList() {
-    final members = ref
-        .read(groupMemberProvider(_groupId))
-        .members
-        .where((m) => m.roleLevel >= 2)
-        .toList();
+    final members = _viewModel.members.where((m) => m.roleLevel >= 2).toList();
     if (members.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -512,9 +474,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       ),
     );
     if (confirmed != true) return;
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .kickMembers([member.userId]);
+    final ok = await _viewModel.kickMember(member.userId);
+    if (!mounted) return;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -522,6 +483,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      _showError(_viewModel.currentState.error ?? '踢出成员失败');
     }
   }
 
@@ -560,9 +523,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       ),
     );
     if (duration == null) return;
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .muteMember(member.userId, duration);
+    final ok = await _viewModel.muteMember(member.userId, duration);
+    if (!mounted) return;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -570,13 +532,14 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      _showError(_viewModel.currentState.error ?? '禁言失败');
     }
   }
 
   Future<void> _unmuteMember(GroupMember member) async {
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .unmuteMember(member.userId);
+    final ok = await _viewModel.unmuteMember(member.userId);
+    if (!mounted) return;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -584,6 +547,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      _showError(_viewModel.currentState.error ?? '取消禁言失败');
     }
   }
 
@@ -647,9 +612,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _setMuteAll(bool isMute) async {
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .muteAll(isMute);
+    final ok = await _viewModel.muteAll(isMute);
+    if (!mounted) return;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -657,12 +621,14 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      _showError(_viewModel.currentState.error ?? '全员禁言操作失败');
     }
   }
 
   Future<void> _transferOwner({GroupMember? target}) async {
-    final members = ref.read(groupMemberProvider(_groupId)).members;
-    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
+    final members = _viewModel.members;
+    final currentUserId = _viewModel.currentUserId;
     final candidates = members.where((m) => m.userId != currentUserId).toList();
     if (candidates.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -705,9 +671,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     );
     if (selected == null) return;
 
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .transferOwner(selected.userId);
+    final ok = await _viewModel.transferOwner(selected.userId);
+    if (!mounted) return;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -715,6 +680,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } else {
+      _showError(_viewModel.currentState.error ?? '转让群主失败');
     }
   }
 
@@ -740,20 +707,18 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       ),
     );
     if (confirmed != true) return;
-    final ok = await ref
-        .read(groupMemberProvider(_groupId).notifier)
-        .dismissGroup();
+    final ok = await _viewModel.dismissGroup();
+    if (!mounted) return;
     if (ok && mounted) {
-      await ref.read(groupListProvider.notifier).loadGroups();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群组已解散'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        AppRouter.goBack(context);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群组已解散'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      AppRouter.goBack(context);
+    } else {
+      _showError(_viewModel.currentState.error ?? '解散群组失败');
     }
   }
 
@@ -787,25 +752,17 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       ),
     );
     if (url == null || url.isEmpty) return;
-    try {
-      await ref
-          .read(groupRepositoryProvider)
-          .setGroupInfo(_groupId, faceUrl: url);
-      await ref.read(conversationListProvider.notifier).refreshConversations();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群头像已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('更新失败: $e')));
-      }
+    final ok = await _viewModel.updateGroupAvatar(url);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群头像已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '更新失败');
     }
   }
 
@@ -857,48 +814,32 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _saveGroupName(String value) async {
-    try {
-      await ref
-          .read(groupRepositoryProvider)
-          .setGroupInfo(_groupId, groupName: value);
-      if (mounted) {
-        setState(() => _groupName = value);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群名称已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('群名称更新失败: $e')));
-      }
+    final ok = await _viewModel.updateGroupName(value);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群名称已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '群名称更新失败');
     }
   }
 
   Future<void> _saveGroupDescription(String value) async {
-    try {
-      await ref
-          .read(groupRepositoryProvider)
-          .setGroupInfo(_groupId, introduction: value);
-      if (mounted) {
-        setState(() => _groupDescription = value.isEmpty ? '暂无描述' : value);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('群描述已更新'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('群描述更新失败: $e')));
-      }
+    final ok = await _viewModel.updateGroupDescription(value);
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('群描述已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      _showError(_viewModel.currentState.error ?? '群描述更新失败');
     }
   }
 }

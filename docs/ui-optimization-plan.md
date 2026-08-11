@@ -292,3 +292,39 @@ flutter test test
 - [x] P1-3：常见页面标题与搜索文案迁移到 l10n。
 - [x] P2：补充共享组件 widget 测试与核心图标按钮 Semantics。
 - [x] P3：按阶段整理提交与文档状态。
+
+## 11. 下一批优化计划
+
+> 状态：P0 已实施
+> 目标：继续收敛剩余 UI 直连数据层，补齐大页面 ViewModel，再推进设计 token、本地化和测试覆盖。
+
+### 11.1 P0：剩余页面架构分层
+
+- [x] P0-A：`AccountSettingsScreen` 拆分 `AccountSettingsViewModel`。
+  - 应用锁、生物识别、本地通知、语言、全局免打扰写入迁移到 ViewModel。
+  - Screen 只保留开关交互、对话框、SnackBar 与布局。
+  - 补充 ViewModel 单元测试。
+- [x] P0-B：`GroupInfoScreen` 拆分 `GroupInfoViewModel`。
+  - 群资料编辑、群成员管理、转让、解散等 Repository 调用迁移到 ViewModel。
+  - Screen 只保留成员筛选、对话框、SnackBar 与布局。
+  - 补充 ViewModel 单元测试。
+- [ ] P0-C：`FriendSetupScreen` 拆掉直接 FFI/MessageService 访问。
+  - 好友关系、拉黑、会话定位等操作下沉到 Repository / ViewModel。
+- [ ] P0-D：`ChatListScreen`、`ContactPickerScreen`、`ChatDetailScreen` 残留编排收敛。
+
+### 11.2 P1：设计系统与本地化
+
+- [ ] P1-A：清理剩余 `Colors.white/black` 与 `Color(0x...)`，迁移到语义 token。
+- [ ] P1-B：把聊天设置、群资料、好友资料、设置页硬编码中文迁移到 ARB。
+
+### 11.3 P2：测试覆盖
+
+- [ ] P2-A：为 `group_info_screen`、`account_settings_screen`、`friend_setup_screen` 补 widget test。
+- [ ] P2-B：为 `contact_picker_screen`、`chat_settings_screen` 补关键交互 widget test。
+
+### 11.4 P3：大文件拆分
+
+- [ ] P3-A：`MessageBubble` 按消息类型拆分。
+- [ ] P3-B：`ChatInput` 拆附件面板、格式栏、快捷操作区。
+- [ ] P3-C：`ChatDetailScreen` 剩余媒体、多选、转发面板继续拆分。
+- [ ] P3-D：`MessageServiceNotifier` 按连接、消息、会话、群组职责拆分。
