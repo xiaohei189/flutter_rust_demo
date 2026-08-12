@@ -25,6 +25,7 @@ class MessageBubble extends StatelessWidget {
   final MessageInfo message;
   final User otherUser;
   final String? currentUserId;
+  final String? currentUserAvatar;
   final UserInfo? cachedSenderProfile;
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
@@ -37,6 +38,7 @@ class MessageBubble extends StatelessWidget {
     required this.message,
     required this.otherUser,
     this.currentUserId,
+    this.currentUserAvatar,
     this.cachedSenderProfile,
     this.cachedCurrentUserProfile,
     this.onLongPress,
@@ -51,11 +53,13 @@ class MessageBubble extends StatelessWidget {
     final meProfile = cachedCurrentUserProfile;
     if (isFromMe) {
       final nickname = meProfile?.nickname ?? message.senderNickname;
-      final faceUrl = meProfile?.faceUrl ?? message.senderFaceUrl;
+      final faceUrl = currentUserAvatar?.isNotEmpty == true
+          ? currentUserAvatar
+          : (meProfile?.faceUrl ?? message.senderFaceUrl);
       return User(
         id: message.sendId.isNotEmpty ? message.sendId : (currentUserId ?? ''),
         name: nickname.isNotEmpty ? nickname : (currentUserId ?? '我'),
-        avatar: faceUrl.isNotEmpty ? faceUrl : null,
+        avatar: (faceUrl ?? '').isNotEmpty ? faceUrl : null,
         avatarColorValue: 0xFF6200EE,
         avatarIconName: 'person',
       );

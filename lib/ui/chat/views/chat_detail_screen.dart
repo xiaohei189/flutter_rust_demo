@@ -765,6 +765,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                             currentUserId: currentUserId.isNotEmpty
                                 ? currentUserId
                                 : null,
+                            currentUserAvatar: ref
+                                .read(userProfileProvider.notifier)
+                                .getDisplayAvatarUrl(),
                             scrollController: _scrollController,
                             isLoading: chatDetailState.isLoading,
                             selectMode: chatDetailState.selectMode,

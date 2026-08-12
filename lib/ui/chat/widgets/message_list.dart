@@ -20,6 +20,7 @@ class MessageList extends StatefulWidget {
     required this.messages,
     required this.otherUser,
     required this.currentUserId,
+    this.currentUserAvatar,
     required this.scrollController,
     this.isLoading = false,
     this.cachedSenderProfiles,
@@ -36,6 +37,7 @@ class MessageList extends StatefulWidget {
   final List<MessageInfo> messages;
   final User otherUser;
   final String? currentUserId;
+  final String? currentUserAvatar;
   final ScrollController scrollController;
   final bool isLoading;
   final Map<String, UserInfo>? cachedSenderProfiles;
@@ -151,6 +153,7 @@ class MessageListState extends State<MessageList> {
                   message: message,
                   otherUser: widget.otherUser,
                   currentUserId: widget.currentUserId,
+                  currentUserAvatar: widget.currentUserAvatar,
                   cachedSenderProfile:
                       widget.cachedSenderProfiles?[message.sendId],
                   cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
@@ -244,6 +247,7 @@ class _VisibleMessageBubble extends StatelessWidget {
     required this.message,
     required this.otherUser,
     required this.currentUserId,
+    required this.currentUserAvatar,
     required this.cachedSenderProfile,
     required this.cachedCurrentUserProfile,
     required this.onLongPress,
@@ -256,6 +260,7 @@ class _VisibleMessageBubble extends StatelessWidget {
   final MessageInfo message;
   final User otherUser;
   final String? currentUserId;
+  final String? currentUserAvatar;
   final UserInfo? cachedSenderProfile;
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
@@ -271,6 +276,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         message: message,
         otherUser: otherUser,
         currentUserId: currentUserId,
+        currentUserAvatar: currentUserAvatar,
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
@@ -293,6 +299,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         message: message,
         otherUser: otherUser,
         currentUserId: currentUserId,
+        currentUserAvatar: currentUserAvatar,
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,

@@ -446,20 +446,14 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
           globalRecvMsgOpt: updated.globalRecvMsgOpt,
         );
 
-        // 只有当服务器确认更新了 faceUrl 且 URL 有效时才清除本地路径
         state = state.copyWith(
           profile: profileWithCacheBuster,
-          localAvatarPath: serverUrlUpdated
-              ? null
-              : state.localAvatarPath, // 只有服务器确认更新且 URL 有效才清除
-          clearLocalAvatarPath: serverUrlUpdated,
+          localAvatarPath: state.localAvatarPath,
           isLoading: false,
         );
 
-        // 如果服务器已更新，同时清除 SharedPreferences 中的本地路径
         if (serverUrlUpdated) {
-          await _saveLocalAvatarPath(null);
-          appLog.i('[UserProfile] updateAvatar: 服务器已确认更新且 URL 有效，清除本地路径');
+          appLog.i('[UserProfile] updateAvatar: 服务器已确认更新，保留本地路径作为兜底');
         } else {
           appLog.w('[UserProfile] updateAvatar: 服务器未确认更新或 URL 无效，保留本地路径');
         }
