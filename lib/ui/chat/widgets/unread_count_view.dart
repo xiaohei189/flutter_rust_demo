@@ -29,9 +29,9 @@ class UnreadCountView extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
-          color: Colors.white,
+          color: context.appColors.onPrimary,
           fontWeight: FontWeight.w500,
         ),
       ),

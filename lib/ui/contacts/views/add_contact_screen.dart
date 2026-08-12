@@ -53,7 +53,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
         children: [
           // 搜索栏
           Container(
-            color: Colors.white,
+            color: context.appColors.onPrimary,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               children: [
@@ -130,7 +130,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
     final isSelf = item.relationship == 1;
 
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [

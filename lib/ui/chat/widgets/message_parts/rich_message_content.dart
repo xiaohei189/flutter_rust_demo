@@ -20,7 +20,9 @@ class CardMessageContent extends StatelessWidget {
       width: 200,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
+        color: isFromMe
+            ? context.appColors.onPrimary.withValues(alpha: 0.15)
+            : context.appColors.onPrimary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -54,7 +56,7 @@ class CardMessageContent extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isFromMe
-                            ? Colors.white
+                            ? context.appColors.onPrimary
                             : context.appColors.bubbleOtherText,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -66,7 +68,7 @@ class CardMessageContent extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isFromMe
-                            ? Colors.white70
+                            ? context.appColors.onPrimary.withValues(alpha: 0.7)
                             : context.appColors.textSecondary,
                         fontSize: 12,
                       ),
@@ -77,14 +79,16 @@ class CardMessageContent extends StatelessWidget {
             ],
           ),
           Divider(
-            color: isFromMe ? Colors.white30 : Colors.grey.shade200,
+            color: isFromMe
+                ? context.appColors.onPrimary.withValues(alpha: 0.3)
+                : context.appColors.surfaceMuted,
             height: 12,
           ),
           Text(
             '个人名片',
             style: TextStyle(
               color: isFromMe
-                  ? Colors.white70
+                  ? context.appColors.onPrimary.withValues(alpha: 0.7)
                   : context.appColors.textSecondary,
               fontSize: 12,
             ),
@@ -115,7 +119,9 @@ class MergeMessageContent extends StatelessWidget {
       width: 220,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
+        color: isFromMe
+            ? context.appColors.onPrimary.withValues(alpha: 0.15)
+            : context.appColors.onPrimary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -128,7 +134,7 @@ class MergeMessageContent extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: isFromMe
-                  ? Colors.white
+                  ? context.appColors.onPrimary
                   : context.appColors.bubbleOtherText,
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -137,7 +143,9 @@ class MergeMessageContent extends StatelessWidget {
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             height: 0.5,
-            color: isFromMe ? Colors.white24 : Colors.grey.shade300,
+            color: isFromMe
+                ? context.appColors.onPrimary.withValues(alpha: 0.24)
+                : context.appColors.surfaceMuted,
           ),
           ...previews
               .take(5)
@@ -150,7 +158,7 @@ class MergeMessageContent extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: isFromMe
-                          ? Colors.white70
+                          ? context.appColors.onPrimary.withValues(alpha: 0.7)
                           : context.appColors.textSecondary,
                       fontSize: 12,
                     ),
@@ -164,7 +172,7 @@ class MergeMessageContent extends StatelessWidget {
               '$count条消息',
               style: TextStyle(
                 color: isFromMe
-                    ? Colors.white54
+                    ? context.appColors.onPrimary.withValues(alpha: 0.54)
                     : context.appColors.textSecondary,
                 fontSize: 11,
               ),
@@ -192,7 +200,9 @@ class LocationMessageContent extends StatelessWidget {
       width: 200,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isFromMe ? Colors.white.withValues(alpha: 0.15) : Colors.white,
+        color: isFromMe
+            ? context.appColors.onPrimary.withValues(alpha: 0.15)
+            : context.appColors.onPrimary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -204,7 +214,9 @@ class LocationMessageContent extends StatelessWidget {
               Icon(
                 Icons.location_on,
                 size: 20,
-                color: isFromMe ? Colors.white : context.appColors.primary,
+                color: isFromMe
+                    ? context.appColors.onPrimary
+                    : context.appColors.primary,
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -214,7 +226,7 @@ class LocationMessageContent extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isFromMe
-                        ? Colors.white
+                        ? context.appColors.onPrimary
                         : context.appColors.bubbleOtherText,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -231,7 +243,7 @@ class LocationMessageContent extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isFromMe
-                    ? Colors.white70
+                    ? context.appColors.onPrimary.withValues(alpha: 0.7)
                     : context.appColors.textSecondary,
                 fontSize: 12,
               ),
@@ -259,14 +271,16 @@ class CustomMessageContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isFromMe
-            ? Colors.white.withValues(alpha: 0.15)
+            ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : Colors.grey.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         message.displayText.isNotEmpty ? message.displayText : '[自定义消息]',
         style: TextStyle(
-          color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
+          color: isFromMe
+              ? context.appColors.onPrimary
+              : context.appColors.bubbleOtherText,
           fontSize: 14,
         ),
       ),

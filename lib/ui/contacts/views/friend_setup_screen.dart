@@ -103,7 +103,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
     required VoidCallback onTap,
   }) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -134,7 +134,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
     bool isDestructive = false,
   }) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -144,7 +144,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
               style: TextStyle(
                 fontSize: 16,
                 color: isDestructive
-                    ? const Color(0xFFFF3B30)
+                    ? context.appColors.danger
                     : context.appColors.textPrimary,
               ),
             ),
@@ -153,7 +153,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
               value: value,
               onChanged: onChanged,
               activeThumbColor: isDestructive
-                  ? const Color(0xFFFF3B30)
+                  ? context.appColors.danger
                   : context.appColors.primary,
             ),
           ],
@@ -170,7 +170,7 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.onPrimary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
@@ -181,9 +181,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
           child: Center(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: Color(0xFFFF3B30),
+                color: context.appColors.danger,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -294,9 +294,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text(
+              child: Text(
                 '确定',
-                style: TextStyle(color: Color(0xFFFF3B30)),
+                style: TextStyle(color: context.appColors.danger),
               ),
             ),
           ],
@@ -333,7 +333,10 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除', style: TextStyle(color: Color(0xFFFF3B30))),
+            child: Text(
+              '删除',
+              style: TextStyle(color: context.appColors.danger),
+            ),
           ),
         ],
       ),

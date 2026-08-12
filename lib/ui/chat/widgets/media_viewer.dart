@@ -101,10 +101,10 @@ class ImagePreviewScreen extends StatelessWidget {
     final image = AppImage(
       source: source,
       fit: BoxFit.contain,
-      errorWidget: const Icon(
+      errorWidget: Icon(
         Icons.broken_image,
         size: 96,
-        color: Colors.white54,
+        color: context.appColors.onPrimary.withValues(alpha: 0.54),
       ),
     );
 
@@ -112,7 +112,7 @@ class ImagePreviewScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        foregroundColor: context.appColors.onPrimary,
         title: const Text('图片预览'),
         actions: [
           IconButton(
@@ -193,7 +193,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        foregroundColor: context.appColors.onPrimary,
         title: const Text('视频播放'),
       ),
       body: Center(child: _buildBody()),
@@ -202,7 +202,9 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   Widget _buildBody() {
     if (_initializing) {
-      return const CircularProgressIndicator(color: Colors.white70);
+      return CircularProgressIndicator(
+        color: context.appColors.onPrimary.withValues(alpha: 0.7),
+      );
     }
     if (_error != null) {
       return Padding(
@@ -210,7 +212,9 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
         child: Text(
           _error!,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(
+            color: context.appColors.onPrimary.withValues(alpha: 0.7),
+          ),
         ),
       );
     }
@@ -240,8 +244,12 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
               allowScrubbing: true,
               colors: VideoProgressColors(
                 playedColor: context.appColors.primary,
-                bufferedColor: Colors.white38,
-                backgroundColor: Colors.white24,
+                bufferedColor: context.appColors.onPrimary.withValues(
+                  alpha: 0.38,
+                ),
+                backgroundColor: context.appColors.surface.withValues(
+                  alpha: 0.24,
+                ),
               ),
             ),
           ),

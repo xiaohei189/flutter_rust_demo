@@ -31,7 +31,9 @@ class UploadProgress extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress! / 100,
             minHeight: 3,
-            backgroundColor: Colors.white24,
+            backgroundColor: context.appColors.onPrimary.withValues(
+              alpha: 0.15,
+            ),
           ),
         ),
       ],
@@ -115,7 +117,11 @@ class VideoMessageContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-          const Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
+          Icon(
+            Icons.play_circle_fill,
+            size: 40,
+            color: context.appColors.onPrimary,
+          ),
           if (message.videoDurationString != '0:00')
             Positioned(
               bottom: 4,
@@ -128,7 +134,10 @@ class VideoMessageContent extends StatelessWidget {
                 ),
                 child: Text(
                   message.videoDurationString,
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  style: TextStyle(
+                    color: context.appColors.onPrimary,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ),
@@ -166,14 +175,16 @@ class AudioMessageContent extends StatelessWidget {
           Icon(
             Icons.play_circle_outline,
             size: 24,
-            color: isFromMe ? Colors.white : context.appColors.primary,
+            color: isFromMe
+                ? context.appColors.onPrimary
+                : context.appColors.primary,
           ),
           const SizedBox(width: 8),
           Text(
             message.audioDurationString,
             style: TextStyle(
               color: isFromMe
-                  ? Colors.white
+                  ? context.appColors.onPrimary
                   : context.appColors.bubbleOtherText,
               fontSize: 16,
             ),
@@ -207,7 +218,9 @@ class FileMessageContent extends StatelessWidget {
       'zip' || 'rar' => Icons.folder_zip,
       _ => Icons.insert_drive_file,
     };
-    final iconColor = isFromMe ? Colors.white70 : context.appColors.primary;
+    final iconColor = isFromMe
+        ? context.appColors.onPrimary.withValues(alpha: 0.7)
+        : context.appColors.primary;
 
     return UploadProgress(
       isFromMe: isFromMe,
@@ -228,7 +241,7 @@ class FileMessageContent extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isFromMe
-                        ? Colors.white
+                        ? context.appColors.onPrimary
                         : context.appColors.bubbleOtherText,
                     fontSize: 14,
                   ),
@@ -238,7 +251,7 @@ class FileMessageContent extends StatelessWidget {
                     message.fileSizeString,
                     style: TextStyle(
                       color: isFromMe
-                          ? Colors.white70
+                          ? context.appColors.onPrimary.withValues(alpha: 0.7)
                           : context.appColors.textSecondary,
                       fontSize: 12,
                     ),

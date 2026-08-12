@@ -105,7 +105,7 @@ class EmojiPanel extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(maxHeight: 260),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.onPrimary,
         border: Border(
           top: BorderSide(color: context.appColors.divider, width: 0.5),
         ),

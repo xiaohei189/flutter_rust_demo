@@ -103,7 +103,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   /// 构建收到的申请项
   Widget _buildReceivedItem(FriendApplication apply) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -164,7 +164,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
           onPressed: () => _showHandleDialog(apply.userId),
           style: TextButton.styleFrom(
             backgroundColor: context.appColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: context.appColors.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             minimumSize: Size.zero,
             shape: RoundedRectangleBorder(
@@ -175,11 +175,11 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         );
       case 1:
         // 已同意
-        return const Text(
+        return Text(
           '已同意',
           style: TextStyle(
             fontSize: 13,
-            color: Color(0xFF34C759),
+            color: context.appColors.success,
             fontWeight: FontWeight.w500,
           ),
         );
@@ -200,7 +200,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   /// 构建发出的申请项
   Widget _buildSentItem(FriendApplication apply) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -266,11 +266,11 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
         );
       case 1:
         // 已同意
-        return const Text(
+        return Text(
           '已同意',
           style: TextStyle(
             fontSize: 13,
-            color: Color(0xFF34C759),
+            color: context.appColors.success,
             fontWeight: FontWeight.w500,
           ),
         );
@@ -291,7 +291,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
   /// 构建空状态提示
   Widget _buildEmptyHint(String message) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text(

@@ -24,7 +24,7 @@ class QuoteMessagePreview extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isFromMe
-            ? Colors.white.withValues(alpha: 0.15)
+            ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : Colors.grey.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -36,7 +36,9 @@ class QuoteMessagePreview extends StatelessWidget {
             Text(
               message.quoteSenderNickname,
               style: TextStyle(
-                color: isFromMe ? Colors.white70 : context.appColors.primary,
+                color: isFromMe
+                    ? context.appColors.onPrimary.withValues(alpha: 0.7)
+                    : context.appColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -48,7 +50,7 @@ class QuoteMessagePreview extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isFromMe
-                    ? Colors.white60
+                    ? context.appColors.onPrimary.withValues(alpha: 0.6)
                     : context.appColors.textSecondary,
                 fontSize: 12,
               ),
@@ -81,7 +83,9 @@ class QuoteMessageContent extends StatelessWidget {
               ? message.quoteText
               : message.displayText,
           style: TextStyle(
-            color: isFromMe ? Colors.white : context.appColors.bubbleOtherText,
+            color: isFromMe
+                ? context.appColors.onPrimary
+                : context.appColors.bubbleOtherText,
             fontSize: 16,
           ),
         ),

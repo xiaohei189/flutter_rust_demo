@@ -18,7 +18,9 @@ class TextMessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isFromMe ? Colors.white : context.appColors.bubbleOtherText;
+    final color = isFromMe
+        ? context.appColors.onPrimary
+        : context.appColors.bubbleOtherText;
     return Text(
       message.displayText,
       style: TextStyle(color: color, fontSize: 16),
@@ -38,7 +40,9 @@ class AtMessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isFromMe ? Colors.white : context.appColors.bubbleOtherText;
+    final color = isFromMe
+        ? context.appColors.onPrimary
+        : context.appColors.bubbleOtherText;
     return Text(
       message.displayText,
       style: TextStyle(color: color, fontSize: 16),
@@ -59,11 +63,13 @@ class MarkdownMessageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = isFromMe
-        ? Colors.white
+        ? context.appColors.onPrimary
         : context.appColors.bubbleOtherText;
-    final linkColor = isFromMe ? Colors.white70 : context.appColors.primary;
+    final linkColor = isFromMe
+        ? context.appColors.onPrimary.withValues(alpha: 0.7)
+        : context.appColors.primary;
     final codeBgColor = isFromMe
-        ? Colors.white.withValues(alpha: 0.15)
+        ? context.appColors.onPrimary.withValues(alpha: 0.15)
         : Colors.black.withValues(alpha: 0.06);
 
     return MarkdownBody(

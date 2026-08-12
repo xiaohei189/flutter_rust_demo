@@ -126,7 +126,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   /// 搜索栏
   Widget _buildSearchBar() {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: TextField(
         controller: _searchController,
@@ -172,7 +172,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.onPrimary,
         border: Border(
           top: BorderSide(color: context.appColors.divider, width: 0.5),
         ),
@@ -202,7 +202,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
                 : _confirmSelection,
             style: ElevatedButton.styleFrom(
               backgroundColor: context.appColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: context.appColors.onPrimary,
               disabledBackgroundColor: context.appColors.primary.withValues(
                 alpha: 0.5,
               ),

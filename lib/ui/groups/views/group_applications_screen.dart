@@ -126,7 +126,7 @@ class _GroupApplicationsScreenState
     final pending = apply.handleResult == 0;
     final name = apply.nickname.isNotEmpty ? apply.nickname : apply.userId;
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -206,7 +206,7 @@ class _GroupApplicationsScreenState
   Widget _buildSentItem(GroupApplication apply) {
     final name = apply.nickname.isNotEmpty ? apply.nickname : apply.userId;
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -250,7 +250,7 @@ class _GroupApplicationsScreenState
 
   Widget _buildEmptyHint(String text) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.onPrimary,
       padding: const EdgeInsets.all(24),
       child: Center(
         child: Text(

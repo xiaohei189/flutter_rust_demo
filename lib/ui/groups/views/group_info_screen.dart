@@ -267,7 +267,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
 
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -363,7 +363,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     }
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -410,7 +410,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   Future<void> _showJoinTimeFilter() async {
     final selected = await showModalBottomSheet<_JoinTimeFilter>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -499,7 +499,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     };
     final duration = await showModalBottomSheet<int>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -557,7 +557,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   Future<void> _showGroupManageSheet() async {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -645,7 +645,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     GroupMember? selected = target;
     selected ??= await showModalBottomSheet<GroupMember>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),

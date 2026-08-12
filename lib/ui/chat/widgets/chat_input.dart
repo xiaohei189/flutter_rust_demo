@@ -370,7 +370,7 @@ class _ChatInputState extends State<ChatInput> {
           Container(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.appColors.onPrimary,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.06),

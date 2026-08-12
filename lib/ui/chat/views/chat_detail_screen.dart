@@ -257,7 +257,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
     final selected = await showModalBottomSheet<GroupMember>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -323,7 +323,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -448,7 +448,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Future<void> _showFileActions(MessageInfo msg) async {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -637,8 +637,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       ),
                       child: Text(
                         unread > 99 ? '99+' : '$unread',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.appColors.onPrimary,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),

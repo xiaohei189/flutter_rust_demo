@@ -192,7 +192,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       : _handleCreateGroup,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.appColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.appColors.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -200,12 +200,12 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         .withValues(alpha: 0.5),
                   ),
                   child: createGroupState.isCreating
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: context.appColors.onPrimary,
                           ),
                         )
                       : const Text(
@@ -229,7 +229,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       margin: EdgeInsets.zero,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.white,
+      color: context.appColors.surface,
       child: child,
     );
   }
@@ -463,7 +463,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: context.appColors.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: context.appColors.onPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
