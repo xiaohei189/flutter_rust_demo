@@ -5,10 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../contacts/providers/friend_provider.dart';
+import '../../groups/providers/group_provider.dart';
+import '../providers/chat_settings_provider.dart';
 import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
 

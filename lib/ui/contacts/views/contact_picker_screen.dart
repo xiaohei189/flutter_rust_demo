@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../../groups/providers/group_provider.dart';
+import '../providers/contact_picker_provider.dart';
+import '../providers/friend_provider.dart';
 import '../view_models/contact_picker_view_model.dart';
 import '../widgets/contact_pick_item.dart';
 import '../widgets/contact_picker_list.dart';

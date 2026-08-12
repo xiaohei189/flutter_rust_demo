@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../../providers/providers.dart';
+import '../../chat/providers/message_service_provider.dart';
+import '../../contacts/providers/friend_provider.dart';
+import '../../groups/providers/group_provider.dart';
+import '../providers/search_provider.dart';
 
 /// 搜索分类
 enum SearchCategory { message, contacts, groups }

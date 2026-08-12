@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/group_application.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../providers/group_provider.dart';
 
 /// 群申请页面：处理收到的入群申请，查看我发出的申请。
 class GroupApplicationsScreen extends ConsumerStatefulWidget {

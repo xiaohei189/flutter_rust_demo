@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../providers/account_settings_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../view_models/account_settings_view_model.dart';
 
 /// 账号设置页：全局免打扰、本地通知、应用锁、生物识别、语言、关于。

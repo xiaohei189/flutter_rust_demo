@@ -319,6 +319,9 @@ flutter test test
 
 - [ ] P1-A：清理剩余 `Colors.white/black` 与 `Color(0x...)`，迁移到语义 token。
 - [ ] P1-B：把聊天设置、群资料、好友资料、设置页硬编码中文迁移到 ARB。
+- [x] P1-C：拆分 `AppLockViewModel`，UI 层移除全局 barrel 依赖。
+  - `AppLockGate` 不再直接读 `settingsRepositoryProvider`。
+  - UI 层文件改为直连 feature Provider。
 
 ### 11.3 P2：测试覆盖
 

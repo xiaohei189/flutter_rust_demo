@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
+import '../../contacts/providers/friend_provider.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../providers/group_provider.dart';
 import '../view_models/create_group_view_model.dart';
 
 /// 创建群组页面

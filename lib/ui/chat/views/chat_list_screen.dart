@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../providers/providers.dart';
+import '../../../providers/connection_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/chat/widgets/chat_list_header.dart';
@@ -11,7 +11,10 @@ import '../../../../ui/chat/widgets/chat_list_item.dart';
 import '../../../../ui/chat/widgets/conversation_title_bar.dart';
 import '../../../../ui/chat/widgets/group_filter_panel.dart';
 import '../../../../ui/profile/views/profile_drawer_screen.dart';
+import '../../profile/providers/user_profile_provider.dart';
 import '../../core/view_models/connection_view_model.dart';
+import '../providers/chat_list_provider.dart';
+import '../providers/conversation_provider.dart';
 import '../view_models/chat_list_view_model.dart';
 import '../view_models/conversation_view_model.dart';
 

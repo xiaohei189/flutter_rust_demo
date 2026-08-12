@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/services/app_lifecycle_service.dart';
-import '../../../providers/providers.dart';
+import '../providers/app_lock_provider.dart';
 import '../theme/app_theme.dart';
+import '../view_models/app_lock_view_model.dart';
 
 class AppLockGate extends ConsumerStatefulWidget {
   const AppLockGate({super.key, required this.child});
@@ -16,14 +19,14 @@ class AppLockGate extends ConsumerStatefulWidget {
 
 class _AppLockGateState extends ConsumerState<AppLockGate> {
   final TextEditingController _pinController = TextEditingController();
-  bool? _enabled;
-  bool _unlocked = false;
+  late final AppLockViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = ref.read(appLockViewModelProvider.notifier);
     AppLifecycleService.instance.isBackground.addListener(_onLifecycleChanged);
-    _load();
+    unawaited(_viewModel.load());
   }
 
   @override
@@ -35,53 +38,35 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    final enabled = await ref
-        .read(settingsRepositoryProvider)
-        .isAppLockEnabled();
-    if (mounted) {
-      setState(() {
-        _enabled = enabled;
-        _unlocked = !enabled;
-      });
-    }
-  }
-
   void _onLifecycleChanged() {
     if (AppLifecycleService.instance.isBackground.value) {
-      _unlocked = false;
-    } else if (_enabled == true) {
-      _unlocked = false;
+      _viewModel.lock();
+    } else if (_viewModel.currentState.enabled == true) {
+      _viewModel.lock();
     }
-    if (mounted) setState(() {});
   }
 
   Future<void> _unlockWithPin() async {
     final pin = _pinController.text.trim();
     if (pin.isEmpty) return;
-    final ok = await ref.read(settingsRepositoryProvider).verifyPin(pin);
+    final ok = await _viewModel.unlockWithPin(pin);
     if (ok && mounted) {
       _pinController.clear();
-      setState(() => _unlocked = true);
     } else if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('PIN 不正确')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_viewModel.currentState.error ?? 'PIN 不正确')),
+      );
     }
   }
 
   Future<void> _unlockWithBiometrics() async {
-    final ok = await ref
-        .read(settingsRepositoryProvider)
-        .authenticateWithBiometrics();
-    if (ok && mounted) {
-      setState(() => _unlocked = true);
-    }
+    await _viewModel.unlockWithBiometrics();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_enabled != true || _unlocked) {
+    final lockState = ref.watch(appLockViewModelProvider);
+    if (!lockState.shouldShowLock) {
       return widget.child;
     }
 
@@ -125,20 +110,12 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
                   onPressed: _unlockWithPin,
                   child: const Text('解锁'),
                 ),
-                FutureBuilder<bool>(
-                  future: ref
-                      .read(settingsRepositoryProvider)
-                      .isBiometricEnabled(),
-                  builder: (context, snapshot) {
-                    final enabled = snapshot.data ?? false;
-                    if (!enabled) return const SizedBox.shrink();
-                    return TextButton.icon(
-                      onPressed: _unlockWithBiometrics,
-                      icon: const Icon(Icons.fingerprint),
-                      label: const Text('使用生物识别'),
-                    );
-                  },
-                ),
+                if (lockState.biometricEnabled)
+                  TextButton.icon(
+                    onPressed: _unlockWithBiometrics,
+                    icon: const Icon(Icons.fingerprint),
+                    label: const Text('使用生物识别'),
+                  ),
               ],
             ),
           ),

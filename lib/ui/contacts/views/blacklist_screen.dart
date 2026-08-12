@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../ui/core/widgets/state_views.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../providers/friend_provider.dart';
 
 /// 黑名单页面：展示已拉黑用户，支持移出黑名单。
 class BlacklistScreen extends ConsumerStatefulWidget {

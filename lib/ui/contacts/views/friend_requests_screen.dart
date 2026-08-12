@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/friend_application.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../providers/friend_provider.dart';
 
 /// 好友申请页面
 ///

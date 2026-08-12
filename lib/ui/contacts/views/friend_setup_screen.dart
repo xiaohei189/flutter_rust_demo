@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../providers/friend_setup_provider.dart';
 import '../view_models/friend_setup_view_model.dart';
 
 /// 好友设置页面

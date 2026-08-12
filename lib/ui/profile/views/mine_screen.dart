@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/user.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/providers.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../widgets/mine_menu.dart';
 
 /// “我的”页面：用户信息 + 设置菜单。

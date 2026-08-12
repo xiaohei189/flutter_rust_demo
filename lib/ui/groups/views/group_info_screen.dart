@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
+import '../../profile/providers/user_profile_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../data/services/services.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -14,6 +14,8 @@ import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../providers/group_info_provider.dart';
+import '../providers/group_provider.dart';
 import '../view_models/group_info_view_model.dart';
 import '../widgets/group_member_section.dart';
 

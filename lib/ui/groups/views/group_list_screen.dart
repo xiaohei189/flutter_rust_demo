@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../providers/providers.dart';
+import '../../profile/providers/user_profile_provider.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../providers/group_provider.dart';
 import '../widgets/group_tab.dart';
 
 /// 我的群组页面

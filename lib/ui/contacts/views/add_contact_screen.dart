@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/friend_search_result.dart';
-import '../../../../providers/providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../domain/models/user.dart';
+import '../providers/friend_provider.dart';
 
 /// 添加好友 / 搜索用户页面
 ///
