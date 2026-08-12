@@ -9,6 +9,7 @@ import '../../../generated/rust/ffi/ffi_init.dart' show initLogger;
 import '../../../data/services/login_storage.dart';
 import '../../../data/services/navigation_service.dart';
 import '../../../data/services/online_status_service.dart';
+import '../../../data/services/im_client.dart';
 import '../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 import 'message_service_state.dart';
@@ -26,6 +27,8 @@ class MessageServiceConnectionController {
     String? imToken,
   }) async {
     if (service.client != null && service.currentState.isConnected) {
+      OnlineStatusService.instance.setClient(service.client);
+      ImClient.instance.setClient(service.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
@@ -51,6 +54,7 @@ class MessageServiceConnectionController {
         }
         service.client = null;
         OnlineStatusService.instance.setClient(null);
+        ImClient.instance.setClient(null);
       }
 
       appLog.i('[MessageService] 初始化日志和 SDK 客户端...');
@@ -86,6 +90,7 @@ class MessageServiceConnectionController {
         ),
       );
       OnlineStatusService.instance.setClient(service.client);
+      ImClient.instance.setClient(service.client);
       unawaited(service.loadConversations());
 
       service.subscriptions.add(
@@ -152,6 +157,7 @@ class MessageServiceConnectionController {
     await service.client?.disconnect();
     service.client = null;
     OnlineStatusService.instance.setClient(null);
+    ImClient.instance.setClient(null);
     service.updateState(const MessageServiceState());
   }
 }
