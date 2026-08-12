@@ -89,16 +89,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     if (!mounted) return;
 
     // 先设置本地路径并持久化，立即显示预览
-    await ref.read(userProfileProvider.notifier).setLocalAvatarPath(image.path);
+    final savedPath = await ref
+        .read(userProfileProvider.notifier)
+        .setLocalAvatarPath(image.path);
+    if (savedPath == null) return;
     appLog.i('[MyProfile] 已保存本地头像路径到 Provider');
 
     try {
       appLog.i('[MyProfile] 开始上传文件...');
       // 上传文件到服务器
-      final url = await uploadFile(
-        filePath: image.path,
-        fileName: 'avatar.jpg',
-      );
+      final url = await uploadFile(filePath: savedPath, fileName: 'avatar.jpg');
       appLog.i('[MyProfile] 上传完成，返回 URL: $url');
 
       // 检查 URL 是否有效（不为空且非示例地址）

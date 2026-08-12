@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -35,6 +37,7 @@ class UserProfileState {
     String? alias,
     String? signature,
     String? localAvatarPath,
+    bool clearLocalAvatarPath = false,
     bool? isLoading,
     String? error,
   }) {
@@ -43,7 +46,9 @@ class UserProfileState {
       nickname: nickname ?? this.nickname,
       alias: alias ?? this.alias,
       signature: signature ?? this.signature,
-      localAvatarPath: localAvatarPath ?? this.localAvatarPath,
+      localAvatarPath: clearLocalAvatarPath
+          ? null
+          : (localAvatarPath ?? this.localAvatarPath),
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -203,7 +208,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
   /// 优先级：本地路径 > 服务器 URL（如果有效）
   String? getDisplayAvatarUrl() {
     // 如果有本地路径，优先使用
-    if (state.localAvatarPath != null && state.localAvatarPath!.isNotEmpty) {
+    if (state.localAvatarPath != null &&
+        state.localAvatarPath!.isNotEmpty &&
+        File(state.localAvatarPath!).existsSync()) {
       return state.localAvatarPath;
     }
     // 如果服务器 URL 有效，使用服务器 URL
@@ -445,6 +452,7 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
           localAvatarPath: serverUrlUpdated
               ? null
               : state.localAvatarPath, // 只有服务器确认更新且 URL 有效才清除
+          clearLocalAvatarPath: serverUrlUpdated,
           isLoading: false,
         );
 
@@ -478,20 +486,32 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
   }
 
   /// 设置本地头像路径（用于临时显示和持久化）
-  Future<void> setLocalAvatarPath(String path) async {
+  Future<String?> setLocalAvatarPath(String path) async {
     appLog.i('[UserProfile] setLocalAvatarPath 被调用，path=$path');
-    await _saveLocalAvatarPath(path);
-    state = state.copyWith(localAvatarPath: path);
-    appLog.i(
-      '[UserProfile] setLocalAvatarPath 完成，state.localAvatarPath=${state.localAvatarPath}',
-    );
+    String savedPath = path;
+    final source = File(path);
+    if (source.existsSync()) {
+      try {
+        final dir = await getApplicationDocumentsDirectory();
+        savedPath =
+            '${dir.path}/avatar_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        await source.copy(savedPath);
+        appLog.i('[UserProfile] 已复制头像到持久目录: $savedPath');
+      } catch (e) {
+        appLog.e('[UserProfile] 复制头像失败，保留原路径: $e');
+      }
+    }
+    await _saveLocalAvatarPath(savedPath);
+    state = state.copyWith(localAvatarPath: savedPath);
+    appLog.i('[UserProfile] setLocalAvatarPath 完成，savedPath=$savedPath');
+    return savedPath;
   }
 
   /// 清除本地头像路径
   Future<void> clearLocalAvatarPath() async {
     appLog.i('[UserProfile] clearLocalAvatarPath 被调用');
     await _saveLocalAvatarPath(null);
-    state = state.copyWith(localAvatarPath: null);
+    state = state.copyWith(clearLocalAvatarPath: true);
   }
 
   /// 为 URL 添加缓存清除参数
