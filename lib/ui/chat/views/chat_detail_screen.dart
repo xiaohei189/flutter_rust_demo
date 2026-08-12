@@ -580,7 +580,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final online = otherUserId.isNotEmpty
         ? ref.watch(userOnlineStatusProvider(otherUserId))
         : null;
-    final currentUserId = userProfileState.profile?.userId ?? '';
+    final currentUserId =
+        _viewModel?.currentUserId ?? userProfileState.profile?.userId ?? '';
     final typingUserId = ref.watch(
       messageServiceProvider.select(
         (s) => s.typingUsers[widget.conversationId],

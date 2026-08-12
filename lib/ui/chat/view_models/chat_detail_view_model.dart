@@ -105,8 +105,13 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     return conv?.conversationType == 2 || conv?.conversationType == 3;
   }
 
-  String get currentUserId =>
-      ref.read(userProfileProvider).profile?.userId ?? '';
+  String get currentUserId {
+    final profileUserId = ref.read(userProfileProvider).profile?.userId;
+    if (profileUserId != null && profileUserId.isNotEmpty) {
+      return profileUserId;
+    }
+    return ref.read(messageServiceProvider).currentUserId;
+  }
 
   String? get draftText {
     final conv = conversation;
