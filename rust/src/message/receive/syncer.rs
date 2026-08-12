@@ -376,14 +376,13 @@ impl MessageSyncer {
         Ok(())
     }
 
-    /// 获取会话已同步最大 seq：synced_max_seq 记录优先，旧库无记录时用消息表 MAX(seq) 兜底
+    /// 获取会话已同步最大 seq（对齐 Go SDK `GetSyncedMaxSeqs`：无记录即为 0，全量拉取）
     ///
-    /// 消息表 MAX(seq) 不含已读回执/撤回等不落库消息，不能单独作为拉取进度；
-    /// 兜底仅用于兼容旧库（首次升级后第一次增量会把回执区间补齐并写入 synced_max_seq）。
+    /// 不能依赖消息表 MAX(seq)：已读回执/撤回等不落库消息的 seq 不包含在内。
     async fn get_synced_max_seq(&self, conv_id: &str) -> i64 {
         match self.repositories.sync_version_repo.get_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id).await {
             Ok(Some((_, v))) => v as i64,
-            _ => self.repositories.message_repo.get_max_seq(conv_id).await.unwrap_or(0),
+            _ => 0,
         }
     }
 
@@ -470,10 +469,11 @@ impl MessageSyncer {
     async fn sync_incremental_messages(&self, max_seq_to_sync: &HashMap<String, i64>, pull_num: i64) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
-        // 对齐 Go SDK `compareSeqsAndBatchSync`：差量基于内存 synced_max_seqs，
-        // 而非 DB get_max_seq（通知会话的消息不入库，get_max_seq 恒为 0 会导致全量重拉）
+        // 对齐 Go SDK `compareSeqsAndBatchSync`：差量基于 synced_max_seq（DB 持久化进度，
+        // 无记录时消息表 MAX(seq) 兜底）。不能依赖内存 synced_max_seqs——它由 load 填充、
+        // 且 load 只遍历 local_conversations 已有会话，本地无会话记录时进度为 0 导致全量重拉
         for (conversation_id, server_max_seq) in max_seq_to_sync {
-            let local_max_seq = self.synced_max_seqs.read().await.get(conversation_id).copied().unwrap_or(0);
+            let local_max_seq = self.get_synced_max_seq(conversation_id).await;
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -968,9 +968,13 @@ mod tests {
             },
         );
         let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
+        // 差量基于 DB synced_max_seq（对齐 Go GetSyncedMaxSeqs）：预置已同步到 seq=3，只应拉取 [4,5]
+        repositories
+            .sync_version_repo
+            .set_version_sync("synced_max_seq", "conv_a", "", 3)
+            .await
+            .unwrap();
         let syncer = make_syncer(remote.clone(), repositories, handler);
-        // 差量基于内存 synced_max_seqs：预置已同步到 seq=3，只应拉取 [4,5]
-        syncer.synced_max_seqs.write().await.insert("conv_a".to_string(), 3);
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_a".to_string(), 5i64);
         server_seqs.insert("conv_b".to_string(), 5i64);
