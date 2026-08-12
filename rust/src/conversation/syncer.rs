@@ -97,7 +97,19 @@ impl ConversationSyncer {
         // 3. 如果服务端返回 full=true，回退到全量同步（对齐 Go SDK `FullSyncer`）
         if resp.full {
             info!("增量同步返回 full=true，执行全量同步");
-            return self.sync_full().await;
+            let version_id = resp.version_id;
+            let version = resp.version;
+            let r = self.sync_full().await;
+            // 全量同步完成后持久化服务端返回的版本，避免下次启动再次全量
+            if let Err(e) = self
+                .repositories
+                .sync_version_repo
+                .set_version_sync(CONVERSATION_TABLE_NAME, &user_id, &version_id, version)
+                .await
+            {
+                warn!("全量同步后更新会话同步版本失败: {}", e);
+            }
+            return r;
         }
 
         // 4. 处理增量变更
@@ -501,7 +513,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
 
-        let inc = GetIncrementalConversationResp { full: true, ..Default::default() };
+        let inc = GetIncrementalConversationResp { version: 99, version_id: "v99".to_string(), full: true, ..Default::default() };
         let api = Arc::new(
             MockConversationApi::new()
                 .with_incremental(inc)
@@ -511,6 +523,10 @@ mod tests {
 
         let result = syncer.sync_incremental().await.unwrap();
         assert_eq!(result.len(), 2);
+
+        // full 回退全量后版本仍持久化，避免下次启动再次全量
+        assert_eq!(syncer.get_sync_version().await, 99);
+        assert_eq!(syncer.get_sync_version_id().await, "v99");
 
         // 全量同步结果入库
         assert!(repositories.conversation_repo.get_by_id("conv_a").await.unwrap().is_some());
