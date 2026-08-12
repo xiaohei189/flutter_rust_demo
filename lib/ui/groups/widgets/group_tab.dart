@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/group.dart';
+import '../../../../router/app_paths.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_views.dart';
 
@@ -42,8 +43,8 @@ class GroupTab extends StatelessWidget {
             backgroundColor: _avatarColor(group.groupName),
             child: Text(
               _initial(group.groupName),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.appColors.onPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -59,7 +60,7 @@ class GroupTab extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: colors.textSecondary),
           ),
           onTap: () {
-            context.push('/group/${group.groupId}/info');
+            context.push(AppPaths.groupInfoOf(group.groupId));
           },
         );
       },

@@ -200,6 +200,18 @@ abstract class AppLocalizations {
   /// **'Group Info'**
   String get groupInfoTitle;
 
+  /// No description provided for @chatSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get chatSettingsTitle;
+
+  /// No description provided for @groupApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Apps'**
+  String get groupApps;
+
   /// No description provided for @createGroupTitle.
   ///
   /// In en, this message translates to:
@@ -224,6 +236,18 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get searchHint;
 
+  /// No description provided for @routeNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Page not found'**
+  String get routeNotFound;
+
+  /// No description provided for @goBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get goBack;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
@@ -247,6 +271,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Groups'**
   String get searchGroups;
+
+  /// No description provided for @groupAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Avatar'**
+  String get groupAvatar;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Name'**
+  String get groupName;
+
+  /// No description provided for @groupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Description'**
+  String get groupDescription;
+
+  /// No description provided for @editGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Group Name'**
+  String get editGroupName;
+
+  /// No description provided for @editGroupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Group Description'**
+  String get editGroupDescription;
+
+  /// No description provided for @groupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Members'**
+  String get groupMembers;
+
+  /// No description provided for @ownerAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner & Admins'**
+  String get ownerAdmin;
+
+  /// No description provided for @joinTimeFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Join Time'**
+  String get joinTimeFilter;
+
+  /// No description provided for @searchMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Members'**
+  String get searchMembers;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @last7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 Days'**
+  String get last7Days;
+
+  /// No description provided for @last30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 30 Days'**
+  String get last30Days;
+
+  /// No description provided for @muteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute All'**
+  String get muteAll;
+
+  /// No description provided for @unmuteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute All'**
+  String get unmuteAll;
+
+  /// No description provided for @transferOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Owner'**
+  String get transferOwner;
+
+  /// No description provided for @dismissGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss Group'**
+  String get dismissGroup;
+
+  /// No description provided for @groupQrCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Group QR Code'**
+  String get groupQrCode;
+
+  /// No description provided for @muteNotification.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute Notifications'**
+  String get muteNotification;
+
+  /// No description provided for @pinChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin Chat'**
+  String get pinChat;
+
+  /// No description provided for @privateChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Chat'**
+  String get privateChat;
+
+  /// No description provided for @clearHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear History'**
+  String get clearHistory;
+
+  /// No description provided for @quitGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Group'**
+  String get quitGroup;
+
+  /// No description provided for @groupAnnouncement.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Announcement'**
+  String get groupAnnouncement;
+
+  /// No description provided for @groupNickname.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Nickname'**
+  String get groupNickname;
+
+  /// No description provided for @inviteMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite Members'**
+  String get inviteMembers;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get accepted;
+
+  /// No description provided for @rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// No description provided for @noMatchingMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching members'**
+  String get noMatchingMembers;
+
+  /// No description provided for @roleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get roleOwner;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get roleAdmin;
+
+  /// No description provided for @roleMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get roleMember;
 }
 
 class _AppLocalizationsDelegate

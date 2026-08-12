@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../data/services/auth_api.dart' show usedForLogin;
+import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../providers/auth_provider.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -69,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           apiBaseUrl: widget.apiBaseUrl,
         );
     if (ok && mounted) {
-      context.go(AppRouter.main);
+      context.go(AppPaths.main);
     }
   }
 
@@ -84,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           apiBaseUrl: widget.apiBaseUrl,
         );
     if (ok && mounted) {
-      context.go(AppRouter.main);
+      context.go(AppPaths.main);
     }
   }
 

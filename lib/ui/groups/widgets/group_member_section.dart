@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../../core/widgets/list_row.dart';
 import '../../core/widgets/card_layout.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// 群成员分区：搜索、成员列表、群主/管理员、按时间筛选。
 class GroupMemberSection extends StatelessWidget {
@@ -42,10 +43,11 @@ class GroupMemberSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return CardLayout(
       children: [
         ListRow(
-          label: '群成员',
+          label: l10n?.groupMembers ?? '群成员',
           trailing: Text(
             isLoading ? '加载中...' : '${members.length}人',
             style: TextStyle(
@@ -60,7 +62,7 @@ class GroupMemberSection extends StatelessWidget {
           child: TextField(
             onChanged: onKeywordChanged,
             decoration: InputDecoration(
-              hintText: '搜索群成员',
+              hintText: l10n?.searchMembers ?? '搜索群成员',
               prefixIcon: const Icon(Icons.search, size: 20),
               isDense: true,
               filled: true,
@@ -79,9 +81,9 @@ class GroupMemberSection extends StatelessWidget {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (members.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(child: Text('没有匹配的成员')),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(child: Text(l10n?.noMatchingMembers ?? '没有匹配的成员')),
           )
         else
           ...members.map(
@@ -115,7 +117,7 @@ class GroupMemberSection extends StatelessWidget {
           ),
         const ListDivider(),
         ListRow(
-          label: '群主和管理员',
+          label: l10n?.ownerAdmin ?? '群主和管理员',
           trailing: Text(
             '$ownerAdminCount人',
             style: TextStyle(
@@ -127,7 +129,7 @@ class GroupMemberSection extends StatelessWidget {
         ),
         const ListDivider(),
         ListRow(
-          label: '按加入时间筛选',
+          label: l10n?.joinTimeFilter ?? '按加入时间筛选',
           trailing: Text(
             joinTimeFilterLabel,
             style: TextStyle(

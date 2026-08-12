@@ -3,15 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../data/services/services.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart';
-import '../../../../providers/providers.dart';
-import '../../../../router/app_router.dart';
-import '../../../../data/services/services.dart';
-import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/widgets/user_avatar.dart';
-import '../../../../ui/core/utils/app_logger.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../router/app_paths.dart';
+import '../../../../router/app_router.dart';
+import '../../../../ui/core/theme/app_theme.dart';
+import '../../../../ui/core/utils/app_logger.dart';
+import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../contacts/providers/friend_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../view_models/user_profile_view_model.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
@@ -185,7 +187,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             color: displayUser.status == '在线'
-                                ? const Color(0xFF34C759)
+                                ? context.appColors.success
                                 : colors.textSecondary,
                           ),
                         ),
@@ -295,7 +297,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           Icons.settings_outlined,
                           '好友设置',
                           () {
-                            context.push('/friend-setup/${widget.user.id}');
+                            context.push(
+                              AppPaths.friendSetupOf(widget.user.id),
+                            );
                           },
                         ),
                       ],

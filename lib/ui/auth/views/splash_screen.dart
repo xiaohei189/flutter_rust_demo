@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../router/app_router.dart';
+import '../../../../router/app_paths.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 
@@ -38,7 +38,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         .autoLogin(wsUrl: widget.wsUrl, apiBaseUrl: widget.apiBaseUrl);
     if (!mounted) return;
 
-    context.go(ok ? AppRouter.main : AppRouter.login);
+    context.go(ok ? AppPaths.main : AppPaths.login);
   }
 
   @override

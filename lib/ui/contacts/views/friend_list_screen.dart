@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/friend.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../providers/providers.dart';
-import '../../../../router/app_router.dart';
-import '../../../../ui/core/widgets/user_avatar.dart';
-import '../../../../ui/core/widgets/state_views.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../router/app_paths.dart';
+import '../../../../router/app_router.dart';
+import '../../../../providers/current_user_provider.dart';
+import '../../../../ui/core/widgets/state_views.dart';
+import '../../../../ui/core/widgets/user_avatar.dart';
+import '../providers/friend_provider.dart';
 import '../view_models/friend_list_view_model.dart';
 
 /// 好友列表页面
@@ -30,7 +32,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () => context.push('/search'),
+            onPressed: () => context.push(AppPaths.search),
           ),
         ],
       ),
@@ -119,8 +121,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
               title: const Text('发消息'),
               onTap: () {
                 Navigator.pop(context);
-                final currentUserId =
-                    ref.read(userProfileProvider).profile?.userId ?? '';
+                final currentUserId = ref.read(currentUserIdProvider);
                 final ids = [currentUserId, friend.userId]..sort();
                 final conversationId = 'si_${ids[0]}_${ids[1]}';
                 AppRouter.goToChatDetailById(context, conversationId);

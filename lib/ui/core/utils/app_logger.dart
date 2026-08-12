@@ -96,7 +96,11 @@ class _FileLinePrinter extends LogPrinter {
     final msg = event.message.toString();
     final line = '[$timeStr] [$caller] $levelStr: $msg';
     if (event.error != null) {
-      return [line, '  ${event.error}', if (event.stackTrace != null) '  ${event.stackTrace}'];
+      return [
+        line,
+        '  ${event.error}',
+        if (event.stackTrace != null) '  ${event.stackTrace}',
+      ];
     }
     return [line];
   }

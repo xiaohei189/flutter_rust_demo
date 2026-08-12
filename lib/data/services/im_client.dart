@@ -38,7 +38,12 @@ class ImClient {
   
   /// 是否正在初始化
   bool get isInitializing => _isInitializing;
-  
+
+  /// 设置客户端实例（由外部初始化流程注入，保持与 UI 层 client 一致）
+  void setClient(OpenImBridgeClient? client) {
+    _client = client;
+  }
+
   /// 创建客户端实例
   /// 
   /// [userId] 用户ID

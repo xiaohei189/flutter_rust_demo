@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../data/services/auth_api.dart' show usedForRegister;
-import '../../../../router/app_router.dart';
-import '../providers/auth_provider.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../router/app_paths.dart';
 import '../../../ui/core/theme/app_theme.dart';
+import '../providers/auth_provider.dart';
 
 /// 注册页：手机号 + 验证码 + 昵称，注册成功后自动登录。
 /// 业务逻辑由 [AuthViewModel] 负责，页面只做表单与导航。
@@ -67,7 +67,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           apiBaseUrl: widget.apiBaseUrl,
         );
     if (ok && mounted) {
-      context.go(AppRouter.main);
+      context.go(AppPaths.main);
     }
   }
 

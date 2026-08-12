@@ -8,6 +8,7 @@ import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../../groups/providers/group_provider.dart';
 import '../providers/chat_settings_provider.dart';
@@ -46,6 +47,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final settings = ref.watch(
       chatSettingsViewModelProvider(widget.conversationId),
     );
@@ -56,7 +58,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       return Scaffold(
         backgroundColor: context.appColors.background,
         appBar: AppBar(
-          title: const Text('设置'),
+          title: Text(l10n?.chatSettingsTitle ?? '设置'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
             onPressed: () => AppRouter.goBack(context),
@@ -69,7 +71,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     return Scaffold(
       backgroundColor: context.appColors.background,
       appBar: AppBar(
-        title: const Text('设置'),
+        title: Text(l10n?.chatSettingsTitle ?? '设置'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
@@ -97,14 +99,14 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             const SizedBox(height: 8),
             SettingsCard(
               children: [
-                const SettingsSectionTitle(title: '群应用'),
+                SettingsSectionTitle(title: l10n?.groupApps ?? '群应用'),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   child: Row(
                     children: [
                       _buildAppIcon(
                         Icons.campaign_outlined,
-                        '群公告',
+                        l10n?.groupAnnouncement ?? '群公告',
                         context.appColors.primary,
                         onTap: _editGroupAnnouncement,
                       ),
@@ -117,7 +119,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             SettingsCard(
               children: [
                 const Divider(height: 1, indent: 16, endIndent: 16),
-                SettingsNavRow(title: '群昵称', onTap: _editGroupNickname),
+                SettingsNavRow(
+                  title: l10n?.groupNickname ?? '群昵称',
+                  onTap: _editGroupNickname,
+                ),
               ],
             ),
           ],
@@ -127,20 +132,20 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           SettingsCard(
             children: [
               SettingsSwitchRow(
-                title: '消息免打扰',
+                title: l10n?.muteNotification ?? '消息免打扰',
                 value: settings.muteNotification,
                 onChanged: _setMuteNotification,
               ),
               const Divider(height: 1, indent: 16, endIndent: 16),
               SettingsSwitchRow(
-                title: '置顶会话',
+                title: l10n?.pinChat ?? '置顶会话',
                 value: settings.pinChat,
                 onChanged: _setPinChat,
               ),
               if (!isGroup) ...[
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 SettingsSwitchRow(
-                  title: '私聊（阅后即焚）',
+                  title: l10n?.privateChat ?? '私聊（阅后即焚）',
                   value: settings.privateChat,
                   onChanged: _setPrivateChat,
                 ),
@@ -152,7 +157,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           const SizedBox(height: 8),
           SettingsCard(
             children: [
-              SettingsNavRow(title: '清空聊天记录', onTap: _handleClearChatHistory),
+              SettingsNavRow(
+                title: l10n?.clearHistory ?? '清空聊天记录',
+                onTap: _handleClearChatHistory,
+              ),
             ],
           ),
 
@@ -167,7 +175,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     child: Center(
                       child: Text(
-                        '退出群组',
+                        l10n?.quitGroup ?? '退出群组',
                         style: TextStyle(
                           fontSize: 15,
                           color: context.appColors.danger,

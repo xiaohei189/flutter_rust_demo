@@ -3,17 +3,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/models/conversation.dart';
 import '../../domain/models/user.dart';
+import '../../router/app_router.dart';
 
-/// 导航服务 - 封装导航逻辑，提供统一的导航方法
+/// 导航服务 - 提供无 BuildContext 场景的全局导航与 UI 辅助方法
 ///
-/// 使用方式:
-/// ```dart
-/// // 在 Widget 中
-/// NavigationService.of(context).goToMain();
-///
-/// // 或使用全局实例（需要确保 BuildContext 可用）
-/// NavigationService.instance.goToMain();
-/// ```
+/// 导航实现统一委托给 [AppRouter]（唯一实现），本类只做两件事：
+/// 1. 通过全局 navigatorKey 在无 context 场景下导航（如服务层/通知回调）
+/// 2. 提供对话框 / 底部弹窗 / SnackBar 等 UI 辅助方法
 class NavigationService {
   static final NavigationService _instance = NavigationService._internal();
 
@@ -33,11 +29,13 @@ class NavigationService {
   /// 获取当前上下文
   BuildContext? get _context => navigatorKey.currentContext;
 
+  // ==================== 导航方法（委托 AppRouter） ====================
+
   /// 导航到登录页
   void goToLogin() {
     final context = _context;
     if (context != null) {
-      context.go('/login');
+      AppRouter.goToLogin(context);
     }
   }
 
@@ -45,7 +43,7 @@ class NavigationService {
   void goToMain() {
     final context = _context;
     if (context != null) {
-      context.go('/main');
+      AppRouter.goToMain(context);
     }
   }
 
@@ -53,8 +51,7 @@ class NavigationService {
   void goToChatDetail(Conversation conversation, {bool preLoaded = false}) {
     final context = _context;
     if (context != null) {
-      final queryParams = preLoaded ? '?preLoaded=true' : '';
-      context.push('/chat/${conversation.conversationId}$queryParams');
+      AppRouter.goToChatDetail(context, conversation, preLoaded: preLoaded);
     }
   }
 
@@ -62,8 +59,11 @@ class NavigationService {
   void goToChatDetailById(String conversationId, {bool preLoaded = false}) {
     final context = _context;
     if (context != null) {
-      final queryParams = preLoaded ? '?preLoaded=true' : '';
-      context.push('/chat/$conversationId$queryParams');
+      AppRouter.goToChatDetailById(
+        context,
+        conversationId,
+        preLoaded: preLoaded,
+      );
     }
   }
 
@@ -71,7 +71,7 @@ class NavigationService {
   void goToChatSettings(Conversation conversation) {
     final context = _context;
     if (context != null) {
-      context.push('/chat/${conversation.conversationId}/settings');
+      AppRouter.goToChatSettings(context, conversation);
     }
   }
 
@@ -79,7 +79,7 @@ class NavigationService {
   void goToChatSettingsById(String conversationId) {
     final context = _context;
     if (context != null) {
-      context.push('/chat/$conversationId/settings');
+      AppRouter.goToChatSettingsById(context, conversationId);
     }
   }
 
@@ -87,7 +87,7 @@ class NavigationService {
   void goToGroupInfo(Conversation conversation) {
     final context = _context;
     if (context != null) {
-      context.push('/group/${conversation.conversationId}/info');
+      AppRouter.goToGroupInfo(context, conversation);
     }
   }
 
@@ -95,7 +95,7 @@ class NavigationService {
   void goToGroupInfoById(String conversationId) {
     final context = _context;
     if (context != null) {
-      context.push('/group/$conversationId/info');
+      AppRouter.goToGroupInfoById(context, conversationId);
     }
   }
 
@@ -103,19 +103,15 @@ class NavigationService {
   void goToMyProfile() {
     final context = _context;
     if (context != null) {
-      context.push('/profile/my');
+      AppRouter.goToMyProfile(context);
     }
   }
 
   /// 导航到用户资料页
   void goToUserProfile({String? userId, User? user}) {
     final context = _context;
-    if (context == null) return;
-
-    if (userId != null && userId.isNotEmpty) {
-      context.push('/profile/user/$userId', extra: user);
-    } else if (user != null) {
-      context.push('/profile/user/unknown', extra: user);
+    if (context != null) {
+      AppRouter.goToUserProfile(context, userId: userId, user: user);
     }
   }
 
@@ -123,7 +119,7 @@ class NavigationService {
   void goToSearch() {
     final context = _context;
     if (context != null) {
-      context.push('/search');
+      AppRouter.goToSearch(context);
     }
   }
 
@@ -135,12 +131,16 @@ class NavigationService {
   }) {
     final context = _context;
     if (context != null) {
-      context.push(
-        '/profile/edit-field',
-        extra: {'title': title, 'hint': hint, 'initialValue': initialValue},
+      AppRouter.goToProfileEditField(
+        context,
+        title: title,
+        hint: hint,
+        initialValue: initialValue,
       );
     }
   }
+
+  // ==================== UI 辅助方法 ====================
 
   /// 返回上一页
   void goBack() {

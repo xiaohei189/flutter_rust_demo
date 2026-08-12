@@ -78,7 +78,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final background = state != AppLifecycleState.resumed;
-    AppLifecycleService.instance.update(background: background);
+    // 状态未实际变化（如 inactive/hidden 反复触发）时不重复通知 SDK，避免重复触发同步
+    if (!AppLifecycleService.instance.update(background: background)) return;
     try {
       unawaited(
         setAppBackgroundStatus(isBackground: background).catchError((_) {}),
