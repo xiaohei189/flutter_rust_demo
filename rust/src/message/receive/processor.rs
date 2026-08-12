@@ -20,6 +20,7 @@ use crate::model::UserId;
 use openim_protocol::sdkws::MsgData;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
 use tracing::{debug, info, trace, warn};
 
 /// 消息处理器 — 接收消息的分类入库与事件分发中心
@@ -51,6 +52,9 @@ pub struct MessageProcessor {
     pub(crate) listener: Arc<dyn ConversationListener>,
     /// 消息事件出口（对齐 Go SDK MsgListener）
     pub(crate) message_listener: Arc<dyn MessageListener>,
+    /// 会话级处理锁：push 与 sync 两条路径可能并发处理同一会话的消息，
+    /// 串行化避免同一条消息被重复入库/重复增加未读
+    conv_locks: RwLock<HashMap<String, Arc<Mutex<()>>>>,
 }
 
 impl MessageProcessor {
@@ -61,6 +65,7 @@ impl MessageProcessor {
             max_seq_recorder: Arc::new(MaxSeqRecorder::new()),
             listener,
             message_listener,
+            conv_locks: RwLock::new(HashMap::new()),
         }
     }
 
@@ -114,6 +119,13 @@ impl MessageProcessor {
         if messages.is_empty() {
             return Ok(false);
         }
+
+        // 会话级互斥：push 与 sync 路径并发处理同一会话时，保证同一条消息只入库一次、未读只 +1 一次
+        let conv_lock = {
+            let mut locks = self.conv_locks.write().await;
+            locks.entry(conv_id.to_string()).or_insert_with(|| Arc::new(Mutex::new(()))).clone()
+        };
+        let _guard = conv_lock.lock().await;
         // 已读回执处理（对齐 Go SDK read_drawing.go L227-284）
         for msg in &messages {
             if msg.content_type == HAS_READ_RECEIPT {
@@ -244,10 +256,6 @@ impl MessageProcessor {
                         let msg_seq = local_msg.seq;
                         insert_list.push(local_msg);
                         to_notify.push(msg.clone());
-                        if self.max_seq_recorder.is_new_msg(conv_id, msg_seq) {
-                            is_trigger_unread_count = true;
-                            self.max_seq_recorder.incr(conv_id, 1);
-                        }
                     }
                 } else {
                     debug!("[MsgHandler] 跳过重复消息: client_msg_id={}, seq={}", msg.client_msg_id, msg.seq);
@@ -316,8 +324,14 @@ impl MessageProcessor {
             if is_conversation_update && !is_online_only {
                 self.repositories.conversation_repo.update_latest_msg(conv_id, &content_str, msg.send_time).await?;
 
-                if !is_self {
-                    self.repositories.conversation_repo.increase_unread_count(conv_id, msg.seq).await?;
+                // 对齐 Go `incrUnreadCount`：IsNewMsg → Incr + DB +1（仅新消息增加未读，
+                // 重复处理/并发时不会重复 +1；会话已在上方创建，UPDATE 必然生效）
+                if !is_self && self.max_seq_recorder.is_new_msg(conv_id, msg.seq) {
+                    is_trigger_unread_count = true;
+                    self.max_seq_recorder.incr(conv_id, 1);
+                    if let Err(e) = self.repositories.conversation_repo.increase_unread_count(conv_id, msg.seq).await {
+                        warn!("[MsgHandler] increase_unread_count 失败: {}", e);
+                    }
                 }
             }
         }
@@ -587,6 +601,73 @@ mod tests {
 
         let msgs = vec![make_msg("msg_1", "conv_1", 1), make_msg("msg_2", "conv_1", 2)];
         handler.handle_messages("conv_1", msgs).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_peer_message_increments_unread_once() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("me"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
+
+        // 预置会话（未读 0）
+        conversation_dao.upsert(&make_conv("conv_unread")).await.unwrap();
+
+        // 对方发一条消息
+        let mut msg = make_msg("msg_unread_1", "conv_unread", 5);
+        msg.send_id = "user_2".into();
+        handler.handle_messages("conv_unread", vec![msg.clone()]).await.unwrap();
+
+        let c = conversation_dao.get_by_id("conv_unread").await.unwrap().unwrap();
+        assert_eq!(c.unread_count, 1, "对方一条消息未读应为 1");
+
+        // 同一条消息再次到达（去重），未读不应再 +1
+        handler.handle_messages("conv_unread", vec![msg]).await.unwrap();
+        let c = conversation_dao.get_by_id("conv_unread").await.unwrap().unwrap();
+        assert_eq!(c.unread_count, 1, "重复消息不应再增加未读");
+
+        // 自己发的消息不应增加未读
+        let mut self_msg = make_msg("msg_unread_2", "conv_unread", 6);
+        self_msg.send_id = "me".into();
+        handler.handle_messages("conv_unread", vec![self_msg]).await.unwrap();
+        let c = conversation_dao.get_by_id("conv_unread").await.unwrap().unwrap();
+        assert_eq!(c.unread_count, 1, "自己发的消息不应增加未读");
+    }
+
+    /// 复现：push 与 sync 两条路径并发处理同一条消息时，未读被重复 +1
+    #[tokio::test]
+    async fn test_concurrent_duplicate_handling_increments_unread_twice() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = Arc::new(MessageProcessor::new(
+            repositories,
+            UserId::new("me"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        ));
+
+        conversation_dao.upsert(&make_conv("conv_race")).await.unwrap();
+
+        let mut msg = make_msg("msg_race", "conv_race", 5);
+        msg.send_id = "user_2".into();
+
+        // 模拟 push(handle_messages) 与 sync(handle_sync_messages) 并发处理同一条消息
+        let h1 = handler.clone();
+        let m1 = msg.clone();
+        let t1 = tokio::spawn(async move { h1.handle_messages("conv_race", vec![m1]).await });
+        let h2 = handler.clone();
+        let m2 = msg.clone();
+        let t2 = tokio::spawn(async move { h2.handle_sync_messages("conv_race", vec![m2]).await });
+        let _ = tokio::join!(t1, t2);
+
+        let c = conversation_dao.get_by_id("conv_race").await.unwrap().unwrap();
+        assert_eq!(c.unread_count, 1, "并发处理同一条消息不应重复增加未读");
     }
 
     #[tokio::test]
