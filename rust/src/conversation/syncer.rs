@@ -512,7 +512,7 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
 
-        let inc = GetIncrementalConversationResp { version: 7, version_id: "v7".to_string(), full: true, ..Default::default() };
+        let inc = GetIncrementalConversationResp { version: 99, version_id: "v99".to_string(), full: true, ..Default::default() };
         let api = Arc::new(
             MockConversationApi::new()
                 .with_incremental(inc)
@@ -523,6 +523,10 @@ mod tests {
         let result = syncer.sync_incremental().await.unwrap();
         assert_eq!(result.len(), 2);
 
+        // full 回退全量后版本仍持久化，避免下次启动再次全量
+        assert_eq!(syncer.get_sync_version().await, 99);
+        assert_eq!(syncer.get_sync_version_id().await, "v99");
+
         // 全量同步结果入库
         assert!(repositories.conversation_repo.get_by_id("conv_a").await.unwrap().is_some());
         assert!(repositories.conversation_repo.get_by_id("conv_b").await.unwrap().is_some());
@@ -532,10 +536,6 @@ mod tests {
             ConversationEvent::Changed(convs) => assert_eq!(convs.len(), 2),
             other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
         }
-
-        // full 路径也应持久化版本号（对齐 Go `VersionSynchronizer.IncrementalSync`），
-        // 否则下次增量请求无版本号，服务端会持续返回 full=true
-        assert_eq!(syncer.get_sync_version_id().await, "v7");
     }
 
     #[tokio::test]

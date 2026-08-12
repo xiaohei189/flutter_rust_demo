@@ -129,7 +129,14 @@ impl GroupService {
         // 3. full=true 回退全量
         if resp.full {
             info!("服务端返回 full=true, 执行全量同步群组");
-            return self.sync_groups().await;
+            let version_id = resp.version_id;
+            let version = resp.version;
+            let r = self.sync_groups().await;
+            // 全量同步完成后持久化服务端返回的版本，避免下次启动再次全量
+            if let Err(e) = self.repositories.sync_version_repo.set_version_sync(table_name, &user_id, &version_id, version).await {
+                warn!("全量同步后更新群组同步版本失败: {}", e);
+            }
+            return r;
         }
 
         // 4. 处理增量变更

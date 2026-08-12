@@ -27,6 +27,12 @@ use tracing::{debug, error, info, warn};
 // 直接使用 openim-protocol crate 中的 pb 生成类型
 use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs, PullOrder, SeqRange};
 
+/// 已同步最大 seq 的持久化记录表名（local_sync_version 内）
+///
+/// 已读回执/撤回等通知消息不落 local_chat_logs，消息表 MAX(seq) 无法代表拉取进度，
+/// 否则重启后增量同步会重复拉取回执区间。此记录由拉取成功后写入，拉取判断以此为准。
+const SYNCED_MAX_SEQ_TABLE: &str = "synced_max_seq";
+
 /// ConnectionManager 的 SyncServerApi 实现
 #[async_trait]
 impl SyncServerApi for ConnectionManager {
@@ -366,12 +372,35 @@ impl MessageSyncer {
         Ok(())
     }
 
+    /// 获取会话已同步最大 seq：synced_max_seq 记录优先，旧库无记录时用消息表 MAX(seq) 兜底
+    ///
+    /// 消息表 MAX(seq) 不含已读回执/撤回等不落库消息，不能单独作为拉取进度；
+    /// 兜底仅用于兼容旧库（首次升级后第一次增量会把回执区间补齐并写入 synced_max_seq）。
+    async fn get_synced_max_seq(&self, conv_id: &str) -> i64 {
+        match self.repositories.sync_version_repo.get_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id).await {
+            Ok(Some((_, v))) => v as i64,
+            _ => self.repositories.message_repo.get_max_seq(conv_id).await.unwrap_or(0),
+        }
+    }
+
+    /// 持久化会话拉取进度（含回执/撤回等不落库消息的 seq），供下次启动的增量判断使用
+    async fn persist_synced_max_seq(&self, conv_id: &str, seq: i64) {
+        if let Err(e) = self
+            .repositories
+            .sync_version_repo
+            .set_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id, "", seq as u64)
+            .await
+        {
+            warn!("持久化 synced_max_seq 失败 conv={}: {}", conv_id, e);
+        }
+    }
+
     /// 从本地 DB 加载已同步的 max_seq 到内存
     pub async fn load_synced_max_seqs(&self) -> Result<()> {
         let conv_seqs = self.repositories.conversation_repo.get_all_seq_pairs().await?;
         let mut map = self.synced_max_seqs.write().await;
-        for (conv_id, seq) in conv_seqs {
-            let local_max = self.repositories.message_repo.get_max_seq(&conv_id).await.unwrap_or(0);
+        for (conv_id, _seq) in conv_seqs {
+            let local_max = self.get_synced_max_seq(&conv_id).await;
             map.insert(conv_id, local_max);
         }
 
@@ -422,7 +451,7 @@ impl MessageSyncer {
 
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
-            self.repositories.sync_version_repo.mark_reinstall_complete("1.0.0").await?;
+            self.repositories.sync_version_repo.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await?;
             if let Err(e) = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await {
                 warn!("设置 SYNC_END 标志失败: {}", e);
             }
@@ -479,7 +508,7 @@ impl MessageSyncer {
                 continue;
             }
 
-            let local_max_seq = self.repositories.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.get_synced_max_seq(conversation_id).await;
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -641,6 +670,11 @@ impl MessageSyncer {
             if *end_seq > current {
                 synced.insert(conv_id.clone(), *end_seq);
             }
+        }
+
+        // 持久化拉取进度：回执/撤回等不落库消息的 seq 也要消耗掉，避免重启后重复拉取
+        for (conv_id, (_, end_seq)) in seq_map {
+            self.persist_synced_max_seq(conv_id, *end_seq).await;
         }
 
         let total_convs = seq_map.len().max(1);
@@ -832,6 +866,24 @@ mod tests {
         }
     }
 
+    /// 构造已读回执消息（content_type=2200，content 为 protobuf MarkAsReadTips）
+    fn make_receipt_msg_data(conv_id: &str, seq: i64) -> MsgData {
+        use crate::constant::notification_type::HAS_READ_RECEIPT;
+        use openim_protocol::sdkws::MarkAsReadTips;
+        let tips = MarkAsReadTips {
+            mark_as_read_user_id: "other_user".to_string(),
+            conversation_id: conv_id.to_string(),
+            seqs: vec![seq],
+            has_read_seq: seq,
+            ..Default::default()
+        };
+        let mut m = make_msg_data(conv_id, seq, "");
+        m.content_type = HAS_READ_RECEIPT;
+        m.content = tips.encode_to_vec();
+        m.send_id = "other_user".to_string();
+        m
+    }
+
     fn make_msg_data(conv_id: &str, seq: i64, content: &str) -> MsgData {
         MsgData {
             send_id: "sender_1".to_string(),
@@ -922,6 +974,65 @@ mod tests {
         let msg4 = message_dao.get_by_client_msg_id("conv_a", "msg_conv_a_4").await.unwrap();
         assert!(msg4.is_some());
         assert_eq!(remote.pull_count.load(Ordering::SeqCst), 1);
+    }
+
+    /// 验证：已读回执消息不落库，但拉取进度（synced_max_seq）包含回执 seq，
+    /// 重启后不会重复拉取同一批回执。
+    ///
+    /// 场景：首次同步拉到 seq=4(普通消息)+ seq=5/6(已读回执)，回执只处理不落库，
+    /// 消息表 max_seq 停在 4；拉取进度 synced_max_seq 应为 6，
+    /// 重启后增量判断 local_max_seq=6 >= server_max_seq=6，不再发起拉取。
+    #[tokio::test]
+    async fn test_receipt_msgs_persist_sync_progress_no_repull_on_restart() {
+        let (repositories, handler) = setup_db().await;
+        let message_dao = repositories.message_repo.clone();
+
+        // 首次同步后：本地已存普通消息 seq 1-3
+        message_dao
+            .batch_insert(&[make_local_msg("conv_a", "a1", 1), make_local_msg("conv_a", "a2", 2), make_local_msg("conv_a", "a3", 3)])
+            .await
+            .unwrap();
+
+        // 服务端：seq=4 普通消息，seq=5/6 已读回执
+        let mut pull_msgs = HashMap::new();
+        pull_msgs.insert(
+            "conv_a".to_string(),
+            PullMsgs {
+                msgs: vec![
+                    make_msg_data("conv_a", 4, "msg4"),
+                    make_receipt_msg_data("conv_a", 5),
+                    make_receipt_msg_data("conv_a", 6),
+                ],
+                ..Default::default()
+            },
+        );
+        let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
+        let mut server_seqs = HashMap::new();
+        server_seqs.insert("conv_a".to_string(), 6i64);
+
+        // 第一次同步：拉 4..6
+        let syncer1 = make_syncer(remote.clone(), repositories.clone(), handler.clone());
+        syncer1.sync_incremental_messages(&server_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
+        // 回执不落库：消息表 max_seq 只推进到 4
+        assert_eq!(message_dao.get_max_seq("conv_a").await.unwrap(), 4, "回执 seq 不应推进消息表 max_seq");
+        // 拉取进度包含回执 seq：synced_max_seq = 6
+        let synced = repositories
+            .sync_version_repo
+            .get_version_sync("synced_max_seq", "conv_a")
+            .await
+            .unwrap()
+            .map(|(_, v)| v)
+            .unwrap_or(0);
+        assert_eq!(synced, 6, "拉取进度应包含回执 seq，避免重启后重复拉取");
+
+        // 模拟重启（新 syncer，内存 synced_max_seqs 为空）：再次增量同步
+        let pull_before = remote.pull_count.load(Ordering::SeqCst);
+        let syncer2 = make_syncer(remote.clone(), repositories, handler);
+        syncer2.sync_incremental_messages(&server_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
+        let pull_after = remote.pull_count.load(Ordering::SeqCst);
+
+        // 修复验证：第二次同步不再发起拉取
+        assert_eq!(pull_after - pull_before, 0, "重启后不应重复拉取已同步的回执区间");
     }
 
     #[tokio::test]
