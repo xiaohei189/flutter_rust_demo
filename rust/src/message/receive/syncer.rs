@@ -204,6 +204,8 @@ impl MessageSyncer {
         }
 
         info!("重连后开始增量同步消息");
+        // 从 DB 加载已同步进度（synced_max_seq），否则内存为空会导致全量重拉
+        self.load_synced_max_seqs().await?;
         self.send(ConversationEvent::SyncStarted(self.reinstalled_flag().await));
         self.send(ConversationEvent::SyncProgress {
             progress: 1,
@@ -268,6 +270,8 @@ impl MessageSyncer {
         }
 
         info!("后台唤醒开始增量同步消息");
+        // 从 DB 加载已同步进度（synced_max_seq），否则内存为空会导致全量重拉
+        self.load_synced_max_seqs().await?;
         self.send(ConversationEvent::SyncStarted(self.reinstalled_flag().await));
         let server_max_seqs = match self.get_server_max_seqs().await {
             Ok(seqs) => seqs,
@@ -1025,9 +1029,10 @@ mod tests {
             .unwrap_or(0);
         assert_eq!(synced, 6, "拉取进度应包含回执 seq，避免重启后重复拉取");
 
-        // 模拟重启（新 syncer，内存 synced_max_seqs 为空）：再次增量同步
+        // 模拟重启（新 syncer，内存 synced_max_seqs 为空）：先按真实启动流程从 DB 加载进度，再增量同步
         let pull_before = remote.pull_count.load(Ordering::SeqCst);
         let syncer2 = make_syncer(remote.clone(), repositories, handler);
+        syncer2.load_synced_max_seqs().await.unwrap();
         syncer2.sync_incremental_messages(&server_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
         let pull_after = remote.pull_count.load(Ordering::SeqCst);
 
