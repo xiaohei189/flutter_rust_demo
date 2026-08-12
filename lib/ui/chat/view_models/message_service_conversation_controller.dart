@@ -231,9 +231,10 @@ class MessageServiceConversationController {
           draftText: draftText,
           draftTextTime: now,
         );
-        service.updateState(
-          service.currentState.copyWith(conversations: newConversations),
+        final next = service.currentState.copyWith(
+          conversations: newConversations,
         );
+        unawaited(Future<void>.microtask(() => service.updateState(next)));
       }
       await service.repository.setConversationDraft(
         conversationId: conversationId,
@@ -258,9 +259,10 @@ class MessageServiceConversationController {
           draftText: '',
           draftTextTime: 0,
         );
-        service.updateState(
-          service.currentState.copyWith(conversations: newConversations),
+        final next = service.currentState.copyWith(
+          conversations: newConversations,
         );
+        unawaited(Future<void>.microtask(() => service.updateState(next)));
       }
       await service.repository.clearConversationDraft(
         conversationId: conversationId,
