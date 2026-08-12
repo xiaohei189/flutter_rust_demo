@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../chat/providers/conversation_provider.dart';
-import '../../profile/providers/user_profile_provider.dart';
 import '../providers/group_provider.dart';
 
 /// 群信息页状态
@@ -82,8 +82,7 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
   List<GroupMember> get members =>
       ref.read(groupMemberProvider(groupId)).members;
 
-  String get currentUserId =>
-      ref.read(userProfileProvider).profile?.userId ?? '';
+  String get currentUserId => ref.read(currentUserIdProvider);
 
   GroupMember? get currentMember =>
       members.where((m) => m.userId == currentUserId).firstOrNull;

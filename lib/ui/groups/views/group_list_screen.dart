@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../profile/providers/user_profile_provider.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../providers/group_provider.dart';
 import '../widgets/group_tab.dart';
@@ -51,7 +51,7 @@ class _GroupListScreenState extends ConsumerState<GroupListScreen>
   @override
   Widget build(BuildContext context) {
     final groupState = ref.watch(groupListProvider);
-    final currentUserId = ref.watch(userProfileProvider).profile?.userId ?? '';
+    final currentUserId = ref.watch(currentUserIdProvider);
 
     final createdGroups = groupState.groups
         .where((g) => g.ownerUserId == currentUserId)

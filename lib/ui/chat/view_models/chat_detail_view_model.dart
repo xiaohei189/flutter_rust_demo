@@ -14,9 +14,9 @@ import '../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../../../ui/core/extensions/conversation_extensions.dart';
-import '../../profile/providers/user_profile_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
@@ -106,9 +106,9 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }
 
   String get currentUserId {
-    final profileUserId = ref.read(userProfileProvider).profile?.userId;
-    if (profileUserId != null && profileUserId.isNotEmpty) {
-      return profileUserId;
+    final loginUserId = ref.read(currentUserIdProvider);
+    if (loginUserId.isNotEmpty) {
+      return loginUserId;
     }
     return ref.read(messageServiceProvider).currentUserId;
   }

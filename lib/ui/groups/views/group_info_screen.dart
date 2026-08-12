@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
-import '../../profile/providers/user_profile_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../data/services/services.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -57,6 +56,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     final groupInfo = ref.watch(
       groupInfoViewModelProvider(widget.conversationId),
     );
+    final l10n = AppLocalizations.of(context);
 
     if (conversation == null) {
       return Scaffold(
@@ -72,7 +72,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       );
     }
 
-    final currentUserId = ref.watch(userProfileProvider).profile?.userId ?? '';
+    final currentUserId = _viewModel.currentUserId;
     final memberState = ref.watch(groupMemberProvider(_groupId));
     final keyword = _memberKeyword.trim().toLowerCase();
     final now = DateTime.now();
@@ -116,7 +116,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           CardLayout(
             children: [
               ListRow(
-                label: '群头像',
+                label: l10n?.groupAvatar ?? '群头像',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -135,20 +135,20 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ),
               const ListDivider(),
               TwoLineListRow(
-                label: '群名称',
+                label: l10n?.groupName ?? '群名称',
                 value: groupInfo.groupName,
                 onTap: () => _editField(
-                  title: '修改群名称',
+                  title: l10n?.editGroupName ?? '修改群名称',
                   initialValue: groupInfo.groupName,
                   onSave: _saveGroupName,
                 ),
               ),
               const ListDivider(),
               TwoLineListRow(
-                label: '群描述',
+                label: l10n?.groupDescription ?? '群描述',
                 value: groupInfo.groupDescription,
                 onTap: () => _editField(
-                  title: '修改群描述',
+                  title: l10n?.editGroupDescription ?? '修改群描述',
                   initialValue: groupInfo.groupDescription == '暂无描述'
                       ? ''
                       : groupInfo.groupDescription,
@@ -176,7 +176,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             CardLayout(
               children: [
                 ListRow(
-                  label: '全员禁言',
+                  label: l10n?.muteAll ?? '全员禁言',
                   trailing: Icon(
                     Icons.volume_off_outlined,
                     size: 20,
@@ -186,7 +186,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 ),
                 const ListDivider(),
                 ListRow(
-                  label: '转让群主',
+                  label: l10n?.transferOwner ?? '转让群主',
                   trailing: Icon(
                     Icons.swap_horiz,
                     size: 20,
@@ -195,7 +195,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                   onTap: _transferOwner,
                 ),
                 const ListDivider(),
-                DangerActionRow(title: '解散群组', onTap: _dismissGroup),
+                DangerActionRow(
+                  title: l10n?.dismissGroup ?? '解散群组',
+                  onTap: _dismissGroup,
+                ),
               ],
             ),
           ],
@@ -204,7 +207,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           CardLayout(
             children: [
               ListRow(
-                label: '群二维码',
+                label: l10n?.groupQrCode ?? '群二维码',
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -408,6 +411,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   };
 
   Future<void> _showJoinTimeFilter() async {
+    final l10n = AppLocalizations.of(context);
     final selected = await showModalBottomSheet<_JoinTimeFilter>(
       context: context,
       backgroundColor: context.appColors.surface,
@@ -418,21 +422,21 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                '按加入时间筛选',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                l10n?.joinTimeFilter ?? '按加入时间筛选',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             const Divider(height: 1),
             for (final filter in _JoinTimeFilter.values)
               ListTile(
                 title: Text(switch (filter) {
-                  _JoinTimeFilter.all => '全部',
-                  _JoinTimeFilter.today => '今天',
-                  _JoinTimeFilter.week => '近 7 天',
-                  _JoinTimeFilter.month => '近 30 天',
+                  _JoinTimeFilter.all => l10n?.all ?? '全部',
+                  _JoinTimeFilter.today => l10n?.today ?? '今天',
+                  _JoinTimeFilter.week => l10n?.last7Days ?? '近 7 天',
+                  _JoinTimeFilter.month => l10n?.last30Days ?? '近 30 天',
                 }),
                 trailing: _joinTimeFilter == filter
                     ? Icon(

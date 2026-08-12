@@ -6,6 +6,7 @@ import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
 import 'package:flutter_rust_demo/domain/models/group_member.dart';
 import 'package:flutter_rust_demo/domain/models/user_profile.dart';
+import 'package:flutter_rust_demo/providers/current_user_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/chat_settings_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/conversation_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
@@ -145,6 +146,11 @@ class FakeUserProfileNotifier extends UserProfileNotifier {
   UserProfileState build() => UserProfileState(profile: profile);
 }
 
+class FakeCurrentUserNotifier extends CurrentUserNotifier {
+  @override
+  String build() => 'u1';
+}
+
 class FakeConversationListNotifier extends ConversationListNotifier {
   FakeConversationListNotifier(this.conversation);
 
@@ -197,6 +203,7 @@ ChatSettingsViewModel buildViewModel({
   Conversation? conversation,
 }) {
   final overrides = [
+    currentUserIdProvider.overrideWith(() => FakeCurrentUserNotifier()),
     messageRepositoryProvider.overrideWithValue(
       messageRepository ?? FakeMessageRepository(),
     ),

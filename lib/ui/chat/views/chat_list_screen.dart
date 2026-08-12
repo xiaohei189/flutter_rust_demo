@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../providers/connection_provider.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/chat/widgets/chat_list_header.dart';
@@ -67,6 +68,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final connectionState = ref.watch(connectionProvider);
     final userProfileState = ref.watch(userProfileProvider);
     final cachedUserProfiles = ref.watch(conversationUserProfilesProvider);
+    final currentUserId = ref.watch(currentUserIdProvider);
     final listState = ref.watch(chatListViewModelProvider);
     final activeFilter = listState.activeFilter;
 
@@ -78,7 +80,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     return Scaffold(
       backgroundColor: colors.background,
       appBar: ConversationTitleBar(
-        currentUserId: userProfileState.profile?.userId ?? '',
+        currentUserId: currentUserId,
         nickname: userProfileState.profile?.nickname,
         avatarUrl: _viewModel.displayAvatarUrl,
         isSyncing: conversationState.isSyncing,
@@ -150,8 +152,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                             ? conversation.userId
                             : null;
                         final otherUserProfile =
-                            otherUserId != null &&
-                                otherUserId != userProfileState.profile?.userId
+                            otherUserId != null && otherUserId != currentUserId
                             ? cachedUserProfiles[otherUserId]
                             : null;
                         return ChatListItem(
@@ -165,7 +166,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           timeText: conversationState
                               .timeTexts[conversation.conversationId],
                           itemIndex: index,
-                          currentUserId: userProfileState.profile?.userId,
+                          currentUserId: currentUserId,
                           onTap: () {
                             AppRouter.goToChatDetail(context, conversation);
                           },

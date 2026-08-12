@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/user.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../../groups/providers/group_provider.dart';
-import '../../profile/providers/user_profile_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_service_provider.dart';
 
@@ -171,7 +171,7 @@ class ChatSettingsViewModel extends FamilyNotifier<ChatSettingsState, String> {
   }
 
   Future<bool> updateGroupNickname(String nickname) async {
-    final currentUserId = ref.read(userProfileProvider).profile?.userId ?? '';
+    final currentUserId = ref.read(currentUserIdProvider);
     if (currentUserId.isEmpty || nickname.isEmpty) return false;
     try {
       await ref

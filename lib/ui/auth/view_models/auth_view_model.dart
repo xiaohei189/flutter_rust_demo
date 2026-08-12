@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/services/auth_api.dart' as auth_api;
 import '../../../data/services/login_storage.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../../ui/core/utils/app_logger.dart';
 import '../../chat/providers/message_service_provider.dart';
 
@@ -205,6 +206,7 @@ class AuthViewModel extends Notifier<AuthState> {
   }) async {
     final credentials = await LoginStorage.loadCredentials();
     if (credentials == null) return false;
+    ref.read(currentUserIdProvider.notifier).setUserId(credentials.userId);
     try {
       await ref
           .read(messageServiceProvider.notifier)
@@ -228,6 +230,7 @@ class AuthViewModel extends Notifier<AuthState> {
     } catch (e) {
       appLog.w('[Auth] 退出登录 SDK 失败: $e');
     }
+    ref.read(currentUserIdProvider.notifier).clear();
     await LoginStorage.clearCredentials();
   }
 
@@ -246,6 +249,7 @@ class AuthViewModel extends Notifier<AuthState> {
         areaCode: areaCode,
         phoneNumber: phoneNumber,
       );
+      ref.read(currentUserIdProvider.notifier).setUserId(userId);
       await ref
           .read(messageServiceProvider.notifier)
           .initialize(
