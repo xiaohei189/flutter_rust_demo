@@ -100,12 +100,20 @@ impl SyncVersionDao {
     }
 
     /// 设置同步标志
+    ///
+    /// 首次运行时 local_app_sdk_version 尚无行（mark_reinstall_complete 才会插行），
+    /// 纯 UPDATE 会静默影响 0 行导致阶段标志丢失；这里用 SDK_LOCAL_VERSION 锚定行做 UPSERT，
+    /// 保证与 mark_reinstall_complete 始终操作同一行。
     pub async fn set_sync_flag(&self, flag: i32) -> Result<()> {
-        sqlx::query("UPDATE local_app_sdk_version SET sync_flag = ?1")
-            .bind(flag as i64)
-            .execute(&self.pool)
-            .await
-            .map_err(|e| SdkError::database(format!("set sync_flag: {}", e)))?;
+        sqlx::query(
+            "INSERT INTO local_app_sdk_version (version, sync_flag) VALUES (?1, ?2) \
+             ON CONFLICT(version) DO UPDATE SET sync_flag = excluded.sync_flag",
+        )
+        .bind(crate::constant::SDK_LOCAL_VERSION)
+        .bind(flag as i64)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| SdkError::database(format!("set sync_flag: {}", e)))?;
         info!("sync_flag set to {}", flag);
         Ok(())
     }
@@ -145,6 +153,25 @@ mod tests {
         let dao = SyncVersionDao::new(pool.clone());
 
         dao.mark_reinstall_complete("1.0.0").await.unwrap();
+        assert!(!dao.is_reinstalled().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_set_sync_flag_creates_anchor_row() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = SyncVersionDao::new(pool);
+
+        // 无行时首次调用应插入锚定行而不是静默空操作
+        dao.set_sync_flag(sync_flag::SYNC_STAGE_FRIENDS).await.unwrap();
+        assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_FRIENDS);
+
+        // 再次调用更新同一行
+        dao.set_sync_flag(sync_flag::SYNC_STAGE_DONE).await.unwrap();
+        assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_DONE);
+
+        // 与 mark_reinstall_complete 共用锚定行，表内不应出现多行导致读取错乱
+        dao.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await.unwrap();
+        assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_DONE);
         assert!(!dao.is_reinstalled().await.unwrap());
     }
 }

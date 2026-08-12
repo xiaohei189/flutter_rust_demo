@@ -337,6 +337,9 @@ mod tests {
     }
 }
 
+/// SDK 本地安装版本（local_app_sdk_version 锚定行的 version，与 Go SDK 保持一致）
+pub const SDK_LOCAL_VERSION: &str = "1.0.0";
+
 /// 同步标志（对齐 Go SDK syncFlag）
 pub mod sync_flag {
     /// 未同步
