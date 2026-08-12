@@ -437,8 +437,10 @@ impl MessageSyncer {
     async fn sync_incremental_messages(&self, max_seq_to_sync: &HashMap<String, i64>, pull_num: i64) -> Result<()> {
         let mut need_sync_seq_map: HashMap<String, (i64, i64)> = HashMap::new();
 
+        // 对齐 Go SDK `compareSeqsAndBatchSync`：差量基于内存 synced_max_seqs，
+        // 而非 DB get_max_seq（通知会话的消息不入库，get_max_seq 恒为 0 会导致全量重拉）
         for (conversation_id, server_max_seq) in max_seq_to_sync {
-            let local_max_seq = self.repositories.message_repo.get_max_seq(conversation_id).await.unwrap_or(0);
+            let local_max_seq = self.synced_max_seqs.read().await.get(conversation_id).copied().unwrap_or(0);
 
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
@@ -617,8 +619,27 @@ impl MessageSyncer {
         self.handle_pulled_messages(&resp.msgs).await?;
 
         if let Some(handler) = self.notification_handler.get() {
-            for (_conv_id, pull_msgs) in &resp.notification_msgs {
+            for (conv_id, pull_msgs) in &resp.notification_msgs {
                 handler.handle_notifications(&pull_msgs.msgs).await;
+                // 对齐 Go SDK `doNotificationManager`：处理完通知批次后持久化通知进度，
+                // 避免下次同步重复拉取历史通知（local_notification_seqs 表）
+                if let Some(last_msg) = pull_msgs.msgs.iter().max_by_key(|m| m.seq) {
+                    if last_msg.seq != 0 {
+                        if let Err(e) = self.set_notification_seq(conv_id, last_msg.seq).await {
+                            warn!("[MsgSync] SetNotificationSeq 失败 conv={}: {}", conv_id, e);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 对齐 Go SDK `syncAndTriggerMsgs`：拉取完成后按请求区间统一更新内存进度
+        // （含通知会话；即使服务端返回空，也已同步到该 seq，下次不再全量重拉）
+        for (conv_id, (_, end_seq)) in seq_map {
+            let mut synced = self.synced_max_seqs.write().await;
+            let current = synced.get(conv_id).copied().unwrap_or(0);
+            if *end_seq > current {
+                synced.insert(conv_id.clone(), *end_seq);
             }
         }
 
@@ -892,6 +913,8 @@ mod tests {
         );
         let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
         let syncer = make_syncer(remote.clone(), repositories, handler);
+        // 差量基于内存 synced_max_seqs：预置已同步到 seq=3，只应拉取 [4,5]
+        syncer.synced_max_seqs.write().await.insert("conv_a".to_string(), 3);
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_a".to_string(), 5i64);
         server_seqs.insert("conv_b".to_string(), 5i64);

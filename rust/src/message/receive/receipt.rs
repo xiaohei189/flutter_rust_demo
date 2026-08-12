@@ -23,7 +23,7 @@ impl MessageProcessor {
     /// 1. 别人发来的已读回执（对方标记我的消息已读）：
     ///    - 单聊：标记消息 is_read + 发布 C2CReadReceipt 事件 + 重算未读数
     ///    - 群聊/通知：仅重算未读数（doUnreadCount）
-    /// 2. 自己的已读回执（其他设备同步）：更新未读数
+    /// 2. 自己的已读回执（其他设备同步）：走统一的 doUnreadCount（含幂等检查）
     pub(crate) async fn handle_read_receipt(&self, msg: &MsgData) -> Result<()> {
         let tips = MarkAsReadTips::decode(msg.content.as_slice()).map_err(|e| SdkError::invalid_argument(format!("解析 MarkAsReadTips 失败: {}", e)))?;
 
@@ -57,11 +57,14 @@ impl MessageProcessor {
 
             info!("[RECEIPT] conv={} mark_user={} seqs={}", tips.conversation_id, tips.mark_as_read_user_id, tips.seqs.len());
         } else {
-            // 自己的已读回执（其他设备同步过来的）
-            self.repositories.conversation_repo.update_unread_count(&tips.conversation_id, 0).await?;
-
-            if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
-                self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
+            // 自己的已读回执（其他设备同步过来的）：对齐 Go SDK doReadDrawing L281-282
+            // 走统一的 doUnreadCount（含幂等检查），已处理过的回执不再重复发布事件
+            let conversation = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await?;
+            let session_type_val = conversation.as_ref().map(|c| c.conversation_type).unwrap_or(msg.session_type);
+            if self.do_unread_count(&tips.conversation_id, session_type_val, tips.has_read_seq, &tips.seqs).await? {
+                if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
+                    self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
+                }
             }
 
             info!("[RECEIPT] self sync conv={}", tips.conversation_id);
@@ -130,9 +133,14 @@ impl MessageProcessor {
 
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
-            self.repositories.conversation_repo.update_unread_count(&tips_json.conversation_id, 0).await?;
-            if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
-                self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
+            // 对齐 Go SDK doReadDrawing L281-282：自己的回执（其他设备同步）走统一的
+            // doUnreadCount（含幂等检查），已处理过的回执不再重复发布事件
+            let conversation = self.repositories.conversation_repo.get_by_id(&tips_json.conversation_id).await?;
+            let session_type_val = conversation.as_ref().map(|c| c.conversation_type).unwrap_or(msg.session_type);
+            if self.do_unread_count(&tips_json.conversation_id, session_type_val, tips_json.has_read_seq, &seqs).await? {
+                if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
+                    self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
+                }
             }
 
             info!("[RECEIPT] notif self sync conv={}", tips_json.conversation_id);
@@ -142,33 +150,42 @@ impl MessageProcessor {
     }
 
     /// 重算会话未读数（对齐 Go SDK `doUnreadCount` read_drawing.go L173-225）
-    async fn do_unread_count(&self, conversation_id: &str, session_type_val: i32, has_read_seq: i64, seqs: &[i64]) -> Result<()> {
+    ///
+    /// 返回 true 表示实际处理（更新了未读数）；false 表示回执可忽略（幂等跳过/无有效信息），
+    /// 调用方不应发布 TotalUnreadCountChanged 事件。
+    async fn do_unread_count(&self, conversation_id: &str, session_type_val: i32, has_read_seq: i64, seqs: &[i64]) -> Result<bool> {
         if session_type_val == session_type::SINGLE_CHAT {
-            // 幂等性检查：如果 has_read_seq 对应的消息已读，说明已处理过此回执
-            if !seqs.is_empty() {
-                if let Ok(Some(msg)) = self.repositories.message_repo.get_by_seq(has_read_seq).await {
-                    if msg.is_read != 0 {
-                        return Ok(());
-                    }
-                }
+            // 对齐 Go L175-192：seqs 为空视为无有效已读信息，直接忽略
+            if seqs.is_empty() {
+                return Ok(false);
+            }
+
+            // 幂等性检查（对齐 Go L176-182）：has_read_seq 消息缺失或已读，说明已处理过此回执
+            match self.repositories.message_repo.get_by_conversation_and_seq(conversation_id, has_read_seq).await {
+                Ok(Some(msg)) if msg.is_read != 0 => return Ok(false),
+                Ok(None) => return Ok(false),
+                Err(e) => return Err(e),
+                _ => {}
             }
 
             // 标记消息已读（排除自己发的）
-            if !seqs.is_empty() {
-                let login_user_id = self.user_id.get().await;
-                self.repositories.message_repo.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
+            let login_user_id = self.user_id.get().await;
+            self.repositories.message_repo.mark_as_read_by_seqs(conversation_id, seqs, &login_user_id).await?;
+
+            // 对齐 Go L193-195：内存中未记录当前 max_seq 时忽略
+            let current_max_seq = self.max_seq_recorder.get(conversation_id);
+            if current_max_seq == 0 {
+                return Ok(false);
             }
 
-            // 计算未读数 = max_seq - has_read_seq
-            let current_max_seq = self.max_seq_recorder.get(conversation_id);
+            // 计算未读数 = max_seq - has_read_seq（对齐 Go L196-201，负数取 0）
             let unread_count = if current_max_seq > has_read_seq { (current_max_seq - has_read_seq) as i32 } else { 0 };
-
             self.repositories.conversation_repo.update_unread_count(conversation_id, unread_count).await?;
         } else {
             self.repositories.conversation_repo.update_unread_count(conversation_id, 0).await?;
         }
 
-        Ok(())
+        Ok(true)
     }
 }
 
@@ -308,6 +325,7 @@ mod tests {
     async fn test_read_receipt_self_sync_clears_unread() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
         let handler = MessageProcessor::new(
             repositories,
@@ -317,8 +335,20 @@ mod tests {
         );
 
         conversation_dao.upsert(&make_conv("conv_self_read", 5)).await.unwrap();
+        message_dao
+            .batch_insert(&[
+                make_local_msg("conv_self_read", "s1", 1, "user_2"),
+                make_local_msg("conv_self_read", "s2", 2, "user_2"),
+                make_local_msg("conv_self_read", "s3", 3, "user_2"),
+                make_local_msg("conv_self_read", "s4", 4, "user_2"),
+                make_local_msg("conv_self_read", "s5", 5, "user_2"),
+            ])
+            .await
+            .unwrap();
+        handler.max_seq_recorder.set("conv_self_read", 5);
 
-        let receipt = make_receipt_msg("conv_self_read", "user_1", vec![], 5);
+        // 自己的回执带已读消息列表（对齐 Go doReadDrawing：self 回执走 doUnreadCount）
+        let receipt = make_receipt_msg("conv_self_read", "user_1", vec![1, 2, 3, 4, 5], 5);
         handler.handle_messages("conv_self_read", vec![receipt]).await.unwrap();
 
         let conv = conversation_dao.get_by_id("conv_self_read").await.unwrap().unwrap();
@@ -326,17 +356,60 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_read_receipt_self_sync_idempotent_skips_second_event() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let conversation_dao = repositories.conversation_repo.clone();
+        let hub = crate::event::hub::EventHub::new();
+        let handler = MessageProcessor::new(repositories, UserId::new("user_1"), hub.clone(), crate::event::test_util::noop_message_listener());
+        let mut rx = hub.take_conv_rx().unwrap();
+
+        conversation_dao.upsert(&make_conv("conv_idem", 3)).await.unwrap();
+        message_dao
+            .batch_insert(&[
+                make_local_msg("conv_idem", "i1", 1, "user_2"),
+                make_local_msg("conv_idem", "i2", 2, "user_2"),
+                make_local_msg("conv_idem", "i3", 3, "user_2"),
+            ])
+            .await
+            .unwrap();
+        handler.max_seq_recorder.set("conv_idem", 3);
+
+        let receipt = make_receipt_msg("conv_idem", "user_1", vec![1, 2, 3], 3);
+        // 第一次处理：应更新未读数并发布事件
+        handler.handle_messages("conv_idem", vec![receipt.clone()]).await.unwrap();
+        assert!(rx.try_recv().is_ok(), "first processing should publish TotalUnreadCountChanged");
+
+        // 重放同一条回执：has_read_seq 消息已读 → 幂等跳过，不再发布事件
+        handler.handle_messages("conv_idem", vec![receipt]).await.unwrap();
+        let event = rx.try_recv();
+        assert!(event.is_err(), "replayed receipt should be idempotently skipped");
+    }
+
+    #[tokio::test]
     async fn test_read_receipt_publishes_total_unread_changed() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
         let conversation_dao = repositories.conversation_repo.clone();
         let hub = crate::event::hub::EventHub::new();
         let handler = MessageProcessor::new(repositories, UserId::new("user_1"), hub.clone(), crate::event::test_util::noop_message_listener());
         let mut rx = hub.take_conv_rx().unwrap();
 
         conversation_dao.upsert(&make_conv("conv_ev", 3)).await.unwrap();
+        message_dao
+            .batch_insert(&[
+                make_local_msg("conv_ev", "e1", 1, "user_2"),
+                make_local_msg("conv_ev", "e2", 2, "user_2"),
+                make_local_msg("conv_ev", "e3", 3, "user_2"),
+            ])
+            .await
+            .unwrap();
+        handler.max_seq_recorder.set("conv_ev", 3);
 
-        let receipt = make_receipt_msg("conv_ev", "user_1", vec![], 3);
+        // 自己的回执带已读消息列表才会触发事件（对齐 Go：seqs 为空直接忽略）
+        let receipt = make_receipt_msg("conv_ev", "user_1", vec![1, 2, 3], 3);
         handler.handle_messages("conv_ev", vec![receipt]).await.unwrap();
 
         let event = rx.try_recv();
