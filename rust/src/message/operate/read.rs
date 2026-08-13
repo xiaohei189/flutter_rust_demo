@@ -110,7 +110,10 @@ impl MessageService {
             self.send(ConversationEvent::Changed(vec![conv]));
         }
 
-        // 总未读数由 processor.rs 统一发布，这里只发 ConversationChanged
+        // L169-170: TotalUnreadMessageChanged（对齐 Go SDK：无条件发布总未读变化）
+        if let Ok(total) = self.repositories.conversation_repo.get_total_unread_count().await {
+            self.send(ConversationEvent::TotalUnreadCountChanged(total as i64));
+        }
     }
 
     /// 调用服务端 `markConversationAsRead` API（对齐 Go SDK `server_api.go` L17-22）
@@ -125,43 +128,61 @@ impl MessageService {
         self.api.mark_conversation_as_read_on_server(&req).await
     }
 
-    /// 标记消息已读（按 seq 列表，对齐 Go SDK `markMsgAsRead2Server`）
+    /// 标记消息已读（按 seq 列表，对齐 Go SDK `markMessagesAsReadByMsgID` read_drawing.go L107-143）
     pub async fn mark_messages_as_read(&self, mut req: MarkMessagesAsReadReq) -> Result<()> {
         // 外部传入的 user_id 可能为空，统一以当前登录用户覆盖（值一致）
         req.user_id = self.user_id.get().await;
 
+        if req.seqs.is_empty() {
+            return Ok(());
+        }
+
+        // L112-124: GetMessagesByClientMsgIDs → getAsReadMsgMapAndList（未读且非自己发送）
+        let msgs = self.repositories.message_repo.get_by_seqs(&req.conversation_id, &req.seqs).await?;
+        let markable_seqs: Vec<i64> = msgs.iter().filter(|m| m.is_read == 0 && m.send_id != req.user_id).map(|m| m.seq).collect();
+
+        // L126-129: 无可标记消息直接返回
+        if markable_seqs.is_empty() {
+            info!("消息已标记为已读: conversation_id={}, seq_count=0（无可标记消息）", req.conversation_id);
+            return Ok(());
+        }
+
+        // L130-132: markMsgAsRead2Server
         self.api.mark_messages_as_read_on_server(&req).await?;
 
-        // 更新本地数据库：标记消息为已读（排除自己发的）
-        if !req.seqs.is_empty() {
-            self.repositories.message_repo.mark_as_read_by_seqs(&req.conversation_id, &req.seqs, &req.user_id).await?;
+        // L133-136: MarkConversationMessageAsReadDB
+        self.repositories.message_repo.mark_as_read_by_seqs(&req.conversation_id, &markable_seqs, &req.user_id).await?;
+
+        // L137-140: DecrConversationUnreadCount（按实际标记条数扣减，不为负）
+        let decr_count = markable_seqs.len() as i32;
+        if let Some(conv) = self.repositories.conversation_repo.get_by_id(&req.conversation_id).await? {
+            let new_unread = (conv.unread_count - decr_count).max(0);
+            self.repositories.conversation_repo.update_unread_count(&req.conversation_id, new_unread).await?;
         }
+
+        // L141: unreadChangeTrigger(hasReadSeq == maxSeq && msgs[0].SendID != loginUserID)
+        let first_msg = &msgs[0];
+        let max_seq = self.repositories.message_repo.get_max_seq(&req.conversation_id).await?;
+        let latest_msg_is_read = req.has_read_seq == max_seq && first_msg.send_id != req.user_id;
+        self.unread_change_trigger(&req.conversation_id, latest_msg_is_read).await;
 
         info!("消息已标记为已读: conversation_id={}, seq_count={}", req.conversation_id, req.seqs.len());
         Ok(())
     }
 
-    /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
+    /// 标记所有会话消息已读（对齐 Go SDK `MarkAllConversationMessageAsRead` api.go L825-836）
     ///
-    /// 遍历所有未读会话，逐个调用 `mark_conversation_message_as_read` 标记已读
+    /// 遍历所有未读会话，逐个调用 `mark_conversation_message_as_read` 走完整流程
+    /// （服务端通知 + 本地标记 + unreadChangeTrigger，每个会话各自发布总未读变化）
     pub async fn mark_all_conversation_as_read(&self) -> Result<()> {
         let conversations = self.repositories.conversation_repo.get_all().await?;
-        let user_id = self.user_id.get().await;
 
         for conv in &conversations {
             if conv.unread_count > 0 {
-                // 为每个未读会话获取 maxSeq 并通知服务端
-                let max_seq = self.repositories.message_repo.get_max_seq(&conv.conversation_id).await.unwrap_or(0);
-                if max_seq > 0 {
-                    let _ = self.mark_conversation_as_read_server(&conv.conversation_id, max_seq, &[]).await;
-                }
-                // 标记本地消息已读 + 清零未读数
-                self.repositories.message_repo.mark_as_read_by_max_seq(&conv.conversation_id, max_seq, &user_id).await?;
-                self.repositories.conversation_repo.update_unread_count(&conv.conversation_id, 0).await?;
+                self.mark_conversation_message_as_read(conv.conversation_id.clone(), conv.conversation_type).await?;
             }
         }
 
-        // 总未读数由 processor.rs 统一发布
         info!("已标记所有会话消息已读");
         Ok(())
     }

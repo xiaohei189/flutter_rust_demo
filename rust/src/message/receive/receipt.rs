@@ -30,20 +30,17 @@ impl MessageProcessor {
         let login_user_id = self.user_id.get().await;
 
         if tips.mark_as_read_user_id != login_user_id {
-            // 别人发来的已读回执：对方标记我的消息为已读
+            // 对齐 Go SDK doReadDrawing L241-280：别人发来的已读回执只标记消息已读 + C2CReadReceipt，
+            // 不重算会话未读数（别人已读不影响"我未读"的计数）
             let conversation = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await?;
             let session_type_val = conversation.as_ref().map(|c| c.conversation_type).unwrap_or(msg.session_type);
 
-            if session_type_val == session_type::SINGLE_CHAT {
-                // 单聊已读回执：由 do_unread_count 统一标记已读 + 重算未读数
-            } else if session_type_val == session_type::WRITE_GROUP_CHAT || session_type_val == session_type::READ_GROUP_CHAT {
-                // 群聊：发布群已读回执事件
+            // L245-275: 单聊逐条标记消息 IsRead（不过滤 send_id）
+            if session_type_val == session_type::SINGLE_CHAT && !tips.seqs.is_empty() {
+                self.repositories.message_repo.mark_as_read_by_seqs_all(&tips.conversation_id, &tips.seqs).await?;
             }
 
-            // 重算未读数
-            self.do_unread_count(&tips.conversation_id, session_type_val, tips.has_read_seq, &tips.seqs).await?;
-
-            // 单聊：发布 C2CReadReceipt 事件
+            // L277-279: 单聊发布 C2CReadReceipt 事件
             if session_type_val == session_type::SINGLE_CHAT && !tips.seqs.is_empty() {
                 self.message_listener.emit(MessageEvent::C2CReadReceipt {
                     receipts: vec![MessageReceipt {
@@ -129,7 +126,7 @@ impl MessageProcessor {
             } else if session_type_val == session_type::WRITE_GROUP_CHAT || session_type_val == session_type::READ_GROUP_CHAT {
             }
 
-            self.do_unread_count(&tips_json.conversation_id, session_type_val, tips_json.has_read_seq, &seqs).await?;
+            // 对齐 Go SDK doReadDrawing L241-280：别人已读回执不重算会话未读数
 
             info!("[RECEIPT] notif conv={} mark_user={} seqs={}", tips_json.conversation_id, tips_json.mark_as_read_user_id, seqs.len());
         } else {
@@ -318,7 +315,7 @@ mod tests {
         assert!(logs.iter().all(|m| m.is_read == 1), "all messages should be marked as read");
 
         let conv = conversation_dao.get_by_id("conv_read").await.unwrap().unwrap();
-        assert_eq!(conv.unread_count, 0, "unread should be 0 after read receipt");
+        assert_eq!(conv.unread_count, 3, "别人已读回执不重算未读数（对齐 Go doReadDrawing）");
     }
 
     #[tokio::test]
@@ -450,11 +447,11 @@ mod tests {
         assert_eq!(read_count, 2, "only seq 1,2 should be marked read");
 
         let conv = conversation_dao.get_by_id("conv_partial").await.unwrap().unwrap();
-        assert_eq!(conv.unread_count, 1, "unread should be 1 (3-2)");
+        assert_eq!(conv.unread_count, 3, "别人已读回执不重算未读数（对齐 Go doReadDrawing）");
     }
 
     #[tokio::test]
-    async fn test_read_receipt_group_chat_clears_unread() {
+    async fn test_read_receipt_group_chat_keeps_unread() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
         let message_dao = repositories.message_repo.clone();
@@ -479,6 +476,6 @@ mod tests {
         handler.handle_messages("conv_group", vec![receipt]).await.unwrap();
 
         let conv = conversation_dao.get_by_id("conv_group").await.unwrap().unwrap();
-        assert_eq!(conv.unread_count, 0, "group chat unread should be 0 after receipt");
+        assert_eq!(conv.unread_count, 5, "别人已读回执不重算群聊未读数（对齐 Go doReadDrawing）");
     }
 }
