@@ -371,7 +371,17 @@ where
             write!(writer, "{:<5} ", *level)?;
         }
 
-        // 3) 文件:行号
+        // 3) target（仅显示自定义 target，如 im::sync；默认 module_path 前缀过长且无区分度，不输出）
+        let target = event.metadata().target();
+        if !target.starts_with(env!("CARGO_PKG_NAME")) {
+            if self.with_ansi {
+                write!(writer, "{}{}{} ", GREY, target, RESET)?;
+            } else {
+                write!(writer, "{} ", target)?;
+            }
+        }
+
+        // 4) 文件:行号
         if let (Some(file), Some(line)) = (event.metadata().file(), event.metadata().line()) {
             let file = shorten_cargo_path(file);
             if self.with_ansi {

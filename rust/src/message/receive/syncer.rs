@@ -40,7 +40,7 @@ impl SyncServerApi for ConnectionManager {
         use openim_protocol::sdkws::{GetMaxSeqReq, GetMaxSeqResp};
         let req = GetMaxSeqReq { user_id: user_id.to_string() };
         fetch_server_max_seqs_with_retry(3, std::time::Duration::from_secs(2), || async {
-            info!("[MsgSync] getServerMaxSeq 请求: user_id={}", req.user_id);
+            info!(target: "im::sync", "[Sync] getServerMaxSeq 请求: user_id={}", req.user_id);
             self.send_rpc::<GetMaxSeqReq, GetMaxSeqResp>(ws_req_identifier::GET_NEWEST_SEQ, &req).await.map(|resp| resp.max_seqs)
         })
         .await
@@ -84,14 +84,14 @@ where
     let mut retry_interval = initial_interval;
     for retry in 0..max_retries {
         if retry > 0 {
-            warn!("[MsgSync] getServerMaxSeq 第 {} 次重试，等待 {:?}", retry + 1, retry_interval);
+            warn!(target: "im::sync", "[Sync] getServerMaxSeq 第 {} 次重试，等待 {:?}", retry + 1, retry_interval);
             tokio::time::sleep(retry_interval).await;
             retry_interval *= 2;
         }
         match fetch().await {
             Ok(seqs) => return Ok(seqs),
             Err(e) => {
-                warn!("[MsgSync] getServerMaxSeq 失败 (retry={}): {:?}", retry + 1, e);
+                warn!(target: "im::sync", "[Sync] getServerMaxSeq 失败 (retry={}): {:?}", retry + 1, e);
                 if retry == max_retries - 1 {
                     return Err(SdkError::network(format!("getServerMaxSeq {} 次重试均失败: {}", max_retries, e)));
                 }
@@ -199,11 +199,11 @@ impl MessageSyncer {
     pub async fn sync_after_reconnect(&self) -> Result<()> {
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
-            info!("消息同步已在进行中，跳过");
+            info!(target: "im::sync", "[Sync] 消息同步已在进行中，跳过");
             return Ok(());
         }
 
-        info!("重连后开始增量同步消息");
+        info!(target: "im::sync", "[Sync] 重连后开始增量同步消息");
         // 从 DB 加载已同步进度（synced_max_seq），否则内存为空会导致全量重拉
         self.load_synced_max_seqs().await?;
         self.send(ConversationEvent::SyncStarted(self.reinstalled_flag().await));
@@ -225,7 +225,7 @@ impl MessageSyncer {
         };
 
         if server_max_seqs.is_empty() {
-            info!("服务端无会话 seq，跳过同步");
+            info!(target: "im::sync", "[Sync] 服务端无会话 seq，跳过同步");
             self.send(ConversationEvent::SyncProgress {
                 progress: 100,
                 message: "同步完成（无需同步）".into(),
@@ -236,7 +236,7 @@ impl MessageSyncer {
 
         for (conv_id, max_seq) in &server_max_seqs {
             if let Err(e) = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await {
-                warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
+                warn!(target: "im::sync", "[Sync] update_max_seq 失败 conv={}: {}", conv_id, e);
             }
         }
 
@@ -247,7 +247,7 @@ impl MessageSyncer {
                     message: "重连后同步完成".into(),
                 });
                 self.send(ConversationEvent::SyncFinished(self.reinstalled_flag().await));
-                info!("重连后增量同步完成");
+                info!(target: "im::sync", "[Sync] 重连后增量同步完成");
                 Ok(())
             }
             Err(e) => {
@@ -265,11 +265,11 @@ impl MessageSyncer {
     pub async fn sync_on_wakeup(&self) -> Result<()> {
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
-            info!("消息同步已在进行中，跳过唤醒同步");
+            info!(target: "im::sync", "[Sync] 消息同步已在进行中，跳过唤醒同步");
             return Ok(());
         }
 
-        info!("后台唤醒开始增量同步消息");
+        info!(target: "im::sync", "[Sync] 后台唤醒开始增量同步消息");
         // 从 DB 加载已同步进度（synced_max_seq），否则内存为空会导致全量重拉
         self.load_synced_max_seqs().await?;
         self.send(ConversationEvent::SyncStarted(self.reinstalled_flag().await));
@@ -289,26 +289,26 @@ impl MessageSyncer {
         }
         for (conv_id, max_seq) in &server_max_seqs {
             if let Err(e) = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await {
-                warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
+                warn!(target: "im::sync", "[Sync] update_max_seq 失败 conv={}: {}", conv_id, e);
             }
         }
         self.sync_incremental_messages(&server_max_seqs, pull_msg_num::DEFAULT_PULL_NUMS).await?;
         self.send(ConversationEvent::SyncFinished(self.reinstalled_flag().await));
-        info!("后台唤醒增量同步完成");
+        info!(target: "im::sync", "[Sync] 后台唤醒增量同步完成");
         Ok(())
     }
 
     /// 登录后的全量同步（区分重装和普通模式）
     pub async fn sync_on_login(&self) -> Result<()> {
-        info!("=== 消息同步开始: sync_on_login ===");
+        info!(target: "im::sync", "[Sync] === 消息同步开始: sync_on_login ===");
         let _guard = self.sync_lock.try_lock();
         if _guard.is_err() {
-            info!("消息同步已在进行中，跳过");
+            info!(target: "im::sync", "[Sync] 消息同步已在进行中，跳过");
             return Ok(());
         }
 
         let reinstalled = self.repositories.sync_version_repo.is_reinstalled().await?;
-        info!("登录后开始同步全部消息，reinstalled={}", reinstalled);
+        info!(target: "im::sync", "[Sync] 登录后开始同步全部消息，reinstalled={}", reinstalled);
 
         self.send(ConversationEvent::SyncStarted(reinstalled));
         self.send(ConversationEvent::SyncProgress {
@@ -323,7 +323,7 @@ impl MessageSyncer {
                     message: "同步完成".into(),
                 });
                 self.send(ConversationEvent::SyncFinished(reinstalled));
-                info!("=== 消息同步成功: sync_on_login ===");
+                info!(target: "im::sync", "[Sync] === 消息同步成功: sync_on_login ===");
                 Ok(())
             }
             Err(e) => {
@@ -332,7 +332,7 @@ impl MessageSyncer {
                     reinstalled,
                     error: error_msg.to_string(),
                 });
-                error!("=== 消息同步失败: sync_on_login, error={} ===", e);
+                error!(target: "im::sync", "[Sync] === 消息同步失败: sync_on_login, error={} ===", e);
                 Err(e)
             }
         }
@@ -363,7 +363,7 @@ impl MessageSyncer {
             return Ok(());
         }
 
-        info!("推送消息 seq 不连续: conv={}, expected_last={}, actual_max={}, min={}", conv_id, expected_last, max_seq, min_seq);
+        info!(target: "im::sync", "[Sync] 推送消息 seq 不连续: conv={}, expected_last={}, actual_max={}, min={}", conv_id, expected_last, max_seq, min_seq);
 
         let begin = expected_last + 1;
         if begin <= max_seq {
@@ -394,7 +394,7 @@ impl MessageSyncer {
             .set_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id, "", seq as u64)
             .await
         {
-            warn!("持久化 synced_max_seq 失败 conv={}: {}", conv_id, e);
+            warn!(target: "im::sync", "[Sync] 持久化 synced_max_seq 失败 conv={}: {}", conv_id, e);
         }
     }
 
@@ -413,14 +413,14 @@ impl MessageSyncer {
                 for ns in &notification_seqs {
                     map.insert(ns.conversation_id.clone(), ns.seq);
                 }
-                info!("已加载 {} 个通知会话的 seq 到 synced_max_seqs", count);
+                info!(target: "im::sync", "[Sync] 从 local_notification_seqs 加载 {} 个通知会话的进度 seq", count);
             }
             Err(e) => {
-                warn!("加载通知 seq 失败（忽略）: {}", e);
+                warn!(target: "im::sync", "[Sync] 加载通知 seq 失败（忽略）: {}", e);
             }
         }
 
-        info!("已加载 {} 个会话的 synced_max_seqs", map.len());
+        info!(target: "im::sync", "[Sync] 拉取进度载入内存完成，共 {} 个会话（普通会话 + 通知会话）", map.len());
         Ok(())
     }
 
@@ -430,23 +430,23 @@ impl MessageSyncer {
     }
 
     pub async fn sync_all_conversations(&self, reinstalled: bool) -> Result<()> {
-        info!("开始同步全部会话消息, reinstalled={}", reinstalled);
+        info!(target: "im::sync", "[Sync] 开始同步全部会话消息, reinstalled={}", reinstalled);
 
         let server_max_seqs = self.get_server_max_seqs().await?;
 
         if server_max_seqs.is_empty() {
-            info!("服务端无会话记录，跳过同步");
+            info!(target: "im::sync", "[Sync] 服务端无会话记录，跳过同步");
             self.send(ConversationEvent::SyncFinished(reinstalled));
             return Ok(());
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
-            debug!("[SYNC_DIAG] 服务端会话: conv={}, max_seq={}, is_notification={}", conv_id, max_seq, is_notification(conv_id));
+            debug!(target: "im::sync", "[Sync] 服务端会话: conv={}, max_seq={}, is_notification={}", conv_id, max_seq, is_notification(conv_id));
         }
 
         for (conv_id, max_seq) in &server_max_seqs {
             if let Err(e) = self.repositories.conversation_repo.update_max_seq(conv_id, *max_seq).await {
-                warn!("update_max_seq 失败 conv={}: {}", conv_id, e);
+                warn!(target: "im::sync", "[Sync] update_max_seq 失败 conv={}: {}", conv_id, e);
             }
         }
 
@@ -456,13 +456,13 @@ impl MessageSyncer {
             self.sync_all_messages_reinstall(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
             self.repositories.sync_version_repo.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await?;
             if let Err(e) = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await {
-                warn!("设置 SYNC_END 标志失败: {}", e);
+                warn!(target: "im::sync", "[Sync] 设置 SYNC_END 标志失败: {}", e);
             }
         } else {
             self.sync_incremental_messages(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
         }
 
-        info!("全部会话消息同步完成");
+        info!(target: "im::sync", "[Sync] 全部会话消息同步完成");
         Ok(())
     }
 
@@ -478,7 +478,8 @@ impl MessageSyncer {
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
                 info!(
-                    "会话 {} 需要同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
+                    target: "im::sync",
+                    "[Sync] 会话 {} 需要同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
                     conversation_id, local_max_seq, server_max_seq, begin, server_max_seq
                 );
                 need_sync_seq_map.insert(conversation_id.clone(), (begin, *server_max_seq));
@@ -486,11 +487,11 @@ impl MessageSyncer {
         }
 
         if need_sync_seq_map.is_empty() {
-            info!("无需要同步的消息");
+            info!(target: "im::sync", "[Sync] 服务端 max_seq 均未超过本地进度，无需拉取");
             return Ok(());
         }
 
-        info!("需要同步 {} 个会话的消息", need_sync_seq_map.len());
+        info!(target: "im::sync", "[Sync] 需要同步 {} 个会话的消息", need_sync_seq_map.len());
         self.batch_pull_messages(&need_sync_seq_map, false, pull_num).await
     }
 
@@ -507,7 +508,7 @@ impl MessageSyncer {
                         seq: *server_max_seq,
                     });
                     self.synced_max_seqs.write().await.insert(conversation_id.clone(), *server_max_seq);
-                    info!("重装模式: 通知会话 {} 跳过拉取，直接持久化 seq={}", conversation_id, server_max_seq);
+                    info!(target: "im::sync", "[Sync] 重装模式: 通知会话 {} 跳过拉取，直接持久化 seq={}", conversation_id, server_max_seq);
                 }
                 continue;
             }
@@ -517,7 +518,8 @@ impl MessageSyncer {
             if *server_max_seq > local_max_seq {
                 let begin = local_max_seq + 1;
                 info!(
-                    "会话 {} 重装同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
+                    target: "im::sync",
+                    "[Sync] 会话 {} 重装同步: local_max_seq={}, server_max_seq={}, begin={}, end={}",
                     conversation_id, local_max_seq, server_max_seq, begin, server_max_seq
                 );
                 need_sync_seq_map.insert(conversation_id.clone(), (begin, *server_max_seq));
@@ -525,9 +527,9 @@ impl MessageSyncer {
         }
 
         if !notification_seq_records.is_empty() {
-            info!("重装模式: 持久化 {} 个通知会话的 seq", notification_seq_records.len());
+            info!(target: "im::sync", "[Sync] 重装模式: 持久化 {} 个通知会话的 seq", notification_seq_records.len());
             if let Err(e) = self.repositories.notification_seq_repo.batch_insert(&notification_seq_records).await {
-                warn!("持久化通知 seq 失败: {}", e);
+                warn!(target: "im::sync", "[Sync] 持久化通知 seq 失败: {}", e);
             }
         }
 
@@ -536,7 +538,7 @@ impl MessageSyncer {
         }
 
         let total = need_sync_seq_map.values().map(|(_, end)| end).sum::<i64>();
-        info!("重装模式，同步全部 {} 条消息", total);
+        info!(target: "im::sync", "[Sync] 重装模式，同步全部 {} 条消息", total);
 
         self.batch_pull_messages(&need_sync_seq_map, true, pull_num).await
     }
@@ -597,7 +599,8 @@ impl MessageSyncer {
         };
 
         info!(
-            "[MsgSync] pull_and_handle_messages 请求: user_id={}, conv_count={}, seq_ranges={:?}",
+            target: "im::sync",
+            "[Sync] pull_and_handle_messages 请求: user_id={}, conv_count={}, seq_ranges={:?}",
             req.user_id,
             req.seq_ranges.len(),
             req.seq_ranges.iter().map(|r| format!("{}:[{},{}]", r.conversation_id, r.begin, r.end)).collect::<Vec<_>>()
@@ -610,7 +613,8 @@ impl MessageSyncer {
         }
 
         info!(
-            "[MsgSync] pull_and_handle_messages: {} conversations, msgs_count={}",
+            target: "im::sync",
+            "[Sync] pull_and_handle_messages: {} conversations, msgs_count={}",
             resp.msgs.len(),
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>()
         );
@@ -645,7 +649,7 @@ impl MessageSyncer {
                 })
                 .collect();
             if let Err(e) = self.checker.validate_and_fill_internal_gaps(&mut logs, false).await {
-                warn!("[MsgSync] 块内连续性检查失败: conv={}, err={}", _conv_id, e);
+                warn!(target: "im::sync", "[Sync] 块内连续性检查失败: conv={}, err={}", _conv_id, e);
             }
         }
 
@@ -659,7 +663,7 @@ impl MessageSyncer {
                 if let Some(last_msg) = pull_msgs.msgs.iter().max_by_key(|m| m.seq) {
                     if last_msg.seq != 0 {
                         if let Err(e) = self.set_notification_seq(conv_id, last_msg.seq).await {
-                            warn!("[MsgSync] SetNotificationSeq 失败 conv={}: {}", conv_id, e);
+                            warn!(target: "im::sync", "[Sync] SetNotificationSeq 失败 conv={}: {}", conv_id, e);
                         }
                     }
                 }
@@ -711,7 +715,7 @@ impl MessageSyncer {
             return Ok(());
         }
 
-        info!("重装模式：{} 个会话拉取结果全部已删除，尝试拉取最新有效消息", conversation_ids.len());
+        info!(target: "im::sync", "[Sync] 重装模式：{} 个会话拉取结果全部已删除，尝试拉取最新有效消息", conversation_ids.len());
         let last_messages = self.remote.pull_conv_last_message(&self.user_id.get().await, conversation_ids).await?;
         for (conv_id, message) in last_messages {
             msgs.entry(conv_id).or_default().msgs = vec![message];

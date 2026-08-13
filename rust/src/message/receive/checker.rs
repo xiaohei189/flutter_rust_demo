@@ -104,7 +104,7 @@ impl MessageChecker {
         let lost_seqs = get_lost_seq_list_with_limit_length(min_seq, max_seq, &have_seq_list, is_reverse);
 
         if !lost_seqs.is_empty() {
-            debug!("[MsgCheck] 块内间隙: min={}, max={}, lost_count={}", min_seq, max_seq, lost_seqs.len());
+            debug!(target: "im::sync", "[Sync] 块内间隙: min={}, max={}, lost_count={}", min_seq, max_seq, lost_seqs.len());
             if let Some(fetched) = self.fetch_and_merge_missing_messages(&first_conversation_id(messages), &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
@@ -144,7 +144,7 @@ impl MessageChecker {
         let lost_seqs = get_lost_seq_list_with_limit_length(gap_begin, gap_end, &have_seq_list, is_reverse);
 
         if !lost_seqs.is_empty() {
-            info!("[MsgCheck] 块间间隙: conv={}, gap=[{}, {}], lost_count={}", conversation_id, gap_begin, gap_end, lost_seqs.len());
+            info!(target: "im::sync", "[Sync] 块间间隙: conv={}, gap=[{}, {}], lost_count={}", conversation_id, gap_begin, gap_end, lost_seqs.len());
             if let Some(fetched) = self.fetch_and_merge_missing_messages(conversation_id, &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
@@ -171,7 +171,7 @@ impl MessageChecker {
         }
 
         if !lost_seqs.is_empty() {
-            info!("[MsgCheck] 末尾不连续: conv={}, lost_count={}", conversation_id, lost_seqs.len());
+            info!(target: "im::sync", "[Sync] 末尾不连续: conv={}, lost_count={}", conversation_id, lost_seqs.len());
             if let Some(fetched) = self.fetch_and_merge_missing_messages(conversation_id, &lost_seqs, is_reverse).await? {
                 messages.extend(fetched);
             }
@@ -259,7 +259,8 @@ impl MessageChecker {
         };
 
         info!(
-            "[MsgCheck] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
+            target: "im::sync",
+            "[Sync] fetch_missing_messages 请求: user_id={}, conv={}, seqs={:?}, order={}",
             req.user_id, conversation_id, pending_seqs, order
         );
 
@@ -270,7 +271,8 @@ impl MessageChecker {
             .map_err(|e| SdkError::network(format!("fetch missing messages by seq list failed: {}", e)))?;
 
         info!(
-            "[MsgCheck] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
+            target: "im::sync",
+            "[Sync] fetch_missing_messages: conv={}, seqs_requested={}, msgs_fetched={}",
             conversation_id,
             pending_seqs.len(),
             resp.msgs.values().map(|m| m.msgs.len()).sum::<usize>()
@@ -298,10 +300,10 @@ impl MessageChecker {
         if !fetched_logs.is_empty() {
             // 入库
             if let Err(e) = self.message_repo.batch_insert(&fetched_logs).await {
-                warn!("[MsgCheck] 缺失消息入库失败: {}", e);
+                warn!(target: "im::sync", "[Sync] 缺失消息入库失败: {}", e);
             }
 
-            info!("[MsgCheck] 补拉缺失消息: conv={}, count={}", conversation_id, fetched_logs.len());
+            info!(target: "im::sync", "[Sync] 补拉缺失消息: conv={}, count={}", conversation_id, fetched_logs.len());
             Ok(Some(fetched_logs))
         } else {
             Ok(None)
