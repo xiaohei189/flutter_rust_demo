@@ -127,16 +127,22 @@ impl ConnectionManager {
                                                     }
                                                 }
                                                 ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => {
-                                                    match parse_online_status_push(&resp.data) {
-                                                        Ok(events) => {
-                                                            let tx = user_push_tx.lock().expect("user_push_tx mutex poisoned");
-                                                            if let Some(tx) = tx.as_ref() {
-                                                                for event in events {
-                                                                    let _ = tx.send(event);
+                                                    // 订阅请求的响应 msg_incr 与请求一致，命中 pending 则交给 send_rpc 返回；
+                                                    // 未命中则是服务端推送的状态变更（PushUserOnlineStatus 不带 msg_incr）。
+                                                    if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+                                                        let _ = req.tx.send(resp);
+                                                    } else {
+                                                        match parse_online_status_push(&resp.data) {
+                                                            Ok(events) => {
+                                                                let tx = user_push_tx.lock().expect("user_push_tx mutex poisoned");
+                                                                if let Some(tx) = tx.as_ref() {
+                                                                    for event in events {
+                                                                        let _ = tx.send(event);
+                                                                    }
                                                                 }
                                                             }
+                                                            Err(e) => error!("decode SubUserOnlineStatusTips failed: {}", e),
                                                         }
-                                                        Err(e) => error!("decode SubUserOnlineStatusTips failed: {}", e),
                                                     }
                                                 }
                                                 _ => {

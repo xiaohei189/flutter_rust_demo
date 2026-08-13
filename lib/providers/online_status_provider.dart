@@ -7,7 +7,11 @@ final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(
   (ref) => OnlineStatusService.instance.statusesStream,
 );
 
+/// 用户在线状态。watch 状态流以保持响应式：
+/// - `null`:未知(尚未订阅/订阅未完成),UI 不应显示"离线"
+/// - `false`/`true`:离线/在线
 final userOnlineStatusProvider = Provider.family<bool?, String>((ref, userId) {
-  final status = OnlineStatusService.instance.statusOf(userId);
-  return status?.status == 1;
+  final statuses = ref.watch(onlineStatusStreamProvider).value;
+  final status = statuses?[userId];
+  return status == null ? null : status.status == 1;
 });

@@ -324,6 +324,7 @@ impl OpenIMClient {
         let conversation_syncer = self.conversation_syncer.clone();
         let repositories = self.context.repositories.clone();
         let cancel_token = self.context.cancel_token.clone();
+        let online_status = self.online_status.clone();
 
         let (push_tx, mut push_rx) = tokio::sync::mpsc::unbounded_channel::<(PushMessages, String)>();
         self.connection.set_push_sender(push_tx);
@@ -334,12 +335,14 @@ impl OpenIMClient {
             let cs = conversation_syncer.clone();
             let repos = repositories.clone();
             let ct = cancel_token.clone();
+            let os = online_status.clone();
             move || {
                 let mh = mh.clone();
                 let ms = ms.clone();
                 let cs = cs.clone();
                 let repos = repos.clone();
                 let ct = ct.clone();
+                let os = os.clone();
                 tokio::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                     if ct.is_cancelled() {
@@ -354,6 +357,7 @@ impl OpenIMClient {
                         return;
                     }
                     info!("push_message_handler: connection established, syncing conversations then messages");
+                    os.resubscribe_all().await;
                     if let Err(e) = cs.sync_incremental().await {
                         warn!("push_message_handler: conversation sync after reconnect failed: {:?}", e);
                         let _ = cs.sync_full().await;

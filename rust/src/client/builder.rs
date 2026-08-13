@@ -66,6 +66,7 @@ impl OpenIMClientBuilder {
         );
         let online_status = Arc::new(OnlineStatusService::new(
             Arc::new(HttpOnlineStatusApi::new(context.infra.http_client.clone())),
+            connection.clone(),
             context.user_id.clone(),
             listeners.clone(),
         ));
