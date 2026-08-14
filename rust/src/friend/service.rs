@@ -1,4 +1,4 @@
-use crate::error::{Result, SdkError};
+use crate::error::Result;
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::http::FriendServerApi;
 use crate::model::friend::FriendInfo;
@@ -8,11 +8,10 @@ use crate::model::UserId;
 use crate::client::context::Repositories;
 use crate::http::friend::*;
 use crate::http::Pagination;
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 // ========== 增量同步类型 ==========
 
@@ -88,7 +87,7 @@ impl FriendService {
 
         let resp = self.api.get_friend_list(&req).await?;
 
-        let friends: Vec<FriendInfo> = resp.friends_info.unwrap_or_default().into_iter().map(|s| server_to_friend(s)).collect();
+        let friends: Vec<FriendInfo> = resp.friends_info.unwrap_or_default().into_iter().map(server_to_friend).collect();
 
         // 持久化到数据库
         let local_friends: Vec<LocalFriend> = friends.iter().map(|f| friend_info_to_local(f, &user_id)).collect();
@@ -361,7 +360,7 @@ impl FriendService {
 
         // 分页
         let start = offset.max(0) as usize;
-        let page: Vec<FriendInfo> = filtered.into_iter().skip(start).take(count.max(0) as usize).map(|l| local_to_friend_info(l)).collect();
+        let page: Vec<FriendInfo> = filtered.into_iter().skip(start).take(count.max(0) as usize).map(local_to_friend_info).collect();
 
         Ok(page)
     }
@@ -451,15 +450,17 @@ impl FriendService {
     }
 
     pub async fn sync_blacks(&self) -> Result<()> {
-        let resp = self.api.get_black_list().await?;
+        let user_id = self.user_id.get().await;
+        let resp = self.api.get_black_list(&user_id).await?;
 
-        let new_blacks: Vec<String> = resp.blacks_info.iter().map(|b| b.user_id.clone()).collect();
+        let new_blacks: Vec<String> = resp.blacks.iter().map(|b| b.black_user_info.user_id.clone()).collect();
         let old_blacks = self.blacks.read().await.clone();
         let old_set: HashSet<String> = old_blacks.iter().cloned().collect();
         let new_set: HashSet<String> = new_blacks.iter().cloned().collect();
 
-        for black in &resp.blacks_info {
-            if !old_set.contains(&black.user_id) {
+        for black in &resp.blacks {
+            let user_id = &black.black_user_info.user_id;
+            if !old_set.contains(user_id) {
                 if let Ok(json) = serde_json::to_string(black) {
                     self.send(FriendEvent::BlackAdded(json));
                 }

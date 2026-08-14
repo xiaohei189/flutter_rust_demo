@@ -22,7 +22,6 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::registry::LookupSpan;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
-use tracing_subscriber::Registry;
 
 use super::config::LogConfig;
 
@@ -634,7 +633,9 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
         .with_default_directive(tracing_subscriber::filter::LevelFilter::INFO.into())
         .from_env_lossy();
     let override_filter = ENV_FILTER_OVERRIDE.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    let has_crate_override = override_filter.as_deref().is_some_and(|f| f.split(',').any(|p| p.trim_start().starts_with("rust_lib_flutter_rust_demo=")));
+    let has_crate_override = override_filter
+        .as_deref()
+        .is_some_and(|f| f.split(',').any(|p| p.trim_start().starts_with("rust_lib_flutter_rust_demo=")));
     if !has_crate_override {
         let crate_level = format!("{:?}", config.level_filter()).to_lowercase();
         env_filter = env_filter.add_directive(format!("rust_lib_flutter_rust_demo={}", crate_level).parse().unwrap());

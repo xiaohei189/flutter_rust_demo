@@ -11,6 +11,12 @@ pub struct MaxSeqRecorder {
     seqs: RwLock<HashMap<String, i64>>,
 }
 
+impl Default for MaxSeqRecorder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MaxSeqRecorder {
     pub fn new() -> Self {
         Self { seqs: RwLock::new(HashMap::new()) }

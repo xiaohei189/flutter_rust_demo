@@ -1,7 +1,4 @@
-use crate::connection::ws::OpenIMResp;
-use crate::constant::ws_req_identifier;
-use crate::error::{Result, SdkError};
-use serde::{Deserialize, Serialize};
+use crate::error::Result;
 use std::time::Duration;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tracing::{debug, warn};

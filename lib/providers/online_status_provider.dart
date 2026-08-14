@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/services/online_status_service.dart';
 import '../generated/rust/http/online.dart' show OnlineStatus;
 
+final onlineStatusServiceProvider = Provider<OnlineStatusService>(
+  (ref) => OnlineStatusService.instance,
+);
+
 final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(
-  (ref) => OnlineStatusService.instance.statusesStream,
+  (ref) => ref.watch(onlineStatusServiceProvider).statusesStream,
 );
 
 /// 用户在线状态。watch 状态流以保持响应式：

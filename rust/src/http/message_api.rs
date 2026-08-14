@@ -77,13 +77,11 @@ mod tests {
     }
 
     fn ok_response() -> ResponseTemplate {
-        ResponseTemplate::new(200)
-            .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_ok.json")).unwrap())
+        ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_ok.json")).unwrap())
     }
 
     fn err_response() -> ResponseTemplate {
-        ResponseTemplate::new(200)
-            .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_error.json")).unwrap())
+        ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/api_error.json")).unwrap())
     }
 
     #[tokio::test]
@@ -158,10 +156,7 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/msg/get_server_time"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/server_time.json")).unwrap()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("../../tests/fixtures/server_time.json")).unwrap()))
             .mount(&server)
             .await;
         let api = make_api(&server);

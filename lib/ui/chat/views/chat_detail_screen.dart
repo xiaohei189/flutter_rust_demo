@@ -706,7 +706,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                             )
                           else
                             Text(
-                              online == false ? '离线' : '在线',
+                              switch (online) {
+                                true => '在线',
+                                false => '离线',
+                                null => '未知',
+                              },
                               style: TextStyle(
                                 fontSize: 12,
                                 color: context.appColors.textSecondary

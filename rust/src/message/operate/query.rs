@@ -24,7 +24,7 @@ impl MessageService {
         } else {
             self.repositories.message_repo.get_by_client_msg_id(&req.conversation_id, &req.start_client_msg_id).await?
         };
-        let start_time = start_msg.as_ref().map(|m| m.send_time).unwrap_or(0);
+        let _start_time = start_msg.as_ref().map(|m| m.send_time).unwrap_or(0);
         if let Some(m) = &start_msg {
             info!("通过 client_msg_id 查询到 send_time={}, seq={}", m.send_time, m.seq);
         }
@@ -47,15 +47,13 @@ impl MessageService {
             } else if let Some(start) = &start_msg {
                 // 翻页起点消息的 seq 作为上一块结束边界（对齐 Go handleEndSeq）
                 let mut ctx = self.seq_pull_context.lock().await;
-                ctx.forward_end_seq_map
-                    .entry(req.conversation_id.clone())
-                    .or_insert(start.seq);
+                ctx.forward_end_seq_map.entry(req.conversation_id.clone()).or_insert(start.seq);
             }
             // 对齐 Go fetchMessagesWithGapCheck：三层连续性检查 + 服务端缺失补拉
-            let mut ctx = self.seq_pull_context.lock().await;
-            let last_end_seq = ctx.forward_end_seq_map.get(&req.conversation_id).copied().unwrap_or(0);
+            let ctx = self.seq_pull_context.lock().await;
+            let _last_end_seq = ctx.forward_end_seq_map.get(&req.conversation_id).copied().unwrap_or(0);
             drop(ctx);
-            let boundary = checker.validate_and_fill_internal_gaps(&mut messages, false).await?;
+            let _boundary = checker.validate_and_fill_internal_gaps(&mut messages, false).await?;
             let this_end_seq = SeqPullContext::batch_end_seq(&messages, false);
             let mut ctx = self.seq_pull_context.lock().await;
             let last_end_seq = ctx.update_end_seq(&req.conversation_id, this_end_seq, false);
@@ -75,7 +73,7 @@ impl MessageService {
         }
 
         // 对齐 Go：最终统一按 send_time/seq 升序返回
-        messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
+        messages.sort_by_key(|a| (a.send_time, a.seq));
         let msg_info_list: Vec<MessageInfo> = messages
             .into_iter()
             .map(|m| {
@@ -120,22 +118,18 @@ impl MessageService {
             } else if let Some(start) = &start_msg {
                 // 翻页起点消息的 seq 作为上一块结束边界（对齐 Go handleEndSeq）
                 let mut ctx = self.seq_pull_context.lock().await;
-                ctx.reverse_end_seq_map
-                    .entry(conversation_id.to_string())
-                    .or_insert(start.seq);
+                ctx.reverse_end_seq_map.entry(conversation_id.to_string()).or_insert(start.seq);
             }
-            let mut ctx = self.seq_pull_context.lock().await;
-            let last_end_seq = ctx.reverse_end_seq_map.get(conversation_id).copied().unwrap_or(0);
+            let ctx = self.seq_pull_context.lock().await;
+            let _last_end_seq = ctx.reverse_end_seq_map.get(conversation_id).copied().unwrap_or(0);
             drop(ctx);
-            let boundary = checker.validate_and_fill_internal_gaps(&mut messages, true).await?;
+            let _boundary = checker.validate_and_fill_internal_gaps(&mut messages, true).await?;
             let this_end_seq = SeqPullContext::batch_end_seq(&messages, true);
             let mut ctx = self.seq_pull_context.lock().await;
             let last_end_seq = ctx.update_end_seq(conversation_id, this_end_seq, true);
             drop(ctx);
             checker.validate_and_fill_inter_block_gaps(conversation_id, &mut messages, last_end_seq, true).await?;
-            checker
-                .validate_and_fill_end_block_continuity(conversation_id, &mut messages, count, last_end_seq, true)
-                .await?
+            checker.validate_and_fill_end_block_continuity(conversation_id, &mut messages, count, last_end_seq, true).await?
         } else {
             let is_end = messages.len() <= count as usize;
             if messages.len() > count as usize {
@@ -150,7 +144,7 @@ impl MessageService {
             messages.truncate(count as usize);
         }
 
-        messages.sort_by(|a, b| (a.send_time, a.seq).cmp(&(b.send_time, b.seq)));
+        messages.sort_by_key(|a| (a.send_time, a.seq));
         let msg_info_list: Vec<MessageInfo> = messages
             .into_iter()
             .map(|m| {
@@ -330,7 +324,7 @@ impl MessageService {
             local_ex: String::new(),
             group_id: String::new(),
         };
-        self.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
+        self.repositories.message_repo.batch_insert(std::slice::from_ref(&local_log)).await?;
 
         // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
         if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
@@ -361,7 +355,7 @@ impl MessageService {
         let login_user_id = self.user_id.get().await;
         // 对方 ID：send_id != loginUserID 时对方是 send_id（插入他人消息），否则是 recv_id
         let other_id = if send_id != login_user_id { send_id.to_string() } else { recv_id.to_string() };
-        let mut ids = vec![login_user_id, other_id.clone()];
+        let mut ids = [login_user_id, other_id.clone()];
         ids.sort();
         let conversation_id = format!("si_{}_{}", ids[0], ids[1]);
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as i64;
@@ -389,7 +383,7 @@ impl MessageService {
             local_ex: String::new(),
             group_id: String::new(),
         };
-        self.repositories.message_repo.batch_insert(&[local_log.clone()]).await?;
+        self.repositories.message_repo.batch_insert(std::slice::from_ref(&local_log)).await?;
 
         // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
         if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
@@ -418,8 +412,8 @@ mod tests {
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
     use crate::event::test_util::*;
-    use crate::http::client::HttpApiClient;
-    use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+    
+    use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;
     use async_trait::async_trait;
@@ -634,12 +628,9 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repos = make_repositories(pool.clone());
         let dao = MessageDao::new(pool);
-        dao.batch_insert(&[
-            make_msg("conv_1", "m1", 1, 1000, "user_a"),
-            make_msg("conv_1", "m3", 3, 3000, "user_a"),
-        ])
-        .await
-        .unwrap();
+        dao.batch_insert(&[make_msg("conv_1", "m1", 1, 1000, "user_a"), make_msg("conv_1", "m3", 3, 3000, "user_a")])
+            .await
+            .unwrap();
         repos
             .conversation_repo
             .upsert(&LocalConversation {
@@ -874,10 +865,7 @@ mod tests {
             seq_pull_context: Arc::new(tokio::sync::Mutex::new(crate::message::receive::checker::SeqPullContext::default())),
         };
 
-        let page1 = service
-            .get_history_messages_reverse("conv_1", "", 2)
-            .await
-            .unwrap();
+        let page1 = service.get_history_messages_reverse("conv_1", "", 2).await.unwrap();
         assert_eq!(page1.messages.len(), 2);
         assert_eq!(page1.messages[0].client_msg_id, "m1");
         assert_eq!(page1.messages[1].client_msg_id, "m2");
@@ -886,10 +874,7 @@ mod tests {
             assert_eq!(ctx.reverse_end_seq_map.get("conv_1"), Some(&2), "反向翻页应缓存本批最新 seq");
         }
 
-        let page2 = service
-            .get_history_messages_reverse("conv_1", &page1.messages[1].client_msg_id, 2)
-            .await
-            .unwrap();
+        let page2 = service.get_history_messages_reverse("conv_1", &page1.messages[1].client_msg_id, 2).await.unwrap();
         assert_eq!(page2.messages.len(), 2);
         assert_eq!(page2.messages[0].client_msg_id, "m3");
         assert_eq!(page2.messages[1].client_msg_id, "m4");

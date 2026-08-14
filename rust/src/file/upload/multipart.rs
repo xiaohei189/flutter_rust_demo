@@ -12,7 +12,6 @@ use crate::http::routes::{AUTH_SIGN, COMPLETE_MULTIPART_UPLOAD, INITIATE_MULTIPA
 use crate::model::local::LocalUpload;
 use base64::Engine;
 use std::io::Read;
-use std::sync::Arc;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tracing::{error, info, warn};

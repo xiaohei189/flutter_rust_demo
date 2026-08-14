@@ -12,11 +12,6 @@ use async_trait::async_trait;
 
 use crate::error::{Result, SdkError};
 use crate::event::events::connection::ConnectionEvent;
-use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::friend::FriendEvent;
-use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
 use crate::event::hub::EventHub;
 use crate::message::notification::NotificationHandler;
 use crate::message::MessageService;
@@ -51,13 +46,11 @@ pub struct OpenIMClient {
     pub(crate) listeners: Arc<EventHub>,
 }
 
-use crate::client::config::ClientConfig;
 use crate::constant::sync_flag;
 use crate::constant::ws_push_identifier;
 use crate::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
-use prost::Message as ProstMessage;
 use tracing::{debug, info, warn, Instrument};
 
 /// 处理一批推送消息

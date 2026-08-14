@@ -3,10 +3,11 @@
 //! 从 manager.rs 提取，职责：持续读取 WS 消息，分发给 pending RPC 或 message_batcher
 
 use crate::connection::manager::ConnectionManager;
+use crate::connection::manager::PendingRequest;
 use crate::connection::ws::OpenIMResp;
 use crate::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
-use crate::event::events::user::UserEvent;
 use crate::event::events::connection::ConnectionListenerExt;
+use crate::event::events::user::UserEvent;
 use crate::logger::decode_operation_id;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
@@ -14,7 +15,10 @@ use openim_protocol::sdkws::{PushMessages, SubUserOnlineStatusTips};
 use opentelemetry::trace::{SpanContext, SpanId, TraceContextExt, TraceFlags, TraceId, TraceState};
 use opentelemetry::Context;
 use prost::Message;
+use std::collections::HashMap;
+use std::sync::Mutex as StdMutex;
 use tokio::net::TcpStream;
+use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
@@ -127,23 +131,7 @@ impl ConnectionManager {
                                                     }
                                                 }
                                                 ws_push_identifier::WS_SUB_USER_ONLINE_STATUS => {
-                                                    // 订阅请求的响应 msg_incr 与请求一致，命中 pending 则交给 send_rpc 返回；
-                                                    // 未命中则是服务端推送的状态变更（PushUserOnlineStatus 不带 msg_incr）。
-                                                    if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
-                                                        let _ = req.tx.send(resp);
-                                                    } else {
-                                                        match parse_online_status_push(&resp.data) {
-                                                            Ok(events) => {
-                                                                let tx = user_push_tx.lock().expect("user_push_tx mutex poisoned");
-                                                                if let Some(tx) = tx.as_ref() {
-                                                                    for event in events {
-                                                                        let _ = tx.send(event);
-                                                                    }
-                                                                }
-                                                            }
-                                                            Err(e) => error!("decode SubUserOnlineStatusTips failed: {}", e),
-                                                        }
-                                                    }
+                                                    route_sub_user_online_status(resp, &pending, &user_push_tx).await;
                                                 }
                                                 _ => {
                                                     error!("binary message type not support: req_identifier={}({})",
@@ -196,6 +184,26 @@ impl ConnectionManager {
     }
 }
 
+/// 订阅请求的响应 msg_incr 与请求一致，命中 pending 则交给 send_rpc 返回；
+/// 未命中则是服务端推送的状态变更（PushUserOnlineStatus 不带 msg_incr）。
+async fn route_sub_user_online_status(resp: OpenIMResp, pending: &RwLock<HashMap<String, PendingRequest>>, user_push_tx: &StdMutex<Option<mpsc::UnboundedSender<UserEvent>>>) {
+    if let Some(req) = pending.write().await.remove(&resp.msg_incr) {
+        let _ = req.tx.send(resp);
+        return;
+    }
+    match parse_online_status_push(&resp.data) {
+        Ok(events) => {
+            let tx = user_push_tx.lock().expect("user_push_tx mutex poisoned");
+            if let Some(tx) = tx.as_ref() {
+                for event in events {
+                    let _ = tx.send(event);
+                }
+            }
+        }
+        Err(e) => error!("decode SubUserOnlineStatusTips failed: {}", e),
+    }
+}
+
 fn parse_online_status_push(data: &[u8]) -> std::result::Result<Vec<UserEvent>, prost::DecodeError> {
     let tips = SubUserOnlineStatusTips::decode(data)?;
     Ok(tips
@@ -215,8 +223,10 @@ fn parse_online_status_push(data: &[u8]) -> std::result::Result<Vec<UserEvent>, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::constant::ws_push_identifier::WS_SUB_USER_ONLINE_STATUS;
     use crate::event::events::user::UserEvent;
     use openim_protocol::sdkws::{SubUserOnlineStatusElem, SubUserOnlineStatusTips};
+    use tokio::sync::oneshot;
 
     #[test]
     fn test_parse_online_status_push_empty() {
@@ -256,5 +266,90 @@ mod tests {
             }
             _ => panic!("expected user status changed"),
         }
+    }
+
+    #[tokio::test]
+    async fn test_route_online_status_rpc_response_wins_over_push() {
+        let (tx, rx) = oneshot::channel();
+        let mut pending_map = HashMap::new();
+        pending_map.insert("rpc_1".to_string(), PendingRequest { tx });
+        let pending = RwLock::new(pending_map);
+        let (user_tx, mut user_rx) = mpsc::unbounded_channel();
+        let user_push_tx = StdMutex::new(Some(user_tx));
+
+        let resp = OpenIMResp {
+            req_identifier: WS_SUB_USER_ONLINE_STATUS,
+            msg_incr: "rpc_1".to_string(),
+            operation_id: String::new(),
+            err_code: 0,
+            err_msg: String::new(),
+            data: SubUserOnlineStatusTips {
+                subscribers: vec![SubUserOnlineStatusElem {
+                    user_id: "u1".to_string(),
+                    online_platform_i_ds: vec![1],
+                }],
+            }
+            .encode_to_vec(),
+        };
+
+        route_sub_user_online_status(resp, &pending, &user_push_tx).await;
+
+        let routed = rx.await.expect("pending RPC should receive response");
+        assert_eq!(routed.msg_incr, "rpc_1");
+        assert!(user_rx.try_recv().is_err(), "matching RPC response must not be pushed as user status");
+    }
+
+    #[tokio::test]
+    async fn test_route_online_status_push_without_msg_incr() {
+        let pending = RwLock::new(HashMap::new());
+        let (user_tx, mut user_rx) = mpsc::unbounded_channel();
+        let user_push_tx = StdMutex::new(Some(user_tx));
+
+        let resp = OpenIMResp {
+            req_identifier: WS_SUB_USER_ONLINE_STATUS,
+            msg_incr: String::new(),
+            operation_id: String::new(),
+            err_code: 0,
+            err_msg: String::new(),
+            data: SubUserOnlineStatusTips {
+                subscribers: vec![SubUserOnlineStatusElem {
+                    user_id: "u1".to_string(),
+                    online_platform_i_ds: vec![1],
+                }],
+            }
+            .encode_to_vec(),
+        };
+
+        route_sub_user_online_status(resp, &pending, &user_push_tx).await;
+
+        match user_rx.try_recv() {
+            Ok(UserEvent::UserStatusChanged { user_id, status, platform_ids }) => {
+                assert_eq!(user_id, "u1");
+                assert_eq!(status, 1);
+                assert_eq!(platform_ids, vec![1]);
+            }
+            Ok(other) => panic!("unexpected event: {:?}", other),
+            Err(e) => panic!("expected user status push, got: {:?}", e),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_route_online_status_invalid_push_is_ignored() {
+        let pending = RwLock::new(HashMap::new());
+        let (user_tx, mut user_rx) = mpsc::unbounded_channel();
+        let user_push_tx = StdMutex::new(Some(user_tx));
+
+        let resp = OpenIMResp {
+            req_identifier: WS_SUB_USER_ONLINE_STATUS,
+            msg_incr: String::new(),
+            operation_id: String::new(),
+            err_code: 0,
+            err_msg: String::new(),
+            data: b"not a valid protobuf".to_vec(),
+        };
+
+        route_sub_user_online_status(resp, &pending, &user_push_tx).await;
+
+        assert!(user_rx.try_recv().is_err(), "invalid push must be ignored");
     }
 }

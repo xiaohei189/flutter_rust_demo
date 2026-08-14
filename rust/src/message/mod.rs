@@ -28,10 +28,10 @@ pub(crate) mod receive {
     pub(crate) mod revoke;
     mod syncer;
 
-    pub(crate) use crate::model::revoke::{parse_revoke_tips_from_json, RevokeTipsWithNickname};
+    
     pub use max_seq_recorder::MaxSeqRecorder;
     pub use processor::MessageProcessor;
-    pub use syncer::{is_notification, MessageSyncer};
+    pub use syncer::MessageSyncer;
 }
 
 // 发送管道（内联自 send.rs）

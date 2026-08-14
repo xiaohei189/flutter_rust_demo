@@ -4,10 +4,9 @@ use crate::http::UserServerApi;
 use crate::model::user::UserInfo;
 
 use crate::http::user::*;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info};
+use tracing::info;
 
 pub struct UserService {
     api: Arc<dyn UserServerApi>,
@@ -29,7 +28,7 @@ impl UserService {
 
         let resp = self.api.get_users_info(&req).await?;
 
-        let users = resp.users_info.into_iter().map(|s| server_to_domain(s)).collect();
+        let users = resp.users_info.into_iter().map(server_to_domain).collect();
 
         Ok(users)
     }

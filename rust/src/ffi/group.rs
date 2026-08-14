@@ -1,11 +1,8 @@
 //! 群组相关 FFI 桥接
 
-use crate::client::SdkApi;
 use crate::ffi::client::OpenIMBridgeClient;
-use crate::ffi::global::client_holder;
 use crate::http::group::GroupApplyInfo;
-use crate::model::group::GroupInfo;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 impl OpenIMBridgeClient {
     // ========== 群组操作 ==========

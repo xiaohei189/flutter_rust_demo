@@ -10,9 +10,8 @@
 //! 由 MessageSyncer 在拉取消息后调用，确保消息 seq 连续性。
 //! 消息翻页加载场景也可直接使用。
 
-use crate::connection::manager::ConnectionManager;
 use crate::connection::sync_server::SyncServerApi;
-use crate::constant::{msg_status, pull_msg_num, ws_req_identifier};
+use crate::constant::{msg_status, pull_msg_num};
 use crate::db::{ConversationRepository, MessageRepository};
 use crate::error::{Result, SdkError};
 use crate::model::local::LocalChatLog;
@@ -156,14 +155,7 @@ impl MessageChecker {
     /// 第 3 层：末尾连续性检查（对齐 Go SDK alidateAndFillEndBlockContinuity）
     ///
     /// 当拉取到的消息数量少于请求数量时，判断是否已到底。如果未到底则补拉缺失消息。
-    pub async fn validate_and_fill_end_block_continuity(
-        &self,
-        conversation_id: &str,
-        messages: &mut Vec<LocalChatLog>,
-        request_count: i64,
-        last_end_seq: i64,
-        is_reverse: bool,
-    ) -> Result<bool> {
+    pub async fn validate_and_fill_end_block_continuity(&self, conversation_id: &str, messages: &mut Vec<LocalChatLog>, request_count: i64, last_end_seq: i64, is_reverse: bool) -> Result<bool> {
         let (is_end, lost_seqs) = self.check_end_block(conversation_id, messages, request_count, last_end_seq, is_reverse).await?;
 
         if is_end {
@@ -185,14 +177,7 @@ impl MessageChecker {
     }
 
     /// alidate_and_fill_end_block_continuity 的核心逻辑（对齐 Go SDK checkEndBlock）
-    async fn check_end_block(
-        &self,
-        conversation_id: &str,
-        messages: &[LocalChatLog],
-        request_count: i64,
-        last_end_seq: i64,
-        is_reverse: bool,
-    ) -> Result<(bool, Vec<i64>)> {
+    async fn check_end_block(&self, conversation_id: &str, messages: &[LocalChatLog], request_count: i64, last_end_seq: i64, is_reverse: bool) -> Result<(bool, Vec<i64>)> {
         if messages.len() as i64 >= request_count {
             // 拉满说明可能还有更多，不算到底
             return Ok((false, Vec::new()));
@@ -237,11 +222,7 @@ impl MessageChecker {
 
         // 本地已软删（status>=4）的 seq 视为已存在，跳过补拉，避免服务端把已删消息复活
         let local_logs = self.message_repo.get_by_seqs(conversation_id, seq_list).await.unwrap_or_default();
-        let deleted_seqs: HashSet<i64> = local_logs
-            .iter()
-            .filter(|log| log.status >= msg_status::HAS_DELETED as i32)
-            .map(|log| log.seq)
-            .collect();
+        let deleted_seqs: HashSet<i64> = local_logs.iter().filter(|log| log.status >= msg_status::HAS_DELETED).map(|log| log.seq).collect();
         let pending_seqs: Vec<i64> = seq_list.iter().copied().filter(|seq| !deleted_seqs.contains(seq)).collect();
         if pending_seqs.is_empty() {
             return Ok(None);
@@ -342,7 +323,6 @@ impl MessageChecker {
     async fn get_conversation_min_seq(&self, conversation_id: &str) -> i64 {
         self.conversation_repo.get_min_seq(conversation_id).await.unwrap_or(0).max(1)
     }
-
 }
 
 // ============================================================================
@@ -471,7 +451,7 @@ mod tests {
             content_type: 101,
             content: String::new(),
             is_read: 0,
-            status: msg_status::SEND_SUCCESS as i32,
+            status: msg_status::SEND_SUCCESS,
             seq,
             send_time,
             create_time: send_time,
@@ -711,31 +691,22 @@ mod tests {
                     create_time: 2000,
                     content_type: 101,
                     content: r#"{"content":"deleted"}"#.as_bytes().to_vec(),
-                    status: msg_status::HAS_DELETED as i32,
+                    status: msg_status::HAS_DELETED,
                     ..Default::default()
                 }],
                 is_end: false,
                 end_seq: 0,
             },
         )]);
-        let checker = MessageChecker::new(
-            Arc::new(DeletedMsgMock { msgs }),
-            message_dao.clone(),
-            conversation_dao.clone(),
-            "test_user".to_string(),
-        );
+        let checker = MessageChecker::new(Arc::new(DeletedMsgMock { msgs }), message_dao.clone(), conversation_dao.clone(), "test_user".to_string());
 
-        let fetched = checker
-            .fetch_and_merge_missing_messages("conv_1", &[2], false)
-            .await
-            .unwrap()
-            .unwrap();
+        let fetched = checker.fetch_and_merge_missing_messages("conv_1", &[2], false).await.unwrap().unwrap();
         assert_eq!(fetched.len(), 1);
-        assert_eq!(fetched[0].status, msg_status::HAS_DELETED as i32, "服务端已删除消息补拉后应保留删除状态");
+        assert_eq!(fetched[0].status, msg_status::HAS_DELETED, "服务端已删除消息补拉后应保留删除状态");
         assert_eq!(fetched[0].client_msg_id, "m1");
 
         let from_db = message_dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().unwrap();
-        assert_eq!(from_db.status, msg_status::HAS_DELETED as i32, "入库后仍应保留删除状态");
+        assert_eq!(from_db.status, msg_status::HAS_DELETED, "入库后仍应保留删除状态");
     }
 
     #[tokio::test]
@@ -780,29 +751,18 @@ mod tests {
         let message_dao = Arc::new(MessageDao::new(pool.clone()));
         let conversation_dao = Arc::new(ConversationDao::new(pool.clone()));
         // seq=2 已本地软删
-        message_dao
-            .batch_insert(&[make_log("m2", 2, 2000)])
-            .await
-            .unwrap();
+        message_dao.batch_insert(&[make_log("m2", 2, 2000)]).await.unwrap();
         message_dao.mark_as_deleted("conv_1", "m2").await.unwrap();
 
         let mock = Arc::new(EmptyMock { calls: AtomicUsize::new(0) });
-        let checker = MessageChecker::new(
-            mock.clone(),
-            message_dao.clone(),
-            conversation_dao.clone(),
-            "test_user".to_string(),
-        );
+        let checker = MessageChecker::new(mock.clone(), message_dao.clone(), conversation_dao.clone(), "test_user".to_string());
 
-        let fetched = checker
-            .fetch_and_merge_missing_messages("conv_1", &[2], false)
-            .await
-            .unwrap();
+        let fetched = checker.fetch_and_merge_missing_messages("conv_1", &[2], false).await.unwrap();
         assert!(fetched.is_none(), "本地已软删的 seq 不应触发服务端补拉");
         assert_eq!(mock.calls.load(Ordering::SeqCst), 0, "不应发起补拉请求");
 
         let local = message_dao.get_by_client_msg_id("conv_1", "m2").await.unwrap().unwrap();
-        assert_eq!(local.status, msg_status::HAS_DELETED as i32);
+        assert_eq!(local.status, msg_status::HAS_DELETED);
     }
 
     #[test]

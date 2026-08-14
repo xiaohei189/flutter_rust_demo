@@ -58,7 +58,7 @@ async fn test_full_registration_and_functionality() {
     assert!(cert.is_ok(), "注册失败: {:?}", cert.err());
     let cert = cert.unwrap();
     let user_id = cert.user_id.clone();
-    let im_token = cert.im_token.clone();
+    let _im_token = cert.im_token.clone();
 
     println!("  注册成功: user_id={}", user_id);
     tokio::time::sleep(Duration::from_secs(2)).await;
@@ -126,7 +126,7 @@ async fn test_user_state_via_sdk() {
     println!("  好友数量: {}", friends.len());
 
     println!("6. 获取用户信息...");
-    let users_result = sdk.get_users_info(&vec![user_id.clone()]).await;
+    let users_result = sdk.get_users_info(&[user_id.clone()]).await;
     assert!(users_result.is_ok(), "get_users_info failed: {:?}", users_result.err());
     let users = users_result.unwrap();
     println!("  昵称: {}", users.first().map(|u| &u.nickname).unwrap_or(&"unknown".into()));
@@ -148,7 +148,7 @@ async fn test_get_user_online_status() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let status = sdk.get_user_status(&vec![user1.user_id.clone()]).await;
+    let status = sdk.get_user_status(&[user1.user_id.clone()]).await;
     assert!(status.is_ok(), "获取在线状态失败: {:?}", status.err());
     let list = status.unwrap();
     assert!(!list.is_empty(), "在线状态列表为空");
@@ -177,7 +177,7 @@ async fn test_update_user_profile() {
     println!("  ✅ 昵称更新成功");
 
     println!("验证用户资料...");
-    let users_result = sdk.get_users_info(&vec![user1.user_id.clone()]).await;
+    let users_result = sdk.get_users_info(&[user1.user_id.clone()]).await;
     assert!(users_result.is_ok(), "获取用户信息失败: {:?}", users_result.err());
     let users = users_result.unwrap();
     assert!(!users.is_empty(), "用户列表为空");
@@ -214,6 +214,6 @@ async fn test_subscribe_unsubscribe_user_status() {
     assert!(unsubscribe.is_ok(), "退订在线状态失败: {:?}", unsubscribe.err());
     println!("  ✅ 退订成功");
 
-    let _ = sdk2.get_user_status(&vec![user2.user_id.clone()]).await;
+    let _ = sdk2.get_user_status(&[user2.user_id.clone()]).await;
     println!("✅ 在线状态订阅/退订测试完成");
 }

@@ -1,6 +1,6 @@
 use crate::db::misc_dao::UploadDao;
 use crate::error::SdkError;
-use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
+use crate::file::callbacks::UploadFileCallback;
 use crate::file::upload::dto::{PartLimitResp, ProgressCallback, UploadResult};
 use crate::file::upload::session::HashLock;
 use crate::http::client::HttpApiClient;
@@ -155,7 +155,7 @@ impl FileUploader {
     // ========================================================================
 
     fn detect_content_type(&self, file_name: &str) -> String {
-        let extension = file_name.split('.').last().unwrap_or("").to_lowercase();
+        let extension = file_name.split('.').next_back().unwrap_or("").to_lowercase();
         match extension.as_str() {
             "jpg" | "jpeg" => "image/jpeg".to_string(),
             "png" => "image/png".to_string(),

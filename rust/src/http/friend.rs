@@ -101,19 +101,35 @@ pub struct RemoveBlackReq {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct GetBlackListResp {
-    #[serde(rename = "blacksInfo", default)]
-    pub blacks_info: Vec<BlackServerInfo>,
+    #[serde(rename = "blacks", default)]
+    pub blacks: Vec<BlackServerInfo>,
+    #[serde(default)]
+    pub total: i32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct BlackServerInfo {
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct BlackUserInfo {
     #[serde(rename = "userID")]
     pub user_id: String,
     pub nickname: String,
     #[serde(rename = "faceURL")]
     pub face_url: String,
-    #[serde(rename = "createTime")]
+    pub ex: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct BlackServerInfo {
+    #[serde(rename = "ownerUserID", default)]
+    pub owner_user_id: String,
+    #[serde(rename = "createTime", default)]
     pub create_time: i64,
+    #[serde(rename = "blackUserInfo", default)]
+    pub black_user_info: BlackUserInfo,
+    #[serde(rename = "addSource", default)]
+    pub add_source: i32,
+    #[serde(rename = "operatorUserID", default)]
+    pub operator_user_id: String,
+    #[serde(default)]
     pub ex: String,
 }
 
@@ -354,7 +370,7 @@ pub trait FriendServerApi: Send + Sync {
     async fn add_friend(&self, req: &AddFriendReq) -> Result<()>;
     async fn delete_friend(&self, req: &DeleteFriendReq) -> Result<()>;
     async fn check_friend(&self, user_ids: &[String]) -> Result<Vec<CheckFriendResult>>;
-    async fn get_black_list(&self) -> Result<GetBlackListResp>;
+    async fn get_black_list(&self, user_id: &str) -> Result<GetBlackListResp>;
     async fn add_black(&self, req: &AddBlackReq) -> Result<()>;
     async fn remove_black(&self, req: &RemoveBlackReq) -> Result<()>;
     async fn get_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp>;
@@ -465,5 +481,15 @@ mod tests {
         let item: SearchFriendItem = serde_json::from_str(json).unwrap();
         assert_eq!(item.friend_user_id, "user_1");
         assert_eq!(item.relationship, 1);
+    }
+
+    #[test]
+    fn test_black_list_resp_deserialization() {
+        let json = r#"{"blacks":[{"ownerUserID":"me","createTime":1,"blackUserInfo":{"userID":"black_1","nickname":"Blocked User","faceURL":"","ex":""},"addSource":0,"operatorUserID":"me","ex":""}],"total":1}"#;
+        let resp: GetBlackListResp = serde_json::from_str(json).unwrap();
+        assert_eq!(resp.total, 1);
+        assert_eq!(resp.blacks.len(), 1);
+        assert_eq!(resp.blacks[0].black_user_info.user_id, "black_1");
+        assert_eq!(resp.blacks[0].black_user_info.nickname, "Blocked User");
     }
 }

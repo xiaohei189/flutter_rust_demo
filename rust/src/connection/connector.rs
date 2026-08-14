@@ -9,11 +9,10 @@ use crate::event::events::connection::ConnectionEvent;
 use crate::logger::extract_trace_id;
 use futures_util::StreamExt;
 use std::time::Duration;
-use tokio::net::TcpStream;
 use tokio::time::timeout;
-use tokio_util::sync::CancellationToken;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::connect_async;
+use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
 impl ConnectionManager {

@@ -649,11 +649,7 @@ impl From<&MsgStruct> for MsgData {
                 i_os_badge_count: p.ios_badge_count,
                 signal_info: p.signal_info.clone(),
             }),
-            at_user_id_list: msg
-                .at_text_elem
-                .as_ref()
-                .map(|e| e.at_user_list.clone())
-                .unwrap_or_default(),
+            at_user_id_list: msg.at_text_elem.as_ref().map(|e| e.at_user_list.clone()).unwrap_or_default(),
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
         }
@@ -691,6 +687,72 @@ impl From<&MsgData> for MsgStruct {
                 ios_badge_count: p.i_os_badge_count,
                 signal_info: p.signal_info.clone(),
             }),
+            ..Default::default()
+        };
+        msg.populate_elem_by_content_type();
+        msg
+    }
+}
+
+/// MsgStruct → LocalChatLog（对齐 Go SDK MsgStructToLocalChatLog）
+impl From<&MsgStruct> for LocalChatLog {
+    fn from(msg: &MsgStruct) -> Self {
+        let status = match msg.status {
+            0..=2 => msg.status,
+            3..=5 => 3,
+            10 => 10,
+            _ => 1,
+        };
+        LocalChatLog {
+            conversation_id: String::new(),
+            client_msg_id: msg.client_msg_id.clone(),
+            server_msg_id: msg.server_msg_id.clone(),
+            send_id: msg.send_id.clone(),
+            recv_id: msg.recv_id.clone(),
+            sender_platform_id: msg.sender_platform_id,
+            sender_nick_name: msg.sender_nickname.clone(),
+            sender_face_url: msg.sender_face_url.clone(),
+            session_type: msg.session_type,
+            msg_from: msg.msg_from,
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            is_read: msg.is_read as i32,
+            status,
+            seq: msg.seq,
+            send_time: msg.send_time,
+            create_time: msg.create_time,
+            attached_info: msg.attached_info.clone(),
+            ex: msg.ex.clone(),
+            local_ex: msg.local_ex.clone(),
+            group_id: msg.group_id.clone(),
+        }
+    }
+}
+
+/// LocalChatLog → MsgStruct（对齐 Go SDK LocalChatLogToMsgStruct）
+impl From<&LocalChatLog> for MsgStruct {
+    fn from(log: &LocalChatLog) -> Self {
+        let mut msg = MsgStruct {
+            client_msg_id: log.client_msg_id.clone(),
+            server_msg_id: log.server_msg_id.clone(),
+            session_type: log.session_type,
+            msg_from: log.msg_from,
+            send_id: log.send_id.clone(),
+            recv_id: log.recv_id.clone(),
+            group_id: log.group_id.clone(),
+            content_type: log.content_type,
+            content: log.content.clone(),
+            send_time: log.send_time,
+            create_time: log.create_time,
+            seq: log.seq,
+            status: log.status,
+            is_read: log.is_read != 0,
+            attached_info: log.attached_info.clone(),
+            ex: log.ex.clone(),
+            local_ex: log.local_ex.clone(),
+            sender_platform_id: log.sender_platform_id,
+            sender_nickname: log.sender_nick_name.clone(),
+            sender_face_url: log.sender_face_url.clone(),
             ..Default::default()
         };
         msg.populate_elem_by_content_type();
@@ -841,71 +903,5 @@ mod tests {
         let msg = MsgStruct::create_quote_message("引用", Box::new(MsgStruct::create_text_message("原文")));
         let quote_elem = msg.quote_elem.as_ref().unwrap();
         assert!(quote_elem.message_entity_list.is_empty());
-    }
-}
-
-/// MsgStruct → LocalChatLog（对齐 Go SDK MsgStructToLocalChatLog）
-impl From<&MsgStruct> for LocalChatLog {
-    fn from(msg: &MsgStruct) -> Self {
-        let status = match msg.status {
-            0 | 1 | 2 => msg.status,
-            3 | 4 | 5 => 3,
-            10 => 10,
-            _ => 1,
-        };
-        LocalChatLog {
-            conversation_id: String::new(),
-            client_msg_id: msg.client_msg_id.clone(),
-            server_msg_id: msg.server_msg_id.clone(),
-            send_id: msg.send_id.clone(),
-            recv_id: msg.recv_id.clone(),
-            sender_platform_id: msg.sender_platform_id,
-            sender_nick_name: msg.sender_nickname.clone(),
-            sender_face_url: msg.sender_face_url.clone(),
-            session_type: msg.session_type,
-            msg_from: msg.msg_from,
-            content_type: msg.content_type,
-            content: msg.content.clone(),
-            is_read: msg.is_read as i32,
-            status,
-            seq: msg.seq,
-            send_time: msg.send_time,
-            create_time: msg.create_time,
-            attached_info: msg.attached_info.clone(),
-            ex: msg.ex.clone(),
-            local_ex: msg.local_ex.clone(),
-            group_id: msg.group_id.clone(),
-        }
-    }
-}
-
-/// LocalChatLog → MsgStruct（对齐 Go SDK LocalChatLogToMsgStruct）
-impl From<&LocalChatLog> for MsgStruct {
-    fn from(log: &LocalChatLog) -> Self {
-        let mut msg = MsgStruct {
-            client_msg_id: log.client_msg_id.clone(),
-            server_msg_id: log.server_msg_id.clone(),
-            session_type: log.session_type,
-            msg_from: log.msg_from,
-            send_id: log.send_id.clone(),
-            recv_id: log.recv_id.clone(),
-            group_id: log.group_id.clone(),
-            content_type: log.content_type,
-            content: log.content.clone(),
-            send_time: log.send_time,
-            create_time: log.create_time,
-            seq: log.seq,
-            status: log.status,
-            is_read: log.is_read != 0,
-            attached_info: log.attached_info.clone(),
-            ex: log.ex.clone(),
-            local_ex: log.local_ex.clone(),
-            sender_platform_id: log.sender_platform_id,
-            sender_nickname: log.sender_nick_name.clone(),
-            sender_face_url: log.sender_face_url.clone(),
-            ..Default::default()
-        };
-        msg.populate_elem_by_content_type();
-        msg
     }
 }

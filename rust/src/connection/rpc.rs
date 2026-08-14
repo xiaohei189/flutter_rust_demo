@@ -3,7 +3,7 @@
 //! 从 manager.rs 提取，职责：发送 RPC 请求、等待响应、超时处理
 
 use crate::connection::manager::ConnectionManager;
-use crate::connection::ws::OpenIMReq;
+use crate::connection::ws::{OpenIMReq, OpenIMResp};
 use crate::constant::req_identifier_name;
 use crate::error::{Result, SdkError};
 use crate::logger::{encode_operation_id, extract_span_id, extract_trace_id};
@@ -89,42 +89,7 @@ impl ConnectionManager {
         }
 
         match timeout(RPC_TIMEOUT, rx).await {
-            Ok(Ok(resp)) => {
-                if resp.is_success() {
-                    match R::decode(resp.data.as_slice()) {
-                        Ok(r) => {
-                            trace!(
-                                req_name = %req_name,
-                                msg_incr = %resp.msg_incr,
-                                resp_len = resp.data.len(),
-                                elapsed_ms = start.elapsed().as_millis() as u64,
-                                "ws rpc response ok"
-                            );
-                            Ok(r)
-                        }
-                        Err(e) => {
-                            error!(
-                                req_name = %req_name,
-                                msg_incr = %resp.msg_incr,
-                                elapsed_ms = start.elapsed().as_millis() as u64,
-                                error = %e,
-                                "ws rpc decode response failed"
-                            );
-                            Err(SdkError::unknown(format!("decode response: {}", e)))
-                        }
-                    }
-                } else {
-                    warn!(
-                        req_name = %req_name,
-                        msg_incr = %resp.msg_incr,
-                        err_code = resp.err_code,
-                        err_msg = %resp.err_msg,
-                        elapsed_ms = start.elapsed().as_millis() as u64,
-                        "ws rpc response error"
-                    );
-                    Err(SdkError::api(resp.err_code, &resp.err_msg))
-                }
-            }
+            Ok(Ok(resp)) => decode_rpc_response::<R>(resp).await,
             Ok(Err(_)) => {
                 warn!(
                     req_name = %req_name,
@@ -146,5 +111,72 @@ impl ConnectionManager {
                 Err(SdkError::timeout("rpc timeout"))
             }
         }
+    }
+}
+
+/// 将 WS RPC 响应解码为业务响应；成功码之外统一返回 SdkError::api。
+async fn decode_rpc_response<R>(resp: OpenIMResp) -> Result<R>
+where
+    R: prost::Message + Default + std::fmt::Debug,
+{
+    if resp.is_success() {
+        match R::decode(resp.data.as_slice()) {
+            Ok(r) => Ok(r),
+            Err(e) => Err(SdkError::unknown(format!("decode response: {}", e))),
+        }
+    } else {
+        Err(SdkError::api(resp.err_code, &resp.err_msg))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use openim_protocol::sdkws::UserSendMsgResp;
+    use prost::Message as _;
+
+    fn resp_with(data: Vec<u8>, err_code: i32, err_msg: &str, msg_incr: &str) -> OpenIMResp {
+        OpenIMResp {
+            req_identifier: 1003,
+            msg_incr: msg_incr.to_string(),
+            operation_id: String::new(),
+            err_code,
+            err_msg: err_msg.to_string(),
+            data,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_decode_rpc_response_success() {
+        let payload = UserSendMsgResp {
+            server_msg_id: "srv_1".to_string(),
+            client_msg_id: "cli_1".to_string(),
+            send_time: 123,
+        };
+        let decoded: UserSendMsgResp = decode_rpc_response(resp_with(payload.encode_to_vec(), 0, "", "rpc_1")).await.unwrap();
+
+        assert_eq!(decoded.server_msg_id, "srv_1");
+        assert_eq!(decoded.client_msg_id, "cli_1");
+        assert_eq!(decoded.send_time, 123);
+    }
+
+    #[tokio::test]
+    async fn test_decode_rpc_response_business_error() {
+        let err = decode_rpc_response::<UserSendMsgResp>(resp_with(vec![], 1506, "token kicked", "rpc_1")).await.unwrap_err();
+
+        match err {
+            SdkError::ApiError { code, message } => {
+                assert_eq!(code, 1506);
+                assert_eq!(message, "token kicked");
+            }
+            other => panic!("expected ApiError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_decode_rpc_response_invalid_payload() {
+        let err = decode_rpc_response::<UserSendMsgResp>(resp_with(b"not a protobuf".to_vec(), 0, "", "rpc_1")).await.unwrap_err();
+
+        assert!(err.to_string().contains("decode response"));
     }
 }

@@ -12,9 +12,12 @@ class OnlineStatusService {
       StreamController<Map<String, OnlineStatus>>.broadcast();
   final Map<String, OnlineStatus> _statuses = {};
   final Map<String, int> _refCounts = {};
-  fb.OpenImBridgeClient? _client;
+  OnlineStatusClient? _client;
 
   OnlineStatusService._internal();
+
+  /// 供单元测试创建独立实例，避免污染全局 singleton。
+  OnlineStatusService.forTesting() : this._internal();
 
   Stream<Map<String, OnlineStatus>> get statusesStream =>
       _statusesController.stream;
@@ -24,6 +27,16 @@ class OnlineStatusService {
   OnlineStatus? statusOf(String userId) => _statuses[userId];
 
   void setClient(fb.OpenImBridgeClient? client) {
+    _client = client == null ? null : _BridgeOnlineStatusClient(client);
+    if (client == null) {
+      _statuses.clear();
+      _refCounts.clear();
+      _notify();
+    }
+  }
+
+  /// 供单元测试注入 fake，不参与生产调用路径。
+  void setClientForTest(OnlineStatusClient? client) {
     _client = client;
     if (client == null) {
       _statuses.clear();
@@ -112,5 +125,36 @@ class OnlineStatusService {
     if (!_statusesController.isClosed) {
       _statusesController.add(statuses);
     }
+  }
+
+  void dispose() {
+    _statusesController.close();
+  }
+}
+
+/// 在线状态服务依赖的最小客户端接口，便于测试注入 fake。
+abstract class OnlineStatusClient {
+  Future<List<OnlineStatus>> subscribeUsersStatus({
+    required List<String> userIds,
+  });
+
+  Future<void> unsubscribeUsersStatus({required List<String> userIds});
+}
+
+class _BridgeOnlineStatusClient implements OnlineStatusClient {
+  _BridgeOnlineStatusClient(this._inner);
+
+  final fb.OpenImBridgeClient _inner;
+
+  @override
+  Future<List<OnlineStatus>> subscribeUsersStatus({
+    required List<String> userIds,
+  }) {
+    return _inner.subscribeUsersStatus(userIds: userIds);
+  }
+
+  @override
+  Future<void> unsubscribeUsersStatus({required List<String> userIds}) {
+    return _inner.unsubscribeUsersStatus(userIds: userIds);
   }
 }

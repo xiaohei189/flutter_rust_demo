@@ -8,8 +8,7 @@ use crate::model::UserId;
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use crate::http::conversation::ConversationServerApi;
 use crate::http::conversation_api::HttpConversationApi;
@@ -512,7 +511,12 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
 
-        let inc = GetIncrementalConversationResp { version: 99, version_id: "v99".to_string(), full: true, ..Default::default() };
+        let inc = GetIncrementalConversationResp {
+            version: 99,
+            version_id: "v99".to_string(),
+            full: true,
+            ..Default::default()
+        };
         let api = Arc::new(
             MockConversationApi::new()
                 .with_incremental(inc)

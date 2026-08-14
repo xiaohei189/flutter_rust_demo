@@ -10,7 +10,7 @@
 use crate::connection::message_batcher::MessageBatcher;
 use crate::connection::ws::GzipCompressor;
 use crate::connection::ws::OpenIMResp;
-use crate::error::{Result, SdkError};
+use crate::error::Result;
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
 use crate::event::events::user::UserEvent;
 use futures_util::stream::SplitSink;
@@ -26,7 +26,7 @@ use tokio::time::{interval, sleep, MissedTickBehavior};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 pub type WsWriter = SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, WsMessage>;
 
@@ -118,7 +118,7 @@ impl ConnectionManager {
             prev.cancel();
         }
         {
-            let current_state = self.state.read().await.clone();
+            let current_state = *self.state.read().await;
             if current_state != ConnectionState::Disconnected {
                 info!("[Connection] connect: closing existing connection (state: {:?})", current_state);
                 *self.is_manual_disconnect.write().await = true;
@@ -160,7 +160,7 @@ impl ConnectionManager {
                     }
                     _ = async {
                         loop {
-                            let current_state = state.read().await.clone();
+                            let current_state = *state.read().await;
                             let manual = { *is_manual.read().await };
                             if manual { info!("reconnect_loop: manual disconnect, stopping"); return; }
                             if current_state == ConnectionState::Disconnected || current_state == ConnectionState::Reconnecting { break; }
@@ -300,7 +300,7 @@ impl ConnectionManager {
         &self.message_batcher
     }
     pub async fn get_state(&self) -> ConnectionState {
-        self.state.read().await.clone()
+        *self.state.read().await
     }
     pub(crate) async fn set_state(&self, state: ConnectionState) {
         *self.state.write().await = state;
@@ -349,8 +349,8 @@ async fn test_clone_shallow_copies_all_fields() {
     let original = ConnectionManager::new(cancel_token.clone(), crate::event::test_util::noop_connection_listener());
     let cloned = original.clone_shallow();
     assert!(!cloned.cancel_token.is_cancelled());
-    assert_eq!(original.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
-    assert_eq!(cloned.state.try_read().map(|s| s.clone()).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
+    assert_eq!(original.state.try_read().map(|s| *s).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
+    assert_eq!(cloned.state.try_read().map(|s| *s).unwrap_or(ConnectionState::Disconnected), ConnectionState::Disconnected);
     assert_eq!(original.reconnect_attempts.load(Ordering::SeqCst), 0);
     assert_eq!(cloned.reconnect_attempts.load(Ordering::SeqCst), 0);
     assert!(original.writer.try_read().unwrap().is_none());

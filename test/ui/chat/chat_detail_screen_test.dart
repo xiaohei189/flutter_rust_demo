@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import 'package:flutter_rust_demo/data/services/online_status_service.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
+import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/ui/profile/providers/user_profile_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
@@ -76,6 +78,20 @@ Widget _buildHost(MessageServiceNotifier service) {
     overrides: [
       messageServiceProvider.overrideWith(() => service),
       userProfileProvider.overrideWith(() => UserProfileNotifier()),
+    ],
+    child: const MaterialApp(home: ChatDetailScreen(conversationId: _convId)),
+  );
+}
+
+Widget _buildHostWithOnline(
+  MessageServiceNotifier service,
+  OnlineStatusService onlineStatusService,
+) {
+  return ProviderScope(
+    overrides: [
+      messageServiceProvider.overrideWith(() => service),
+      userProfileProvider.overrideWith(() => UserProfileNotifier()),
+      onlineStatusServiceProvider.overrideWithValue(onlineStatusService),
     ],
     child: const MaterialApp(home: ChatDetailScreen(conversationId: _convId)),
   );
@@ -185,5 +201,51 @@ void main() {
       find.descendant(of: find.byType(AppBar), matching: find.text('2')),
       findsNothing,
     );
+  });
+
+  testWidgets('单聊在线状态展示 未知/在线/离线', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+        messages: {},
+        userProfiles: {
+          'user_a': const UserInfo(
+            userId: 'user_a',
+            nickname: '我',
+            faceUrl: '',
+            gender: 0,
+            telephone: '',
+            email: '',
+            remark: '',
+            globalRecvMsgOpt: 0,
+          ),
+        },
+      ),
+    );
+    final onlineStatusService = OnlineStatusService.forTesting();
+
+    await tester.pumpWidget(_buildHostWithOnline(service, onlineStatusService));
+    await tester.pumpAndSettle();
+    expect(find.text('未知'), findsOneWidget);
+
+    onlineStatusService.applyUserStatusChanged(
+      userId: 'user_b',
+      status: 1,
+      platformIds: const [1],
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('在线'), findsOneWidget);
+
+    onlineStatusService.applyUserStatusChanged(
+      userId: 'user_b',
+      status: 0,
+      platformIds: const [],
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('离线'), findsOneWidget);
+
+    onlineStatusService.dispose();
   });
 }

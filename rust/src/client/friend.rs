@@ -4,28 +4,11 @@
 
 use crate::client::OpenIMClient;
 
-use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::event::events::connection::ConnectionEvent;
-use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::friend::FriendEvent;
-use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
-use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
+use crate::http::friend::{FriendApplyInfo, SearchFriendItem};
 use crate::model::friend::FriendInfo;
-use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
 use async_trait::async_trait;
-use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[async_trait]
 pub trait FriendApi: Send + Sync {
@@ -88,8 +71,7 @@ impl FriendApi for OpenIMClient {
     /// 批量检查好友关系状态
     #[tracing::instrument(skip_all)]
     async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::http::friend::CheckFriendResult>, SdkError> {
-        self.friend.check_friend(user_ids).await.map_err(SdkError::from)
-    }
+        self.friend.check_friend(user_ids).await}
 
     #[tracing::instrument(skip_all, fields(user_id = %user_id))]
     async fn add_black(&self, user_id: &str) -> Result<()> {

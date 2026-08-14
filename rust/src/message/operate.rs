@@ -10,7 +10,7 @@ mod search;
 
 use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
-use crate::event::events::message::{MessageListener, MessageListenerExt};
+use crate::event::events::message::MessageListener;
 use crate::http::message::MessageServerApi;
 use crate::message::receive::checker::{MessageChecker, SeqPullContext};
 use crate::model::UserId;
@@ -55,9 +55,9 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
     use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;
@@ -307,6 +307,22 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_mark_all_conversation_as_read_clears_unread_and_skips_clean() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let conversation_dao = repositories.conversation_repo.clone();
+        let service = make_service(repositories);
+
+        conversation_dao.upsert(&make_conv("conv_all_1", 3)).await.unwrap();
+        conversation_dao.upsert(&make_conv("conv_all_2", 0)).await.unwrap();
+
+        service.mark_all_conversation_as_read().await.unwrap();
+
+        assert_eq!(conversation_dao.get_by_id("conv_all_1").await.unwrap().unwrap().unread_count, 0);
+        assert_eq!(conversation_dao.get_by_id("conv_all_2").await.unwrap().unwrap().unread_count, 0);
+    }
+
+    #[tokio::test]
     async fn test_revoke_message_success_marks_local() {
         let pool = create_pool_memory().await.unwrap();
         let repositories = make_test_repositories(pool);
@@ -340,10 +356,7 @@ mod tests {
             dao.batch_insert(&[make_local_msg("conv_w", "msg_w", 5, "user_1")]).await.unwrap();
         });
 
-        let seq = service
-            .wait_for_message_sync_seq_inner("conv_w", "msg_w", 5, Duration::from_millis(10))
-            .await
-            .unwrap();
+        let seq = service.wait_for_message_sync_seq_inner("conv_w", "msg_w", 5, Duration::from_millis(10)).await.unwrap();
         assert_eq!(seq, 5);
         task.await.unwrap();
     }
@@ -354,9 +367,7 @@ mod tests {
         let repositories = make_test_repositories(pool);
         let service = make_service(repositories);
 
-        let result = service
-            .wait_for_message_sync_seq_inner("conv_missing", "msg_x", 3, Duration::from_millis(1))
-            .await;
+        let result = service.wait_for_message_sync_seq_inner("conv_missing", "msg_x", 3, Duration::from_millis(1)).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("seq 未同步"));
     }
@@ -426,7 +437,7 @@ mod tests {
             .await
             .unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().unwrap();
-        assert_eq!(msg.status, crate::constant::msg_status::HAS_DELETED as i32, "本地删除应保留记录并标记为已删除");
+        assert_eq!(msg.status, crate::constant::msg_status::HAS_DELETED, "本地删除应保留记录并标记为已删除");
     }
 
     #[tokio::test]

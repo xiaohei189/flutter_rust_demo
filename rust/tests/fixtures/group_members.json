@@ -1,0 +1,20 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "members": [
+      {
+        "groupID": "g1",
+        "userID": "user_member",
+        "nickname": "Member",
+        "faceURL": "",
+        "roleLevel": 1,
+        "joinTime": 1,
+        "joinSource": 0,
+        "operatorUserID": "me",
+        "ex": ""
+      }
+    ],
+    "total": 1
+  }
+}

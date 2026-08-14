@@ -1,10 +1,8 @@
 //! 会话相关 FFI 桥接
 
-use crate::client::SdkApi;
 use crate::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
-use crate::model::local::LocalConversation;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 impl OpenIMBridgeClient {
     // ========== 会话操作 ==========

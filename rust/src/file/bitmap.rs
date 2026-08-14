@@ -9,13 +9,13 @@ pub struct Bitmap {
 impl Bitmap {
     /// 创建指定大小的空位图
     pub fn new(size: usize) -> Self {
-        let words = (size + 63) / 64;
+        let words = size.div_ceil(64);
         Self { data: vec![0u64; words], size }
     }
 
     /// 从字节数组恢复位图（大端序，与 Go Serialize 输出一致）
     pub fn parse(bytes: &[u8], size: usize) -> Self {
-        let words = (size + 63) / 64;
+        let words = size.div_ceil(64);
         let mut data = vec![0u64; words];
         for i in 0..words.min(bytes.len() / 8) {
             data[i] = u64::from_be_bytes([

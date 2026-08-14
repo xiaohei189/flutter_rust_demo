@@ -9,7 +9,10 @@ pub enum ConversationEvent {
     TotalUnreadCountChanged(i64),
     SyncStarted(bool),
     SyncFinished(bool),
-    SyncFailed { reinstalled: bool, error: String },
+    SyncFailed {
+        reinstalled: bool,
+        error: String,
+    },
     SyncProgress {
         progress: i32,
         message: String,

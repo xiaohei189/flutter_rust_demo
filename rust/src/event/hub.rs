@@ -13,7 +13,6 @@ use crate::event::events::user::{UserEvent, UserListener};
 use crate::model::friend::FriendInfo;
 use crate::model::group::GroupInfo;
 use crate::model::local::LocalConversation;
-use crate::model::message::MessageInfo;
 use crate::model::user::UserInfo;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
@@ -100,10 +99,7 @@ impl ConnectionListener for EventHub {
     }
     fn on_connect_failed(&self, err_code: i32, error: &str) {
         info!("[EventHub] connection 回调: connect_failed, err_code={}, error={}", err_code, error);
-        let _ = self.conn_tx.send(ConnectionEvent::ConnectFailed {
-            err_code,
-            error: error.to_string(),
-        });
+        let _ = self.conn_tx.send(ConnectionEvent::ConnectFailed { err_code, error: error.to_string() });
     }
     fn on_kicked_offline(&self, reason: &str) {
         info!("[EventHub] connection 回调: kicked_offline, reason={}", reason);
@@ -171,7 +167,12 @@ impl ConversationListener for EventHub {
         });
     }
     fn on_user_input_status_changed(&self, conversation_id: &str, user_id: &str, platform_ids: &[i32]) {
-        info!("[EventHub] conversation 回调: user_input_status_changed, conv={}, user={}, platforms={}", conversation_id, user_id, platform_ids.len());
+        info!(
+            "[EventHub] conversation 回调: user_input_status_changed, conv={}, user={}, platforms={}",
+            conversation_id,
+            user_id,
+            platform_ids.len()
+        );
         let _ = self.conv_tx.send(ConversationEvent::UserInputStatusChanged {
             conversation_id: conversation_id.to_string(),
             user_id: user_id.to_string(),
@@ -361,15 +362,15 @@ impl UserListener for EventHub {
 mod tests {
     use super::*;
     use crate::event::events::connection::ConnectionEvent;
-    use crate::event::events::conversation::ConversationEvent;
-    use crate::event::events::friend::FriendEvent;
-    use crate::event::events::group::GroupEvent;
-    use crate::event::events::message::MessageEvent;
-    use crate::event::events::user::UserEvent;
-    use crate::model::friend::FriendInfo;
+    
+    
+    
+    
+    
+    
     use crate::model::group::GroupInfo;
-    use crate::model::local::LocalConversation;
-    use openim_protocol::sdkws::MsgData;
+    
+    
 
     #[tokio::test]
     async fn test_event_hub_creation() {
@@ -458,27 +459,30 @@ mod tests {
             status: 0,
         });
         user.on_user_status_changed("u1", 1, &[]);
-        msg.on_new_message("conv_1", &crate::model::message::MessageInfo {
-            client_msg_id: "m1".into(),
-            server_msg_id: String::new(),
-            send_id: "user_a".into(),
-            recv_id: "user_b".into(),
-            group_id: String::new(),
-            sender_platform_id: 1,
-            sender_nickname: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 0,
-            content_type: 101,
-            content: String::new(),
-            seq: 1,
-            send_time: 1000,
-            create_time: 1000,
-            status: 2,
-            is_read: false,
-            attached_info: String::new(),
-            ex: String::new(),
-        });
+        msg.on_new_message(
+            "conv_1",
+            &crate::model::message::MessageInfo {
+                client_msg_id: "m1".into(),
+                server_msg_id: String::new(),
+                send_id: "user_a".into(),
+                recv_id: "user_b".into(),
+                group_id: String::new(),
+                sender_platform_id: 1,
+                sender_nickname: String::new(),
+                sender_face_url: String::new(),
+                session_type: 1,
+                msg_from: 0,
+                content_type: 101,
+                content: String::new(),
+                seq: 1,
+                send_time: 1000,
+                create_time: 1000,
+                status: 2,
+                is_read: false,
+                attached_info: String::new(),
+                ex: String::new(),
+            },
+        );
 
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 

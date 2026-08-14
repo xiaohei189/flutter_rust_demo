@@ -74,7 +74,7 @@ pub async fn register_user(phone: &str, nickname: &str) -> Result<RegisterRespon
     let operation_id = format!("test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
 
     let resp = client
-        .post(&format!("{}/account/register", CHAT_API_BASE_URL))
+        .post(format!("{}/account/register", CHAT_API_BASE_URL))
         .header("operationID", &operation_id)
         .json(&serde_json::json!({
             "verifyCode": DEFAULT_VERIFICATION_CODE,
@@ -116,7 +116,7 @@ pub async fn login_user(phone: &str) -> Result<LoginCertificate, String> {
     let operation_id = format!("test_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
 
     let resp = client
-        .post(&format!("{}/account/login", CHAT_API_BASE_URL))
+        .post(format!("{}/account/login", CHAT_API_BASE_URL))
         .header("operationID", &operation_id)
         .json(&serde_json::json!({
             "phoneNumber": phone,
@@ -428,7 +428,7 @@ pub fn create_test_audio_file(dir: &std::path::Path) -> std::path::PathBuf {
     wav.extend_from_slice(&num_channels.to_le_bytes());
     wav.extend_from_slice(&sample_rate.to_le_bytes());
     wav.extend_from_slice(&(sample_rate * num_channels as u32 * bits_per_sample as u32 / 8).to_le_bytes());
-    wav.extend_from_slice(&(num_channels as u16 * bits_per_sample / 8).to_le_bytes());
+    wav.extend_from_slice(&(num_channels * bits_per_sample / 8).to_le_bytes());
     wav.extend_from_slice(&bits_per_sample.to_le_bytes());
     // data chunk
     wav.extend_from_slice(b"data");

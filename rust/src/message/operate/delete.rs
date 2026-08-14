@@ -189,9 +189,9 @@ mod tests {
         let m1 = dao.get_by_client_msg_id("conv_1", "m1").await.unwrap().unwrap();
         let m3 = dao.get_by_client_msg_id("conv_1", "m3").await.unwrap().unwrap();
         let m2 = dao.get_by_client_msg_id("conv_1", "m2").await.unwrap().unwrap();
-        assert_eq!(m1.status, msg_status::HAS_DELETED as i32);
-        assert_eq!(m3.status, msg_status::HAS_DELETED as i32);
-        assert_eq!(m2.status, msg_status::SEND_SUCCESS as i32);
+        assert_eq!(m1.status, msg_status::HAS_DELETED);
+        assert_eq!(m3.status, msg_status::HAS_DELETED);
+        assert_eq!(m2.status, msg_status::SEND_SUCCESS);
         // Deleted 事件发布
         match msg_rx.try_recv().unwrap() {
             MessageEvent::Deleted { conversation_id, client_msg_ids } => {
@@ -220,7 +220,7 @@ mod tests {
         assert_eq!(api.delete_count(), 1, "即使 seqs 为空也会调用服务端");
         // 本地仍软删
         let m = dao.get_by_client_msg_id("conv_1", "m_local").await.unwrap().unwrap();
-        assert_eq!(m.status, msg_status::HAS_DELETED as i32);
+        assert_eq!(m.status, msg_status::HAS_DELETED);
     }
 
     #[tokio::test]

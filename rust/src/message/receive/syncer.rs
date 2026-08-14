@@ -7,8 +7,6 @@ use crate::client::context::Repositories;
 use crate::connection::manager::ConnectionManager;
 use crate::connection::sync_server::SyncServerApi;
 use crate::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
-use crate::db::NotificationSeqRepository;
-use crate::db::{ConversationRepository, MessageRepository};
 use crate::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::message::notification::NotificationHandler;
@@ -17,7 +15,7 @@ use crate::model::local::LocalNotificationSeq;
 use crate::model::UserId;
 use async_trait::async_trait;
 use openim_protocol::msg::{GetLastMessageReq, GetLastMessageResp, GetSeqMessageReq, GetSeqMessageResp};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::Arc;
 use std::sync::OnceLock;
@@ -25,7 +23,7 @@ use tokio::sync::{Mutex, RwLock, Semaphore};
 use tracing::{debug, error, info, warn};
 
 // 直接使用 openim-protocol crate 中的 pb 生成类型
-use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs, PullOrder, SeqRange};
+use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs, SeqRange};
 
 /// 已同步最大 seq 的持久化记录表名（local_sync_version 内）
 ///
@@ -388,12 +386,7 @@ impl MessageSyncer {
 
     /// 持久化会话拉取进度（含回执/撤回等不落库消息的 seq），供下次启动的增量判断使用
     async fn persist_synced_max_seq(&self, conv_id: &str, seq: i64) {
-        if let Err(e) = self
-            .repositories
-            .sync_version_repo
-            .set_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id, "", seq as u64)
-            .await
-        {
+        if let Err(e) = self.repositories.sync_version_repo.set_version_sync(SYNCED_MAX_SEQ_TABLE, conv_id, "", seq as u64).await {
             warn!(target: "im::sync", "[Sync] 持久化 synced_max_seq 失败 conv={}: {}", conv_id, e);
         }
     }
@@ -548,18 +541,22 @@ impl MessageSyncer {
         let mut tasks = Vec::new();
 
         let batch_size = pull_msg_num::SPLIT_PULL_MSG_NUM as i64;
-        let mut batches: Vec<HashMap<String, (i64, i64)>> = Vec::new();
-        let mut current_batch = HashMap::new();
+        let mut batches: Vec<Vec<(String, i64, i64)>> = Vec::new();
+        let mut current_batch = Vec::new();
+        let mut current_convs = HashSet::new();
         let mut msg_count = 0i64;
 
-        for (conv_id, (begin, end)) in seq_map {
+        for (conv_id, begin, end) in split_seq_ranges(seq_map, pull_num) {
             let range_size = end - begin + 1;
-            if msg_count + range_size > batch_size && !current_batch.is_empty() {
-                batches.push(current_batch);
-                current_batch = HashMap::new();
+            // 服务端 PullMessageBySeqs 对同一会话的多个 SeqRange 会互相覆盖，
+            // 因此同一请求内每个会话只能出现一个区间；需要继续拉同会话时另起一批。
+            if !current_batch.is_empty() && (current_convs.contains(&conv_id) || msg_count + range_size > batch_size) {
+                batches.push(std::mem::take(&mut current_batch));
+                current_convs.clear();
                 msg_count = 0;
             }
-            current_batch.insert(conv_id.clone(), (*begin, *end));
+            current_convs.insert(conv_id.clone());
+            current_batch.push((conv_id, begin, end));
             msg_count += range_size;
         }
         if !current_batch.is_empty() {
@@ -583,12 +580,12 @@ impl MessageSyncer {
         Ok(())
     }
 
-    async fn pull_and_handle_messages(&self, seq_map: &HashMap<String, (i64, i64)>, reinstall: bool, pull_num: i64) -> Result<()> {
+    async fn pull_and_handle_messages(&self, seq_ranges: &[(String, i64, i64)], reinstall: bool, pull_num: i64) -> Result<()> {
         let req = PullMessageBySeqsReq {
             user_id: self.user_id.get().await,
-            seq_ranges: seq_map
+            seq_ranges: seq_ranges
                 .iter()
-                .map(|(conv_id, (begin, end))| SeqRange {
+                .map(|(conv_id, begin, end)| SeqRange {
                     conversation_id: conv_id.clone(),
                     begin: *begin,
                     end: *end,
@@ -638,7 +635,7 @@ impl MessageSyncer {
                     content_type: m.content_type,
                     content: String::from_utf8_lossy(&m.content).to_string(),
                     is_read: 0,
-                    status: msg_status::SEND_SUCCESS as i32,
+                    status: msg_status::SEND_SUCCESS,
                     seq: m.seq,
                     send_time: m.send_time,
                     create_time: m.create_time,
@@ -672,7 +669,7 @@ impl MessageSyncer {
 
         // 对齐 Go SDK `syncAndTriggerMsgs`：拉取完成后按请求区间统一更新内存进度
         // （含通知会话；即使服务端返回空，也已同步到该 seq，下次不再全量重拉）
-        for (conv_id, (_, end_seq)) in seq_map {
+        for (conv_id, _, end_seq) in seq_ranges {
             let mut synced = self.synced_max_seqs.write().await;
             let current = synced.get(conv_id).copied().unwrap_or(0);
             if *end_seq > current {
@@ -681,12 +678,12 @@ impl MessageSyncer {
         }
 
         // 持久化拉取进度：回执/撤回等不落库消息的 seq 也要消耗掉，避免重启后重复拉取
-        for (conv_id, (_, end_seq)) in seq_map {
+        for (conv_id, _, end_seq) in seq_ranges {
             self.persist_synced_max_seq(conv_id, *end_seq).await;
         }
 
-        let total_convs = seq_map.len().max(1);
-        for (idx, (conv_id, (_, end_seq))) in seq_map.iter().enumerate() {
+        let total_convs = seq_ranges.len().max(1);
+        for (idx, (conv_id, _, end_seq)) in seq_ranges.iter().enumerate() {
             let progress = 10 + ((idx + 1) * 90 / total_convs);
             let msg = if reinstall {
                 format!("重装同步完成 {}: seq={}", conv_id, end_seq)
@@ -706,7 +703,7 @@ impl MessageSyncer {
     async fn check_messages_and_get_last_message(&self, msgs: &mut HashMap<String, PullMsgs>) -> Result<()> {
         let mut conversation_ids = Vec::new();
         for (conv_id, pull_msgs) in msgs.iter() {
-            let all_deleted = !pull_msgs.msgs.is_empty() && pull_msgs.msgs.iter().all(|m| m.status >= msg_status::HAS_DELETED as i32);
+            let all_deleted = !pull_msgs.msgs.is_empty() && pull_msgs.msgs.iter().all(|m| m.status >= msg_status::HAS_DELETED);
             if all_deleted {
                 conversation_ids.push(conv_id.clone());
             }
@@ -761,6 +758,29 @@ impl MessageSyncer {
     }
 }
 
+/// 将每个会话的拉取区间按 `pull_num` 切成多个小区间。
+///
+/// 服务端 `GetMsgBySeqsRange` 在 `end-begin+1 > num` 时只返回区间末尾 `num` 条，
+/// 因此一次 `[begin,end]` 拉不全历史消息。按 `pull_num` 切成连续小区间后，
+/// 每个小区间的条数不超过 `num`，服务端会完整返回；通知会话按 seq 列表全量返回，不拆分。
+fn split_seq_ranges(seq_map: &HashMap<String, (i64, i64)>, pull_num: i64) -> Vec<(String, i64, i64)> {
+    let chunk_size = pull_num.max(1);
+    let mut ranges = Vec::new();
+    for (conv_id, (begin, end)) in seq_map {
+        if is_notification(conv_id) || chunk_size > *end - *begin {
+            ranges.push((conv_id.clone(), *begin, *end));
+            continue;
+        }
+        let mut start = *begin;
+        while start <= *end {
+            let chunk_end = (*end).min(start.saturating_add(chunk_size - 1));
+            ranges.push((conv_id.clone(), start, chunk_end));
+            start = chunk_end + 1;
+        }
+    }
+    ranges
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -775,6 +795,7 @@ mod tests {
         max_seqs: HashMap<String, i64>,
         pull_msgs: HashMap<String, PullMsgs>,
         pull_nums: Arc<tokio::sync::Mutex<Vec<i64>>>,
+        ranges: Arc<tokio::sync::Mutex<Vec<(String, i64, i64)>>>,
         kicked: bool,
         pull_count: AtomicUsize,
     }
@@ -785,6 +806,7 @@ mod tests {
                 max_seqs: HashMap::new(),
                 pull_msgs: HashMap::new(),
                 pull_nums: Arc::new(tokio::sync::Mutex::new(Vec::new())),
+                ranges: Arc::new(tokio::sync::Mutex::new(Vec::new())),
                 kicked: false,
                 pull_count: AtomicUsize::new(0),
             }
@@ -811,6 +833,7 @@ mod tests {
         async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
             self.pull_count.fetch_add(1, Ordering::SeqCst);
             self.pull_nums.lock().await.extend(_req.seq_ranges.iter().map(|r| r.num));
+            self.ranges.lock().await.extend(_req.seq_ranges.iter().map(|r| (r.conversation_id.clone(), r.begin, r.end)));
             Ok(PullMessageBySeqsResp {
                 msgs: self.pull_msgs.clone(),
                 ..Default::default()
@@ -819,6 +842,62 @@ mod tests {
         async fn is_kicked(&self) -> bool {
             self.kicked
         }
+        async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> Result<GetSeqMessageResp> {
+            Ok(GetSeqMessageResp {
+                msgs: HashMap::new(),
+                notification_msgs: HashMap::new(),
+            })
+        }
+    }
+
+    /// 按请求中的 SeqRange 返回对应区间消息，用于验证 `pull_num` 分页能拉全历史。
+    struct PagedMockSyncerApi {
+        max_seqs: HashMap<String, i64>,
+        server_msgs: HashMap<String, Vec<MsgData>>,
+        pull_count: AtomicUsize,
+        ranges: Arc<tokio::sync::Mutex<Vec<(String, i64, i64)>>>,
+    }
+
+    impl PagedMockSyncerApi {
+        fn new(max_seqs: HashMap<String, i64>, server_msgs: HashMap<String, Vec<MsgData>>) -> Self {
+            Self {
+                max_seqs,
+                server_msgs,
+                pull_count: AtomicUsize::new(0),
+                ranges: Arc::new(tokio::sync::Mutex::new(Vec::new())),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl SyncServerApi for PagedMockSyncerApi {
+        async fn fetch_server_max_seqs(&self, _user_id: &str) -> Result<HashMap<String, i64>> {
+            Ok(self.max_seqs.clone())
+        }
+
+        async fn pull_messages_by_seqs(&self, req: &PullMessageBySeqsReq) -> Result<PullMessageBySeqsResp> {
+            self.pull_count.fetch_add(1, Ordering::SeqCst);
+            self.ranges.lock().await.extend(req.seq_ranges.iter().map(|r| (r.conversation_id.clone(), r.begin, r.end)));
+            let mut resp = PullMessageBySeqsResp::default();
+            for range in &req.seq_ranges {
+                let matched: Vec<MsgData> = self
+                    .server_msgs
+                    .get(&range.conversation_id)
+                    .map(|msgs| msgs.iter().filter(|m| m.seq >= range.begin && m.seq <= range.end).cloned().collect())
+                    .unwrap_or_default();
+                if matched.is_empty() {
+                    continue;
+                }
+                // 对齐真实服务端：同一会话的多个 SeqRange 会覆盖前一次结果
+                resp.msgs.insert(range.conversation_id.clone(), PullMsgs { msgs: matched, ..Default::default() });
+            }
+            Ok(resp)
+        }
+
+        async fn is_kicked(&self) -> bool {
+            false
+        }
+
         async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> Result<GetSeqMessageResp> {
             Ok(GetSeqMessageResp {
                 msgs: HashMap::new(),
@@ -934,12 +1013,38 @@ mod tests {
         assert!(!is_notification(""));
     }
 
+    #[test]
+    fn test_split_seq_ranges_by_pull_num() {
+        let mut seq_map = HashMap::new();
+        seq_map.insert("si_a".to_string(), (1, 27));
+        seq_map.insert("n_notice".to_string(), (1, 27));
+
+        let ranges = split_seq_ranges(&seq_map, 1);
+        let normal: Vec<_> = ranges.iter().filter(|(conv_id, _, _)| conv_id == "si_a").collect();
+        assert_eq!(normal.len(), 27);
+        assert_eq!(normal[0].1, 1);
+        assert_eq!(normal[0].2, 1);
+        assert_eq!(normal[26].1, 27);
+        assert_eq!(normal[26].2, 27);
+
+        // 通知会话服务端按 seq 列表全量返回，不参与分片
+        assert_eq!(ranges.iter().filter(|(conv_id, _, _)| conv_id == "n_notice").count(), 1);
+    }
+
+    #[test]
+    fn test_split_seq_ranges_keeps_small_ranges() {
+        let mut seq_map = HashMap::new();
+        seq_map.insert("si_a".to_string(), (4, 5));
+        let ranges = split_seq_ranges(&seq_map, 10);
+        assert_eq!(ranges, vec![("si_a".to_string(), 4, 5)]);
+    }
+
     #[tokio::test]
     async fn test_handle_pulled_messages_stores_and_updates_seq() {
         let (repositories, handler) = setup_db().await;
         let message_dao = repositories.message_repo.clone();
         let remote = Arc::new(MockSyncerApi::new());
-        let mut syncer = make_syncer(remote, repositories, handler);
+        let syncer = make_syncer(remote, repositories, handler);
         let mut msgs_map = HashMap::new();
         msgs_map.insert(
             "conv_a".to_string(),
@@ -973,19 +1078,56 @@ mod tests {
         );
         let remote = Arc::new(MockSyncerApi::new().with_pull_msgs(pull_msgs));
         // 差量基于 DB synced_max_seq（对齐 Go GetSyncedMaxSeqs）：预置已同步到 seq=3，只应拉取 [4,5]
-        repositories
-            .sync_version_repo
-            .set_version_sync("synced_max_seq", "conv_a", "", 3)
-            .await
-            .unwrap();
-        let syncer = make_syncer(remote.clone(), repositories, handler);
+        repositories.sync_version_repo.set_version_sync("synced_max_seq", "conv_a", "", 3).await.unwrap();
+        let syncer = make_syncer(remote.clone(), repositories.clone(), handler);
         let mut server_seqs = HashMap::new();
         server_seqs.insert("conv_a".to_string(), 5i64);
-        server_seqs.insert("conv_b".to_string(), 5i64);
         syncer.sync_incremental_messages(&server_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
         let msg4 = message_dao.get_by_client_msg_id("conv_a", "msg_conv_a_4").await.unwrap();
         assert!(msg4.is_some());
-        assert_eq!(remote.pull_count.load(Ordering::SeqCst), 1);
+        let msg5 = message_dao.get_by_client_msg_id("conv_a", "msg_conv_a_5").await.unwrap();
+        assert!(msg5.is_some());
+        assert_eq!(remote.pull_count.load(Ordering::SeqCst), 2, "pull_num=1 时每个 seq 分片应独立请求");
+        let ranges = remote.ranges.lock().await;
+        assert_eq!(*ranges, vec![("conv_a".to_string(), 4, 4), ("conv_a".to_string(), 5, 5)]);
+    }
+
+    #[tokio::test]
+    async fn test_sync_incremental_with_pull_num_one_pulls_full_history() {
+        let (repositories, handler) = setup_db().await;
+        let message_dao = repositories.message_repo.clone();
+
+        let mut server_msgs = HashMap::new();
+        server_msgs.insert("conv_page".to_string(), (1..=5).map(|seq| make_msg_data("conv_page", seq, &format!("page_msg_{}", seq))).collect());
+        let mut max_seqs = HashMap::new();
+        max_seqs.insert("conv_page".to_string(), 5);
+
+        let remote = Arc::new(PagedMockSyncerApi::new(max_seqs.clone(), server_msgs));
+        let syncer = make_syncer(remote.clone(), repositories.clone(), handler);
+        syncer.sync_incremental_messages(&max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await.unwrap();
+
+        assert_eq!(remote.pull_count.load(Ordering::SeqCst), 5, "同一会话的分片必须拆成独立请求");
+        let ranges = remote.ranges.lock().await;
+        assert_eq!(ranges.len(), 5);
+        for (idx, range) in ranges.iter().enumerate() {
+            assert_eq!(range.0, "conv_page".to_string());
+            assert_eq!(range.1, idx as i64 + 1);
+            assert_eq!(range.2, idx as i64 + 1);
+        }
+        drop(ranges);
+
+        for seq in 1..=5 {
+            let stored = message_dao.get_by_client_msg_id("conv_page", &format!("msg_conv_page_{}", seq)).await.unwrap();
+            assert!(stored.is_some(), "pull_num=1 时 seq={} 也应被完整拉取", seq);
+        }
+        let synced = repositories
+            .sync_version_repo
+            .get_version_sync("synced_max_seq", "conv_page")
+            .await
+            .unwrap()
+            .map(|(_, v)| v)
+            .unwrap_or(0);
+        assert_eq!(synced, 5);
     }
 
     /// 验证：已读回执消息不落库，但拉取进度（synced_max_seq）包含回执 seq，
@@ -1010,11 +1152,7 @@ mod tests {
         pull_msgs.insert(
             "conv_a".to_string(),
             PullMsgs {
-                msgs: vec![
-                    make_msg_data("conv_a", 4, "msg4"),
-                    make_receipt_msg_data("conv_a", 5),
-                    make_receipt_msg_data("conv_a", 6),
-                ],
+                msgs: vec![make_msg_data("conv_a", 4, "msg4"), make_receipt_msg_data("conv_a", 5), make_receipt_msg_data("conv_a", 6)],
                 ..Default::default()
             },
         );
@@ -1028,13 +1166,7 @@ mod tests {
         // 回执不落库：消息表 max_seq 只推进到 4
         assert_eq!(message_dao.get_max_seq("conv_a").await.unwrap(), 4, "回执 seq 不应推进消息表 max_seq");
         // 拉取进度包含回执 seq：synced_max_seq = 6
-        let synced = repositories
-            .sync_version_repo
-            .get_version_sync("synced_max_seq", "conv_a")
-            .await
-            .unwrap()
-            .map(|(_, v)| v)
-            .unwrap_or(0);
+        let synced = repositories.sync_version_repo.get_version_sync("synced_max_seq", "conv_a").await.unwrap().map(|(_, v)| v).unwrap_or(0);
         assert_eq!(synced, 6, "拉取进度应包含回执 seq，避免重启后重复拉取");
 
         // 模拟重启（新 syncer，内存 synced_max_seqs 为空）：先按真实启动流程从 DB 加载进度，再增量同步

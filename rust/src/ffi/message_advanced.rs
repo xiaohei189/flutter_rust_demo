@@ -3,7 +3,6 @@
 //! 转发、seq 查询、Typing、编辑、删除系列、本地存储管理等
 //! 所有操作委托给 OpenIMClient
 
-use crate::client::SdkApi;
 use crate::constant::SessionType;
 use crate::ffi::global::client_holder;
 use crate::http::message::DeleteMessagesReq;
@@ -264,12 +263,7 @@ pub async fn send_message_online_only(msg_struct: MsgStruct, source_id: String, 
 
 /// 通用消息发送（对齐 Go SDK `SendMessage`，支持离线推送参数）
 #[flutter_rust_bridge::frb]
-pub async fn send_message(
-    msg_struct: MsgStruct,
-    source_id: String,
-    session_type: crate::constant::SessionType,
-    offline_push_info: Option<OfflinePushInfo>,
-) -> Result<MsgStruct> {
+pub async fn send_message(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
     let client = client_holder()?;
     let mut msg = msg_struct;
     msg.session_type = session_type.into();

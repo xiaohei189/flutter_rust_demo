@@ -84,12 +84,19 @@ impl HttpApiClient {
 
         let api_resp: ApiResponse<R> = serde_json::from_slice(&raw_bytes).map_err(|e| {
             tracing::error!("[HTTP] POST {} 解析失败: {} - 耗时: {:?}, 请求: {}, 响应: {}", route, e, duration, body_json, raw_str);
-            SdkError::unknown(&format!("响应解析错误: {}", e))
+            SdkError::unknown(format!("响应解析错误: {}", e))
         })?;
 
         // 业务错误用 error，成功用 info
         if api_resp.err_code != 0 {
-            tracing::error!("[HTTP] POST {} 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}", route, api_resp.err_code, api_resp.err_msg, duration, body_json);
+            tracing::error!(
+                "[HTTP] POST {} 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}",
+                route,
+                api_resp.err_code,
+                api_resp.err_msg,
+                duration,
+                body_json
+            );
         } else {
             tracing::info!("[HTTP] POST {} 成功 - 状态码: {}, 耗时: {:?}, 请求: {}", route, status, duration, body_json);
         }
@@ -109,13 +116,27 @@ impl HttpApiClient {
 
         if !response.status().is_success() {
             let resp_body = response.text().await.unwrap_or_default();
-            tracing::error!("[HTTP] POST {} (no_auth) 失败 - 状态码: {}, 耗时: {:?}, 请求: {}, 响应: {}", route, status, duration, body_json, resp_body);
+            tracing::error!(
+                "[HTTP] POST {} (no_auth) 失败 - 状态码: {}, 耗时: {:?}, 请求: {}, 响应: {}",
+                route,
+                status,
+                duration,
+                body_json,
+                resp_body
+            );
             return Err(SdkError::http(status, format!("HTTP 错误: {}", resp_body)));
         }
 
         let api_resp: ApiResponse<R> = response.json().await?;
         if api_resp.err_code != 0 {
-            tracing::error!("[HTTP] POST {} (no_auth) 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}", route, api_resp.err_code, api_resp.err_msg, duration, body_json);
+            tracing::error!(
+                "[HTTP] POST {} (no_auth) 业务错误: errCode={} errMsg={}, 耗时: {:?}, 请求: {}",
+                route,
+                api_resp.err_code,
+                api_resp.err_msg,
+                duration,
+                body_json
+            );
         } else {
             tracing::info!("[HTTP] POST {} (no_auth) 成功 - 状态码: {}, 耗时: {:?}, 请求: {}", route, status, duration, body_json);
         }

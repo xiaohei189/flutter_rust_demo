@@ -87,10 +87,7 @@ impl NotificationHandler {
             notification_type::FRIEND_APPLICATION => {
                 self.handle_friend_application_added(&msg.content).await?;
             }
-            notification_type::FRIEND_ADDED
-            | notification_type::FRIEND_REMARK_SET
-            | notification_type::FRIEND_INFO_UPDATED
-            | notification_type::FRIENDS_INFO_UPDATE => {
+            notification_type::FRIEND_ADDED | notification_type::FRIEND_REMARK_SET | notification_type::FRIEND_INFO_UPDATED | notification_type::FRIENDS_INFO_UPDATE => {
                 if let Err(e) = self.friend_manager.sync_friends_incremental().await {
                     warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
                 }
@@ -400,19 +397,12 @@ impl NotificationHandler {
 
     async fn handle_group_member_added(&self, msg: &MsgData) {
         let detail: GroupMemberJoinedTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
-        let group_id = detail
-            .group
-            .as_ref()
-            .map(|g| g.group_id.clone())
-            .unwrap_or_default();
+        let group_id = detail.group.as_ref().map(|g| g.group_id.clone()).unwrap_or_default();
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
         if !group_id.is_empty() {
-            let user = detail
-                .invited_user_list
-                .first()
-                .or(detail.entrant_user.as_ref());
+            let user = detail.invited_user_list.first().or(detail.entrant_user.as_ref());
             if let Some(user) = user {
                 self.group_listener.emit(GroupEvent::MemberAdded(self.group_member(group_id, user)));
             }
@@ -421,11 +411,7 @@ impl NotificationHandler {
 
     async fn handle_group_member_deleted(&self, msg: &MsgData) {
         let detail: GroupMemberRemovedTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
-        let group_id = detail
-            .group
-            .as_ref()
-            .map(|g| g.group_id.clone())
-            .unwrap_or_default();
+        let group_id = detail.group.as_ref().map(|g| g.group_id.clone()).unwrap_or_default();
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
@@ -439,11 +425,7 @@ impl NotificationHandler {
 
     async fn handle_group_member_info_changed(&self, msg: &MsgData) {
         let detail: GroupMemberInfoSetTipsJson = unmarshal_notification_elem(&msg.content).unwrap_or_default();
-        let group_id = detail
-            .group
-            .as_ref()
-            .map(|g| g.group_id.clone())
-            .unwrap_or_default();
+        let group_id = detail.group.as_ref().map(|g| g.group_id.clone()).unwrap_or_default();
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
@@ -481,9 +463,7 @@ impl NotificationHandler {
     }
 
     fn parse_group_id(&self, content: &[u8]) -> String {
-        unmarshal_notification_elem::<GroupChangeInfoJson>(content)
-            .map(|t| t.effective_group_id())
-            .unwrap_or_default()
+        unmarshal_notification_elem::<GroupChangeInfoJson>(content).map(|t| t.effective_group_id()).unwrap_or_default()
     }
 }
 
@@ -493,15 +473,15 @@ mod tests {
     use crate::client::context::Repositories;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
-    use crate::event::events::conversation::ConversationListener;
-    use crate::event::events::message::MessageListener;
+    
+    
     use crate::event::hub::EventHub;
     use crate::event::test_util::*;
     use crate::http::client::HttpApiClient;
     use crate::http::conversation::ConversationServerApi;
     use crate::http::friend::FriendServerApi;
     use crate::http::group::GroupServerApi;
-    use crate::http::UserServerApi;
+    
     use crate::model::UserId;
     use std::sync::Arc;
 

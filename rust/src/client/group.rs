@@ -6,26 +6,10 @@ use crate::client::OpenIMClient;
 
 use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::event::events::connection::ConnectionEvent;
-use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::friend::FriendEvent;
 use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
 use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
-use crate::model::friend::FriendInfo;
 use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
 use async_trait::async_trait;
-use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[async_trait]
 pub trait GroupApi: Send + Sync {
@@ -79,7 +63,7 @@ impl GroupApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(group_name = %group_name))]
-    async fn create_group(&self, group_name: &str, group_type: GroupType, member_ids: &[String]) -> Result<GroupInfo> {
+    async fn create_group(&self, group_name: &str, _group_type: GroupType, member_ids: &[String]) -> Result<GroupInfo> {
         let user_id = self.context.user_id.get_blocking();
         self.group.create_group(group_name.to_string(), None, None, None, member_ids.to_vec(), vec![], user_id).await
     }

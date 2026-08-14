@@ -1,0 +1,13 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "statusList": [
+      {
+        "userID": "user_1",
+        "status": 1,
+        "platformIDs": [1, 2]
+      }
+    ]
+  }
+}

@@ -6,7 +6,6 @@ use crate::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::conversation::ConversationListenerExt;
 use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
-use crate::model::local::LocalConversation;
 use tracing::{error, info, warn};
 
 impl MessageService {

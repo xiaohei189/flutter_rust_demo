@@ -14,7 +14,7 @@ impl<R: Read> Md5Reader<R> {
     }
 
     /// 获取当前已计算的 MD5（hex 编码）
-    pub fn md5_hex(mut self) -> String {
+    pub fn md5_hex(self) -> String {
         let result = self.hasher.finalize();
         hex::encode(result)
     }

@@ -116,14 +116,14 @@ pub trait MessageApi: Send + Sync {
 #[async_trait]
 impl MessageApi for OpenIMClient {
     #[tracing::instrument(skip_all)]
-    async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
+    async fn send_msg(&self, msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
         self.sender.send_msg(msg, source_id, offline_push_info).await
     }
 
     /// 发送仅在线消息（isOnlineOnly）：不持久化、不同步、不更新会话
     /// 对齐 Go SDK SendMessage 的 isOnlineOnly=true 分支
     #[tracing::instrument(skip_all, fields(source_id = %source_id))]
-    async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError> {
+    async fn send_msg_online_only(&self, msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError> {
         self.sender.send_msg_online_only(msg, source_id).await
     }
 

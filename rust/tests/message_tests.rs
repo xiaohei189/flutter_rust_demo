@@ -10,7 +10,7 @@ use std::time::Duration;
 
 /// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
-    let mut ids = vec![uid1.to_string(), uid2.to_string()];
+    let mut ids = [uid1.to_string(), uid2.to_string()];
     ids.sort();
     format!("si_{}_{}", ids[0], ids[1])
 }
@@ -344,7 +344,7 @@ async fn test_message_flow() {
         .await;
     assert!(page2.is_ok(), "分页查询第二页失败: {:?}", page2.err());
     let page2 = page2.unwrap();
-    assert!(page2.messages.len() > 0, "第二页应有消息");
+    assert!(!page2.messages.is_empty(), "第二页应有消息");
     // 验证两页没有重叠
     let page1_ids: std::collections::HashSet<_> = page1.messages.iter().map(|m| &m.client_msg_id).collect();
     for msg in &page2.messages {
@@ -427,7 +427,7 @@ async fn test_message_flow() {
         })
         .await
         .unwrap();
-    let all_read = history.messages.iter().all(|m| m.is_read);
+    let _all_read = history.messages.iter().all(|m| m.is_read);
     // 只检查最近 3 条（A 发的），因为可能有历史数据
     let a_msgs: Vec<_> = history.messages.iter().filter(|m| m.send_id == user_a.user_id).take(3).collect();
     if !a_msgs.is_empty() {
@@ -1076,10 +1076,7 @@ async fn test_history_query_reverse_and_by_seq() {
             page.messages[i].seq
         );
     }
-    assert!(
-        page.messages.iter().all(|m| m.seq > start_msg.seq),
-        "反向查询应返回起点之后的消息"
-    );
+    assert!(page.messages.iter().all(|m| m.seq > start_msg.seq), "反向查询应返回起点之后的消息");
     println!("Phase 4 通过: 返回 {} 条，seq 升序排列", page.messages.len());
 
     // Phase 5: 按 seq 范围查询（取第 3 条到第 7 条之间的消息）
@@ -1249,7 +1246,7 @@ async fn test_find_messages_by_ids() {
     // Phase 5: 查找全部不存在的 ID → 验证返回空列表
     println!("\n========== Phase 5: 查找全部不存在的 ID ==========");
 
-    let fake_ids = vec!["fake_id_001".to_string(), "fake_id_002".to_string(), "fake_id_003".to_string()];
+    let fake_ids = ["fake_id_001".to_string(), "fake_id_002".to_string(), "fake_id_003".to_string()];
     let fake_history = receiver_sdk
         .get_history_messages(GetHistoryMessagesReq {
             conversation_id: conv_id.clone(),
@@ -1275,7 +1272,7 @@ async fn test_find_messages_by_ids() {
         .await
         .unwrap();
 
-    let empty_found: Vec<_> = empty_history.messages.iter().filter(|m| vec![String::new()].contains(&m.client_msg_id)).collect();
+    let empty_found: Vec<_> = empty_history.messages.iter().filter(|m| [String::new()].contains(&m.client_msg_id)).collect();
     assert!(empty_found.is_empty(), "空列表查询应返回空结果");
     println!("Phase 6 通过: 空列表查询返回空结果");
 
@@ -2687,7 +2684,7 @@ async fn test_concurrent_send_stress() {
                     if message.content.contains("STRESS_SEQ_") {
                         received_seqs.push(message.seq);
                         received_count += 1;
-                        if received_count % 5 == 0 || received_count == 20 {
+                        if received_count.is_multiple_of(5) || received_count == 20 {
                             println!("  B 已收到 {}/20 条消息", received_count);
                         }
                     }
@@ -2769,33 +2766,43 @@ async fn test_concurrent_send_stress() {
     // Phase 6: 验证双方都收到全部消息
     println!("\n========== Phase 6: 验证双向消息全部送达 ==========");
 
-    tokio::time::sleep(Duration::from_secs(3)).await;
-
-    // 验证 A 的历史中有 B 发的 10 条消息
-    let a_history = a_sdk_arc
-        .get_history_messages(GetHistoryMessagesReq {
-            conversation_id: conv_id.clone(),
-            start_client_msg_id: String::new(),
-            count: 100,
-        })
-        .await
-        .unwrap();
-
-    let b2a_in_a_history: Vec<_> = a_history.messages.iter().filter(|m| m.content.contains("BIDIR_B2A_")).collect();
+    // 验证 A 的历史中有 B 发的 10 条消息（轮询等待，避免整包串行运行时偶发超时）
+    let mut b2a_in_a_history = Vec::new();
+    for _ in 0..20 {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let a_history = a_sdk_arc
+            .get_history_messages(GetHistoryMessagesReq {
+                conversation_id: conv_id.clone(),
+                start_client_msg_id: String::new(),
+                count: 100,
+            })
+            .await
+            .unwrap();
+        b2a_in_a_history = a_history.messages.iter().filter(|m| m.content.contains("BIDIR_B2A_")).cloned().collect();
+        if b2a_in_a_history.len() >= 10 {
+            break;
+        }
+    }
     assert_eq!(b2a_in_a_history.len(), 10, "A 历史中应有 10 条 B2A 消息，实际 {}", b2a_in_a_history.len());
     println!("A 历史中 B2A 消息: {} 条 ✓", b2a_in_a_history.len());
 
     // 验证 B 的历史中有 A 发的 10 条消息
-    let b_history = b_sdk_arc
-        .get_history_messages(GetHistoryMessagesReq {
-            conversation_id: conv_id.clone(),
-            start_client_msg_id: String::new(),
-            count: 100,
-        })
-        .await
-        .unwrap();
-
-    let a2b_in_b_history: Vec<_> = b_history.messages.iter().filter(|m| m.content.contains("BIDIR_A2B_")).collect();
+    let mut a2b_in_b_history = Vec::new();
+    for _ in 0..20 {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let b_history = b_sdk_arc
+            .get_history_messages(GetHistoryMessagesReq {
+                conversation_id: conv_id.clone(),
+                start_client_msg_id: String::new(),
+                count: 100,
+            })
+            .await
+            .unwrap();
+        a2b_in_b_history = b_history.messages.iter().filter(|m| m.content.contains("BIDIR_A2B_")).cloned().collect();
+        if a2b_in_b_history.len() >= 10 {
+            break;
+        }
+    }
     assert_eq!(a2b_in_b_history.len(), 10, "B 历史中应有 10 条 A2B 消息，实际 {}", a2b_in_b_history.len());
     println!("B 历史中 A2B 消息: {} 条 ✓", a2b_in_b_history.len());
 
@@ -2804,7 +2811,7 @@ async fn test_concurrent_send_stress() {
     // Phase 7: 混合类型并发发送
     println!("\n========== Phase 7: 混合类型并发发送 ==========");
 
-    let mut a_events = subscribe_all(&a_sdk_arc);
+    let _a_events = subscribe_all(&a_sdk_arc);
 
     // A 同时发送 3 种不同类型的消息
     let a_text_fut = a_sdk_arc.send_text_message("并发文本消息", target_b, st);

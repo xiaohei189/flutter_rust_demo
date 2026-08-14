@@ -4,14 +4,13 @@
 //! 媒体消息见 `message_media`，Go SDK 补齐 API 见 `message_advanced`
 //! 所有操作委托给 OpenIMClient
 
-use crate::client::SdkApi;
 use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
 use crate::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
 use crate::ffi::global::client_holder;
 use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
 use crate::model::msg_struct::MsgStruct;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 impl OpenIMBridgeClient {
     // ========== 消息操作 ==========

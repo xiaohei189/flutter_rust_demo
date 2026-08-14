@@ -5,8 +5,7 @@ use crate::constant::notification_type::REVOKE;
 use crate::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::model::revoke::{parse_revoke_tips_from_json, RevokeTipsWithNickname};
-use openim_protocol::sdkws::{MsgData, RevokeMsgTips};
+use openim_protocol::sdkws::RevokeMsgTips;
 use tracing::{info, warn};
 
 impl MessageProcessor {
@@ -197,6 +196,8 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::revoke::parse_revoke_tips_from_json;
+    use openim_protocol::sdkws::MsgData;
 
     // ========================================================================
     // parse_revoke_tips_from_json 纯解析测试

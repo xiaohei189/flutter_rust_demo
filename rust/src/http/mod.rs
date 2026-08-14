@@ -16,8 +16,8 @@ pub mod online;
 pub mod types;
 pub mod user;
 
-pub use types::Pagination;
 use serde::{Deserialize, Deserializer};
+pub use types::Pagination;
 
 /// 服务端会把空数组序列化为 null，这里统一按空数组处理。
 pub(crate) fn de_vec_or_default<'de, D, T>(deserializer: D) -> Result<Vec<T>, D::Error>

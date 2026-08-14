@@ -3,9 +3,7 @@
 //! 从 api/client.rs 拆出，职责：不属于特定客户端的全局函数
 //! 包括：App 前后台切换、网络状态通知、SDK 版本查询等
 
-use crate::client::core::OpenIMClient;
 use crate::client::SdkApi;
-use crate::frb_generated::StreamSink;
 use anyhow::Result;
 use std::sync::Arc;
 use std::sync::OnceLock;
@@ -24,20 +22,14 @@ pub(crate) fn set_client(client: Arc<dyn SdkApi>) {
 #[flutter_rust_bridge::frb]
 pub async fn set_app_background_status(is_background: bool) -> Result<()> {
     let client = client_holder()?;
-    client
-        .set_app_background_status(is_background)
-        .await
-        .map_err(|e| anyhow::anyhow!("{}", e))
+    client.set_app_background_status(is_background).await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 网络状态变化通知（对齐 Go SDK NetworkStatusChanged）
 #[flutter_rust_bridge::frb]
 pub async fn network_status_changed() -> Result<()> {
     let client = client_holder()?;
-    client
-        .network_status_changed()
-        .await
-        .map_err(|e| anyhow::anyhow!("{}", e))
+    client.network_status_changed().await.map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 /// 获取当前登录用户 ID（对齐 Go SDK GetLoginUserID）

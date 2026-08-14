@@ -1,4 +1,4 @@
-use crate::error::{Result, SdkError};
+use crate::error::Result;
 use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 
 use crate::http::GroupServerApi;
@@ -9,10 +9,9 @@ use crate::model::UserId;
 use crate::client::context::Repositories;
 use crate::http::group::*;
 use crate::http::Pagination;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 // ========== 增量同步类型 ==========
 
@@ -75,7 +74,7 @@ impl GroupService {
 
         let resp = self.api.get_joined_group_list(&req).await?;
 
-        let groups: Vec<GroupInfo> = resp.groups.unwrap_or_default().into_iter().map(|s| server_to_group_info(s)).collect();
+        let groups: Vec<GroupInfo> = resp.groups.unwrap_or_default().into_iter().map(server_to_group_info).collect();
 
         // 持久化到数据库
         for group in &groups {
@@ -200,7 +199,7 @@ impl GroupService {
 
         let resp = self.api.get_groups_info(&req).await?;
 
-        let groups: Vec<GroupInfo> = resp.groups_info.into_iter().map(|s| server_to_group_info(s)).collect();
+        let groups: Vec<GroupInfo> = resp.groups_info.into_iter().map(server_to_group_info).collect();
 
         Ok(groups)
     }
@@ -338,7 +337,7 @@ impl GroupService {
 
         let resp = self.api.get_group_member_list(&req).await?;
 
-        let members: Vec<GroupMember> = resp.members.unwrap_or_default().into_iter().map(|s| server_to_group_member(s)).collect();
+        let members: Vec<GroupMember> = resp.members.unwrap_or_default().into_iter().map(server_to_group_member).collect();
 
         Ok(members)
     }
@@ -348,7 +347,7 @@ impl GroupService {
 
         let resp = self.api.get_group_members_info(&req).await?;
 
-        let members: Vec<GroupMember> = resp.members_info.into_iter().map(|s| server_to_group_member(s)).collect();
+        let members: Vec<GroupMember> = resp.members_info.into_iter().map(server_to_group_member).collect();
 
         Ok(members)
     }

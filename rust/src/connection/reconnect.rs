@@ -1,5 +1,5 @@
 use std::time::Duration;
-use tracing::{info, warn};
+use tracing::info;
 
 /// 重连策略
 pub struct ReconnectStrategy {
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_reconnect_strategy_initial() {
-        let mut strategy = ReconnectStrategy::new();
+        let strategy = ReconnectStrategy::new();
         assert_eq!(strategy.attempt(), 0);
     }
 

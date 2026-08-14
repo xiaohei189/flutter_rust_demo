@@ -8,11 +8,11 @@ use rust_lib_flutter_rust_demo::event::hub::EventHub;
 use rust_lib_flutter_rust_demo::friend::service::FriendService;
 use rust_lib_flutter_rust_demo::group::service::GroupService;
 use rust_lib_flutter_rust_demo::http::client::HttpApiClient;
-use rust_lib_flutter_rust_demo::http::conversation::ConversationServerApi;
-use rust_lib_flutter_rust_demo::http::conversation_api::HttpConversationApi;
 use rust_lib_flutter_rust_demo::http::friend_api::HttpFriendApi;
 use rust_lib_flutter_rust_demo::http::group::GroupServerApi;
 use rust_lib_flutter_rust_demo::http::group_api::HttpGroupApi;
+use rust_lib_flutter_rust_demo::http::online::{GetUserStatusReq, OnlineStatusServerApi};
+use rust_lib_flutter_rust_demo::http::online_api::HttpOnlineStatusApi;
 use rust_lib_flutter_rust_demo::model::UserId;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
@@ -38,18 +38,14 @@ async fn friend_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/friend/get_friend_list"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_list.json")).unwrap()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_list.json")).unwrap()))
         .mount(&server)
         .await;
 
     let pool = create_pool_memory().await.unwrap();
     let repos = make_repositories(pool.clone());
     let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
-    let api: Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi> =
-        Arc::new(HttpFriendApi::new(http));
+    let api: Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
     let user_id = UserId::new("me");
     let hub = EventHub::new();
     let friend_service = FriendService::new(api, repos.clone(), user_id, hub.clone());
@@ -72,10 +68,7 @@ async fn conversation_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/conversation/get_all_conversations"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_list.json")).unwrap()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_list.json")).unwrap()))
         .mount(&server)
         .await;
 
@@ -100,9 +93,7 @@ async fn group_full_sync_works_without_live_server() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/group/get_joined_group_list"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_list.json")).unwrap()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_list.json")).unwrap()))
         .mount(&server)
         .await;
 
@@ -125,10 +116,7 @@ async fn conversation_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/conversation/get_incremental_conversations"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_incremental.json")).unwrap()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/conversation_incremental.json")).unwrap()))
         .mount(&server)
         .await;
 
@@ -155,9 +143,7 @@ async fn group_incremental_sync_stores_insert_and_version() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/group/get_incremental_join_groups"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_incremental.json")).unwrap()),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_incremental.json")).unwrap()))
         .mount(&server)
         .await;
 
@@ -175,4 +161,69 @@ async fn group_incremental_sync_stores_insert_and_version() {
 
     let version = repos.sync_version_repo.get_version_sync("local_groups", "me").await.unwrap();
     assert_eq!(version, Some(("v1".to_string(), 1)));
+}
+
+/// 验证 wiremock 用户在线状态响应能被正确解析。
+#[tokio::test]
+async fn online_status_http_get_user_status_works_without_live_server() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/user/get_users_status"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/user_status.json")).unwrap()))
+        .mount(&server)
+        .await;
+
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let api = HttpOnlineStatusApi::new(http);
+    let resp = api.get_user_status(&GetUserStatusReq { user_ids: vec!["user_1".to_string()] }).await.unwrap();
+
+    let statuses = resp.users_status.unwrap_or_default();
+    assert_eq!(statuses.len(), 1);
+    assert_eq!(statuses[0].user_id, "user_1");
+    assert_eq!(statuses[0].status, 1);
+    assert_eq!(statuses[0].platform_ids, vec![1, 2]);
+}
+
+/// 验证 wiremock 黑名单响应能被解析并同步到本地内存。
+#[tokio::test]
+async fn friend_black_list_sync_works_without_live_server() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/friend/get_black_list"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/black_list.json")).unwrap()))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let api: Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
+    let friend_service = FriendService::new(api, repos, UserId::new("me"), EventHub::new());
+
+    friend_service.sync_blacks().await.unwrap();
+
+    assert_eq!(friend_service.get_blacklist().await, vec!["black_1"]);
+}
+
+/// 验证 wiremock 群成员响应能被解析并返回领域模型。
+#[tokio::test]
+async fn group_member_list_works_without_live_server() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/group/get_group_member_list"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/group_members.json")).unwrap()))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+    let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+    let api: Arc<dyn GroupServerApi> = Arc::new(HttpGroupApi::new(http));
+    let group_service = GroupService::new(api, repos, UserId::new("me"), EventHub::new());
+
+    let members = group_service.get_group_member_list("g1".to_string(), 0, 0, 100).await.unwrap();
+
+    assert_eq!(members.len(), 1);
+    assert_eq!(members[0].user_id, "user_member");
+    assert_eq!(members[0].group_id, "g1");
 }

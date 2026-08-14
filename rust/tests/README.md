@@ -5,7 +5,7 @@
 | 层级 | 命令 | 耗时 | 依赖 |
 | --- | --- | --- | --- |
 | 单元测试 | `cargo test --lib` | 约 3s | 无 |
-| 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无（好友/会话/群组全量同步） |
+| 离线集成（wiremock） | `cargo test --test hermetic_tests` | 约 1s | 无（好友/会话/群组/在线状态/黑名单/群成员） |
 | 真实服务端契约冒烟 | `cargo test --test contract_tests -- --ignored --test-threads=1` | 约 60s | Docker OpenIM |
 | 真实服务端集成 | `cargo test --test <suite> -- --ignored --test-threads=1` | 分钟级 | Docker OpenIM |
 
@@ -16,7 +16,7 @@
 保证 mock 准确的方式：
 
 1. 以真实服务端响应为唯一事实来源，`contract_tests` 负责持续校验；契约已按 user/online、friend、message/conversation、group 分域覆盖。
-2. 把真实响应保存为 JSON fixtures，mock 层直接回放；`tests/fixtures/` 已覆盖好友/会话/群组全量与增量、消息 HTTP 通用响应。
+2. 把真实响应保存为 JSON fixtures，mock 层直接回放；`tests/fixtures/` 已覆盖好友/会话/群组全量与增量、在线状态、黑名单、群成员、消息 HTTP 通用响应。
 3. `contract_tests` 内含 fixture 结构对齐用例：逐字段校验 fixtures 中出现的键仍存在于真实响应中，服务端字段改名/删除会直接失败。
 4. 服务端升级或协议变更后，先跑 `scripts/test-contract.ps1`，再根据真实响应更新 fixtures。
 

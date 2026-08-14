@@ -83,9 +83,7 @@ fn assert_fixture_keys_covered(fixture: &Value, live: &Value, path: &str) {
     match (fixture, live) {
         (Value::Object(f), Value::Object(l)) => {
             for key in f.keys() {
-                let live_value = l
-                    .get(key)
-                    .unwrap_or_else(|| panic!("fixture 字段在真实响应中缺失: {} . {}", path, key));
+                let live_value = l.get(key).unwrap_or_else(|| panic!("fixture 字段在真实响应中缺失: {} . {}", path, key));
                 assert_fixture_keys_covered(&f[key], live_value, &format!("{}.{}", path, key));
             }
         }
@@ -190,6 +188,7 @@ async fn fixture_drift_contract() {
 
     // 播种数据，保证列表类 fixture 能在真实响应中找到同结构样本
     ensure_friends(&a_sdk, &user_a.user_id, &b_sdk, &user_b.user_id).await;
+    a_sdk.add_black(&user_b.user_id).await.expect("添加黑名单失败");
     a_sdk.send_text_message("fixture drift", &user_b.user_id, 1).await.expect("发送消息失败");
     tokio::time::sleep(Duration::from_secs(2)).await;
     let group = a_sdk.create_group("FixtureGroup", GroupType::Normal, &[user_a.user_id.clone()]).await.expect("创建群组失败");
@@ -219,12 +218,36 @@ async fn fixture_drift_contract() {
         serde_json::json!({"userID": user_a.user_id, "versionID": "", "version": 0}),
     )
     .await;
+    let user_status_live = raw_post_json("/user/get_users_status", &a_token, serde_json::json!({"userIDs": [user_a.user_id]})).await;
+    let black_list_live = raw_post_json(
+        "/friend/get_black_list",
+        &a_token,
+        serde_json::json!({"userID": user_a.user_id, "pagination": {"pageNumber": 1, "showNumber": 100}}),
+    )
+    .await;
+    let group_members_live = raw_post_json(
+        "/group/get_group_member_list",
+        &a_token,
+        serde_json::json!({"groupID": group.group_id, "filter": 0, "pagination": {"pageNumber": 1, "showNumber": 100}}),
+    )
+    .await;
     let server_time_live = raw_post_json("/msg/get_server_time", &a_token, serde_json::json!({})).await;
 
     // 列表必须有样本，否则嵌套结构校验会退化为只查信封
-    assert!(friend_live["data"]["friendsInfo"].as_array().map_or(false, |a| !a.is_empty()), "好友列表为空，无法校验 fixture 嵌套结构");
-    assert!(conversation_live["data"]["conversations"].as_array().map_or(false, |a| !a.is_empty()), "会话列表为空，无法校验 fixture 嵌套结构");
+    assert!(
+        friend_live["data"]["friendsInfo"].as_array().map_or(false, |a| !a.is_empty()),
+        "好友列表为空，无法校验 fixture 嵌套结构"
+    );
+    assert!(
+        conversation_live["data"]["conversations"].as_array().map_or(false, |a| !a.is_empty()),
+        "会话列表为空，无法校验 fixture 嵌套结构"
+    );
     assert!(group_live["data"]["groups"].as_array().map_or(false, |a| !a.is_empty()), "群组列表为空，无法校验 fixture 嵌套结构");
+    assert!(black_list_live["data"]["blacks"].as_array().map_or(false, |a| !a.is_empty()), "黑名单为空，无法校验 fixture 嵌套结构");
+    assert!(
+        group_members_live["data"]["members"].as_array().map_or(false, |a| !a.is_empty()),
+        "群成员为空，无法校验 fixture 嵌套结构"
+    );
 
     let checks: Vec<(&str, &str, Value)> = vec![
         ("friend_list.json", include_str!("fixtures/friend_list.json"), friend_live),
@@ -232,6 +255,9 @@ async fn fixture_drift_contract() {
         ("conversation_incremental.json", include_str!("fixtures/conversation_incremental.json"), conversation_inc_live),
         ("group_list.json", include_str!("fixtures/group_list.json"), group_live),
         ("group_incremental.json", include_str!("fixtures/group_incremental.json"), group_inc_live),
+        ("user_status.json", include_str!("fixtures/user_status.json"), user_status_live),
+        ("black_list.json", include_str!("fixtures/black_list.json"), black_list_live),
+        ("group_members.json", include_str!("fixtures/group_members.json"), group_members_live),
         ("server_time.json", include_str!("fixtures/server_time.json"), server_time_live.clone()),
         ("api_ok.json", include_str!("fixtures/api_ok.json"), server_time_live.clone()),
         ("api_error.json", include_str!("fixtures/api_error.json"), server_time_live),
@@ -242,6 +268,7 @@ async fn fixture_drift_contract() {
         println!("  ✅ {} 结构对齐", name);
     }
 
+    a_sdk.remove_black(&user_b.user_id).await.expect("移除黑名单失败");
     assert!(a_sdk.dismiss_group(&group.group_id).await.is_ok());
     println!("✅ fixture 结构对齐校验通过");
 }

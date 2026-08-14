@@ -5,28 +5,10 @@
 use crate::client::OpenIMClient;
 use crate::constant::SessionType;
 
-use crate::constant::GroupType;
 use crate::error::{Result, SdkError};
-use crate::event::events::connection::ConnectionEvent;
 use crate::event::events::conversation::ConversationEvent;
-use crate::event::events::friend::FriendEvent;
-use crate::event::events::group::GroupEvent;
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
-use crate::http::friend::{CheckFriendResult, FriendApplyInfo, SearchFriendItem};
-use crate::http::group::GroupApplyInfo;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::http::online::OnlineStatus;
-use crate::model::friend::FriendInfo;
-use crate::model::group::{GroupInfo, GroupMember};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{AtInfo, MessageEntity, MsgStruct};
-use crate::model::user::UserInfo;
+use crate::model::local::LocalConversation;
 use async_trait::async_trait;
-use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[async_trait]
 pub trait ConversationApi: Send + Sync {
@@ -73,7 +55,7 @@ impl ConversationApi for OpenIMClient {
         let user_id = self.context.get_user_id();
         match SessionType::from_i32(session_type) {
             SessionType::SingleChat => {
-                let mut ids = vec![user_id.as_str(), source_id];
+                let mut ids = [user_id.as_str(), source_id];
                 ids.sort();
                 format!("si_{}_{}", ids[0], ids[1])
             }
@@ -84,7 +66,7 @@ impl ConversationApi for OpenIMClient {
                 format!("sg_{}", source_id)
             }
             SessionType::NotificationChat => {
-                let mut ids = vec![user_id.as_str(), source_id];
+                let mut ids = [user_id.as_str(), source_id];
                 ids.sort();
                 format!("sn_{}_{}", ids[0], ids[1])
             }

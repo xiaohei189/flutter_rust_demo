@@ -147,7 +147,7 @@ async fn test_kick_nonexistent_group_member() {
     let (im_token, _) = login_account(&user1).await.expect("登录失败");
     let sdk = create_sdk(&user1, &im_token).await;
 
-    let group = sdk.create_group("KickTestGroup", GroupType::Normal, &[user1.user_id.clone()]).await.expect("创建群组失败");
+    let group = sdk.create_group("KickTestGroup", GroupType::Normal, std::slice::from_ref(&user1.user_id)).await.expect("创建群组失败");
     println!("  群组创建成功: group_id={}", group.group_id);
 
     let result = sdk.kick_group_members(&group.group_id, &["nonexistent_member_999".to_string()], Some("踢不存在的人")).await;

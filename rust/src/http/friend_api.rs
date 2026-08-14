@@ -6,13 +6,14 @@ use crate::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::friend::{
     AcceptFriendApplicationReq, AddBlackReq, AddFriendReq, CheckFriendResult, DeleteFriendReq, FriendServerApi, GetBlackListResp, GetDesignatedFriendsReq, GetDesignatedFriendsResp,
-    GetFriendApplyListReq, GetFriendApplyListResp, GetFriendApplyListServerResp, GetFriendListReq, GetFriendListResp, GetIncrementalFriendsReq, GetIncrementalFriendsResp,
-    RefuseFriendApplicationReq, RemoveBlackReq, UpdateFriendsReq,
+    GetFriendApplyListReq, GetFriendApplyListResp, GetFriendApplyListServerResp, GetFriendListReq, GetFriendListResp, GetIncrementalFriendsReq, GetIncrementalFriendsResp, RefuseFriendApplicationReq,
+    RemoveBlackReq, UpdateFriendsReq,
 };
 use crate::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND, GET_BLACK_LIST, GET_DESIGNATED_FRIENDS, GET_FRIEND_APPLY_LIST, GET_FRIEND_LIST, GET_INCREMENTAL_FRIENDS,
     GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION, REMOVE_BLACK, UPDATE_FRIENDS,
 };
+use crate::http::types::Pagination;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -73,8 +74,18 @@ impl FriendServerApi for HttpFriendApi {
         Ok(resp.result_info)
     }
 
-    async fn get_black_list(&self) -> Result<GetBlackListResp> {
-        Ok(self.http_client.post(GET_BLACK_LIST, &()).await?)
+    async fn get_black_list(&self, user_id: &str) -> Result<GetBlackListResp> {
+        #[derive(Serialize)]
+        struct GetBlackListReq {
+            #[serde(rename = "userID")]
+            user_id: String,
+            pagination: Pagination,
+        }
+        let req = GetBlackListReq {
+            user_id: user_id.to_string(),
+            pagination: Pagination { page_number: 1, show_number: 1000 },
+        };
+        Ok(self.http_client.post(GET_BLACK_LIST, &req).await?)
     }
 
     async fn add_black(&self, req: &AddBlackReq) -> Result<()> {
@@ -89,13 +100,13 @@ impl FriendServerApi for HttpFriendApi {
 
     async fn get_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
         let raw: serde_json::Value = self.http_client.post(GET_FRIEND_APPLY_LIST, req).await?;
-        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(&format!("解析好友申请列表失败: {}", e)))?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
         Ok(server.into())
     }
 
     async fn get_self_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
         let raw: serde_json::Value = self.http_client.post(GET_SELF_FRIEND_APPLY_LIST, req).await?;
-        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(&format!("解析好友申请列表失败: {}", e)))?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
         Ok(server.into())
     }
 

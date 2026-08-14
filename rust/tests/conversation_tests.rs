@@ -6,7 +6,7 @@ use std::time::Duration;
 
 /// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
-    let mut ids = vec![uid1.to_string(), uid2.to_string()];
+    let mut ids = [uid1.to_string(), uid2.to_string()];
     ids.sort();
     format!("si_{}_{}", ids[0], ids[1])
 }
@@ -23,7 +23,7 @@ fn make_conversation_id(uid1: &str, uid2: &str) -> String {
 async fn test_conversation_list_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -75,7 +75,7 @@ async fn test_conversation_list_sync() {
 async fn test_get_single_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -130,7 +130,7 @@ async fn test_get_single_conversation() {
 async fn test_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -312,7 +312,7 @@ async fn test_conversation_mark_read() {
 async fn test_conversation_pinned() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -370,7 +370,7 @@ async fn test_conversation_pinned() {
 async fn test_conversation_private() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -421,7 +421,7 @@ async fn test_conversation_private() {
 async fn test_conversation_draft() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -492,7 +492,7 @@ async fn test_conversation_draft() {
 async fn test_conversation_delete() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -547,7 +547,7 @@ async fn test_conversation_delete() {
 async fn test_set_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -655,7 +655,7 @@ async fn test_get_conversation_id_by_session_type() {
 async fn test_conversation_lifecycle() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -734,7 +734,7 @@ async fn test_conversation_lifecycle() {
 async fn test_unread_count_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -806,7 +806,7 @@ async fn test_unread_count_persistence() {
 async fn test_unread_count_after_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -881,7 +881,7 @@ async fn test_unread_count_after_message() {
 async fn test_update_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -942,7 +942,7 @@ async fn test_update_conversation_unread_count() {
 async fn test_conversation_list_split() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建 5 个随机账号...");
@@ -959,7 +959,7 @@ async fn test_conversation_list_split() {
     println!("[Phase 1] 建立好友关系...");
     let mut sender_sdks = Vec::new();
     for (i, account) in sender_accounts.iter().enumerate() {
-        let (token, _) = login_account(account).await.expect(&format!("发送方{}登录失败", i));
+        let (token, _) = login_account(account).await.unwrap_or_else(|_| panic!("发送方{}登录失败", i));
         let sdk = create_sdk(account, &token).await;
         ensure_friends(&sdk, &account.user_id, &receiver_sdk, &receiver.user_id).await;
         sender_sdks.push(sdk);
@@ -1054,7 +1054,7 @@ async fn test_conversation_list_split() {
 async fn test_multiple_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方，发送 2 条消息...");
@@ -1137,7 +1137,7 @@ async fn test_multiple_conversations() {
 async fn test_search_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
@@ -1220,7 +1220,7 @@ async fn test_search_conversations() {
 async fn test_hide_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
@@ -1327,7 +1327,7 @@ async fn test_hide_conversation() {
 async fn test_conversation_full_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     // Phase 1: A 发消息给 B
@@ -1426,7 +1426,7 @@ async fn test_conversation_full_persistence() {
 async fn test_concurrent_conversation_ops() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
+    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     use std::sync::Arc;
 

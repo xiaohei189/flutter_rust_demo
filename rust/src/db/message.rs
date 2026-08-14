@@ -8,23 +8,9 @@ pub trait MessageRepository: Send + Sync {
     async fn batch_insert(&self, logs: &[LocalChatLog]) -> Result<()>;
     async fn get_by_conversation(&self, conversation_id: &str, start_time: i64, count: i64) -> Result<Vec<LocalChatLog>>;
     /// 分页获取起始消息之前的历史消息（对齐 Go GetMessageList 非反向分支）
-    async fn get_by_conversation_before(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>>;
+    async fn get_by_conversation_before(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>>;
     /// 分页获取起始消息之后的历史消息（对齐 Go GetMessageList 反向分支）
-    async fn get_by_conversation_after(
-        &self,
-        conversation_id: &str,
-        start_time: i64,
-        start_seq: i64,
-        start_client_msg_id: &str,
-        count: i64,
-    ) -> Result<Vec<LocalChatLog>>;
+    async fn get_by_conversation_after(&self, conversation_id: &str, start_time: i64, start_seq: i64, start_client_msg_id: &str, count: i64) -> Result<Vec<LocalChatLog>>;
     async fn get_max_seq(&self, conversation_id: &str) -> Result<i64>;
     async fn get_by_client_msg_id(&self, conversation_id: &str, client_msg_id: &str) -> Result<Option<LocalChatLog>>;
     async fn get_by_seq(&self, seq: i64) -> Result<Option<LocalChatLog>>;

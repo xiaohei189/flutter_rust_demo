@@ -31,20 +31,11 @@ pub struct GroupReadReceipt {
 #[derive(Clone, Debug)]
 pub enum MessageEvent {
     /// 新消息（服务端推送/同步，对齐 Go SDK `OnRecvNewMessage`）
-    NewMessage {
-        conversation_id: String,
-        message: MessageInfo,
-    },
+    NewMessage { conversation_id: String, message: MessageInfo },
     /// 离线新消息（对齐 Go SDK `OnRecvOfflineNewMessage`）
-    OfflineNewMessage {
-        conversation_id: String,
-        message: MessageInfo,
-    },
+    OfflineNewMessage { conversation_id: String, message: MessageInfo },
     /// 在线-only 消息（对齐 Go SDK `OnRecvOnlineOnlyMessage`）
-    OnlineOnlyMessage {
-        conversation_id: String,
-        message: MessageInfo,
-    },
+    OnlineOnlyMessage { conversation_id: String, message: MessageInfo },
     /// 消息被撤回
     Revoked {
         conversation_id: String,
@@ -107,18 +98,9 @@ pub trait MessageListener: Send + Sync {
 pub trait MessageListenerExt: MessageListener {
     fn emit(&self, event: MessageEvent) {
         match event {
-            MessageEvent::NewMessage {
-                conversation_id,
-                message,
-            } => self.on_new_message(&conversation_id, &message),
-            MessageEvent::OfflineNewMessage {
-                conversation_id,
-                message,
-            } => self.on_offline_new_message(&conversation_id, &message),
-            MessageEvent::OnlineOnlyMessage {
-                conversation_id,
-                message,
-            } => self.on_online_only_message(&conversation_id, &message),
+            MessageEvent::NewMessage { conversation_id, message } => self.on_new_message(&conversation_id, &message),
+            MessageEvent::OfflineNewMessage { conversation_id, message } => self.on_offline_new_message(&conversation_id, &message),
+            MessageEvent::OnlineOnlyMessage { conversation_id, message } => self.on_online_only_message(&conversation_id, &message),
             MessageEvent::Revoked { .. } => self.on_message_revoked(&event),
             MessageEvent::C2CReadReceipt { receipts } => self.on_c2c_read_receipt(&receipts),
             MessageEvent::Deleted { conversation_id, client_msg_ids } => self.on_message_deleted(&conversation_id, &client_msg_ids),

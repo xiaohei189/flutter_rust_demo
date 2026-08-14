@@ -1,0 +1,22 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "blacks": [
+      {
+        "ownerUserID": "me",
+        "createTime": 1,
+        "blackUserInfo": {
+          "userID": "black_1",
+          "nickname": "Blocked User",
+          "faceURL": "",
+          "ex": ""
+        },
+        "addSource": 0,
+        "operatorUserID": "me",
+        "ex": ""
+      }
+    ],
+    "total": 1
+  }
+}

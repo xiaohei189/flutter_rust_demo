@@ -2,7 +2,7 @@ use crate::constant::sync_flag;
 use crate::error::Result;
 use crate::error::SdkError;
 use sqlx::{Pool, Sqlite};
-use tracing::{info, warn};
+use tracing::info;
 
 pub struct SyncVersionDao {
     pool: Pool<Sqlite>,
@@ -36,7 +36,7 @@ impl SyncVersionDao {
     pub async fn is_reinstalled(&self) -> Result<bool> {
         // 检查 sync_flag：如果为 SYNC_START（1），说明上次同步被中断，视为重新安装
         let current_flag = self.get_sync_flag().await.unwrap_or(0);
-        let is_incomplete_stage = current_flag == sync_flag::SYNC_START || (current_flag >= sync_flag::SYNC_STAGE_FRIENDS && current_flag < sync_flag::SYNC_STAGE_DONE);
+        let is_incomplete_stage = current_flag == sync_flag::SYNC_START || (sync_flag::SYNC_STAGE_FRIENDS..sync_flag::SYNC_STAGE_DONE).contains(&current_flag);
         if is_incomplete_stage {
             info!("sync_flag={}，上次同步被中断，视为重新安装", current_flag);
             return Ok(true);
@@ -134,6 +134,43 @@ impl SyncVersionDao {
     }
 }
 
+// ====================================================================
+// Repository trait 实现
+// ====================================================================
+
+use crate::db::sync_version::SyncVersionRepository;
+
+#[async_trait::async_trait]
+impl SyncVersionRepository for SyncVersionDao {
+    async fn is_conversation_id_list_empty(&self) -> Result<bool> {
+        SyncVersionDao::is_conversation_id_list_empty(self).await
+    }
+    async fn get_sdk_version(&self) -> Result<Option<(String, bool)>> {
+        self.get_sdk_version().await
+    }
+    async fn is_reinstalled(&self) -> Result<bool> {
+        self.is_reinstalled().await
+    }
+    async fn get_version_sync(&self, table_name: &str, entity_id: &str) -> Result<Option<(String, u64)>> {
+        self.get_version_sync(table_name, entity_id).await
+    }
+    async fn set_version_sync(&self, table_name: &str, entity_id: &str, version_id: &str, version: u64) -> Result<()> {
+        self.set_version_sync(table_name, entity_id, version_id, version).await
+    }
+    async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()> {
+        self.delete_version_sync(table_name, entity_id).await
+    }
+    async fn get_sync_flag(&self) -> Result<i32> {
+        self.get_sync_flag().await
+    }
+    async fn set_sync_flag(&self, flag: i32) -> Result<()> {
+        self.set_sync_flag(flag).await
+    }
+    async fn mark_reinstall_complete(&self, version: &str) -> Result<()> {
+        self.mark_reinstall_complete(version).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,42 +210,5 @@ mod tests {
         dao.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await.unwrap();
         assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_DONE);
         assert!(!dao.is_reinstalled().await.unwrap());
-    }
-}
-
-// ====================================================================
-// Repository trait 实现
-// ====================================================================
-
-use crate::db::sync_version::SyncVersionRepository;
-
-#[async_trait::async_trait]
-impl SyncVersionRepository for SyncVersionDao {
-    async fn is_conversation_id_list_empty(&self) -> Result<bool> {
-        SyncVersionDao::is_conversation_id_list_empty(self).await
-    }
-    async fn get_sdk_version(&self) -> Result<Option<(String, bool)>> {
-        self.get_sdk_version().await
-    }
-    async fn is_reinstalled(&self) -> Result<bool> {
-        self.is_reinstalled().await
-    }
-    async fn get_version_sync(&self, table_name: &str, entity_id: &str) -> Result<Option<(String, u64)>> {
-        self.get_version_sync(table_name, entity_id).await
-    }
-    async fn set_version_sync(&self, table_name: &str, entity_id: &str, version_id: &str, version: u64) -> Result<()> {
-        self.set_version_sync(table_name, entity_id, version_id, version).await
-    }
-    async fn delete_version_sync(&self, table_name: &str, entity_id: &str) -> Result<()> {
-        self.delete_version_sync(table_name, entity_id).await
-    }
-    async fn get_sync_flag(&self) -> Result<i32> {
-        self.get_sync_flag().await
-    }
-    async fn set_sync_flag(&self, flag: i32) -> Result<()> {
-        self.set_sync_flag(flag).await
-    }
-    async fn mark_reinstall_complete(&self, version: &str) -> Result<()> {
-        self.mark_reinstall_complete(version).await
     }
 }

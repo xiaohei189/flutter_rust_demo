@@ -623,118 +623,6 @@ impl MessageDao {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::db::pool::create_pool_memory;
-
-    #[tokio::test]
-    async fn test_message_dao_batch_insert() {
-        let pool = create_pool_memory().await.unwrap();
-        let dao = MessageDao::new(pool);
-
-        let msg = LocalChatLog {
-            conversation_id: "conv_1".into(),
-            client_msg_id: "msg_1".into(),
-            server_msg_id: String::new(),
-            send_id: "user_1".into(),
-            recv_id: "user_2".into(),
-            sender_platform_id: 1,
-            sender_nick_name: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 101,
-            content: r#"{"text":"hello"}"#.into(),
-            is_read: 0,
-            status: MessageSendStatus::SendSuccess as i32,
-            seq: 1,
-            send_time: 1000,
-            create_time: 1000,
-            attached_info: String::new(),
-            ex: String::new(),
-            local_ex: String::new(),
-            group_id: String::new(),
-        };
-
-        dao.batch_insert(&[msg]).await.unwrap();
-        let seq = dao.get_max_seq("conv_1").await.unwrap();
-        assert_eq!(seq, 1);
-    }
-
-    #[tokio::test]
-    async fn test_message_dao_dedup() {
-        let pool = create_pool_memory().await.unwrap();
-        let dao = MessageDao::new(pool);
-
-        let msg = LocalChatLog {
-            conversation_id: "conv_1".into(),
-            client_msg_id: "msg_1".into(),
-            server_msg_id: String::new(),
-            send_id: "user_1".into(),
-            recv_id: "user_2".into(),
-            sender_platform_id: 1,
-            sender_nick_name: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 101,
-            content: String::new(),
-            is_read: 0,
-            status: MessageSendStatus::SendSuccess as i32,
-            seq: 1,
-            send_time: 1000,
-            create_time: 1000,
-            attached_info: String::new(),
-            ex: String::new(),
-            local_ex: String::new(),
-            group_id: String::new(),
-        };
-
-        dao.batch_insert(&[msg.clone()]).await.unwrap();
-        dao.batch_insert(&[msg]).await.unwrap();
-        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
-        assert_eq!(msgs.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_mark_as_read_by_seqs() {
-        let pool = create_pool_memory().await.unwrap();
-        let dao = MessageDao::new(pool);
-
-        let mut msg = LocalChatLog {
-            conversation_id: "conv_1".into(),
-            client_msg_id: "msg_1".into(),
-            server_msg_id: String::new(),
-            send_id: "user_1".into(),
-            recv_id: "user_2".into(),
-            sender_platform_id: 1,
-            sender_nick_name: String::new(),
-            sender_face_url: String::new(),
-            session_type: 1,
-            msg_from: 100,
-            content_type: 101,
-            content: String::new(),
-            is_read: 0,
-            status: MessageSendStatus::SendSuccess as i32,
-            seq: 1,
-            send_time: 1000,
-            create_time: 1000,
-            attached_info: String::new(),
-            ex: String::new(),
-            local_ex: String::new(),
-            group_id: String::new(),
-        };
-
-        dao.batch_insert(&[msg]).await.unwrap();
-        dao.mark_as_read_by_seqs("conv_1", &[1], "user1").await.unwrap();
-
-        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
-        assert_eq!(msgs.len(), 1);
-        assert_eq!(msgs[0].is_read, 1);
-    }
-}
-
 // ====================================================================
 // Repository trait 实现
 // 注: 方法体委托给同名 inherent 方法（Rust 中 inherent 优先于 trait，无递归）
@@ -873,5 +761,117 @@ impl MessageRepository for MessageDao {
     }
     async fn get_latest_for_conversations(&self, conversation_ids: &[String]) -> Result<Vec<LocalChatLog>> {
         self.get_latest_for_conversations(conversation_ids).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::pool::create_pool_memory;
+
+    #[tokio::test]
+    async fn test_message_dao_batch_insert() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: r#"{"text":"hello"}"#.into(),
+            is_read: 0,
+            status: MessageSendStatus::SendSuccess as i32,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(&[msg]).await.unwrap();
+        let seq = dao.get_max_seq("conv_1").await.unwrap();
+        assert_eq!(seq, 1);
+    }
+
+    #[tokio::test]
+    async fn test_message_dao_dedup() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: String::new(),
+            is_read: 0,
+            status: MessageSendStatus::SendSuccess as i32,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(std::slice::from_ref(&msg)).await.unwrap();
+        dao.batch_insert(&[msg]).await.unwrap();
+        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
+        assert_eq!(msgs.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_mark_as_read_by_seqs() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = MessageDao::new(pool);
+
+        let msg = LocalChatLog {
+            conversation_id: "conv_1".into(),
+            client_msg_id: "msg_1".into(),
+            server_msg_id: String::new(),
+            send_id: "user_1".into(),
+            recv_id: "user_2".into(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: String::new(),
+            is_read: 0,
+            status: MessageSendStatus::SendSuccess as i32,
+            seq: 1,
+            send_time: 1000,
+            create_time: 1000,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+
+        dao.batch_insert(&[msg]).await.unwrap();
+        dao.mark_as_read_by_seqs("conv_1", &[1], "user1").await.unwrap();
+
+        let msgs = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0].is_read, 1);
     }
 }

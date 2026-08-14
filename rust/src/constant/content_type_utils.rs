@@ -87,7 +87,7 @@ impl ContentTypeUtils {
 
     /// 判断是否为通知消息（1000-5000 范围）
     pub fn is_notification(ct: i32) -> bool {
-        ct >= content_type::NOTIFICATION_BEGIN && ct <= content_type::NOTIFICATION_END
+        (content_type::NOTIFICATION_BEGIN..=content_type::NOTIFICATION_END).contains(&ct)
     }
 
     /// 判断是否为 tip 消息（等同通知范围，对齐 Go SDK isTipMessage）

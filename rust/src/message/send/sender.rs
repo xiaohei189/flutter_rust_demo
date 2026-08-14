@@ -22,7 +22,7 @@ use serde_json::{json, Value};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 #[async_trait]
 pub trait MessageSendTransport: Send + Sync {
@@ -40,7 +40,7 @@ impl MessageSendTransport for ConnectionManager {
 /// 计算消息的 conversation_id
 pub(crate) fn conversation_id_for_msg(msg: &MsgStruct) -> String {
     if msg.session_type == 1 {
-        let mut ids = vec![msg.send_id.clone(), msg.recv_id.clone()];
+        let mut ids = [msg.send_id.clone(), msg.recv_id.clone()];
         ids.sort();
         format!("si_{}_{}", ids[0], ids[1])
     } else if msg.session_type == 3 {
@@ -286,14 +286,14 @@ impl MessageSender {
     }
 
     #[tracing::instrument(skip_all)]
-    pub async fn send_msg(&self, mut msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
+    pub async fn send_msg(&self, msg: MsgStruct, source_id: &str, offline_push_info: Option<OfflinePushInfo>) -> std::result::Result<MsgStruct, SdkError> {
         self.send_msg_inner(msg, source_id, offline_push_info, false).await
     }
 
     /// 发送仅在线消息（isOnlineOnly）：不持久化、不同步、不更新会话
     /// 对齐 Go SDK SendMessage 的 isOnlineOnly=true 分支
     #[tracing::instrument(skip_all, fields(source_id = %source_id))]
-    pub async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError> {
+    pub async fn send_msg_online_only(&self, msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError> {
         self.send_msg_inner(msg, source_id, None, true).await
     }
 
@@ -1069,11 +1069,23 @@ mod tests {
         assert!(first.is_err(), "上传失败应阻止发送");
         assert_eq!(fail_transport.call_count.load(std::sync::atomic::Ordering::SeqCst), 0, "上传失败不应触达发送 RPC");
         assert!(
-            context.repositories.message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            context
+                .repositories
+                .message_repo
+                .get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry")
+                .await
+                .unwrap()
+                .is_none(),
             "上传失败不应写入本地消息"
         );
         assert!(
-            context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            context
+                .repositories
+                .sending_message_repo
+                .get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry")
+                .await
+                .unwrap()
+                .is_none(),
             "上传失败不应留下 sending 记录"
         );
 
@@ -1086,21 +1098,19 @@ mod tests {
             .await;
         wiremock::Mock::given(wiremock::matchers::method("POST"))
             .and(wiremock::matchers::path("/object/initiate_form_data"))
-            .respond_with(
-                wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0,
-                    "errMsg": "",
-                    "data": {
-                        "id": "upload_1",
-                        "url": format!("{}/upload_target", ok_server.uri()),
-                        "file": "file",
-                        "header": null,
-                        "formData": {},
-                        "expires": 3600,
-                        "successCodes": [200]
-                    }
-                })),
-            )
+            .respond_with(wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "errCode": 0,
+                "errMsg": "",
+                "data": {
+                    "id": "upload_1",
+                    "url": format!("{}/upload_target", ok_server.uri()),
+                    "file": "file",
+                    "header": null,
+                    "formData": {},
+                    "expires": 3600,
+                    "successCodes": [200]
+                }
+            })))
             .mount(&ok_server)
             .await;
         wiremock::Mock::given(wiremock::matchers::method("POST"))
@@ -1110,13 +1120,11 @@ mod tests {
             .await;
         wiremock::Mock::given(wiremock::matchers::method("POST"))
             .and(wiremock::matchers::path("/object/complete_form_data"))
-            .respond_with(
-                wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "errCode": 0,
-                    "errMsg": "",
-                    "data": {"url": "https://cdn.example/uploaded.png"}
-                })),
-            )
+            .respond_with(wiremock::ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "errCode": 0,
+                "errMsg": "",
+                "data": {"url": "https://cdn.example/uploaded.png"}
+            })))
             .mount(&ok_server)
             .await;
 
@@ -1142,7 +1150,13 @@ mod tests {
         assert!(sent_content.contains("https://cdn.example/uploaded.png"), "发送报文应包含上传 URL");
         assert!(sent_content.contains("sourcePicture"), "图片消息报文应生成 sourcePicture");
         assert!(
-            context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry").await.unwrap().is_none(),
+            context
+                .repositories
+                .sending_message_repo
+                .get_by_client_msg_id("si_user_a_user_b", "client_msg_media_retry")
+                .await
+                .unwrap()
+                .is_none(),
             "发送成功后 sending 记录应被清理"
         );
 

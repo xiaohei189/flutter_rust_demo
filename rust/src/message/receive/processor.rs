@@ -82,8 +82,8 @@ impl MessageProcessor {
     /// - CLIENT_DUP: ClientMsgID 重复但 Seq 不同
     fn handle_exception_messages(&self, existing_message: Option<&LocalChatLog>, message: &mut LocalChatLog) {
         let (prefix, seq, client_msg_id) = match existing_message {
-            None if message.status == msg_status::HAS_DELETED as i32 && message.client_msg_id.is_empty() => ("[SEQ_GAP_+]".to_string(), message.seq, message.client_msg_id.clone()),
-            None if message.status == msg_status::HAS_DELETED as i32 => ("[DELETED]".to_string(), message.seq, message.client_msg_id.clone()),
+            None if message.status == msg_status::HAS_DELETED && message.client_msg_id.is_empty() => ("[SEQ_GAP_+]".to_string(), message.seq, message.client_msg_id.clone()),
+            None if message.status == msg_status::HAS_DELETED => ("[DELETED]".to_string(), message.seq, message.client_msg_id.clone()),
             Some(existing) if existing.seq == message.seq => ("[SEQ_DUP]".to_string(), message.seq, existing.client_msg_id.clone()),
             Some(existing) if existing.seq != message.seq => ("[CLIENT_DUP]".to_string(), message.seq, existing.client_msg_id.clone()),
             _ => return,
@@ -98,7 +98,7 @@ impl MessageProcessor {
 
         warn!("[MsgHandler] {} seq={}, oldClientMsgID={}, newClientMsgID={}", prefix, seq, message.client_msg_id, new_client_msg_id);
 
-        message.status = msg_status::HAS_DELETED as i32;
+        message.status = msg_status::HAS_DELETED;
         message.client_msg_id = new_client_msg_id;
     }
 
@@ -235,11 +235,10 @@ impl MessageProcessor {
 
             if is_self {
                 if let Some(existing) = exists {
-                    if existing.seq == 0 && msg.seq > 0 {
-                        if is_store {
+                    if existing.seq == 0 && msg.seq > 0
+                        && is_store {
                             batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
                         }
-                    }
                 } else {
                     if is_store {
                         let local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
@@ -253,7 +252,7 @@ impl MessageProcessor {
                         to_notify.push(msg.clone());
                     } else {
                         let local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
-                        let msg_seq = local_msg.seq;
+                        let _msg_seq = local_msg.seq;
                         insert_list.push(local_msg);
                         to_notify.push(msg.clone());
                     }
@@ -362,11 +361,7 @@ impl MessageProcessor {
         let offline_msgs: Vec<MsgData> = if is_from_sync && !to_notify.is_empty() {
             to_notify
                 .into_iter()
-                .filter(|m| {
-                    m.send_id != login_user_id
-                        && m.content_type != content_type::TYPING
-                        && !m.options.get("isOnlineOnly").copied().unwrap_or(false)
-                })
+                .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING && !m.options.get("isOnlineOnly").copied().unwrap_or(false))
                 .collect()
         } else {
             Vec::new()
@@ -639,6 +634,35 @@ mod tests {
         assert_eq!(c.unread_count, 1, "自己发的消息不应增加未读");
     }
 
+    #[tokio::test]
+    async fn test_peer_messages_in_batch_increment_unread_once_each() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let conversation_dao = repositories.conversation_repo.clone();
+        let handler = MessageProcessor::new(
+            repositories,
+            UserId::new("me"),
+            crate::event::test_util::noop_conversation_listener(),
+            crate::event::test_util::noop_message_listener(),
+        );
+
+        conversation_dao.upsert(&make_conv("conv_multi")).await.unwrap();
+
+        let mut msgs = vec![
+            make_msg("msg_multi_1", "conv_multi", 1),
+            make_msg("msg_multi_2", "conv_multi", 2),
+            make_msg("msg_multi_3", "conv_multi", 3),
+        ];
+        for msg in &mut msgs {
+            msg.send_id = "user_2".into();
+        }
+
+        handler.handle_messages("conv_multi", msgs).await.unwrap();
+
+        let conv = conversation_dao.get_by_id("conv_multi").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 3, "同批 3 条对方消息未读应为 3");
+    }
+
     /// 复现：push 与 sync 两条路径并发处理同一条消息时，未读被重复 +1
     #[tokio::test]
     async fn test_concurrent_duplicate_handling_increments_unread_twice() {
@@ -698,19 +722,11 @@ mod tests {
         let conversation_dao = repositories.conversation_repo.clone();
         let hub = crate::event::hub::EventHub::new();
         let mut conv_rx = hub.take_conv_rx().unwrap();
-        let handler = MessageProcessor::new(
-            repositories,
-            UserId::new("user_a"),
-            hub.clone(),
-            crate::event::test_util::noop_message_listener(),
-        );
+        let handler = MessageProcessor::new(repositories, UserId::new("user_a"), hub.clone(), crate::event::test_util::noop_message_listener());
 
         conversation_dao.upsert(&make_conv("conv_1")).await.unwrap();
         let msg = make_msg("msg_1", "conv_1", 1);
-        message_dao
-            .batch_insert(&[LocalChatLog::from_msg_data("conv_1", &msg)])
-            .await
-            .unwrap();
+        message_dao.batch_insert(&[LocalChatLog::from_msg_data("conv_1", &msg)]).await.unwrap();
 
         // 消息已存在（例如自己发送后的回推/seq 回填），也应刷新会话列表
         handler.handle_messages("conv_1", vec![msg]).await.unwrap();
@@ -939,7 +955,7 @@ mod tests {
             content_type: 101,
             content: "{\"text\":\"hello\"}".to_string(),
             is_read: 0,
-            status: msg_status::SEND_SUCCESS as i32,
+            status: msg_status::SEND_SUCCESS,
             seq: 0,
             send_time: 1000,
             create_time: 1000,

@@ -1,10 +1,7 @@
 //! 用户相关 FFI 桥接
 
-use crate::client::SdkApi;
 use crate::ffi::client::OpenIMBridgeClient;
-use crate::ffi::global::client_holder;
-use crate::model::user::UserInfo;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 impl OpenIMBridgeClient {
     // ========== 用户操作 ==========
