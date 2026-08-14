@@ -49,6 +49,12 @@ impl OpenIMBridgeClient {
         self.inner.set_global_msg_recv_opt(global_recv_opt).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
+    #[flutter_rust_bridge::frb]
+    pub async fn get_user_client_config(&self) -> Result<std::collections::HashMap<String, String>> {
+        self.inner.get_user_client_config().await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     #[flutter_rust_bridge::frb]
     pub async fn get_connection_state(&self) -> Result<crate::connection::manager::ConnectionState> {
         Ok(self.inner.get_connection_state().await)

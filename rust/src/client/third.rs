@@ -4,8 +4,9 @@
 
 use crate::client::OpenIMClient;
 use crate::error::Result;
+use crate::http::third::{FcmUpdateTokenReq, SetAppBadgeReq};
 use crate::http::third_api::HttpThirdApi;
-use crate::http::{FcmUpdateTokenReq, SetAppBadgeReq, ThirdServerApi};
+use crate::http::ThirdServerApi;
 use async_trait::async_trait;
 
 #[async_trait]
@@ -21,7 +22,7 @@ pub trait ThirdApi: Send + Sync {
 impl ThirdApi for OpenIMClient {
     #[tracing::instrument(skip_all)]
     async fn update_fcm_token(&self, fcm_token: &str, expire_time: i64) -> Result<()> {
-        let api = HttpThirdApi::new(self.context.http_client.clone());
+        let api = HttpThirdApi::new(self.context.infra.http_client.clone());
         let req = FcmUpdateTokenReq {
             platform_id: self.context.config.platform_id,
             fcm_token: fcm_token.to_string(),
@@ -33,7 +34,7 @@ impl ThirdApi for OpenIMClient {
 
     #[tracing::instrument(skip_all)]
     async fn set_app_badge(&self, app_unread_count: i32) -> Result<()> {
-        let api = HttpThirdApi::new(self.context.http_client.clone());
+        let api = HttpThirdApi::new(self.context.infra.http_client.clone());
         let req = SetAppBadgeReq {
             user_id: self.context.get_user_id(),
             app_unread_count,

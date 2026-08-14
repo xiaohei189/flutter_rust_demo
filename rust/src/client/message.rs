@@ -72,6 +72,8 @@ pub trait MessageApi: Send + Sync {
     async fn mark_messages_as_read(&self, req: MarkMessagesAsReadReq) -> Result<()>;
     async fn search_local_messages(&self, req: SearchMessagesReq) -> std::result::Result<Vec<LocalChatLog>, SdkError>;
     async fn send_typing(&self, source_id: &str, session_type: i32, focus: bool) -> std::result::Result<UserSendMsgResp, SdkError>;
+    /// 查询会话中某用户的输入状态（对齐 Go SDK `GetInputStates`）
+    async fn get_input_states(&self, conversation_id: &str, user_id: &str) -> Vec<i32>;
     async fn get_history_messages_reverse(&self, conversation_id: &str, start_client_msg_id: &str, count: i64) -> std::result::Result<GetHistoryMessagesResult, SdkError>;
     async fn get_advanced_history_message_list_by_seq(&self, conversation_id: &str, start_seq: i64, end_seq: i64, count: i32) -> std::result::Result<Vec<LocalChatLog>, SdkError>;
     async fn get_history_message_by_seq(&self, seq: i64) -> std::result::Result<LocalChatLog, SdkError>;
@@ -313,6 +315,14 @@ impl MessageApi for OpenIMClient {
     #[tracing::instrument(skip_all)]
     async fn send_typing(&self, source_id: &str, session_type: i32, focus: bool) -> std::result::Result<UserSendMsgResp, SdkError> {
         self.sender.send_typing(source_id, session_type, focus).await
+    }
+
+    /// 查询会话中某用户的输入状态（对齐 Go SDK `GetInputStates` entering.go L207-216）
+    ///
+    /// 返回正在输入的平台 ID 列表，状态由收到 typing 推送时维护，15 秒过期。
+    #[tracing::instrument(skip_all)]
+    async fn get_input_states(&self, conversation_id: &str, user_id: &str) -> Vec<i32> {
+        self.message_processor.get_input_states(conversation_id, user_id).await
     }
 
     // ========== 第一批测试所需的查询/删除方法 ==========

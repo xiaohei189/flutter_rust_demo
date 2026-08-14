@@ -35,14 +35,7 @@ impl UserService {
 
     /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig` user/api.go L88-94）
     pub async fn get_user_client_config(&self) -> Result<std::collections::HashMap<String, String>> {
-        let user_id = self
-            .self_user
-            .read()
-            .await
-            .as_ref()
-            .ok_or_else(|| SdkError::unknown("用户未登录"))?
-            .user_id
-            .clone();
+        let user_id = self.self_user.read().await.as_ref().ok_or_else(|| SdkError::unknown("用户未登录"))?.user_id.clone();
         let req = GetUserClientConfigReq { user_id };
         let resp = self.api.get_user_client_config(&req).await?;
         Ok(resp.raw_config)

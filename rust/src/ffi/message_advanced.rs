@@ -193,6 +193,34 @@ pub async fn send_typing(source_id: String, session_type: SessionType, focus: bo
     Ok(resp.into())
 }
 
+/// 切换输入状态（对齐 Go SDK `ChangeInputStates` entering.go L65-101）
+///
+/// 按 conversationID 查会话确定发送目标（对齐 Go：GetConversation → sendMsg），
+/// focus=true 发 "yes"，false 发 "no"。
+/// 注：Go 有 10 秒发送节流防抖，Rust 暂不实现（无状态直发）。
+#[flutter_rust_bridge::frb]
+pub async fn change_input_states(conversation_id: String, focus: bool) -> Result<()> {
+    let client = client_holder()?;
+    let conv = client
+        .get_conversation(&conversation_id)
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?
+        .ok_or_else(|| anyhow::anyhow!("会话不存在: {}", conversation_id))?;
+    // 对齐 Go sendMsg：单聊发对方 userID，群聊发 groupID
+    let source_id = if conv.conversation_type == 1 { &conv.user_id } else { &conv.group_id };
+    let _ = client.send_typing(source_id, conv.conversation_type, focus).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+    Ok(())
+}
+
+/// 查询会话中某用户的输入状态（对齐 Go SDK `GetInputStates` entering.go L207-216）
+///
+/// 返回正在输入的平台 ID 列表（状态由 typing 推送维护，15 秒过期）。
+#[flutter_rust_bridge::frb]
+pub async fn get_input_states(conversation_id: String, user_id: String) -> Result<Vec<i32>> {
+    let client = client_holder()?;
+    Ok(client.get_input_states(&conversation_id, &user_id).await)
+}
+
 /// 编辑消息（对齐 Go SDK 消息修改功能）
 ///
 /// 当前实现：构造一条新的文本消息发送，服务端通过 MsgDataToModifyByMQ 广播修改通知。

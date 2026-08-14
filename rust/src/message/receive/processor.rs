@@ -55,7 +55,13 @@ pub struct MessageProcessor {
     /// 会话级处理锁：push 与 sync 两条路径可能并发处理同一会话的消息，
     /// 串行化避免同一条消息被重复入库/重复增加未读
     conv_locks: RwLock<HashMap<String, Arc<Mutex<()>>>>,
+    /// 输入状态缓存（对齐 Go SDK entering.go typing.state）：
+    /// (conversation_id, user_id) -> (platform_id -> 过期时间点)，15 秒过期
+    typing_states: RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>,
 }
+
+/// 输入状态过期时间（对齐 Go SDK entering.go inputStatesTimeout = 15s）
+const TYPING_STATE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
 impl MessageProcessor {
     pub fn new(repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn ConversationListener>, message_listener: Arc<dyn MessageListener>) -> Self {
@@ -66,11 +72,49 @@ impl MessageProcessor {
             listener,
             message_listener,
             conv_locks: RwLock::new(HashMap::new()),
+            typing_states: RwLock::new(HashMap::new()),
         }
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {
         self.listener.emit(e);
+    }
+
+    /// 更新输入状态缓存（对齐 Go SDK entering.go onNewMsg：yes 插入/刷新，no 删除）
+    pub(crate) async fn update_typing_state(&self, conversation_id: &str, user_id: &str, platform_id: i32, is_typing: bool) {
+        let mut states = self.typing_states.write().await;
+        let entry = states.entry((conversation_id.to_string(), user_id.to_string())).or_default();
+        if is_typing {
+            entry.insert(platform_id, std::time::Instant::now() + TYPING_STATE_TIMEOUT);
+        } else {
+            entry.remove(&platform_id);
+            if entry.is_empty() {
+                states.remove(&(conversation_id.to_string(), user_id.to_string()));
+            }
+        }
+    }
+
+    /// 查询某用户在会话中的输入状态平台列表（对齐 Go SDK entering.go GetInputStates）
+    ///
+    /// 返回正在输入的平台 ID 列表，过期的状态自动清理。
+    pub async fn get_input_states(&self, conversation_id: &str, user_id: &str) -> Vec<i32> {
+        let now = std::time::Instant::now();
+        let mut states = self.typing_states.write().await;
+        let key = (conversation_id.to_string(), user_id.to_string());
+        match states.get_mut(&key) {
+            Some(platforms) => {
+                platforms.retain(|_, expire| *expire > now);
+                if platforms.is_empty() {
+                    states.remove(&key);
+                    Vec::new()
+                } else {
+                    let mut pids: Vec<i32> = platforms.keys().copied().collect();
+                    pids.sort_unstable();
+                    pids
+                }
+            }
+            None => Vec::new(),
+        }
     }
 
     /// 处理异常消息（对齐 Go SDK `handleExceptionMessages`）
@@ -161,7 +205,7 @@ impl MessageProcessor {
             return Ok(false);
         }
 
-        // 处理 Typing 消息：发布输入状态变化事件
+        // 处理 Typing 消息：更新本地输入状态缓存并发布事件（对齐 Go SDK entering.go onNewMsg）
         let login_user_id = self.user_id.get().await;
         for msg in &normal_messages {
             if msg.content_type == content_type::TYPING {
@@ -173,6 +217,7 @@ impl MessageProcessor {
                 if let Ok(typing_elem) = serde_json::from_str::<TypingElem>(&content_str) {
                     let platform_id = msg.sender_platform_id;
                     let is_typing = typing_elem.msg_tips == "yes";
+                    self.update_typing_state(conv_id, &msg.send_id, platform_id, is_typing).await;
                     let pids: Vec<i32> = if is_typing { vec![platform_id] } else { vec![] };
                     self.send(ConversationEvent::UserInputStatusChanged {
                         conversation_id: conv_id.to_string(),
