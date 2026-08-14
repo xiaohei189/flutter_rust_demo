@@ -20,6 +20,8 @@ pub trait UserApi: Send + Sync {
     async fn get_self_user_info(&self) -> Result<UserInfo>;
     async fn update_user_profile(&self, nickname: Option<&str>, face_url: Option<&str>, ex: Option<&str>) -> Result<()>;
     async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()>;
+    /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
+    async fn get_user_client_config(&self) -> Result<std::collections::HashMap<String, String>>;
 }
 
 #[async_trait]
@@ -50,6 +52,12 @@ impl UserApi for OpenIMClient {
     #[tracing::instrument(skip_all, fields(global_recv_opt = %global_recv_opt))]
     async fn set_global_msg_recv_opt(&self, global_recv_opt: i32) -> Result<()> {
         self.user.set_global_msg_recv_opt(global_recv_opt).await
+    }
+
+    /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
+    #[tracing::instrument(skip_all)]
+    async fn get_user_client_config(&self) -> Result<std::collections::HashMap<String, String>> {
+        self.user.get_user_client_config().await
     }
 
     async fn get_user_status(&self, user_ids: &[String]) -> Result<Vec<OnlineStatus>> {

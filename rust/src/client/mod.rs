@@ -12,6 +12,7 @@ pub mod conversation;
 pub mod friend;
 pub mod group;
 pub mod message;
+pub mod third;
 pub mod user;
 
 pub use connection::ConnectionApi;
@@ -19,11 +20,12 @@ pub use conversation::ConversationApi;
 pub use friend::FriendApi;
 pub use group::GroupApi;
 pub use message::MessageApi;
+pub use third::ThirdApi;
 pub use user::UserApi;
 
 // SDK 组合特征
-pub trait SdkApi: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + UserApi + Send + Sync {}
-impl<T: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + UserApi + Send + Sync> SdkApi for T {}
+pub trait SdkApi: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + ThirdApi + UserApi + Send + Sync {}
+impl<T: ConnectionApi + ConversationApi + FriendApi + GroupApi + MessageApi + ThirdApi + UserApi + Send + Sync> SdkApi for T {}
 
 // SDK 客户端实现（OpenIMClient）
 pub mod core;
