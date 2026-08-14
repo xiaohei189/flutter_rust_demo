@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use rust_lib_flutter_rust_demo::client::config::ClientConfig;
 use rust_lib_flutter_rust_demo::client::OpenIMClient;
 use rust_lib_flutter_rust_demo::client::*;

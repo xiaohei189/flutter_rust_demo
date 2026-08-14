@@ -61,9 +61,9 @@ impl FileUploader {
 
         // 计算已上传的字节数（用于进度回调）
         let mut uploaded_size = file_size;
-        for i in 0..info.part_sizes.len() {
+        for (i, part_size) in info.part_sizes.iter().enumerate() {
             if !upload_session.bitmap.get(i) {
-                uploaded_size -= info.part_sizes[i];
+                uploaded_size -= *part_size;
             }
         }
         let continue_upload = uploaded_size > 0;
@@ -73,8 +73,8 @@ impl FileUploader {
         let file = fs::File::open(file_path).await.map_err(|e| SdkError::file_upload(format!("打开文件失败: {}", e)))?;
         let mut file_reader = tokio::io::BufReader::new(file);
 
-        for i in 0..info.part_sizes.len() {
-            let current_part_size = info.part_sizes[i] as usize;
+        for (i, part_size) in info.part_sizes.iter().enumerate() {
+            let current_part_size = *part_size as usize;
 
             if session.bitmap.get(i) {
                 // 已上传的分片，跳过（断点续传）
@@ -156,7 +156,7 @@ impl FileUploader {
                     return Err(SdkError::file_upload(format!("分片 {} MD5 校验失败: 期望 {}, 实际 {}", i + 1, info.part_md5s[i], md5_val)));
                 }
 
-                uploaded_size += info.part_sizes[i];
+                uploaded_size += *part_size;
 
                 // 更新 Bitmap 并持久化
                 session.bitmap.set(i);
@@ -227,9 +227,9 @@ impl FileUploader {
         let mut content_type = String::new();
         let mut buf = vec![0u8; 8192];
 
-        for i in 0..part_num {
+        for (i, part_size) in part_sizes.iter().enumerate().take(part_num) {
             let mut part_hasher = md5::Md5::new();
-            let remaining = part_sizes[i] as usize;
+            let remaining = *part_size as usize;
             let mut read_total = 0;
 
             while read_total < remaining {
@@ -319,6 +319,8 @@ impl FileUploader {
         self.http_client.post(INITIATE_MULTIPART_UPLOAD, req).await
     }
 
+    #[allow(dead_code)]
+    #[allow(dead_code)]
     async fn auth_sign(&self, upload_id: &str, part_numbers: Vec<i32>) -> Result<AuthSignResp> {
         if part_numbers.is_empty() {
             return Err(SdkError::file_upload("part_numbers 为空"));

@@ -218,7 +218,6 @@ impl MessageProcessor {
         let mut batch_update_list: Vec<(String, i64)> = Vec::new();
         let mut to_notify: Vec<MsgData> = Vec::new();
         let mut processed_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-        let mut is_trigger_unread_count = false;
 
         for msg in &normal_messages {
             if processed_ids.contains(&msg.client_msg_id) {
@@ -235,10 +234,9 @@ impl MessageProcessor {
 
             if is_self {
                 if let Some(existing) = exists {
-                    if existing.seq == 0 && msg.seq > 0
-                        && is_store {
-                            batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
-                        }
+                    if existing.seq == 0 && msg.seq > 0 && is_store {
+                        batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
+                    }
                 } else {
                     if is_store {
                         let local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
@@ -326,7 +324,6 @@ impl MessageProcessor {
                 // 对齐 Go `incrUnreadCount`：IsNewMsg → Incr + DB +1（仅新消息增加未读，
                 // 重复处理/并发时不会重复 +1；会话已在上方创建，UPDATE 必然生效）
                 if !is_self && self.max_seq_recorder.is_new_msg(conv_id, msg.seq) {
-                    is_trigger_unread_count = true;
                     self.max_seq_recorder.incr(conv_id, 1);
                     if let Err(e) = self.repositories.conversation_repo.increase_unread_count(conv_id, msg.seq).await {
                         warn!("[MsgHandler] increase_unread_count 失败: {}", e);

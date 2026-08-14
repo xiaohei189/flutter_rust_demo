@@ -36,6 +36,7 @@ tracing-appender = "0.2"
 tracing-log = "0.2"
 md-5 = "0.10"
 hex = "0.4"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp"] }
 url = "2"
 http = "1.4.0"
 bytes = "1.6"
@@ -61,3 +62,18 @@ ffi = ["flutter_rust_bridge"]
 
 [dev-dependencies]
 wiremock = "0.6"
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ["cfg(frb_expand)"] }
+
+[lints.clippy]
+too_many_arguments = "allow"
+type_complexity = "allow"
+field_reassign_with_default = "allow"
+doc_lazy_continuation = "allow"
+tabs_in_doc_comments = "allow"
+if_same_then_else = "allow"
+needless_update = "allow"
+assertions_on_constants = "allow"
+unnecessary_sort_by = "allow"
+should_implement_trait = "allow"

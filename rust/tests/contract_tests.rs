@@ -15,7 +15,7 @@ use std::time::Duration;
 
 /// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
 fn make_conversation_id(uid1: &str, uid2: &str) -> String {
-    let mut ids = vec![uid1.to_string(), uid2.to_string()];
+    let mut ids = [uid1.to_string(), uid2.to_string()];
     ids.sort();
     format!("si_{}_{}", ids[0], ids[1])
 }
@@ -109,8 +109,8 @@ async fn user_online_contract() {
     let a_sdk = create_sdk(&user_a, &a_token).await;
     let _b_sdk = create_sdk(&user_b, &b_token).await;
 
-    assert!(a_sdk.get_users_info(&[user_a.user_id.clone()]).await.is_ok());
-    assert!(a_sdk.get_user_status(&[user_a.user_id.clone()]).await.is_ok());
+    assert!(a_sdk.get_users_info(std::slice::from_ref(&user_a.user_id)).await.is_ok());
+    assert!(a_sdk.get_user_status(std::slice::from_ref(&user_a.user_id)).await.is_ok());
     assert!(a_sdk.subscribe_users_status(vec![user_b.user_id.clone()]).await.is_ok());
     assert!(a_sdk.get_subscribe_users_status().await.is_ok());
     assert!(a_sdk.unsubscribe_users_status(vec![user_b.user_id.clone()]).await.is_ok());
@@ -166,9 +166,12 @@ async fn group_contract() {
     let (a_token, _) = login_account(&user_a).await.expect("A 登录失败");
     let a_sdk = create_sdk(&user_a, &a_token).await;
 
-    let group = a_sdk.create_group("ContractGroup", GroupType::Normal, &[user_a.user_id.clone()]).await.expect("创建群组失败");
+    let group = a_sdk
+        .create_group("ContractGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id))
+        .await
+        .expect("创建群组失败");
     assert!(!group.group_id.is_empty());
-    assert!(a_sdk.get_groups_info(&[group.group_id.clone()]).await.is_ok());
+    assert!(a_sdk.get_groups_info(std::slice::from_ref(&group.group_id)).await.is_ok());
     assert!(a_sdk.dismiss_group(&group.group_id).await.is_ok());
     println!("✅ group 契约通过");
 }
@@ -191,7 +194,10 @@ async fn fixture_drift_contract() {
     a_sdk.add_black(&user_b.user_id).await.expect("添加黑名单失败");
     a_sdk.send_text_message("fixture drift", &user_b.user_id, 1).await.expect("发送消息失败");
     tokio::time::sleep(Duration::from_secs(2)).await;
-    let group = a_sdk.create_group("FixtureGroup", GroupType::Normal, &[user_a.user_id.clone()]).await.expect("创建群组失败");
+    let group = a_sdk
+        .create_group("FixtureGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id))
+        .await
+        .expect("创建群组失败");
 
     let friend_live = raw_post_json(
         "/friend/get_friend_list",
@@ -234,20 +240,14 @@ async fn fixture_drift_contract() {
     let server_time_live = raw_post_json("/msg/get_server_time", &a_token, serde_json::json!({})).await;
 
     // 列表必须有样本，否则嵌套结构校验会退化为只查信封
+    assert!(friend_live["data"]["friendsInfo"].as_array().is_some_and(|a| !a.is_empty()), "好友列表为空，无法校验 fixture 嵌套结构");
     assert!(
-        friend_live["data"]["friendsInfo"].as_array().map_or(false, |a| !a.is_empty()),
-        "好友列表为空，无法校验 fixture 嵌套结构"
-    );
-    assert!(
-        conversation_live["data"]["conversations"].as_array().map_or(false, |a| !a.is_empty()),
+        conversation_live["data"]["conversations"].as_array().is_some_and(|a| !a.is_empty()),
         "会话列表为空，无法校验 fixture 嵌套结构"
     );
-    assert!(group_live["data"]["groups"].as_array().map_or(false, |a| !a.is_empty()), "群组列表为空，无法校验 fixture 嵌套结构");
-    assert!(black_list_live["data"]["blacks"].as_array().map_or(false, |a| !a.is_empty()), "黑名单为空，无法校验 fixture 嵌套结构");
-    assert!(
-        group_members_live["data"]["members"].as_array().map_or(false, |a| !a.is_empty()),
-        "群成员为空，无法校验 fixture 嵌套结构"
-    );
+    assert!(group_live["data"]["groups"].as_array().is_some_and(|a| !a.is_empty()), "群组列表为空，无法校验 fixture 嵌套结构");
+    assert!(black_list_live["data"]["blacks"].as_array().is_some_and(|a| !a.is_empty()), "黑名单为空，无法校验 fixture 嵌套结构");
+    assert!(group_members_live["data"]["members"].as_array().is_some_and(|a| !a.is_empty()), "群成员为空，无法校验 fixture 嵌套结构");
 
     let checks: Vec<(&str, &str, Value)> = vec![
         ("friend_list.json", include_str!("fixtures/friend_list.json"), friend_live),

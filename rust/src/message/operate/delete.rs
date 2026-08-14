@@ -245,6 +245,6 @@ mod tests {
     #[test]
     fn test_delete_module_compiles() {
         // 模块加载验证（保留原占位测试的意图）
-        assert!(true);
+        assert_eq!(msg_status::HAS_DELETED, 4);
     }
 }

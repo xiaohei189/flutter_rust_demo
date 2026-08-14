@@ -182,6 +182,7 @@ pub(crate) struct MockConversationApi {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 impl MockConversationApi {
     pub(crate) fn new() -> Self {
         Self {

@@ -91,3 +91,6 @@ pub const PART_LIMIT: &str = "/object/part_limit";
 pub const UPLOAD_LOGS: &str = "/third/upload_logs";
 pub const GET_FCM_TOKEN: &str = "/third/get_fcm_token";
 pub const SET_FCM_TOKEN: &str = "/third/set_fcm_token";
+pub const FCM_UPDATE_TOKEN: &str = "/third/fcm_update_token";
+pub const SET_APP_BADGE: &str = "/third/set_app_badge";
+pub const GET_USER_CLIENT_CONFIG: &str = "/user/get_user_client_config";

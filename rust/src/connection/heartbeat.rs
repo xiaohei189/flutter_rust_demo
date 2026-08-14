@@ -4,6 +4,7 @@ use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tracing::{debug, warn};
 
 /// 心跳管理器
+#[allow(dead_code)]
 pub struct HeartbeatManager {
     /// 心跳间隔
     interval: Duration,

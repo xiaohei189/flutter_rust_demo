@@ -48,6 +48,7 @@ pub(crate) struct RevokeMsgTipsJson {
 
 // --- 好友申请通知 ---
 
+#[allow(dead_code)]
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct FriendRequestJson {
@@ -147,6 +148,7 @@ pub(crate) struct GroupRequestJson {
 }
 
 /// 仅携带用户 ID 的通知（好友删除/黑名单等）
+#[allow(dead_code)]
 #[derive(Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UserIdOnlyJson {

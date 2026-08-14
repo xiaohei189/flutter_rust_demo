@@ -285,6 +285,7 @@ impl<'de> Deserialize<'de> for GroupApplyInfo {
             face_url: String,
         }
 
+        #[allow(dead_code)]
         #[derive(Deserialize, Default)]
         struct GroupApplyGroupInfo {
             #[serde(rename = "groupID", default)]

@@ -71,7 +71,8 @@ impl FriendApi for OpenIMClient {
     /// 批量检查好友关系状态
     #[tracing::instrument(skip_all)]
     async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::http::friend::CheckFriendResult>, SdkError> {
-        self.friend.check_friend(user_ids).await}
+        self.friend.check_friend(user_ids).await
+    }
 
     #[tracing::instrument(skip_all, fields(user_id = %user_id))]
     async fn add_black(&self, user_id: &str) -> Result<()> {

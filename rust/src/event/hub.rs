@@ -362,15 +362,8 @@ impl UserListener for EventHub {
 mod tests {
     use super::*;
     use crate::event::events::connection::ConnectionEvent;
-    
-    
-    
-    
-    
-    
+
     use crate::model::group::GroupInfo;
-    
-    
 
     #[tokio::test]
     async fn test_event_hub_creation() {

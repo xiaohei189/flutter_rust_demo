@@ -28,6 +28,7 @@ use crate::model::notification_types::*;
 // NotificationHandler
 // ============================================================
 
+#[allow(dead_code)]
 pub struct NotificationHandler {
     friend_manager: Arc<FriendService>,
     group_manager: Arc<GroupService>,
@@ -473,15 +474,14 @@ mod tests {
     use crate::client::context::Repositories;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
-    
-    
+
     use crate::event::hub::EventHub;
     use crate::event::test_util::*;
     use crate::http::client::HttpApiClient;
     use crate::http::conversation::ConversationServerApi;
     use crate::http::friend::FriendServerApi;
     use crate::http::group::GroupServerApi;
-    
+
     use crate::model::UserId;
     use std::sync::Arc;
 

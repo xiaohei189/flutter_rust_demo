@@ -412,7 +412,7 @@ mod tests {
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
     use crate::event::test_util::*;
-    
+
     use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::model::local::{LocalChatLog, LocalConversation};
     use crate::model::UserId;

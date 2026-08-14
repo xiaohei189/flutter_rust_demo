@@ -23,7 +23,6 @@ fn make_conversation_id(uid1: &str, uid2: &str) -> String {
 async fn test_conversation_list_sync() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -75,7 +74,6 @@ async fn test_conversation_list_sync() {
 async fn test_get_single_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -130,7 +128,6 @@ async fn test_get_single_conversation() {
 async fn test_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -312,7 +309,6 @@ async fn test_conversation_mark_read() {
 async fn test_conversation_pinned() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -370,7 +366,6 @@ async fn test_conversation_pinned() {
 async fn test_conversation_private() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -421,7 +416,6 @@ async fn test_conversation_private() {
 async fn test_conversation_draft() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -492,7 +486,6 @@ async fn test_conversation_draft() {
 async fn test_conversation_delete() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -547,7 +540,6 @@ async fn test_conversation_delete() {
 async fn test_set_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -655,7 +647,6 @@ async fn test_get_conversation_id_by_session_type() {
 async fn test_conversation_lifecycle() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -734,7 +725,6 @@ async fn test_conversation_lifecycle() {
 async fn test_unread_count_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -806,7 +796,6 @@ async fn test_unread_count_persistence() {
 async fn test_unread_count_after_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -881,7 +870,6 @@ async fn test_unread_count_after_message() {
 async fn test_update_conversation_unread_count() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     let user1 = get_or_create_user1().await;
@@ -942,7 +930,6 @@ async fn test_update_conversation_unread_count() {
 async fn test_conversation_list_split() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建 5 个随机账号...");
@@ -1054,7 +1041,6 @@ async fn test_conversation_list_split() {
 async fn test_multiple_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方，发送 2 条消息...");
@@ -1137,7 +1123,6 @@ async fn test_multiple_conversations() {
 async fn test_search_conversations() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
@@ -1220,7 +1205,6 @@ async fn test_search_conversations() {
 async fn test_hide_conversation() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     println!("[Phase 1] 创建发送方和接收方...");
@@ -1327,7 +1311,6 @@ async fn test_hide_conversation() {
 async fn test_conversation_full_persistence() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
 
     // Phase 1: A 发消息给 B
@@ -1426,7 +1409,6 @@ async fn test_conversation_full_persistence() {
 async fn test_concurrent_conversation_ops() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    
     use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
     use std::sync::Arc;
 

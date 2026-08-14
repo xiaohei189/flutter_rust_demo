@@ -68,12 +68,27 @@ pub struct UpdateUserFields {
     pub email: Option<String>,
 }
 
+/// 获取用户客户端配置请求（对齐 protocol/user GetUserClientConfigReq）
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct GetUserClientConfigReq {
+    #[serde(rename = "userID")]
+    pub user_id: String,
+}
+
+/// 获取用户客户端配置响应（对齐 Go SDK RawConfig）
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct GetUserClientConfigResp {
+    #[serde(rename = "rawConfig", default)]
+    pub raw_config: std::collections::HashMap<String, String>,
+}
+
 /// 用户域服务端 API（入向契约：SDK → OpenIM 服务端）
 #[async_trait]
 pub trait UserServerApi: Send + Sync {
     async fn get_users_info(&self, req: &GetUsersInfoReq) -> Result<GetUsersInfoResp>;
     async fn update_user_info(&self, req: &UpdateUserInfoReq) -> Result<UpdateUserInfoResp>;
     async fn set_global_msg_recv_opt(&self, user_id: &str, global_recv_opt: i32) -> Result<()>;
+    async fn get_user_client_config(&self, req: &GetUserClientConfigReq) -> Result<GetUserClientConfigResp>;
 }
 
 #[cfg(test)]

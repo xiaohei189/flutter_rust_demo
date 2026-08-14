@@ -15,6 +15,7 @@ use tracing::{info, warn};
 
 // ========== 增量同步类型 ==========
 
+#[allow(dead_code)]
 pub struct GroupService {
     /// 外部依赖
     api: Arc<dyn GroupServerApi>,
@@ -40,6 +41,7 @@ impl GroupService {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn send(&self, e: GroupEvent) {
         self.listener.emit(e);
     }

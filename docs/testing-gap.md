@@ -10,9 +10,11 @@
 | Rust 单元 | `cargo test --lib` | 396 passed |
 | Rust 离线集成 | `cargo test --test hermetic_tests` | 8 passed |
 | Rust 契约套件 | `cargo test --test contract_tests -- --ignored` | 5 个用例，需 Docker OpenIM |
+| Rust lint | `cargo clippy --all-targets -- -D warnings` | 0 issues |
 | Flutter 单元/Widget | `flutter test test` | 165 passed |
+| Flutter 覆盖率 | `dart run tool/check_coverage.dart 10` | 13.07%（最低 10%） |
 | Flutter E2E | `integration_test/simple_test.dart` | 仅启动到登录页 |
-| Rust 真实服务端消息集成 | `cargo test --test message_tests -- --ignored --test-threads=1` | 22 passed（需 Docker OpenIM） |
+| Rust 真实服务端全量集成 | `rust/scripts/test-integration.ps1 -Mode Full` | 75 passed（3+20+6+9+22+8+7） |
 
 ## 2. 状态分类
 

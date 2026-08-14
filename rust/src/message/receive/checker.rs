@@ -390,6 +390,7 @@ fn first_conversation_id(messages: &[LocalChatLog]) -> String {
 ///
 /// - is_desc=true：按 send_time 降序，相同 send_time 按 seq 降序
 /// - is_desc=false：按 send_time 升序，相同 send_time 按 seq 升序
+#[allow(dead_code)]
 fn merge_sorted_arrays(a: &[LocalChatLog], b: &[LocalChatLog], n: usize, is_desc: bool) -> Vec<LocalChatLog> {
     let mut result = Vec::with_capacity(a.len() + b.len());
     let mut i = 0;

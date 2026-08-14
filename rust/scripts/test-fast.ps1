@@ -11,6 +11,6 @@ function Invoke-Check([string]$Label, [scriptblock]$Cmd) {
 
 Invoke-Check "cargo test --lib" { cargo test --lib }
 Invoke-Check "cargo test --test hermetic_tests" { cargo test --test hermetic_tests }
-Invoke-Check "cargo clippy --all-targets" { cargo clippy --all-targets }
+Invoke-Check "cargo clippy --all-targets" { cargo clippy --all-targets -- -D warnings }
 
 Write-Host "Fast tests passed."

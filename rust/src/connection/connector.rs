@@ -10,8 +10,8 @@ use crate::logger::extract_trace_id;
 use futures_util::StreamExt;
 use std::time::Duration;
 use tokio::time::timeout;
-use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_tungstenite::connect_async;
+use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 

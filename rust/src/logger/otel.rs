@@ -30,6 +30,7 @@ use super::config::LogConfig;
 // ============================================================================
 
 /// 每个 span 的运行时状态
+#[allow(dead_code)]
 struct SpanState {
     name: String,
     target: String,
@@ -88,6 +89,7 @@ impl<W> CompactLayer<W> {
 const GREY: &str = "\x1b[90m";
 const WHITE: &str = "\x1b[37m";
 const CYAN: &str = "\x1b[36m";
+#[allow(dead_code)]
 const DIM: &str = "\x1b[2m";
 const RESET: &str = "\x1b[0m";
 
@@ -421,7 +423,7 @@ where
                     if self.with_ansi {
                         write!(writer, " {}span={}", GREY, name)?;
                         if !fields_str.is_empty() {
-                            write!(writer, " {}", fields_str.replace('=', "=").replace(' ', " "))?;
+                            write!(writer, " {}", fields_str)?;
                         }
                         if let Some((ref tid, ref sid)) = otel_info {
                             write!(writer, " trace_id={} span_id={}", tid, sid)?;

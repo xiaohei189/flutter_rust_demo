@@ -213,6 +213,9 @@ pub mod at_type {
     pub const AT_ALL_AT_ME: i32 = 3;
 }
 
+/// @所有人 标签字符串（对齐 Go SDK constant.AtAllString）
+pub const AT_ALL_TAG: &str = "AtAllTag";
+
 /// 消息同步状态
 pub mod msg_sync_status {
     pub const BEGIN: i32 = 1001;

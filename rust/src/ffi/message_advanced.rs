@@ -278,3 +278,25 @@ pub async fn send_message(msg_struct: MsgStruct, source_id: String, session_type
     let result = client.send_msg(msg, &source_id, push).await?;
     Ok(result)
 }
+
+/// 发送已上传媒体消息（对齐 Go SDK `SendMessageNotOss`）
+///
+/// 用于 ByURL 系列构造的消息：内容 URL 已填好、无 sourcePath，
+/// 发送时跳过 OSS 上传流程（process_media_content_impl 对无 sourcePath
+/// 的消息天然跳过上传，与 Go sendMessageNotOss 语义一致）。
+#[flutter_rust_bridge::frb]
+pub async fn send_message_not_oss(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
+    let client = client_holder()?;
+    let mut msg = msg_struct;
+    msg.session_type = session_type.into();
+    let push = offline_push_info.map(|p| openim_protocol::sdkws::OfflinePushInfo {
+        title: p.title,
+        desc: p.desc,
+        ex: p.ex,
+        i_os_push_sound: p.ios_push_sound,
+        i_os_badge_count: p.ios_badge_count,
+        signal_info: p.signal_info,
+    });
+    let result = client.send_msg(msg, &source_id, push).await?;
+    Ok(result)
+}

@@ -10,6 +10,7 @@ use tracing::{info, warn};
 
 impl MessageProcessor {
     /// 从通知 JSON 中提取 revokerNickname（服务端下发的真实昵称）
+    #[allow(dead_code)]
     pub(crate) fn extract_nickname_from_notification(content: &str) -> Option<String> {
         if content.is_empty() {
             return None;

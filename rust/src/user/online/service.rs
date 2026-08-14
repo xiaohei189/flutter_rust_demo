@@ -271,6 +271,7 @@ impl OnlineStatusService {
         cache.retain(|s| !user_ids.contains(&s.user_id));
     }
 
+    #[allow(dead_code)]
     async fn cached_statuses(&self) -> Vec<OnlineStatus> {
         self.status_cache.read().await.clone()
     }

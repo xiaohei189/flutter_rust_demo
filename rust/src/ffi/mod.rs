@@ -6,5 +6,6 @@ pub mod global;
 pub mod group;
 pub mod message;
 pub mod message_advanced;
+pub mod message_builder;
 pub mod message_media;
 pub mod user;

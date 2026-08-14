@@ -265,9 +265,9 @@ async fn test_message_flow() {
         let convs = b_sdk.get_conversations().await.expect("获取会话失败");
         if let Some(c) = convs.iter().find(|c| c.conversation_id == conv_id) {
             conv_unread = c.unread_count;
-            if conv_unread >= a_offline_msg_count {
-                break;
-            }
+        }
+        if conv_unread >= a_offline_msg_count {
+            break;
         }
     }
     println!("检查未读数...");

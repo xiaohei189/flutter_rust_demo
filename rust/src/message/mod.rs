@@ -28,7 +28,6 @@ pub(crate) mod receive {
     pub(crate) mod revoke;
     mod syncer;
 
-    
     pub use max_seq_recorder::MaxSeqRecorder;
     pub use processor::MessageProcessor;
     pub use syncer::MessageSyncer;

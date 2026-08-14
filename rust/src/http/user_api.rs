@@ -4,8 +4,8 @@
 
 use crate::error::Result;
 use crate::http::client::HttpApiClient;
-use crate::http::routes::{GET_USERS_INFO, SET_GLOBAL_MSG_RECV_OPT, UPDATE_USER_INFO};
-use crate::http::user::{GetUsersInfoReq, GetUsersInfoResp, UpdateUserInfoReq, UpdateUserInfoResp, UserServerApi};
+use crate::http::routes::{GET_USERS_INFO, GET_USER_CLIENT_CONFIG, SET_GLOBAL_MSG_RECV_OPT, UPDATE_USER_INFO};
+use crate::http::user::{GetUserClientConfigReq, GetUserClientConfigResp, GetUsersInfoReq, GetUsersInfoResp, UpdateUserInfoReq, UpdateUserInfoResp, UserServerApi};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -37,5 +37,9 @@ impl UserServerApi for HttpUserApi {
         });
         let _: serde_json::Value = self.http_client.post(SET_GLOBAL_MSG_RECV_OPT, &req).await?;
         Ok(())
+    }
+
+    async fn get_user_client_config(&self, req: &GetUserClientConfigReq) -> Result<GetUserClientConfigResp> {
+        Ok(self.http_client.post(GET_USER_CLIENT_CONFIG, req).await?)
     }
 }

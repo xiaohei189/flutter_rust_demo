@@ -435,7 +435,7 @@ mod tests {
         let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         manager.upsert_conversation(create_test_conversation("conv_partial")).await.unwrap();
 
-        tokio::join!(
+        let _ = tokio::join!(
             manager.set_conversation("conv_partial", Some(2), None, None, None, None),
             manager.set_conversation("conv_partial", None, Some(true), None, None, None),
             manager.set_conversation("conv_partial", None, None, Some(true), None, None),
