@@ -36,7 +36,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
     final conversation = _viewModel.conversation;
     if (conversation != null) {
-      _viewModel.initialize(conversation);
+      // Riverpod 禁止在 initState 中修改 provider 状态（initialize 内部会 state=...），
+      // 延迟到首帧之后执行，避免 "Tried to modify a provider while the widget tree was building"
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _viewModel.initialize(conversation);
+      });
     }
     if (_viewModel.isGroup) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
