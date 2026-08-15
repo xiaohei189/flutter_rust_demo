@@ -186,6 +186,9 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
 
   Future<List<OnlineStatus>> getSubscribeUsersStatus();
 
+  /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
+  Future<Map<String, String>> getUserClientConfig();
+
   Future<List<OnlineStatus>> getUserStatus({required List<String> userIds});
 
   /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）

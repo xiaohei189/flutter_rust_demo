@@ -151,6 +151,30 @@ Future<SendTypingResp> sendTyping({
   focus: focus,
 );
 
+/// 切换输入状态（对齐 Go SDK `ChangeInputStates` entering.go L65-101）
+///
+/// 按 conversationID 查会话确定发送目标（对齐 Go：GetConversation → sendMsg），
+/// focus=true 发 "yes"，false 发 "no"。
+/// 注：Go 有 10 秒发送节流防抖，Rust 暂不实现（无状态直发）。
+Future<void> changeInputStates({
+  required String conversationId,
+  required bool focus,
+}) => RustLib.instance.api.crateFfiMessageAdvancedChangeInputStates(
+  conversationId: conversationId,
+  focus: focus,
+);
+
+/// 查询会话中某用户的输入状态（对齐 Go SDK `GetInputStates` entering.go L207-216）
+///
+/// 返回正在输入的平台 ID 列表（状态由 typing 推送维护，15 秒过期）。
+Future<Int32List> getInputStates({
+  required String conversationId,
+  required String userId,
+}) => RustLib.instance.api.crateFfiMessageAdvancedGetInputStates(
+  conversationId: conversationId,
+  userId: userId,
+);
+
 /// 编辑消息（对齐 Go SDK 消息修改功能）
 ///
 /// 当前实现：构造一条新的文本消息发送，服务端通过 MsgDataToModifyByMQ 广播修改通知。
@@ -236,6 +260,23 @@ Future<MsgStruct> sendMessage({
   required SessionType sessionType,
   OfflinePushInfo? offlinePushInfo,
 }) => RustLib.instance.api.crateFfiMessageAdvancedSendMessage(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  offlinePushInfo: offlinePushInfo,
+);
+
+/// 发送已上传媒体消息（对齐 Go SDK `SendMessageNotOss`）
+///
+/// 用于 ByURL 系列构造的消息：内容 URL 已填好、无 sourcePath，
+/// 发送时跳过 OSS 上传流程（process_media_content_impl 对无 sourcePath
+/// 的消息天然跳过上传，与 Go sendMessageNotOss 语义一致）。
+Future<MsgStruct> sendMessageNotOss({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+  OfflinePushInfo? offlinePushInfo,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageNotOss(
   msgStruct: msgStruct,
   sourceId: sourceId,
   sessionType: sessionType,

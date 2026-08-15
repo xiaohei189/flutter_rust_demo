@@ -22,7 +22,9 @@ import 'ffi/ffi_init.dart';
 import 'ffi/global.dart';
 import 'ffi/message.dart';
 import 'ffi/message_advanced.dart';
+import 'ffi/message_builder.dart';
 import 'ffi/message_media.dart';
+import 'ffi/third.dart';
 import 'frb_generated.dart';
 import 'http/friend.dart';
 import 'http/group.dart';
@@ -63,6 +65,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     dynamic raw,
   );
+
+  @protected
+  Map<String, String> dco_decode_Map_String_String_None(dynamic raw);
 
   @protected
   OpenImBridgeClient
@@ -182,6 +187,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   OfflinePushInfo dco_decode_box_autoadd_offline_push_info(dynamic raw);
+
+  @protected
+  PictureBaseInfo dco_decode_box_autoadd_picture_base_info(dynamic raw);
 
   @protected
   PictureElem dco_decode_box_autoadd_picture_elem(dynamic raw);
@@ -337,6 +345,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<(String, String)> dco_decode_list_record_string_string(dynamic raw);
+
+  @protected
   List<SearchFriendItem> dco_decode_list_search_friend_item(dynamic raw);
 
   @protected
@@ -454,6 +465,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   QuoteElem dco_decode_quote_elem(dynamic raw);
 
   @protected
+  (String, String) dco_decode_record_string_string(dynamic raw);
+
+  @protected
   RevokeMessageReq dco_decode_revoke_message_req(dynamic raw);
 
   @protected
@@ -510,6 +524,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   OpenImBridgeClient
   sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Map<String, String> sse_decode_Map_String_String_None(
     SseDeserializer deserializer,
   );
 
@@ -649,6 +668,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   OfflinePushInfo sse_decode_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PictureBaseInfo sse_decode_box_autoadd_picture_base_info(
     SseDeserializer deserializer,
   );
 
@@ -836,6 +860,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<(String, String)> sse_decode_list_record_string_string(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<SearchFriendItem> sse_decode_list_search_friend_item(
     SseDeserializer deserializer,
   );
@@ -981,6 +1010,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   QuoteElem sse_decode_quote_elem(SseDeserializer deserializer);
 
   @protected
+  (String, String) sse_decode_record_string_string(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   RevokeMessageReq sse_decode_revoke_message_req(SseDeserializer deserializer);
 
   @protected
@@ -1044,6 +1078,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerOpenIMBridgeClient(
     OpenImBridgeClient self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_Map_String_String_None(
+    Map<String, String> self,
     SseSerializer serializer,
   );
 
@@ -1237,6 +1277,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_offline_push_info(
     OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_picture_base_info(
+    PictureBaseInfo self,
     SseSerializer serializer,
   );
 
@@ -1499,6 +1545,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_record_string_string(
+    List<(String, String)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_search_friend_item(
     List<SearchFriendItem> self,
     SseSerializer serializer,
@@ -1683,6 +1735,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_quote_elem(QuoteElem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_record_string_string(
+    (String, String) self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_revoke_message_req(
