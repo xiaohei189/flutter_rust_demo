@@ -111,13 +111,20 @@ class MessageBubble extends StatelessWidget {
     final senderUser = _buildSenderUser();
     final screenWidth = MediaQuery.sizeOf(context).width;
 
+    // 图片消息不使用气泡背景（直接展示图片，去掉蓝色底），其余消息保留气泡底色
+    final isImage = message.messageType == MessageType.image;
+
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: isImage
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isFromMe
-            ? context.appColors.bubbleMine
-            : context.appColors.bubbleOther,
+        color: isImage
+            ? Colors.transparent
+            : (isFromMe
+                ? context.appColors.bubbleMine
+                : context.appColors.bubbleOther),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),

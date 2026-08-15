@@ -58,6 +58,13 @@ pub(crate) fn content_type_name(ct: i32) -> &'static str {
 }
 
 /// 处理媒体内容上传（独立函数版本）
+///
+/// 对齐 Go SDK `internal/conversation_msg/api.go` SendMessage 内的 media file handle：
+/// 按 content_type 读取本地路径并上传，回填 URL 与元数据后移除本地路径字段。
+/// - 图片(102)：sourcePath → sourcePicture/bigPicture/snapshotPicture
+/// - 语音(103)：soundPath → sourceUrl + uuid/dataSize/soundType
+/// - 视频(104)：videoPath + snapshotPath → videoUrl/snapshotUrl（含元数据）
+/// - 文件(105)：filePath → sourceUrl + uuid/fileSize/fileType
 pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg: &MsgStruct) -> std::result::Result<String, SdkError> {
     if !ContentTypeUtils::is_media(msg.content_type) {
         return Ok(msg.content.clone());
@@ -68,58 +75,117 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
         Err(_) => return Ok(msg.content.clone()),
     };
 
-    // 如果是图片消息且没有 sourcePath 但有 sourceUrl，说明已上传过
-    let source_path = match value.get("sourcePath").and_then(|v| v.as_str()) {
-        Some(p) if !p.is_empty() => p.to_string(),
+    use crate::constant::types::content_type;
+
+    match msg.content_type {
+        content_type::PICTURE => {
+            let Some(source_path) = take_local_path(&mut value, "sourcePath") else {
+                return Ok(msg.content.clone());
+            };
+            let Some(res) = upload_and_cleanup(file_uploader, &source_path).await? else {
+                return Ok(msg.content.clone());
+            };
+            // 只回填 url，保留 width/height/type/size/uuid（对齐 Go api.go L356-357：SourcePicture.Url = res.URL）
+            set_picture_url(&mut value, "sourcePicture", &res.url);
+            set_picture_url(&mut value, "bigPicture", &res.url);
+            let snapshot_url = if res.url.contains('?') {
+                format!("{}&type=image&width=640&height=640", res.url)
+            } else {
+                format!("{}?type=image&width=640&height=640", res.url)
+            };
+            set_picture_url(&mut value, "snapshotPicture", &snapshot_url);
+            if let Some(obj) = value.get_mut("snapshotPicture").and_then(|v| v.as_object_mut()) {
+                obj.insert("width".to_string(), json!(640));
+                obj.insert("height".to_string(), json!(640));
+            }
+        }
+        content_type::SOUND => {
+            let Some(sound_path) = take_local_path(&mut value, "soundPath") else {
+                return Ok(msg.content.clone());
+            };
+            let Some(res) = upload_and_cleanup(file_uploader, &sound_path).await? else {
+                return Ok(msg.content.clone());
+            };
+            value["sourceUrl"] = json!(res.url);
+            value["uuid"] = json!(res.file_id);
+            value["dataSize"] = json!(res.size);
+            value["soundType"] = json!(res.content_type);
+        }
+        content_type::VIDEO => {
+            let Some(video_path) = take_local_path(&mut value, "videoPath") else {
+                return Ok(msg.content.clone());
+            };
+            let Some(v_res) = upload_and_cleanup(file_uploader, &video_path).await? else {
+                return Ok(msg.content.clone());
+            };
+            value["videoUrl"] = json!(v_res.url);
+            value["videoUuid"] = json!(v_res.file_id);
+            value["videoSize"] = json!(v_res.size);
+            value["videoType"] = json!(v_res.content_type);
+
+            // 快照可选（对齐 Go api.go L428-440：快照上传失败仅告警，不阻断）
+            if let Some(snapshot_path) = take_local_path(&mut value, "snapshotPath") {
+                if let Some(s_res) = upload_and_cleanup(file_uploader, &snapshot_path).await? {
+                    value["snapshotUrl"] = json!(s_res.url);
+                    value["snapshotUuid"] = json!(s_res.file_id);
+                    value["snapshotSize"] = json!(s_res.size);
+                    value["snapshotType"] = json!(s_res.content_type);
+                }
+            }
+        }
+        content_type::FILE => {
+            let Some(file_path) = take_local_path(&mut value, "filePath") else {
+                return Ok(msg.content.clone());
+            };
+            let Some(res) = upload_and_cleanup(file_uploader, &file_path).await? else {
+                return Ok(msg.content.clone());
+            };
+            value["sourceUrl"] = json!(res.url);
+            value["uuid"] = json!(res.file_id);
+            value["fileSize"] = json!(res.size);
+            value["fileType"] = json!(res.content_type);
+        }
         _ => return Ok(msg.content.clone()),
-    };
-
-    let path = Path::new(&source_path);
-    if !path.exists() {
-        info!("sourcePath 文件不存在，跳过上传: {}", source_path);
-        return Ok(msg.content.clone());
     }
 
-    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+    serde_json::to_string(&value).map_err(|e| SdkError::message_send(format!("序列化媒体内容失败: {}", e)))
+}
 
-    info!("开始上传媒体文件: content_type={}, path={}", msg.content_type, source_path);
-
-    let upload_result = file_uploader.upload_file(&source_path, &file_name, None).await?;
-    let url = upload_result.url;
-
-    // 临时文件清理（对齐 Go SDK 上传后删除本地临时文件）
-    if let Err(e) = std::fs::remove_file(&source_path) {
-        debug!("删除临时文件失败: path={}, err={}", source_path, e);
+/// 读取并移除本地路径字段；字段缺失或为空返回 None
+fn take_local_path(value: &mut Value, key: &str) -> Option<String> {
+    let path = value.get(key)?.as_str()?.trim().to_string();
+    if path.is_empty() {
+        return None;
     }
+    value.as_object_mut()?.remove(key);
+    Some(path)
+}
 
-    info!("媒体文件上传成功: url={}", url);
-
-    if msg.content_type == 102 {
-        // 图片消息：设置 SourcePicture + BigPicture + SnapshotPicture（对齐 Go SDK api.go L356-374）
-        let source_picture = json!({ "url": url });
-        value["sourcePicture"] = source_picture.clone();
-        value["bigPicture"] = source_picture;
-
-        // 生成快照URL：追加 ?type=image&width=640&height=640
-        let snapshot_url = if url.contains('?') {
-            format!("{}&type=image&width=640&height=640", url)
-        } else {
-            format!("{}?type=image&width=640&height=640", url)
-        };
-        value["snapshotPicture"] = json!({
-            "width": 640,
-            "height": 640,
-            "url": snapshot_url,
-        });
+/// 只回填图片字段的 url 子字段，保留 width/height/type/size/uuid（对齐 Go：SourcePicture.Url = res.URL）
+fn set_picture_url(value: &mut Value, key: &str, url: &str) {
+    if let Some(obj) = value.get_mut(key).and_then(|v| v.as_object_mut()) {
+        obj.insert("url".to_string(), json!(url));
     } else {
-        value["sourceUrl"] = json!(url);
+        value[key] = json!({ "url": url });
     }
+}
 
-    value.as_object_mut().and_then(|map| map.remove("sourcePath"));
-
-    let new_content = serde_json::to_string(&value).unwrap_or_else(|_| msg.content.clone());
-
-    Ok(new_content)
+/// 上传本地文件并清理临时文件；文件不存在返回 Ok(None)，上传失败返回 Err
+async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str) -> std::result::Result<Option<crate::file::upload::UploadResult>, SdkError> {
+    let path = Path::new(file_path);
+    if !path.exists() {
+        info!("本地媒体文件不存在，跳过上传: {}", file_path);
+        return Ok(None);
+    }
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+    info!("开始上传媒体文件: path={}", file_path);
+    let res = file_uploader.upload_file(file_path, &file_name, None).await?;
+    // 临时文件清理（对齐 Go SDK 上传后删除本地临时文件）
+    if let Err(e) = std::fs::remove_file(file_path) {
+        debug!("删除临时文件失败: path={}, err={}", file_path, e);
+    }
+    info!("媒体文件上传成功: url={}", res.url);
+    Ok(Some(res))
 }
 
 /// 发送前插入消息到 DB（独立函数版本）
@@ -158,7 +224,7 @@ pub(crate) async fn do_send_message_impl(
     context: Arc<RuntimeContext>,
     transport: Arc<dyn MessageSendTransport>,
     file_uploader: Arc<FileUploader>,
-    msg: MsgStruct,
+    mut msg: MsgStruct,
     offline_push_info: Option<OfflinePushInfo>,
     online_only: bool,
 ) -> std::result::Result<UserSendMsgResp, SdkError> {
@@ -175,6 +241,10 @@ pub(crate) async fn do_send_message_impl(
     let send_time = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
 
     let content = process_media_content_impl(&file_uploader, &msg).await?;
+    // 将上传后的 content 写回消息：两步式构造的媒体消息 content 里 URL 为空，
+    // 若不回写，本地缓存的消息（会话列表/气泡）会因 URL 为空而显示裂开；
+    // 发送 RPC 与本地缓存共用这份已回填 URL 的 content，保证二者一致。
+    msg.content = content.clone();
 
     // isOnlineOnly: 跳过本地持久化（对齐 Go SDK api.go L154-157, L657-664）
     if !online_only {
@@ -880,6 +950,11 @@ impl MessageSender {
             }
         }
 
+        // 发送前预处理媒体内容（上传并回填 URL），使返回值与本地缓存都携带已上传的 URL：
+        // 否则两步式构造的媒体消息 URL 为空，发送方本地气泡会显示裂开。
+        // 处理后会移除本地路径字段，后续 do_send_message_impl 不会再重复上传。
+        msg.content = process_media_content_impl(&self.file_uploader, &msg).await?;
+
         // 通过双 Lane 发送队列提交消息
         let context = self.context.clone();
         let connection = self.connection.clone();
@@ -1004,25 +1079,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_process_media_video_type_no_source_path() {
+    async fn test_process_media_video_path_not_exists() {
         let uploader = make_uploader();
         let mut msg = MsgStruct::default();
         msg.content_type = 104; // 视频
-        msg.content = r#"{"videoPath":"/tmp/video.mp4"}"#.to_string();
+        msg.content = r#"{"videoPath":"/tmp/nonexistent_video.mp4"}"#.to_string();
 
         let result = process_media_content_impl(&uploader, &msg).await.unwrap();
-        assert_eq!(result, msg.content, "视频无 sourcePath 应原样返回");
+        assert_eq!(result, msg.content, "视频文件不存在应原样返回");
     }
 
     #[tokio::test]
-    async fn test_process_media_unknown_type_no_source_path() {
+    async fn test_process_media_file_no_path() {
         let uploader = make_uploader();
         let mut msg = MsgStruct::default();
         msg.content_type = 105; // 文件
         msg.content = r#"{"fileName":"test.pdf"}"#.to_string();
 
         let result = process_media_content_impl(&uploader, &msg).await.unwrap();
-        assert_eq!(result, msg.content, "文件无 sourcePath 应原样返回");
+        assert_eq!(result, msg.content, "文件无 filePath 应原样返回");
     }
 
     #[tokio::test]
@@ -1145,7 +1220,16 @@ mod tests {
         assert_eq!(db_msg.status, MessageSendStatus::SendSuccess as i32);
         assert_eq!(db_msg.server_msg_id, "server_media_ok");
 
-        // 与 Go SDK 对齐：本地 chat log 不回写上传后的 content，但发送 RPC 报文必须携带上传结果
+        // 本地缓存消息的 content 必须回填上传 URL：
+        // 两步式构造的媒体消息 URL 为空，若本地缓存不回填，发送方本地气泡会因 URL 为空而显示裂开。
+        assert!(
+            db_msg.content.contains("https://cdn.example/uploaded.png"),
+            "本地缓存消息应回填上传 URL，实际 content: {}",
+            db_msg.content
+        );
+        assert!(db_msg.content.contains("sourcePicture"), "本地缓存消息应保留 sourcePicture 结构");
+
+        // 发送 RPC 报文必须携带上传结果
         let sent_content = String::from_utf8(ok_transport.last_content().expect("发送 RPC 应携带上传后的 content")).unwrap();
         assert!(sent_content.contains("https://cdn.example/uploaded.png"), "发送报文应包含上传 URL");
         assert!(sent_content.contains("sourcePicture"), "图片消息报文应生成 sourcePicture");

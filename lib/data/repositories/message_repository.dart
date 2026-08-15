@@ -7,6 +7,7 @@ import '../../generated/rust/constant/enums.dart' show SessionType;
 import '../../generated/rust/ffi/client.dart';
 import '../../generated/rust/ffi/message.dart' as ffi_message;
 import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
+import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
@@ -311,9 +312,12 @@ class MessageRepositoryImpl implements MessageRepository {
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return _client.sendImageMessage(
-      filePath: filePath,
+  }) async {
+    final msg = await ffi_message_builder.createImageMessageFromFullPath(
+      imageFullPath: filePath,
+    );
+    return ffi_message_advanced.sendMessage(
+      msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
     );
@@ -326,13 +330,17 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
     required int duration,
-  }) {
-    return _client.sendVideoMessage(
-      videoPath: videoPath,
-      snapshotPath: snapshotPath,
+  }) async {
+    final msg = await ffi_message_builder.createVideoMessageFromFullPath(
+      videoFullPath: videoPath,
+      videoType: _extensionOf(videoPath),
+      duration: duration,
+      snapshotFullPath: snapshotPath,
+    );
+    return ffi_message_advanced.sendMessage(
+      msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-      duration: duration,
     );
   }
 
@@ -342,12 +350,15 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
     required int duration,
-  }) {
-    return _client.sendSoundMessage(
-      filePath: filePath,
+  }) async {
+    final msg = await ffi_message_builder.createSoundMessageFromFullPath(
+      soundPath: filePath,
+      duration: duration,
+    );
+    return ffi_message_advanced.sendMessage(
+      msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-      duration: duration,
     );
   }
 
@@ -356,9 +367,13 @@ class MessageRepositoryImpl implements MessageRepository {
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return _client.sendFileMessage(
-      filePath: filePath,
+  }) async {
+    final msg = await ffi_message_builder.createFileMessageFromFullPath(
+      fileFullPath: filePath,
+      fileName: _fileNameOf(filePath),
+    );
+    return ffi_message_advanced.sendMessage(
+      msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
     );
@@ -571,4 +586,18 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<void> markAllConversationsAsRead() {
     return ffi_message_advanced.markAllConversationMessageAsRead();
   }
+}
+
+/// 从路径提取文件名（跨平台，支持 / 与 \ 分隔符）
+String _fileNameOf(String path) {
+  final separator = path.contains('\\') ? '\\' : '/';
+  return path.split(separator).last;
+}
+
+/// 从路径提取扩展名（不含点，无扩展名返回空串）
+String _extensionOf(String path) {
+  final name = _fileNameOf(path);
+  final dot = name.lastIndexOf('.');
+  if (dot < 0 || dot == name.length - 1) return '';
+  return name.substring(dot + 1);
 }
