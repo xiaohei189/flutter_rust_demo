@@ -31,16 +31,43 @@ class ChatMediaActions {
 
   Future<void> pickImage(BuildContext context) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
     if (picked == null) return;
     final ok = await viewModel.sendImage(picked.path);
     if (!ok) onError('发送图片失败');
     if (!preLoaded) onScrollToBottom();
   }
 
+  /// 相册多选连发（压缩后逐张发送，最多 9 张）
+  Future<void> pickImages(BuildContext context) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickMultiImage(
+      imageQuality: 85,
+      maxWidth: 1920,
+      limit: 9,
+    );
+    if (picked.isEmpty) return;
+    for (final image in picked) {
+      final ok = await viewModel.sendImage(image.path);
+      if (!ok) {
+        onError('发送图片失败');
+        break;
+      }
+    }
+    if (!preLoaded) onScrollToBottom();
+  }
+
   Future<void> pickFromCamera(BuildContext context) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera);
+    final picked = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+      maxWidth: 1920,
+    );
     if (picked == null) return;
     final ok = await viewModel.sendImage(picked.path);
     if (!ok) onError('发送图片失败');

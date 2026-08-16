@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,6 +30,7 @@ class ChatInput extends StatefulWidget {
   final TextEditingController controller;
   final Function(String text, MessageContentType type) onSend;
   final VoidCallback? onImagePick;
+  final VoidCallback? onImagesPick;
   final VoidCallback? onCameraPick;
   final VoidCallback? onFilePick;
   final VoidCallback? onLocationPick;
@@ -46,6 +48,7 @@ class ChatInput extends StatefulWidget {
     required this.controller,
     required this.onSend,
     this.onImagePick,
+    this.onImagesPick,
     this.onCameraPick,
     this.onFilePick,
     this.onLocationPick,
@@ -81,6 +84,11 @@ class _ChatInputState extends State<ChatInput> {
   DateTime? _recordingStart;
   final AudioRecorder _recorder = AudioRecorder();
 
+  /// 录音手势状态（横滑/上滑取消）
+  bool _isRecording = false;
+  bool _recordingCancel = false;
+  double _recordingStartDy = 0;
+
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
 
@@ -106,7 +114,7 @@ class _ChatInputState extends State<ChatInput> {
       AttachmentItem(
         icon: Icons.photo_library_outlined,
         label: '相册',
-        onTap: widget.onImagePick,
+        onTap: widget.onImagesPick ?? widget.onImagePick,
       ),
       AttachmentItem(
         icon: Icons.camera_alt_outlined,
@@ -275,6 +283,11 @@ class _ChatInputState extends State<ChatInput> {
   // ==================== 语音录制 ====================
 
   void _startRecording([LongPressStartDetails? details]) async {
+    setState(() {
+      _isRecording = true;
+      _recordingCancel = false;
+      _recordingStartDy = details?.globalPosition.dy ?? 0;
+    });
     final dir = await getTemporaryDirectory();
     _recordingPath =
         '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.aac';
@@ -285,6 +298,7 @@ class _ChatInputState extends State<ChatInput> {
       if (!hasPermission) {
         _recordingPath = null;
         _recordingStart = null;
+        setState(() => _isRecording = false);
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -299,6 +313,7 @@ class _ChatInputState extends State<ChatInput> {
     } catch (_) {
       _recordingPath = null;
       _recordingStart = null;
+      setState(() => _isRecording = false);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -310,22 +325,46 @@ class _ChatInputState extends State<ChatInput> {
     _recordingTimer = Timer(const Duration(seconds: 60), () {
       _stopRecording();
     });
+  }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('录音中...松开发送'),
-          duration: Duration(seconds: 1),
-        ),
-      );
+  /// 录音手势移动：上滑超过 60px 进入取消态（业界"上滑取消"）
+  void _onRecordingMove(LongPressMoveUpdateDetails details) {
+    final cancel = details.globalPosition.dy < _recordingStartDy - 60;
+    if (cancel != _recordingCancel) {
+      setState(() => _recordingCancel = cancel);
     }
   }
 
   Future<void> _stopRecording([LongPressEndDetails? details]) async {
     _recordingTimer?.cancel();
     _recordingTimer = null;
+    setState(() => _isRecording = false);
 
     if (_recordingPath == null || _recordingStart == null) return;
+
+    // 横滑/上滑取消：丢弃录音文件，不发送
+    if (_recordingCancel) {
+      final path = _recordingPath;
+      _recordingPath = null;
+      _recordingStart = null;
+      if (path != null) {
+        try {
+          await File(path).delete();
+        } catch (_) {
+          // 删除临时文件失败可忽略
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已取消录音'),
+            duration: Duration(milliseconds: 800),
+          ),
+        );
+      }
+      return;
+    }
+
     final path = await _recorder.stop() ?? _recordingPath;
     final duration = DateTime.now().difference(_recordingStart!).inSeconds;
 
@@ -347,6 +386,34 @@ class _ChatInputState extends State<ChatInput> {
     if (path != null) {
       widget.onVoiceRecord?.call(duration, path);
     }
+  }
+
+  /// 录音状态浮层：默认提示"上滑取消"，上滑后变"松手取消"
+  Widget _buildRecordingOverlay() {
+    final colors = context.appColors;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      color: colors.surface.withValues(alpha: 0.92),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _recordingCancel ? Icons.keyboard_arrow_up : Icons.mic,
+            size: 18,
+            color: _recordingCancel ? colors.danger : colors.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _recordingCancel ? '松手取消' : '上滑取消',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _recordingCancel ? colors.danger : colors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ==================== Emoji 插入 ====================
@@ -516,6 +583,7 @@ class _ChatInputState extends State<ChatInput> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_isRecording) _buildRecordingOverlay(),
           Container(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             decoration: BoxDecoration(
@@ -641,11 +709,12 @@ class _ChatInputState extends State<ChatInput> {
               tooltip: '@ 提及',
               onTap: () => widget.onAtMention?.call(),
             ),
-          // 🎤 语音（长按录音）
+          // 🎤 语音（长按录音，上滑取消）
           _buildToolbarIcon(
             icon: Icons.mic_none,
-            tooltip: '语音（长按录音）',
+            tooltip: '语音（长按录音，上滑取消）',
             onLongPressStart: _startRecording,
+            onLongPressMoveUpdate: _onRecordingMove,
             onLongPressEnd: _stopRecording,
             onTap: () {
               _focusNode.requestFocus();
@@ -705,6 +774,7 @@ class _ChatInputState extends State<ChatInput> {
     bool enabled = true,
     bool active = false,
     void Function(LongPressStartDetails)? onLongPressStart,
+    void Function(LongPressMoveUpdateDetails)? onLongPressMoveUpdate,
     void Function(LongPressEndDetails)? onLongPressEnd,
   }) {
     final hasLongPress = onLongPressStart != null;
@@ -736,6 +806,7 @@ class _ChatInputState extends State<ChatInput> {
       return GestureDetector(
         onTap: enabled ? onTap : null,
         onLongPressStart: onLongPressStart,
+        onLongPressMoveUpdate: onLongPressMoveUpdate,
         onLongPressEnd: onLongPressEnd,
         child: btn,
       );

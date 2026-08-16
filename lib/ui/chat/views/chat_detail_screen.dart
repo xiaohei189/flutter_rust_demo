@@ -377,6 +377,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _pickImage() => _mediaActions.pickImage(context);
 
+  Future<void> _pickImages() => _mediaActions.pickImages(context);
+
   Future<void> _pickFromCamera() => _mediaActions.pickFromCamera(context);
 
   Future<void> _pickLocation() => _mediaActions.pickLocation(context);
@@ -882,6 +884,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     controller: _textController,
                     onSend: _sendMessage,
                     onImagePick: _pickImage,
+                    onImagesPick: _pickImages,
                     onCameraPick: _pickFromCamera,
                     onLocationPick: _pickLocation,
                     onFilePick: _pickFile,
