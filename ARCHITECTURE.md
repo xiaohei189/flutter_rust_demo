@@ -1,5 +1,9 @@
 # 📐 项目架构说明
 
+> ⚠️ **【已过时】本文档为早期骨架说明（setState、screens/widgets 结构、Rust 可选），与当前代码不符。**
+> 请以 **[docs/architecture.md](docs/architecture.md)** 为准（当前架构：Riverpod 状态管理 + `data/domain/ui` 分层 + feature-first 目录，Rust SDK 完整实现）。
+> 保留本文档仅为历史参考，勿按此修改代码。
+
 ## 整体架构
 
 ```

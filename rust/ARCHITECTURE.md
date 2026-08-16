@@ -1,5 +1,8 @@
 # Rust SDK 架构指南
 
+> ⚠️ **【目标架构】本文档描述的是目标五层架构（api/sdk/core/event/infra/domain）。当前 `rust/src/` 仍为扁平结构**（`cache, client, connection, constant, conversation, db, error, event, ffi, file, friend, group, http, logger, message, model, user` 平铺），文中 `sdk/`、`core/`、`infra/` 等路径为**规划目标**，迁移未完成。
+> 现状与规划的对照见 [docs/README.md](../docs/README.md#架构对齐现状-2026-08)。
+
 ## 分层架构（从底层到上层）
 
 `

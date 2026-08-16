@@ -82,7 +82,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 
 | 目录 | 用途 |
 |------|------|
-| `lib/screens/` | 21 个 Flutter 页面 |
+| `lib/ui/<feature>/views/` | 各 feature 页面（早期曾用 `lib/screens/`，已迁移到 feature 目录） |
 | `lib/ui/core/widgets/` | 18 个可复用 UI 组件 |
 | `lib/data/services/` | 13 个业务服务（IM 客户端、消息、用户等） |
 | `lib/providers/` | Riverpod 状态管理 |
@@ -129,13 +129,16 @@ lib/
 
 ### Rust 侧 (`rust/src/`)
 
+> ⚠️ **实际为扁平结构**，下表"目标"列为规划中的五层（见 CLAUDE.md），**迁移未完成**。
+
 | 目录 | 用途 |
 |------|------|
-| `rust/src/api/` | FFI 桥接层，暴露给 Dart 的 API |
-| `rust/src/sdk/` | SDK 入口，组装所有核心模块 |
-| `rust/src/core/` | 核心业务逻辑（连接、消息、会话、好友、群组等） |
-| `rust/src/domain/` | 领域模型、事件、错误、配置 |
-| `rust/src/infra/` | 基础设施（数据库、HTTP、缓存、日志） |
+| `rust/src/`（**实际**） | 扁平平铺：`cache, client, connection, constant, conversation, db, error, event, ffi, file, friend, group, http, logger, message, model, user` |
+| `rust/src/api/`（目标） | FFI 桥接层，暴露给 Dart 的 API |
+| `rust/src/sdk/`（目标） | SDK 入口，组装所有核心模块 |
+| `rust/src/core/`（目标） | 核心业务逻辑（连接、消息、会话、好友、群组等） |
+| `rust/src/domain/`（目标） | 领域模型、事件、错误、配置 |
+| `rust/src/infra/`（目标） | 基础设施（数据库、HTTP、缓存、日志） |
 | `openim-protocol` crate（`../../protocol`） | 协议层（OpenIM protobuf） |
 
 ## 数据流
