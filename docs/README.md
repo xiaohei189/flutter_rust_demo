@@ -1,7 +1,7 @@
 # 📖 Flutter Rust Demo — 文档总入口
 
 > 本项目是基于 **Flutter + Rust**（flutter_rust_bridge）的 **OpenIM 即时通讯客户端**。
-> 本文档是**全部项目文档的唯一入口**，按用途归类，并标注每份文档的**时效状态**，方便开发与 Agent 快速定位。
+> 本文档是**全部项目文档的唯一入口**，按用途归类并标注时效状态，方便开发与 Agent 快速定位。
 
 ---
 
@@ -11,43 +11,39 @@
 |------|------|----------|
 | ✅ **现行** | 与当前代码一致，可直接参考 | 正常使用 |
 | 📌 **参考** | 历史设计/规划，部分可能与现状不符 | 理解设计意图时参考，**以代码为准** |
-| ⚠️ **过时** | 与当前代码不符（多为早期骨架） | 勿直接引用，已标注替代文档 |
+| ⚠️ **过时** | 与当前代码不符（多为早期基线） | 勿直接引用，已标注替代文档 |
 
-> **通用原则**：涉及具体实现时，**以实际代码为准**（Dart：`lib/`；Rust：`rust/src/`）。文档与代码冲突时，代码优先，并在下方「已知文档冲突」中登记。
+> **通用原则**：涉及具体实现时，**以实际代码为准**（Dart：`lib/`；Rust：`rust/src/`）。文档与代码冲突时，代码优先。
 
 ---
 
-## 🚀 快速上手
+## 🚀 快速上手（根目录）
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
 | [QUICKSTART.md](../QUICKSTART.md) | ✅ 现行 | 环境准备（Flutter / Rust / OpenIM Server）与运行步骤 |
-| [CHAT_APP_README.md](../CHAT_APP_README.md) | 📌 参考 | 早期聊天应用骨架说明 |
-| [openim_demo功能清单报告.md](../openim_demo功能清单报告.md) | 📌 参考 | 与官方 Flutter/Electron/Android demo 的功能对比清单 |
-| [docs/README.md](./README.md) | ✅ 现行 | 本文档 |
+| [README.md](../README.md) | ✅ 现行 | 项目简介 |
 
-## 🏗️ 架构（含对齐状态）
+## 🏗️ 架构
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
-| [docs/architecture.md](./architecture.md) | ✅ 现行 | **当前架构与数据流（Dart 侧已对齐 Flutter 分层规范）** |
-| [项目架构以及规划信息.md](../项目架构以及规划信息.md) | 📌 参考 | 项目早期规划 |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) | ⚠️ **过时** | 早期骨架文档（setState / screens/widgets），**以 docs/architecture.md 为准** |
-| [rust/ARCHITECTURE.md](../rust/ARCHITECTURE.md) | 📌 参考 | Rust **目标**分层（五层）；实际为扁平结构（见下） |
-| [rust/SDK_ARCHITECTURE_REDESIGN.md](../rust/SDK_ARCHITECTURE_REDESIGN.md) | 📌 参考 | SDK 重构设计（历史，95KB） |
-| [rust/SDK_IMPLEMENTATION_PLAN.md](../rust/SDK_IMPLEMENTATION_PLAN.md) | 📌 参考 | SDK 实施计划（历史） |
-| [rust/REFACTORING_PLAN.md](../rust/REFACTORING_PLAN.md) | 📌 参考 | Rust 重构计划 |
+| [docs/architecture.md](./architecture.md) | ✅ 现行 | **当前架构与数据流**（Dart 侧已对齐 Flutter 分层规范） |
+| [rust/ARCHITECTURE.md](../rust/ARCHITECTURE.md) | 📌 参考 | Rust **目标**分层（五层）；实际为扁平结构（迁移未完成） |
 
 ### 架构对齐现状（2026-08）
 
 | 侧 | 文档描述 | 实际代码 | 对齐 |
 |----|----------|----------|------|
-| **Dart `lib/`** | `data/` + `domain/` + `ui/<feature>`（分层 + feature-first） | ✅ `data/repositories+services`、`domain/models`、`ui/{auth,chat,contacts,groups,profile,discover,shared,shell}` + `ui/core` | ✅ **已对齐**（参考 Flutter 分层规范迁移完成） |
-| **Rust `rust/src/`** | 五层：`api/sdk/core/domain/infra` | ❌ 实际为**扁平结构**：`cache, client, connection, constant, conversation, db, error, event, ffi, file, friend, group, http, logger, message, model, user` | ⚠️ **未对齐**（目标五层见 CLAUDE.md，迁移未完成） |
+| **Dart `lib/`** | `data/` + `domain/` + `ui/<feature>` | ✅ `data/repositories+services`、`domain/models`、`ui/{auth,chat,contacts,groups,profile,discover,shared,shell}` + `ui/core` | ✅ **已对齐** |
+| **Rust `rust/src/`** | 五层：`api/sdk/core/domain/infra` | ❌ 实际为**扁平结构**（`cache, client, connection, db, ffi, ...` 平铺） | ⚠️ **未对齐**（五层为目标，迁移未完成） |
 
 ## 📚 SDK 模块规范（docs/sdk-spec/）
 
-规范全集 17 个文档，**从 [INDEX.md](./sdk-spec/INDEX.md) 进入**：
+> ⚠️ **规格参考**：sdk-spec 的「实施状态 / ❌ 未实现」标注为**早期基线，与代码有出入**（多数已实现）。
+> 功能状态的权威依据：**实际代码 + [docs/testing-gap.md](./testing-gap.md)**。协议/常量/模型等规格内容仍可参考。
+
+17 个文档，**从 [INDEX.md](./sdk-spec/INDEX.md) 进入**：
 
 | 分组 | 文档 | 内容 |
 |------|------|------|
@@ -62,8 +58,6 @@
 | 桥接 | [15-FFI-BRIDGE](./sdk-spec/15-FFI-BRIDGE.md) | FFI 函数与 Go SDK API 对照 |
 | 事件 | [16-LISTENERS](./sdk-spec/16-LISTENERS.md) | 6 个 Listener trait 回调体系（最新） |
 
-> ⚠️ **sdk-spec 部分章节与当前代码存在出入**（多为早期规划），详见下方「已知文档冲突」。
-
 ## 📋 开发规范与进度
 
 | 文档 | 状态 | 说明 |
@@ -71,21 +65,35 @@
 | [CLAUDE.md](../CLAUDE.md) | ✅ 现行 | **Agent 开发规范**（分层架构、编码、提交规范） |
 | [AGENTS.md](../AGENTS.md) | ✅ 现行 | **仓库指南**（模块结构、命令、风格） |
 | [docs/conventions.md](./conventions.md) | ✅ 现行 | 命名 / 目录 / 提交等编码规范 |
-| [docs/SDK_PROGRESS.md](./SDK_PROGRESS.md) | ⚠️ 部分过时 | SDK 进度追踪（大量 ✅ 与代码有出入，**以 testing-gap.md + 代码为准**） |
+| [docs/SDK_PROGRESS.md](./SDK_PROGRESS.md) | ⚠️ 部分过时 | SDK 进度（大量 ✅ 为规划估算，**以 testing-gap.md + 代码为准**） |
 | [docs/testing-gap.md](./testing-gap.md) | ✅ 现行 | **测试缺口与状态矩阵**（文档冲突的权威裁决） |
 | [docs/ui-optimization-plan.md](./ui-optimization-plan.md) | 📌 参考 | UI 与目录组织优化计划（已大部分落地） |
 | [rust/tests/README.md](../rust/tests/README.md) | ✅ 现行 | Rust 测试说明 |
 
-## 🔬 专项实现说明
+## 🔬 专项实现说明（docs/ 下）
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
-| [RUST_API_IMPLEMENTATION.md](../RUST_API_IMPLEMENTATION.md) | 📌 参考 | Rust API 与 Go SDK 对照 |
-| [MESSAGE_LOADING_IMPLEMENTATION.md](../MESSAGE_LOADING_IMPLEMENTATION.md) | 📌 参考 | 消息加载实现（对照 Go SDK） |
-| [FILE_UPLOAD_IMPLEMENTATION.md](../FILE_UPLOAD_IMPLEMENTATION.md) | 📌 参考 | 文件/头像上传实现 |
-| [AVATAR_UPDATE.md](../AVATAR_UPDATE.md) | 📌 参考 | 头像系统更新说明 |
+| [docs/RUST_API_IMPLEMENTATION.md](./RUST_API_IMPLEMENTATION.md) | 📌 参考 | Rust API 与 Go SDK 对照 |
+| [docs/MESSAGE_LOADING_IMPLEMENTATION.md](./MESSAGE_LOADING_IMPLEMENTATION.md) | 📌 参考 | 消息加载实现（对照 Go SDK） |
+| [docs/FILE_UPLOAD_IMPLEMENTATION.md](./FILE_UPLOAD_IMPLEMENTATION.md) | 📌 参考 | 文件/头像上传实现 |
+| [docs/AVATAR_UPDATE.md](./AVATAR_UPDATE.md) | 📌 参考 | 头像系统更新说明 |
 | [docs/go_ws_message_handling.md](./go_ws_message_handling.md) | 📌 参考 | Go SDK WebSocket 消息处理链路 |
 | [docs/message_flow_analysis.md](./message_flow_analysis.md) | 📌 参考 | 消息收发全链路分析 |
+
+## 📦 归档（docs/archive/）
+
+以下为**历史文档**，内容多为早期骨架/规划，**仅作历史参考，勿直接引用**：
+
+| 文档 | 原位置 | 说明 |
+|------|--------|------|
+| [ARCHITECTURE.md](./archive/ARCHITECTURE.md) | 根目录 | 早期骨架架构（setState/screens），已过时 |
+| [项目架构以及规划信息.md](./archive/项目架构以及规划信息.md) | 根目录 | 早期项目规划 |
+| [CHAT_APP_README.md](./archive/CHAT_APP_README.md) | 根目录 | 早期聊天应用骨架说明 |
+| [openim_demo功能清单报告.md](./archive/openim_demo功能清单报告.md) | 根目录 | 与官方 demo 的功能对比报告 |
+| [SDK_ARCHITECTURE_REDESIGN.md](./archive/SDK_ARCHITECTURE_REDESIGN.md) | rust/ | SDK 重构设计（历史，95KB） |
+| [SDK_IMPLEMENTATION_PLAN.md](./archive/SDK_IMPLEMENTATION_PLAN.md) | rust/ | SDK 实施计划（历史） |
+| [REFACTORING_PLAN.md](./archive/REFACTORING_PLAN.md) | rust/ | Rust 重构计划 |
 
 ## 🧰 Agent 技能（.agents/skills/）
 
@@ -104,10 +112,9 @@
 
 | 冲突点 | 位置 | 处理 |
 |--------|------|------|
-| Rust 侧结构：文档写五层（api/sdk/core/domain/infra） | docs/architecture.md、rust/ARCHITECTURE.md、CLAUDE.md | **实际为扁平结构**（`rust/src/` 平铺）；五层是目标，迁移未完成 |
-| SDK_PROGRESS.md 大量功能标 ✅ | docs/SDK_PROGRESS.md | 与代码有出入，**以 testing-gap.md + 契约为准** |
-| sdk-spec 部分章节标"未实现" | docs/sdk-spec/05、08、15 等 | 部分功能已实现，文档未更新 |
-| 根目录 ARCHITECTURE.md | ARCHITECTURE.md | 早期骨架，已过时 |
+| Rust 侧结构：文档写五层（api/sdk/core/domain/infra） | docs/architecture.md、rust/ARCHITECTURE.md、CLAUDE.md | **实际为扁平结构**；五层是目标，迁移未完成 |
+| sdk-spec 大量「❌ 未实现」实为已实现 | sdk-spec/00、05、07、08、09、15 等 | 已加警示；以代码 + testing-gap.md 为准 |
+| SDK_PROGRESS.md 大量功能标 ✅ | docs/SDK_PROGRESS.md | 与代码有出入，已加警示；以 testing-gap.md 为准 |
 
 ---
 
@@ -123,4 +130,4 @@
 
 ---
 
-> 维护提示：新增文档请在本文档登记；文档状态变化时更新状态标记；涉及事件体系请以 16-LISTENERS.md 为准。
+> 维护提示：新增文档请在本文档登记；文档收拢统一放入 `docs/archive/`；涉及事件体系请以 16-LISTENERS.md 为准。

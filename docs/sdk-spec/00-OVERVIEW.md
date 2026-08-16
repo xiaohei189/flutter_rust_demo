@@ -1,5 +1,8 @@
 # 00 - 整体架构
 
+> ⚠️ **状态标注过时**：本文档的「实施状态」对照表（Go SDK ✅ vs Rust ❌）为**早期基线**，其中多数标 ❌ 的功能（MessageBatcher、Typing、双 Lane 队列、消息转发、好友/群组申请、禁言、用户状态订阅等）**已实现**。以实际代码 + [docs/testing-gap.md](../testing-gap.md) 为准。
+> 架构分层、数据流、模块映射等**规格性内容**仍可参考。
+
 > OpenIM Rust SDK 的系统全景、分层架构、核心数据流、模块映射与实施状态。
 
 > [!NOTE] 事件体系已重构：旧的 `SdkEvent` 枚举 / `EventBus` 广播已废弃，当前以 **Listener trait → EventHub → 领域通道** 为准（见 [16-LISTENERS.md](./16-LISTENERS.md)）。本文档中的事件相关图示为历史版本，遇到冲突以 16-LISTENERS.md 和源码为准。

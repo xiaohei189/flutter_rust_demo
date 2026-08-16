@@ -1,5 +1,9 @@
 # OpenIM Rust SDK — 统一技术文档与进度追踪
 
+> ⚠️ **文档警示**：本文档的完成度标注（✅ / 百分比）为规划估算，**与当前实际代码存在出入**。
+> 实际实现状态以 **[docs/testing-gap.md](testing-gap.md)**（测试缺口矩阵）与**实际代码**（`rust/src/`、`rust/tests/`）为准。
+> 排查具体功能是否实现时，请直接核对 `rust/src/` 对应模块，勿以本文档的 ✅ 作为唯一依据。
+
 > 权威参考：Go SDK (`openim-sdk-core`)  |  协议来源：`openim-protocol` crate
 > 最后更新：2026-08-07（桥接/事件流/在线状态/搜索/CI 补齐）
 
