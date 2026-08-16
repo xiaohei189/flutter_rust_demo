@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
 
 /// 引用消息预览栏
@@ -63,3 +65,15 @@ class QuotePreviewBar extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '引用预览栏', group: 'QuotePreviewBar')
+Widget quotePreviewBarPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: QuotePreviewBar(message: fakeQuoteMessage(), onClose: _noop),
+  );
+}
+
+void _noop() {}

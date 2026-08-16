@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import 'contact_pick_item.dart';
@@ -229,4 +231,24 @@ class ContactPickerList extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '联系人选择列表（多选）', group: 'ContactPickerList')
+Widget contactPickerListPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: SizedBox(
+      height: 480,
+      child: ContactPickerList(
+        friends: fakeFriendList(),
+        groups: [fakeGroup()],
+        keyword: '',
+        multiSelect: true,
+        selectedIds: const {'user_2'},
+        onToggle: (_) {},
+      ),
+    ),
+  );
 }

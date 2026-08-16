@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 
 /// 卡片布局组件：提供统一的卡片样式、圆角与边距。
@@ -81,7 +81,7 @@ class CardLayoutWithTitle extends StatelessWidget {
   }
 }
 
-@Preview(name: '基础卡片', group: 'CardLayout')
+@AppThemePreview(name: '基础卡片', group: 'CardLayout')
 Widget cardLayoutPreview() {
   return const CardLayout(
     padding: EdgeInsets.all(12),
@@ -89,7 +89,7 @@ Widget cardLayoutPreview() {
   );
 }
 
-@Preview(name: '带标题卡片', group: 'CardLayout')
+@AppThemePreview(name: '带标题卡片', group: 'CardLayout')
 Widget cardLayoutWithTitlePreview() {
   return const CardLayoutWithTitle(
     title: '账号信息',

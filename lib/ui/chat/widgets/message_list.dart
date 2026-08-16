@@ -8,6 +8,8 @@ import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
 import 'message_bubble.dart';
 import 'message_skeleton.dart';
@@ -311,4 +313,22 @@ class _VisibleMessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '消息列表（混合内容）', group: 'MessageList')
+Widget messageListPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: SizedBox(
+      height: 480,
+      child: MessageList(
+        messages: fakeMessageList(),
+        otherUser: User.mockUsers[1],
+        currentUserId: kPreviewMyUserId,
+        scrollController: ScrollController(),
+      ),
+    ),
+  );
 }

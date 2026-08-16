@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/user.dart';
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../../router/app_router.dart';
 import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../core/theme/app_theme.dart';
@@ -478,4 +480,64 @@ class _TagLabel extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 预览 ====================
+
+Widget _previewChatListItem(Conversation conversation, {String? previewText}) {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: ChatListItem(
+      conversation: conversation,
+      onTap: () {},
+      currentUserId: kPreviewMyUserId,
+      previewText: previewText,
+      timeText: '10:30',
+      itemIndex: 0,
+    ),
+  );
+}
+
+@AppThemePreview(name: '单聊 - 普通', group: 'ChatListItem')
+Widget chatListItemNormalPreview() {
+  return _previewChatListItem(fakeConversation(), previewText: '在吗？');
+}
+
+@AppThemePreview(name: '单聊 - 未读 5 条', group: 'ChatListItem')
+Widget chatListItemUnreadPreview() {
+  return _previewChatListItem(
+    fakeConversation(unreadCount: 5),
+    previewText: '[图片]',
+  );
+}
+
+@AppThemePreview(name: '单聊 - 置顶', group: 'ChatListItem')
+Widget chatListItemPinnedPreview() {
+  return _previewChatListItem(
+    fakeConversation(isPinned: true),
+    previewText: '好的，收到！',
+  );
+}
+
+@AppThemePreview(name: '单聊 - 草稿', group: 'ChatListItem')
+Widget chatListItemDraftPreview() {
+  return _previewChatListItem(
+    fakeConversation(draftText: '晚上一起吃饭吗？'),
+    previewText: '晚上一起吃饭吗？',
+  );
+}
+
+@AppThemePreview(name: '群聊 - 未读 99+（免打扰）', group: 'ChatListItem')
+Widget chatListItemGroupPreview() {
+  return _previewChatListItem(
+    fakeConversation(
+      showName: '产品讨论群',
+      conversationId: 'sg_group_1001',
+      conversationType: 2,
+      groupId: 'group_1001',
+      unreadCount: 99,
+      recvMsgOpt: 1,
+    ),
+    previewText: '李四: 新版原型已经上传',
+  );
 }

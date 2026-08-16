@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 
@@ -22,46 +23,56 @@ class MarkdownFormatBar extends StatelessWidget {
       height: 44,
       child: Row(
         children: [
-          _formatBtn(context, 'B', '粗体', () => onFormat(MarkdownFormat.bold)),
-          _formatBtn(
-            context,
-            'I',
-            '斜体',
-            () => onFormat(MarkdownFormat.italic),
-            italic: true,
+          // 格式按钮区可横向滚动，窄屏不溢出；关闭/发送固定右侧
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: [
+                  _formatBtn(context, 'B', '粗体', () => onFormat(MarkdownFormat.bold)),
+                  _formatBtn(
+                    context,
+                    'I',
+                    '斜体',
+                    () => onFormat(MarkdownFormat.italic),
+                    italic: true,
+                  ),
+                  _formatBtn(
+                    context,
+                    'S',
+                    '删除线',
+                    () => onFormat(MarkdownFormat.strikethrough),
+                    strikethrough: true,
+                  ),
+                  _formatBtn(
+                    context,
+                    'H',
+                    '标题',
+                    () => onFormat(MarkdownFormat.heading),
+                  ),
+                  _formatBtn(
+                    context,
+                    '<>',
+                    '行内代码',
+                    () => onFormat(MarkdownFormat.inlineCode),
+                    mono: true,
+                  ),
+                  _formatBtn(context, '"', '引用', () => onFormat(MarkdownFormat.quote)),
+                  _formatBtn(
+                    context,
+                    '•',
+                    '列表',
+                    () => onFormat(MarkdownFormat.bulletList),
+                  ),
+                  _formatBtn(context, '🔗', '链接', () => onFormat(MarkdownFormat.link)),
+                ],
+              ),
+            ),
           ),
-          _formatBtn(
-            context,
-            'S',
-            '删除线',
-            () => onFormat(MarkdownFormat.strikethrough),
-            strikethrough: true,
-          ),
-          _formatBtn(
-            context,
-            'H',
-            '标题',
-            () => onFormat(MarkdownFormat.heading),
-          ),
-          _formatBtn(
-            context,
-            '<>',
-            '行内代码',
-            () => onFormat(MarkdownFormat.inlineCode),
-            mono: true,
-          ),
-          _formatBtn(context, '"', '引用', () => onFormat(MarkdownFormat.quote)),
-          _formatBtn(
-            context,
-            '•',
-            '列表',
-            () => onFormat(MarkdownFormat.bulletList),
-          ),
-          _formatBtn(context, '🔗', '链接', () => onFormat(MarkdownFormat.link)),
-          const Spacer(),
           IconButton(
-            icon: const Icon(Icons.text_fields),
-            tooltip: '关闭 Markdown',
+            icon: const Icon(Icons.keyboard_return, size: 20),
+            tooltip: '返回普通输入',
             color: context.appColors.primary,
             onPressed: onClose,
           ),
@@ -109,3 +120,17 @@ class MarkdownFormatBar extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: 'Markdown 格式栏（含关闭）', group: 'MarkdownFormatBar')
+Widget markdownFormatBarPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: MarkdownFormatBar(onFormat: _noopFormat, onClose: _noop),
+  );
+}
+
+void _noopFormat(MarkdownFormat format) {}
+
+void _noop() {}

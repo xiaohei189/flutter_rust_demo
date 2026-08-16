@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
+import 'package:flutter_rust_demo/ui/previews/app_theme_preview.dart';
 import 'package:flutter_rust_demo/ui/core/theme/app_theme.dart';
 
 /// 消息状态指示器组件
@@ -36,4 +37,22 @@ class MessageStatusIndicator extends StatelessWidget {
         return const SizedBox.shrink();
     }
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '发送中', group: 'MessageStatusIndicator')
+Widget messageStatusSendingPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: MessageStatusIndicator(status: MessageSendStatus.sending),
+  );
+}
+
+@AppThemePreview(name: '发送失败（可重试）', group: 'MessageStatusIndicator')
+Widget messageStatusFailedPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: MessageStatusIndicator(status: MessageSendStatus.sendFailed),
+  );
 }

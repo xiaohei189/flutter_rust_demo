@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Markdown 格式操作类型
@@ -125,3 +126,17 @@ class FormatToolbar extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: 'Markdown 格式工具栏', group: 'FormatToolbar')
+Widget formatToolbarPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: FormatToolbar(onFormat: _noopFormat, onClose: _noop),
+  );
+}
+
+void _noopFormat(MarkdownFormat format) {}
+
+void _noop() {}

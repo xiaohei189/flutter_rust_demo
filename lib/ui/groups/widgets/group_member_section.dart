@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../../core/widgets/list_row.dart';
@@ -142,4 +144,24 @@ class GroupMemberSection extends StatelessWidget {
       ],
     );
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '群成员分区', group: 'GroupMemberSection')
+Widget groupMemberSectionPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: GroupMemberSection(
+      members: fakeGroupMemberList(),
+      keyword: '',
+      isLoading: false,
+      ownerAdminCount: 2,
+      joinTimeFilterLabel: '全部',
+      onKeywordChanged: (_) {},
+      onMemberTap: (_) {},
+      onOwnerAdminTap: () {},
+      onJoinTimeFilterTap: () {},
+    ),
+  );
 }

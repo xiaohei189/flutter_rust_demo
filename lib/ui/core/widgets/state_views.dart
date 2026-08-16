@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 
 /// 统一空状态视图。
@@ -90,3 +91,27 @@ class ErrorState extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '空状态（带副标题）', group: 'StateViews')
+Widget emptyStatePreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: EmptyState(
+      icon: Icons.chat_bubble_outline,
+      title: '暂无消息',
+      subtitle: '开始你的第一条消息吧',
+    ),
+  );
+}
+
+@AppThemePreview(name: '错误状态（可重试）', group: 'StateViews')
+Widget errorStatePreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: ErrorState(message: '网络连接失败，请检查网络后重试', onRetry: _noop),
+  );
+}
+
+void _noop() {}

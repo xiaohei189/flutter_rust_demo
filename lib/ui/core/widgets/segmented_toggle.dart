@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 
 /// 分段控制器：灰底圆角容器，当前主题色滑块平滑滑动。
@@ -109,7 +109,7 @@ class SegmentedToggle extends StatelessWidget {
   }
 }
 
-@Preview(name: '两段 - 选中第一项', group: 'SegmentedToggle')
+@AppThemePreview(name: '两段 - 选中第一项', group: 'SegmentedToggle')
 Widget segmentedToggleTwoFirstPreview() {
   return Padding(
     padding: const EdgeInsets.all(16),
@@ -121,7 +121,7 @@ Widget segmentedToggleTwoFirstPreview() {
   );
 }
 
-@Preview(name: '两段 - 选中第二项', group: 'SegmentedToggle')
+@AppThemePreview(name: '两段 - 选中第二项', group: 'SegmentedToggle')
 Widget segmentedToggleTwoSecondPreview() {
   return Padding(
     padding: const EdgeInsets.all(16),
@@ -133,7 +133,7 @@ Widget segmentedToggleTwoSecondPreview() {
   );
 }
 
-@Preview(name: '三段 - 选中中间', group: 'SegmentedToggle')
+@AppThemePreview(name: '三段 - 选中中间', group: 'SegmentedToggle')
 Widget segmentedToggleThreePreview() {
   return Padding(
     padding: const EdgeInsets.all(16),

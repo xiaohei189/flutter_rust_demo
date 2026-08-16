@@ -8,6 +8,8 @@ import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../../router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
@@ -123,8 +125,8 @@ class MessageBubble extends StatelessWidget {
         color: isImage
             ? Colors.transparent
             : (isFromMe
-                ? context.appColors.bubbleMine
-                : context.appColors.bubbleOther),
+                  ? context.appColors.bubbleMine
+                  : context.appColors.bubbleOther),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -340,4 +342,64 @@ class MessageBubble extends StatelessWidget {
       return '${_fullDateFormat.format(dateTime)} $timeStr';
     }
   }
+}
+
+// ==================== 预览 ====================
+
+Widget _previewBubble(MessageInfo message) {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: MessageBubble(
+      message: message,
+      otherUser: User.mockUsers[1],
+      currentUserId: kPreviewMyUserId,
+    ),
+  );
+}
+
+@AppThemePreview(name: '文本 - 对方', group: 'MessageBubble')
+Widget messageBubbleTextOtherPreview() {
+  return _previewBubble(fakeTextMessage());
+}
+
+@AppThemePreview(name: '文本 - 我（已读）', group: 'MessageBubble')
+Widget messageBubbleTextMinePreview() {
+  return _previewBubble(fakeTextMessage(text: '收到，晚上见！', fromMe: true));
+}
+
+@AppThemePreview(name: '文本 - 我（发送失败）', group: 'MessageBubble')
+Widget messageBubbleTextFailedPreview() {
+  return _previewBubble(
+    fakeTextMessage(text: '这条消息发送失败了', fromMe: true, status: 3),
+  );
+}
+
+@AppThemePreview(name: '图片 - 对方', group: 'MessageBubble')
+Widget messageBubbleImagePreview() {
+  return _previewBubble(fakeImageMessage());
+}
+
+@AppThemePreview(name: '引用 - 对方', group: 'MessageBubble')
+Widget messageBubbleQuotePreview() {
+  return _previewBubble(fakeQuoteMessage());
+}
+
+@AppThemePreview(name: '合并转发 - 对方', group: 'MessageBubble')
+Widget messageBubbleMergePreview() {
+  return _previewBubble(fakeMergeMessage());
+}
+
+@AppThemePreview(name: '名片 - 对方', group: 'MessageBubble')
+Widget messageBubbleCardPreview() {
+  return _previewBubble(fakeCardMessage());
+}
+
+@AppThemePreview(name: '位置 - 对方', group: 'MessageBubble')
+Widget messageBubbleLocationPreview() {
+  return _previewBubble(fakeLocationMessage());
+}
+
+@AppThemePreview(name: '系统消息', group: 'MessageBubble')
+Widget messageBubbleSystemPreview() {
+  return _previewBubble(fakeSystemMessage());
 }

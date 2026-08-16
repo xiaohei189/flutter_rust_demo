@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/user.dart';
+import '../../previews/app_theme_preview.dart';
 import '../../../ui/core/utils/app_logger.dart';
 import '../theme/app_theme.dart';
 import 'app_image.dart';
@@ -99,4 +100,23 @@ class UserAvatar extends StatelessWidget {
     final separator = url.contains('?') ? '&' : '?';
     return '$url${separator}_cb=${user.id}';
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '默认头像（不同尺寸）', group: 'UserAvatar')
+Widget userAvatarDefaultPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        UserAvatar(user: User.mockUsers[0], radius: 20),
+        const SizedBox(width: 12),
+        UserAvatar(user: User.mockUsers[1], radius: 28),
+        const SizedBox(width: 12),
+        UserAvatar(user: User.mockUsers[2], radius: 36),
+      ],
+    ),
+  );
 }

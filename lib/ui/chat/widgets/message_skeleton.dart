@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 
 /// 消息加载时的骨架屏
@@ -57,4 +58,14 @@ class SkeletonBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '消息骨架屏', group: 'MessageSkeleton')
+Widget messageSkeletonPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: SizedBox(height: 320, child: MessageSkeleton()),
+  );
 }

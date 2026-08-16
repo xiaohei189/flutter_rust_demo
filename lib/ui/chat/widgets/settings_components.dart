@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/models/user.dart';
 import '../../../domain/models/group_member.dart';
+import '../../previews/app_theme_preview.dart';
+import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 
@@ -200,3 +202,41 @@ class AddMemberButton extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '聊天设置卡片', group: 'SettingsComponents')
+Widget settingsCardPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: SettingsCard(
+      children: [
+        SettingsSectionTitle(title: '通用设置'),
+        SettingsNavRow(title: '聊天背景'),
+        SettingsSwitchRow(title: '置顶聊天', value: true, onChanged: _noopBool),
+        SettingsSwitchRow(title: '消息免打扰', value: false, onChanged: _noopBool),
+        SettingsSectionTitle(title: '成员管理'),
+        SettingsNavRow(title: '群成员管理'),
+      ],
+    ),
+  );
+}
+
+@AppThemePreview(name: '成员头像（含群主/管理员）', group: 'SettingsComponents')
+Widget settingsMemberAvatarPreview() {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final member in fakeGroupMemberList().take(3))
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: RealMemberAvatar(member: member),
+          ),
+      ],
+    ),
+  );
+}
+
+void _noopBool(bool value) {}

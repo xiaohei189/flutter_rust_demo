@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 
 /// 附件面板项定义
@@ -79,4 +80,23 @@ class AttachmentPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '默认附件面板', group: 'AttachmentPanel')
+Widget attachmentPanelPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: AttachmentPanel(
+      items: [
+        AttachmentItem(icon: Icons.photo_library_outlined, label: '相册'),
+        AttachmentItem(icon: Icons.camera_alt_outlined, label: '拍照'),
+        AttachmentItem(icon: Icons.videocam_outlined, label: '视频'),
+        AttachmentItem(icon: Icons.location_on_outlined, label: '位置'),
+        AttachmentItem(icon: Icons.insert_drive_file_outlined, label: '文件'),
+        AttachmentItem(icon: Icons.person_add_outlined, label: '名片'),
+      ],
+    ),
+  );
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 
 /// 未读数角标：红色小圆点（数字或单纯红点）
@@ -39,7 +39,7 @@ class UnreadCountView extends StatelessWidget {
   }
 }
 
-@Preview(name: '未读数 5', group: 'UnreadCountView')
+@AppThemePreview(name: '未读数 5', group: 'UnreadCountView')
 Widget unreadCountViewNumberPreview() {
   return const Padding(
     padding: EdgeInsets.all(16),
@@ -47,7 +47,7 @@ Widget unreadCountViewNumberPreview() {
   );
 }
 
-@Preview(name: '未读数 99+', group: 'UnreadCountView')
+@AppThemePreview(name: '未读数 99+', group: 'UnreadCountView')
 Widget unreadCountViewMaxPreview() {
   return const Padding(
     padding: EdgeInsets.all(16),
@@ -55,7 +55,7 @@ Widget unreadCountViewMaxPreview() {
   );
 }
 
-@Preview(name: '未读数 0（隐藏）', group: 'UnreadCountView')
+@AppThemePreview(name: '未读数 0（隐藏）', group: 'UnreadCountView')
 Widget unreadCountViewZeroPreview() {
   return const Padding(
     padding: EdgeInsets.all(16),

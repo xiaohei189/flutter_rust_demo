@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 
 /// 多选转发操作栏
@@ -44,3 +45,20 @@ class MessageSelectionBar extends StatelessWidget {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '多选操作栏（已选 3 条）', group: 'MessageSelectionBar')
+Widget messageSelectionBarPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: MessageSelectionBar(
+      count: 3,
+      onForwardOneByOne: _noop,
+      onMergeForward: _noop,
+      onClose: _noop,
+    ),
+  );
+}
+
+void _noop() {}

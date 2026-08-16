@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 
 /// 区块标题组件，用于卡片内部的区块分隔标题。
@@ -72,12 +72,12 @@ class SectionTitleWithIcon extends StatelessWidget {
   }
 }
 
-@Preview(name: '基础标题', group: 'SectionTitle')
+@AppThemePreview(name: '基础标题', group: 'SectionTitle')
 Widget sectionTitlePreview() {
   return const SectionTitle(title: '好友动态');
 }
 
-@Preview(name: '带图标标题', group: 'SectionTitle')
+@AppThemePreview(name: '带图标标题', group: 'SectionTitle')
 Widget sectionTitleWithIconPreview() {
   return const SectionTitleWithIcon(title: '群公告', icon: Icons.campaign);
 }

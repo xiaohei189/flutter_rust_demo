@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../previews/app_theme_preview.dart';
 import '../../core/theme/app_theme.dart';
 import 'emoji_store.dart';
 
@@ -22,14 +23,86 @@ class EmojiPanel extends StatefulWidget {
 
   /// 默认表情列表（Unicode Emoji）
   static const List<String> defaultEmojis = [
-    '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃',
-    '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙',
-    '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫',
-    '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬',
-    '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥',
-    '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱',
-    '😤', '😡', '😠', '🤬', '👍', '👎', '👏', '🙏', '💪', '❤️',
-    '🔥', '⭐', '🎉', '🎊', '💯', '✅', '❌', '⚡', '🌟', '💫',
+    '😀',
+    '😃',
+    '😄',
+    '😁',
+    '😆',
+    '😅',
+    '🤣',
+    '😂',
+    '🙂',
+    '🙃',
+    '😉',
+    '😊',
+    '😇',
+    '🥰',
+    '😍',
+    '🤩',
+    '😘',
+    '😗',
+    '😚',
+    '😙',
+    '🥲',
+    '😋',
+    '😛',
+    '😜',
+    '🤪',
+    '😝',
+    '🤑',
+    '🤗',
+    '🤭',
+    '🤫',
+    '🤔',
+    '🤐',
+    '🤨',
+    '😐',
+    '😑',
+    '😶',
+    '😏',
+    '😒',
+    '🙄',
+    '😬',
+    '😮',
+    '😯',
+    '😲',
+    '😳',
+    '🥺',
+    '😦',
+    '😧',
+    '😨',
+    '😰',
+    '😥',
+    '😢',
+    '😭',
+    '😱',
+    '😖',
+    '😣',
+    '😞',
+    '😓',
+    '😩',
+    '😫',
+    '🥱',
+    '😤',
+    '😡',
+    '😠',
+    '🤬',
+    '👍',
+    '👎',
+    '👏',
+    '🙏',
+    '💪',
+    '❤️',
+    '🔥',
+    '⭐',
+    '🎉',
+    '🎊',
+    '💯',
+    '✅',
+    '❌',
+    '⚡',
+    '🌟',
+    '💫',
   ];
 
   /// 内置 GIF 列表（GIPHY 公共资源，点击发送为图片消息）
@@ -62,8 +135,14 @@ class _EmojiPanelState extends State<EmojiPanel> {
   }
 
   Future<void> _load() async {
-    final recent = await EmojiStore.loadRecent();
-    final favorites = await EmojiStore.loadFavorites();
+    List<String> recent = const [];
+    List<String> favorites = const [];
+    try {
+      recent = await EmojiStore.loadRecent();
+      favorites = await EmojiStore.loadFavorites();
+    } catch (_) {
+      // 插件不可用（如 Widget Preview 环境）时降级为空列表
+    }
     if (!mounted) return;
     setState(() {
       _recent = recent;
@@ -148,10 +227,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
           if (header != null) ...[
             Text(
               header,
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
             ),
             const SizedBox(height: 4),
           ],
@@ -274,3 +350,17 @@ class _EmojiPanelState extends State<EmojiPanel> {
     );
   }
 }
+
+// ==================== 预览 ====================
+
+@AppThemePreview(name: '表情面板（默认表情页）', group: 'EmojiPanel')
+Widget emojiPanelPreview() {
+  return const Padding(
+    padding: EdgeInsets.all(16),
+    child: EmojiPanel(onEmojiSelected: _noopString, onClose: _noop),
+  );
+}
+
+void _noopString(String value) {}
+
+void _noop() {}
