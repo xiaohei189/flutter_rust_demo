@@ -9,23 +9,26 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'friend.freezed.dart';
 
-@freezed
-sealed class FriendEvent with _$FriendEvent {
-  const FriendEvent._();
+            
 
-  const factory FriendEvent.added(List<FriendInfo> field0) = FriendEvent_Added;
-  const factory FriendEvent.deleted(String field0) = FriendEvent_Deleted;
-  const factory FriendEvent.infoChanged(List<FriendInfo> field0) =
-      FriendEvent_InfoChanged;
-  const factory FriendEvent.blackAdded(String field0) = FriendEvent_BlackAdded;
-  const factory FriendEvent.blackDeleted(String field0) =
-      FriendEvent_BlackDeleted;
-  const factory FriendEvent.applicationAdded(String field0) =
-      FriendEvent_ApplicationAdded;
-  const factory FriendEvent.applicationDeleted(String field0) =
-      FriendEvent_ApplicationDeleted;
-  const factory FriendEvent.applicationAccepted(String field0) =
-      FriendEvent_ApplicationAccepted;
-  const factory FriendEvent.applicationRejected(String field0) =
-      FriendEvent_ApplicationRejected;
-}
+            
+
+            @freezed
+                sealed class FriendEvent with _$FriendEvent  {
+                    const FriendEvent._();
+
+                     const factory FriendEvent.added(  List<FriendInfo> field0,) = FriendEvent_Added;
+ const factory FriendEvent.deleted(  String field0,) = FriendEvent_Deleted;
+ const factory FriendEvent.infoChanged(  List<FriendInfo> field0,) = FriendEvent_InfoChanged;
+ const factory FriendEvent.blackAdded(  String field0,) = FriendEvent_BlackAdded;
+ const factory FriendEvent.blackDeleted(  String field0,) = FriendEvent_BlackDeleted;
+ const factory FriendEvent.applicationAdded(  String field0,) = FriendEvent_ApplicationAdded;
+ const factory FriendEvent.applicationDeleted(  String field0,) = FriendEvent_ApplicationDeleted;
+ const factory FriendEvent.applicationAccepted(  String field0,) = FriendEvent_ApplicationAccepted;
+ const factory FriendEvent.applicationRejected(  String field0,) = FriendEvent_ApplicationRejected;
+
+                    
+
+                    
+                }
+            

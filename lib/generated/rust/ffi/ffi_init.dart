@@ -7,22 +7,24 @@ import '../frb_generated.dart';
 import '../logger/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 设置日志目录（应在 init_logger 前调用）
-Future<void> setLogDirectory({required String path}) =>
-    RustLib.instance.api.crateFfiFfiInitSetLogDirectory(path: path);
+
+            
+
+            /// 设置日志目录（应在 init_logger 前调用）
+Future<void>  setLogDirectory({required String path }) => RustLib.instance.api.crateFfiFfiInitSetLogDirectory(path: path);
 
 /// 初始化 Rust 日志系统（兼容旧接口，内部委托给 init_otel_subscriber）
-Future<void> initLogger({required String logLevel}) =>
-    RustLib.instance.api.crateFfiFfiInitInitLogger(logLevel: logLevel);
+Future<void>  initLogger({required String logLevel }) => RustLib.instance.api.crateFfiFfiInitInitLogger(logLevel: logLevel);
 
 /// 初始化日志系统（完整配置）
-Future<void> initLoggerV2({required LogConfig config}) =>
-    RustLib.instance.api.crateFfiFfiInitInitLoggerV2(config: config);
+Future<void>  initLoggerV2({required LogConfig config }) => RustLib.instance.api.crateFfiFfiInitInitLoggerV2(config: config);
 
 /// 设置是否打印 span 进入/退出事件（可在 init_logger 前后调用）
 ///
 /// 启用后，每个 #[tracing::instrument] 注解的方法在进入和退出时都会输出日志，
 /// 即使方法内部没有手动调用 info!() 等宏。
 /// 运行时也可切换，立即生效。
-Future<void> setLogSpanEvents({required bool enabled}) =>
-    RustLib.instance.api.crateFfiFfiInitSetLogSpanEvents(enabled: enabled);
+Future<void>  setLogSpanEvents({required bool enabled }) => RustLib.instance.api.crateFfiFfiInitSetLogSpanEvents(enabled: enabled);
+
+            
+            

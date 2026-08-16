@@ -8,72 +8,24 @@ import '../frb_generated.dart';
 import '../model/msg_struct.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-Future<String> uploadFile({
-  required String filePath,
-  required String fileName,
-}) => RustLib.instance.api.crateFfiMessageMediaUploadFile(
-  filePath: filePath,
-  fileName: fileName,
-);
 
-Stream<int> uploadFileWithProgress({
-  required String filePath,
-  required String fileName,
-}) => RustLib.instance.api.crateFfiMessageMediaUploadFileWithProgress(
-  filePath: filePath,
-  fileName: fileName,
-);
+            
+
+            Future<String>  uploadFile({required String filePath , required String fileName }) => RustLib.instance.api.crateFfiMessageMediaUploadFile(filePath: filePath, fileName: fileName);
+
+Stream<int>  uploadFileWithProgress({required String filePath , required String fileName }) => RustLib.instance.api.crateFfiMessageMediaUploadFileWithProgress(filePath: filePath, fileName: fileName);
 
 /// 从 URL 发送图片消息
-Future<MsgStruct> sendImageMessageFromUrl({
-  required String sourceUrl,
-  required String sourceId,
-  required SessionType sessionType,
-}) => RustLib.instance.api.crateFfiMessageMediaSendImageMessageFromUrl(
-  sourceUrl: sourceUrl,
-  sourceId: sourceId,
-  sessionType: sessionType,
-);
+Future<MsgStruct>  sendImageMessageFromUrl({required String sourceUrl , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageMediaSendImageMessageFromUrl(sourceUrl: sourceUrl, sourceId: sourceId, sessionType: sessionType);
 
 /// 从 URL 发送语音消息
-Future<MsgStruct> sendSoundMessageFromUrl({
-  required String sourceUrl,
-  required PlatformInt64 duration,
-  required String sourceId,
-  required SessionType sessionType,
-}) => RustLib.instance.api.crateFfiMessageMediaSendSoundMessageFromUrl(
-  sourceUrl: sourceUrl,
-  duration: duration,
-  sourceId: sourceId,
-  sessionType: sessionType,
-);
+Future<MsgStruct>  sendSoundMessageFromUrl({required String sourceUrl , required int duration , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageMediaSendSoundMessageFromUrl(sourceUrl: sourceUrl, duration: duration, sourceId: sourceId, sessionType: sessionType);
 
 /// 从 URL 发送视频消息
-Future<MsgStruct> sendVideoMessageFromUrl({
-  required String sourceUrl,
-  required PlatformInt64 duration,
-  required String snapshotUrl,
-  required String sourceId,
-  required SessionType sessionType,
-}) => RustLib.instance.api.crateFfiMessageMediaSendVideoMessageFromUrl(
-  sourceUrl: sourceUrl,
-  duration: duration,
-  snapshotUrl: snapshotUrl,
-  sourceId: sourceId,
-  sessionType: sessionType,
-);
+Future<MsgStruct>  sendVideoMessageFromUrl({required String sourceUrl , required int duration , required String snapshotUrl , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageMediaSendVideoMessageFromUrl(sourceUrl: sourceUrl, duration: duration, snapshotUrl: snapshotUrl, sourceId: sourceId, sessionType: sessionType);
 
 /// 从 URL 发送文件消息
-Future<MsgStruct> sendFileMessageFromUrl({
-  required String sourceUrl,
-  required String fileName,
-  required PlatformInt64 fileSize,
-  required String sourceId,
-  required SessionType sessionType,
-}) => RustLib.instance.api.crateFfiMessageMediaSendFileMessageFromUrl(
-  sourceUrl: sourceUrl,
-  fileName: fileName,
-  fileSize: fileSize,
-  sourceId: sourceId,
-  sessionType: sessionType,
-);
+Future<MsgStruct>  sendFileMessageFromUrl({required String sourceUrl , required String fileName , required int fileSize , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageMediaSendFileMessageFromUrl(sourceUrl: sourceUrl, fileName: fileName, fileSize: fileSize, sourceId: sourceId, sessionType: sessionType);
+
+            
+            

@@ -7,209 +7,91 @@ import '../frb_generated.dart';
 import '../model/msg_struct.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 构造文本消息（contentType=101，对齐 Go SDK `CreateTextMessage`）
-Future<MsgStruct> createTextMessage({required String text}) =>
-    RustLib.instance.api.crateFfiMessageBuilderCreateTextMessage(text: text);
+
+            
+
+            /// 构造文本消息（contentType=101，对齐 Go SDK `CreateTextMessage`）
+Future<MsgStruct>  createTextMessage({required String text }) => RustLib.instance.api.crateFfiMessageBuilderCreateTextMessage(text: text);
 
 /// 构造 @ 消息（contentType=106，对齐 Go SDK `CreateTextAtMessage`）
-Future<MsgStruct> createAtTextMessage({
-  required String text,
-  required List<String> atUserList,
-  required List<AtInfo> atUsersInfo,
-  MsgStruct? quoteMsg,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateAtTextMessage(
-  text: text,
-  atUserList: atUserList,
-  atUsersInfo: atUsersInfo,
-  quoteMsg: quoteMsg,
-);
+Future<MsgStruct>  createAtTextMessage({required String text , required List<String> atUserList , required List<AtInfo> atUsersInfo , MsgStruct? quoteMsg }) => RustLib.instance.api.crateFfiMessageBuilderCreateAtTextMessage(text: text, atUserList: atUserList, atUsersInfo: atUsersInfo, quoteMsg: quoteMsg);
 
 /// 构造富文本消息（contentType=111，对齐 Go SDK `CreateAdvancedTextMessage`）
-Future<MsgStruct> createAdvancedTextMessage({
-  required String text,
-  required List<MessageEntity> messageEntityList,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateAdvancedTextMessage(
-  text: text,
-  messageEntityList: messageEntityList,
-);
+Future<MsgStruct>  createAdvancedTextMessage({required String text , required List<MessageEntity> messageEntityList }) => RustLib.instance.api.crateFfiMessageBuilderCreateAdvancedTextMessage(text: text, messageEntityList: messageEntityList);
 
 /// 构造 Markdown 消息（contentType=112，对齐 Go SDK `CreateMarkdownMessage`）
-Future<MsgStruct> createMarkdownMessage({required String text}) => RustLib
-    .instance
-    .api
-    .crateFfiMessageBuilderCreateMarkdownMessage(text: text);
+Future<MsgStruct>  createMarkdownMessage({required String text }) => RustLib.instance.api.crateFfiMessageBuilderCreateMarkdownMessage(text: text);
 
 /// 构造图片消息（contentType=102，对齐 Go SDK `CreateImageMessage`）
-Future<MsgStruct> createImageMessage({
-  required String sourcePath,
-  required PictureBaseInfo sourcePicture,
-  required PictureBaseInfo bigPicture,
-  required PictureBaseInfo snapshotPicture,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessage(
-  sourcePath: sourcePath,
-  sourcePicture: sourcePicture,
-  bigPicture: bigPicture,
-  snapshotPicture: snapshotPicture,
-);
+Future<MsgStruct>  createImageMessage({required String sourcePath , required PictureBaseInfo sourcePicture , required PictureBaseInfo bigPicture , required PictureBaseInfo snapshotPicture }) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessage(sourcePath: sourcePath, sourcePicture: sourcePicture, bigPicture: bigPicture, snapshotPicture: snapshotPicture);
 
 /// 按 URL 构造图片消息（对齐 Go SDK `CreateImageMessageByURL`）
 ///
 /// 内容已上传完成，sourcePicture/bigPicture/snapshotPicture 由调用方提供，
 /// 发送时不再走 OSS 上传。
-Future<MsgStruct> createImageMessageByUrl({
-  required String sourcePath,
-  required PictureBaseInfo sourcePicture,
-  required PictureBaseInfo bigPicture,
-  required PictureBaseInfo snapshotPicture,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessageByUrl(
-  sourcePath: sourcePath,
-  sourcePicture: sourcePicture,
-  bigPicture: bigPicture,
-  snapshotPicture: snapshotPicture,
-);
+Future<MsgStruct>  createImageMessageByUrl({required String sourcePath , required PictureBaseInfo sourcePicture , required PictureBaseInfo bigPicture , required PictureBaseInfo snapshotPicture }) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessageByUrl(sourcePath: sourcePath, sourcePicture: sourcePicture, bigPicture: bigPicture, snapshotPicture: snapshotPicture);
 
 /// 从本地完整路径构造图片消息（对齐 Go SDK `CreateImageMessageFromFullPath`）
 ///
 /// SDK 读取图片宽高与文件大小，类型取文件扩展名。
-Future<MsgStruct> createImageMessageFromFullPath({
-  required String imageFullPath,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessageFromFullPath(
-  imageFullPath: imageFullPath,
-);
+Future<MsgStruct>  createImageMessageFromFullPath({required String imageFullPath }) => RustLib.instance.api.crateFfiMessageBuilderCreateImageMessageFromFullPath(imageFullPath: imageFullPath);
 
 /// 构造语音消息（contentType=103，对齐 Go SDK `CreateSoundMessage`）
-Future<MsgStruct> createSoundMessage({required SoundElem elem}) =>
-    RustLib.instance.api.crateFfiMessageBuilderCreateSoundMessage(elem: elem);
+Future<MsgStruct>  createSoundMessage({required SoundElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateSoundMessage(elem: elem);
 
 /// 按 URL 构造语音消息（对齐 Go SDK `CreateSoundMessageByURL`）
-Future<MsgStruct> createSoundMessageByUrl({required SoundElem elem}) => RustLib
-    .instance
-    .api
-    .crateFfiMessageBuilderCreateSoundMessageByUrl(elem: elem);
+Future<MsgStruct>  createSoundMessageByUrl({required SoundElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateSoundMessageByUrl(elem: elem);
 
 /// 从本地完整路径构造语音消息（对齐 Go SDK `CreateSoundMessageFromFullPath`）
 ///
 /// SDK 读取文件大小，类型取扩展名；duration 由调用方传入。
-Future<MsgStruct> createSoundMessageFromFullPath({
-  required String soundPath,
-  required PlatformInt64 duration,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateSoundMessageFromFullPath(
-  soundPath: soundPath,
-  duration: duration,
-);
+Future<MsgStruct>  createSoundMessageFromFullPath({required String soundPath , required int duration }) => RustLib.instance.api.crateFfiMessageBuilderCreateSoundMessageFromFullPath(soundPath: soundPath, duration: duration);
 
 /// 构造视频消息（contentType=104，对齐 Go SDK `CreateVideoMessage`）
-Future<MsgStruct> createVideoMessage({required VideoElem elem}) =>
-    RustLib.instance.api.crateFfiMessageBuilderCreateVideoMessage(elem: elem);
+Future<MsgStruct>  createVideoMessage({required VideoElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateVideoMessage(elem: elem);
 
 /// 按 URL 构造视频消息（对齐 Go SDK `CreateVideoMessageByURL`）
-Future<MsgStruct> createVideoMessageByUrl({required VideoElem elem}) => RustLib
-    .instance
-    .api
-    .crateFfiMessageBuilderCreateVideoMessageByUrl(elem: elem);
+Future<MsgStruct>  createVideoMessageByUrl({required VideoElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateVideoMessageByUrl(elem: elem);
 
 /// 从本地完整路径构造视频消息（对齐 Go SDK `CreateVideoMessageFromFullPath`）
 ///
 /// duration/videoType 由调用方传入，快照路径一并记录。
-Future<MsgStruct> createVideoMessageFromFullPath({
-  required String videoFullPath,
-  required String videoType,
-  required PlatformInt64 duration,
-  required String snapshotFullPath,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateVideoMessageFromFullPath(
-  videoFullPath: videoFullPath,
-  videoType: videoType,
-  duration: duration,
-  snapshotFullPath: snapshotFullPath,
-);
+Future<MsgStruct>  createVideoMessageFromFullPath({required String videoFullPath , required String videoType , required int duration , required String snapshotFullPath }) => RustLib.instance.api.crateFfiMessageBuilderCreateVideoMessageFromFullPath(videoFullPath: videoFullPath, videoType: videoType, duration: duration, snapshotFullPath: snapshotFullPath);
 
 /// 构造文件消息（contentType=105，对齐 Go SDK `CreateFileMessage`）
-Future<MsgStruct> createFileMessage({required FileElem elem}) =>
-    RustLib.instance.api.crateFfiMessageBuilderCreateFileMessage(elem: elem);
+Future<MsgStruct>  createFileMessage({required FileElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateFileMessage(elem: elem);
 
 /// 按 URL 构造文件消息（对齐 Go SDK `CreateFileMessageByURL`）
-Future<MsgStruct> createFileMessageByUrl({required FileElem elem}) => RustLib
-    .instance
-    .api
-    .crateFfiMessageBuilderCreateFileMessageByUrl(elem: elem);
+Future<MsgStruct>  createFileMessageByUrl({required FileElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateFileMessageByUrl(elem: elem);
 
 /// 从本地完整路径构造文件消息（对齐 Go SDK `CreateFileMessageFromFullPath`）
 ///
 /// SDK 读取文件大小。
-Future<MsgStruct> createFileMessageFromFullPath({
-  required String fileFullPath,
-  required String fileName,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateFileMessageFromFullPath(
-  fileFullPath: fileFullPath,
-  fileName: fileName,
-);
+Future<MsgStruct>  createFileMessageFromFullPath({required String fileFullPath , required String fileName }) => RustLib.instance.api.crateFfiMessageBuilderCreateFileMessageFromFullPath(fileFullPath: fileFullPath, fileName: fileName);
 
 /// 构造引用消息（contentType=114，对齐 Go SDK `CreateQuoteMessage`）
-Future<MsgStruct> createQuoteMessage({
-  required String text,
-  required MsgStruct quotedMsg,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateQuoteMessage(
-  text: text,
-  quotedMsg: quotedMsg,
-);
+Future<MsgStruct>  createQuoteMessage({required String text , required MsgStruct quotedMsg }) => RustLib.instance.api.crateFfiMessageBuilderCreateQuoteMessage(text: text, quotedMsg: quotedMsg);
 
 /// 构造高级引用消息（对齐 Go SDK `CreateAdvancedQuoteMessage`）
-Future<MsgStruct> createAdvancedQuoteMessage({
-  required String text,
-  required MsgStruct quotedMsg,
-  required List<MessageEntity> messageEntityList,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateAdvancedQuoteMessage(
-  text: text,
-  quotedMsg: quotedMsg,
-  messageEntityList: messageEntityList,
-);
+Future<MsgStruct>  createAdvancedQuoteMessage({required String text , required MsgStruct quotedMsg , required List<MessageEntity> messageEntityList }) => RustLib.instance.api.crateFfiMessageBuilderCreateAdvancedQuoteMessage(text: text, quotedMsg: quotedMsg, messageEntityList: messageEntityList);
 
 /// 构造合并转发消息（contentType=107，对齐 Go SDK `CreateMergerMessage`）
-Future<MsgStruct> createMergerMessage({
-  required List<MsgStruct> messages,
-  required String title,
-  required List<String> summaries,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateMergerMessage(
-  messages: messages,
-  title: title,
-  summaries: summaries,
-);
+Future<MsgStruct>  createMergerMessage({required List<MsgStruct> messages , required String title , required List<String> summaries }) => RustLib.instance.api.crateFfiMessageBuilderCreateMergerMessage(messages: messages, title: title, summaries: summaries);
 
 /// 构造名片消息（contentType=108，对齐 Go SDK `CreateCardMessage`）
-Future<MsgStruct> createCardMessage({required CardElem elem}) =>
-    RustLib.instance.api.crateFfiMessageBuilderCreateCardMessage(elem: elem);
+Future<MsgStruct>  createCardMessage({required CardElem elem }) => RustLib.instance.api.crateFfiMessageBuilderCreateCardMessage(elem: elem);
 
 /// 构造位置消息（contentType=109，对齐 Go SDK `CreateLocationMessage`）
-Future<MsgStruct> createLocationMessage({
-  required String description,
-  required double longitude,
-  required double latitude,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateLocationMessage(
-  description: description,
-  longitude: longitude,
-  latitude: latitude,
-);
+Future<MsgStruct>  createLocationMessage({required String description , required double longitude , required double latitude }) => RustLib.instance.api.crateFfiMessageBuilderCreateLocationMessage(description: description, longitude: longitude, latitude: latitude);
 
 /// 构造自定义消息（contentType=110，对齐 Go SDK `CreateCustomMessage`）
-Future<MsgStruct> createCustomMessage({
-  required String data,
-  required String extension_,
-  required String description,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateCustomMessage(
-  data: data,
-  extension_: extension_,
-  description: description,
-);
+Future<MsgStruct>  createCustomMessage({required String data , required String extension_ , required String description }) => RustLib.instance.api.crateFfiMessageBuilderCreateCustomMessage(data: data, extension_: extension_, description: description);
 
 /// 构造表情消息（contentType=115，对齐 Go SDK `CreateFaceMessage`）
-Future<MsgStruct> createFaceMessage({
-  required int index,
-  required String data,
-}) => RustLib.instance.api.crateFfiMessageBuilderCreateFaceMessage(
-  index: index,
-  data: data,
-);
+Future<MsgStruct>  createFaceMessage({required int index , required String data }) => RustLib.instance.api.crateFfiMessageBuilderCreateFaceMessage(index: index, data: data);
 
 /// 获取 @所有人 标签（对齐 Go SDK `GetAtAllTag`，返回常量 "@All"）
-Future<String> getAtAllTag() =>
-    RustLib.instance.api.crateFfiMessageBuilderGetAtAllTag();
+Future<String>  getAtAllTag() => RustLib.instance.api.crateFfiMessageBuilderGetAtAllTag();
+
+            
+            

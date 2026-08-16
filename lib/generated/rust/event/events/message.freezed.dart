@@ -47,8 +47,8 @@ mixin _$MessageEvent {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) => throw _privateConstructorUsedError;
@@ -81,8 +81,8 @@ mixin _$MessageEvent {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) => throw _privateConstructorUsedError;
@@ -114,8 +114,8 @@ mixin _$MessageEvent {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -292,8 +292,8 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -330,8 +330,8 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -367,8 +367,8 @@ class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -564,8 +564,8 @@ class _$MessageEvent_OfflineNewMessageImpl
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -602,8 +602,8 @@ class _$MessageEvent_OfflineNewMessageImpl
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -639,8 +639,8 @@ class _$MessageEvent_OfflineNewMessageImpl
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -838,8 +838,8 @@ class _$MessageEvent_OnlineOnlyMessageImpl
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -876,8 +876,8 @@ class _$MessageEvent_OnlineOnlyMessageImpl
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -913,8 +913,8 @@ class _$MessageEvent_OnlineOnlyMessageImpl
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -1243,8 +1243,8 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -1294,8 +1294,8 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -1344,8 +1344,8 @@ class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -1568,8 +1568,8 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -1606,8 +1606,8 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -1643,8 +1643,8 @@ class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -1848,8 +1848,8 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -1886,8 +1886,8 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -1923,8 +1923,8 @@ class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -2116,8 +2116,8 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -2154,8 +2154,8 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -2191,8 +2191,8 @@ class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -2282,8 +2282,8 @@ abstract class _$$MessageEvent_UploadProgressImplCopyWith<$Res> {
   $Res call({
     String clientMsgId,
     int progress,
-    BigInt totalSize,
-    BigInt uploadedSize,
+    int totalSize,
+    int uploadedSize,
   });
 }
 
@@ -2319,11 +2319,11 @@ class __$$MessageEvent_UploadProgressImplCopyWithImpl<$Res>
         totalSize: null == totalSize
             ? _value.totalSize
             : totalSize // ignore: cast_nullable_to_non_nullable
-                  as BigInt,
+                  as int,
         uploadedSize: null == uploadedSize
             ? _value.uploadedSize
             : uploadedSize // ignore: cast_nullable_to_non_nullable
-                  as BigInt,
+                  as int,
       ),
     );
   }
@@ -2344,9 +2344,9 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
   @override
   final int progress;
   @override
-  final BigInt totalSize;
+  final int totalSize;
   @override
-  final BigInt uploadedSize;
+  final int uploadedSize;
 
   @override
   String toString() {
@@ -2414,8 +2414,8 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
     required TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )
     uploadProgress,
   }) {
@@ -2452,8 +2452,8 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
     TResult? Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
   }) {
@@ -2489,8 +2489,8 @@ class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
     TResult Function(
       String clientMsgId,
       int progress,
-      BigInt totalSize,
-      BigInt uploadedSize,
+      int totalSize,
+      int uploadedSize,
     )?
     uploadProgress,
     required TResult orElse(),
@@ -2557,15 +2557,15 @@ abstract class MessageEvent_UploadProgress extends MessageEvent {
   const factory MessageEvent_UploadProgress({
     required final String clientMsgId,
     required final int progress,
-    required final BigInt totalSize,
-    required final BigInt uploadedSize,
+    required final int totalSize,
+    required final int uploadedSize,
   }) = _$MessageEvent_UploadProgressImpl;
   const MessageEvent_UploadProgress._() : super._();
 
   String get clientMsgId;
   int get progress;
-  BigInt get totalSize;
-  BigInt get uploadedSize;
+  int get totalSize;
+  int get uploadedSize;
 
   /// Create a copy of MessageEvent
   /// with the given fields replaced by the non-null parameter values.

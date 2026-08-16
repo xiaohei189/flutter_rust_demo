@@ -9,138 +9,89 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'message.freezed.dart';
 
-/// 群聊已读回执（对齐 Go SDK OnRecvGroupReadReceipt）
-class GroupReadReceipt {
-  final String groupId;
-  final String msgId;
-  final List<String> hasReadUserIdList;
-  final int hasReadCount;
-  final int groupMemberCount;
-  final PlatformInt64 readTime;
+            
 
-  const GroupReadReceipt({
-    required this.groupId,
-    required this.msgId,
-    required this.hasReadUserIdList,
-    required this.hasReadCount,
-    required this.groupMemberCount,
-    required this.readTime,
-  });
+            
 
-  @override
-  int get hashCode =>
-      groupId.hashCode ^
-      msgId.hashCode ^
-      hasReadUserIdList.hashCode ^
-      hasReadCount.hashCode ^
-      groupMemberCount.hashCode ^
-      readTime.hashCode;
+            /// 群聊已读回执（对齐 Go SDK OnRecvGroupReadReceipt）
+class GroupReadReceipt  {
+                final String groupId;
+final String msgId;
+final List<String> hasReadUserIdList;
+final int hasReadCount;
+final int groupMemberCount;
+final int readTime;
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GroupReadReceipt &&
-          runtimeType == other.runtimeType &&
-          groupId == other.groupId &&
-          msgId == other.msgId &&
-          hasReadUserIdList == other.hasReadUserIdList &&
-          hasReadCount == other.hasReadCount &&
-          groupMemberCount == other.groupMemberCount &&
-          readTime == other.readTime;
-}
+                const GroupReadReceipt({required this.groupId ,required this.msgId ,required this.hasReadUserIdList ,required this.hasReadCount ,required this.groupMemberCount ,required this.readTime ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => groupId.hashCode^msgId.hashCode^hasReadUserIdList.hashCode^hasReadCount.hashCode^groupMemberCount.hashCode^readTime.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GroupReadReceipt &&
+                runtimeType == other.runtimeType
+                && groupId == other.groupId&& msgId == other.msgId&& hasReadUserIdList == other.hasReadUserIdList&& hasReadCount == other.hasReadCount&& groupMemberCount == other.groupMemberCount&& readTime == other.readTime;
+        
+            }
 
 @freezed
-sealed class MessageEvent with _$MessageEvent {
-  const MessageEvent._();
+                sealed class MessageEvent with _$MessageEvent  {
+                    const MessageEvent._();
 
-  /// 新消息（服务端推送/同步，对齐 Go SDK `OnRecvNewMessage`）
-  const factory MessageEvent.newMessage({
-    required String conversationId,
-    required MessageInfo message,
-  }) = MessageEvent_NewMessage;
+                     /// 新消息（服务端推送/同步，对齐 Go SDK `OnRecvNewMessage`）
+const factory MessageEvent.newMessage({   required String conversationId ,  required MessageInfo message , }) = MessageEvent_NewMessage;
+ /// 离线新消息（对齐 Go SDK `OnRecvOfflineNewMessage`）
+const factory MessageEvent.offlineNewMessage({   required String conversationId ,  required MessageInfo message , }) = MessageEvent_OfflineNewMessage;
+ /// 在线-only 消息（对齐 Go SDK `OnRecvOnlineOnlyMessage`）
+const factory MessageEvent.onlineOnlyMessage({   required String conversationId ,  required MessageInfo message , }) = MessageEvent_OnlineOnlyMessage;
+ /// 消息被撤回
+const factory MessageEvent.revoked({   required String conversationId ,  required int seq ,  required String clientMsgId ,  required String revokerId ,  required int revokerRole ,  required String revokerNickname ,  required int revokeTime ,  required int sourceMessageSendTime ,  required String sourceMessageSendId ,  required String sourceMessageSenderNickname ,  required int sessionType ,  required bool isAdminRevoke , }) = MessageEvent_Revoked;
+ /// C2C 已读回执
+const factory MessageEvent.c2CReadReceipt({   required List<MessageReceipt> receipts , }) = MessageEvent_C2CReadReceipt;
+ /// 消息被删除
+const factory MessageEvent.deleted({   required String conversationId ,  required List<String> clientMsgIds , }) = MessageEvent_Deleted;
+ /// 消息发送失败
+const factory MessageEvent.sendFailed({   required String clientMsgId ,  required String error , }) = MessageEvent_SendFailed;
+ /// 上传进度
+const factory MessageEvent.uploadProgress({   required String clientMsgId ,  required int progress ,  required int totalSize ,  required int uploadedSize , }) = MessageEvent_UploadProgress;
 
-  /// 离线新消息（对齐 Go SDK `OnRecvOfflineNewMessage`）
-  const factory MessageEvent.offlineNewMessage({
-    required String conversationId,
-    required MessageInfo message,
-  }) = MessageEvent_OfflineNewMessage;
+                    
 
-  /// 在线-only 消息（对齐 Go SDK `OnRecvOnlineOnlyMessage`）
-  const factory MessageEvent.onlineOnlyMessage({
-    required String conversationId,
-    required MessageInfo message,
-  }) = MessageEvent_OnlineOnlyMessage;
-
-  /// 消息被撤回
-  const factory MessageEvent.revoked({
-    required String conversationId,
-    required PlatformInt64 seq,
-    required String clientMsgId,
-    required String revokerId,
-    required int revokerRole,
-    required String revokerNickname,
-    required PlatformInt64 revokeTime,
-    required PlatformInt64 sourceMessageSendTime,
-    required String sourceMessageSendId,
-    required String sourceMessageSenderNickname,
-    required int sessionType,
-    required bool isAdminRevoke,
-  }) = MessageEvent_Revoked;
-
-  /// C2C 已读回执
-  const factory MessageEvent.c2CReadReceipt({
-    required List<MessageReceipt> receipts,
-  }) = MessageEvent_C2CReadReceipt;
-
-  /// 消息被删除
-  const factory MessageEvent.deleted({
-    required String conversationId,
-    required List<String> clientMsgIds,
-  }) = MessageEvent_Deleted;
-
-  /// 消息发送失败
-  const factory MessageEvent.sendFailed({
-    required String clientMsgId,
-    required String error,
-  }) = MessageEvent_SendFailed;
-
-  /// 上传进度
-  const factory MessageEvent.uploadProgress({
-    required String clientMsgId,
-    required int progress,
-    required BigInt totalSize,
-    required BigInt uploadedSize,
-  }) = MessageEvent_UploadProgress;
-}
+                    
+                }
 
 /// C2C 已读回执（对齐 Go SDK sdkws.MessageReceipt）
-class MessageReceipt {
-  final String userId;
-  final List<String> msgIds;
-  final PlatformInt64 readTime;
-  final int sessionType;
+class MessageReceipt  {
+                final String userId;
+final List<String> msgIds;
+final int readTime;
+final int sessionType;
 
-  const MessageReceipt({
-    required this.userId,
-    required this.msgIds,
-    required this.readTime,
-    required this.sessionType,
-  });
+                const MessageReceipt({required this.userId ,required this.msgIds ,required this.readTime ,required this.sessionType ,});
 
-  @override
-  int get hashCode =>
-      userId.hashCode ^
-      msgIds.hashCode ^
-      readTime.hashCode ^
-      sessionType.hashCode;
+                
+                
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MessageReceipt &&
-          runtimeType == other.runtimeType &&
-          userId == other.userId &&
-          msgIds == other.msgIds &&
-          readTime == other.readTime &&
-          sessionType == other.sessionType;
-}
+                
+        @override
+        int get hashCode => userId.hashCode^msgIds.hashCode^readTime.hashCode^sessionType.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is MessageReceipt &&
+                runtimeType == other.runtimeType
+                && userId == other.userId&& msgIds == other.msgIds&& readTime == other.readTime&& sessionType == other.sessionType;
+        
+            }
+            

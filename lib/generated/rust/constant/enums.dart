@@ -6,14 +6,29 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 连接状态（SDK 对外可见的连接生命周期状态）
+
+            
+
+            
+
+            /// 连接状态（SDK 对外可见的连接生命周期状态）
 enum ConnectionState {
-  disconnected,
-  connecting,
-  connected,
-  reconnecting,
-  kicked,
-}
+                    disconnected,
+connecting,
+connected,
+reconnecting,
+kicked,
+                    ;
+                    
+                }
 
 /// 会话类型
-enum SessionType { singleChat, writeGroupChat, readGroupChat, notificationChat }
+enum SessionType {
+                    singleChat,
+writeGroupChat,
+readGroupChat,
+notificationChat,
+                    ;
+                    
+                }
+            

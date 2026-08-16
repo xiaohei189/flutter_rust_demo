@@ -6,72 +6,50 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 日志配置（对齐 Go SDK IMConfig 日志字段）
-class LogConfig {
-  /// 日志级别: 0=trace, 1=debug, 2=info, 3=warn, 4=error, 5=off
-  final int logLevel;
 
-  /// 是否输出到控制台
-  final bool isLogStandardOutput;
+            
 
-  /// 日志文件目录
-  final String logFilePath;
+            
 
-  /// 保留日志文件个数
-  final int logRemainCount;
+            /// 日志配置（对齐 Go SDK IMConfig 日志字段）
+class LogConfig  {
+                /// 日志级别: 0=trace, 1=debug, 2=info, 3=warn, 4=error, 5=off
+final int logLevel;
+/// 是否输出到控制台
+final bool isLogStandardOutput;
+/// 日志文件目录
+final String logFilePath;
+/// 保留日志文件个数
+final int logRemainCount;
+/// 是否输出 JSON 格式（文件层）
+final bool isLogJson;
+/// 系统类型（如 "linux", "android"）
+final String systemType;
+/// 平台名称（如 "Android", "iOS"）
+final String platformName;
+/// SDK 版本号
+final String sdkVersion;
+/// 是否打印 span 进入/退出事件（FmtSpan::ENTER | FmtSpan::CLOSE）
+/// 启用后即使 span 内没有 info!() 调用，也会在 span 进入/退出时输出日志
+final bool isLogSpanEvents;
 
-  /// 是否输出 JSON 格式（文件层）
-  final bool isLogJson;
+                const LogConfig({required this.logLevel ,required this.isLogStandardOutput ,required this.logFilePath ,required this.logRemainCount ,required this.isLogJson ,required this.systemType ,required this.platformName ,required this.sdkVersion ,required this.isLogSpanEvents ,});
 
-  /// 系统类型（如 "linux", "android"）
-  final String systemType;
+                
+                
 
-  /// 平台名称（如 "Android", "iOS"）
-  final String platformName;
+                
+        @override
+        int get hashCode => logLevel.hashCode^isLogStandardOutput.hashCode^logFilePath.hashCode^logRemainCount.hashCode^isLogJson.hashCode^systemType.hashCode^platformName.hashCode^sdkVersion.hashCode^isLogSpanEvents.hashCode;
+        
 
-  /// SDK 版本号
-  final String sdkVersion;
-
-  /// 是否打印 span 进入/退出事件（FmtSpan::ENTER | FmtSpan::CLOSE）
-  /// 启用后即使 span 内没有 info!() 调用，也会在 span 进入/退出时输出日志
-  final bool isLogSpanEvents;
-
-  const LogConfig({
-    required this.logLevel,
-    required this.isLogStandardOutput,
-    required this.logFilePath,
-    required this.logRemainCount,
-    required this.isLogJson,
-    required this.systemType,
-    required this.platformName,
-    required this.sdkVersion,
-    required this.isLogSpanEvents,
-  });
-
-  @override
-  int get hashCode =>
-      logLevel.hashCode ^
-      isLogStandardOutput.hashCode ^
-      logFilePath.hashCode ^
-      logRemainCount.hashCode ^
-      isLogJson.hashCode ^
-      systemType.hashCode ^
-      platformName.hashCode ^
-      sdkVersion.hashCode ^
-      isLogSpanEvents.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is LogConfig &&
-          runtimeType == other.runtimeType &&
-          logLevel == other.logLevel &&
-          isLogStandardOutput == other.isLogStandardOutput &&
-          logFilePath == other.logFilePath &&
-          logRemainCount == other.logRemainCount &&
-          isLogJson == other.isLogJson &&
-          systemType == other.systemType &&
-          platformName == other.platformName &&
-          sdkVersion == other.sdkVersion &&
-          isLogSpanEvents == other.isLogSpanEvents;
-}
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is LogConfig &&
+                runtimeType == other.runtimeType
+                && logLevel == other.logLevel&& isLogStandardOutput == other.isLogStandardOutput&& logFilePath == other.logFilePath&& logRemainCount == other.logRemainCount&& isLogJson == other.isLogJson&& systemType == other.systemType&& platformName == other.platformName&& sdkVersion == other.sdkVersion&& isLogSpanEvents == other.isLogSpanEvents;
+        
+            }
+            

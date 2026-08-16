@@ -7,95 +7,90 @@ import 'frb_generated.dart';
 import 'model/message.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 历史消息分页查询参数
-class GetHistoryMessagesReq {
-  final String conversationId;
-  final String startClientMsgId;
-  final PlatformInt64 count;
 
-  const GetHistoryMessagesReq({
-    required this.conversationId,
-    required this.startClientMsgId,
-    required this.count,
-  });
+            
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^ startClientMsgId.hashCode ^ count.hashCode;
+            
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetHistoryMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          startClientMsgId == other.startClientMsgId &&
-          count == other.count;
-}
+            /// 历史消息分页查询参数
+class GetHistoryMessagesReq  {
+                final String conversationId;
+final String startClientMsgId;
+final int count;
+
+                const GetHistoryMessagesReq({required this.conversationId ,required this.startClientMsgId ,required this.count ,});
+
+                
+                
+
+                
+        @override
+        int get hashCode => conversationId.hashCode^startClientMsgId.hashCode^count.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GetHistoryMessagesReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& startClientMsgId == other.startClientMsgId&& count == other.count;
+        
+            }
 
 /// 历史消息分页结果
-class GetHistoryMessagesResult {
-  final List<MessageInfo> messages;
-  final bool isEnd;
+class GetHistoryMessagesResult  {
+                final List<MessageInfo> messages;
+final bool isEnd;
 
-  const GetHistoryMessagesResult({required this.messages, required this.isEnd});
+                const GetHistoryMessagesResult({required this.messages ,required this.isEnd ,});
 
-  @override
-  int get hashCode => messages.hashCode ^ isEnd.hashCode;
+                
+                
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GetHistoryMessagesResult &&
-          runtimeType == other.runtimeType &&
-          messages == other.messages &&
-          isEnd == other.isEnd;
-}
+                
+        @override
+        int get hashCode => messages.hashCode^isEnd.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is GetHistoryMessagesResult &&
+                runtimeType == other.runtimeType
+                && messages == other.messages&& isEnd == other.isEnd;
+        
+            }
 
 /// 本地消息搜索参数
-class SearchMessagesReq {
-  final String conversationId;
-  final String keyword;
-  final List<String> senderUserIds;
-  final Int32List messageTypes;
-  final PlatformInt64 startTime;
-  final PlatformInt64 endTime;
-  final PlatformInt64 offset;
-  final PlatformInt64 count;
+class SearchMessagesReq  {
+                final String conversationId;
+final String keyword;
+final List<String> senderUserIds;
+final Int32List messageTypes;
+final int startTime;
+final int endTime;
+final int offset;
+final int count;
 
-  const SearchMessagesReq({
-    required this.conversationId,
-    required this.keyword,
-    required this.senderUserIds,
-    required this.messageTypes,
-    required this.startTime,
-    required this.endTime,
-    required this.offset,
-    required this.count,
-  });
+                const SearchMessagesReq({required this.conversationId ,required this.keyword ,required this.senderUserIds ,required this.messageTypes ,required this.startTime ,required this.endTime ,required this.offset ,required this.count ,});
 
-  @override
-  int get hashCode =>
-      conversationId.hashCode ^
-      keyword.hashCode ^
-      senderUserIds.hashCode ^
-      messageTypes.hashCode ^
-      startTime.hashCode ^
-      endTime.hashCode ^
-      offset.hashCode ^
-      count.hashCode;
+                
+                
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SearchMessagesReq &&
-          runtimeType == other.runtimeType &&
-          conversationId == other.conversationId &&
-          keyword == other.keyword &&
-          senderUserIds == other.senderUserIds &&
-          messageTypes == other.messageTypes &&
-          startTime == other.startTime &&
-          endTime == other.endTime &&
-          offset == other.offset &&
-          count == other.count;
-}
+                
+        @override
+        int get hashCode => conversationId.hashCode^keyword.hashCode^senderUserIds.hashCode^messageTypes.hashCode^startTime.hashCode^endTime.hashCode^offset.hashCode^count.hashCode;
+        
+
+                
+        @override
+        bool operator ==(Object other) =>
+            identical(this, other) ||
+            other is SearchMessagesReq &&
+                runtimeType == other.runtimeType
+                && conversationId == other.conversationId&& keyword == other.keyword&& senderUserIds == other.senderUserIds&& messageTypes == other.messageTypes&& startTime == other.startTime&& endTime == other.endTime&& offset == other.offset&& count == other.count;
+        
+            }
+            

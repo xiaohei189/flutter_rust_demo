@@ -1,3 +1,6 @@
 rust_input: crate::ffi
 rust_root: rust/
 dart_output: lib/generated/rust
+# 64 位整型（i64/u64/usize/isize）全平台生成 int，避免 web 下 BigInt 语义导致
+# 生成代码在 web 编译时 int/BigInt 类型冲突（widget-preview 依赖 web 编译）。
+type_64bit_int: true
