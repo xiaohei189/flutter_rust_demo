@@ -8,6 +8,7 @@ import '../../generated/rust/ffi/client.dart';
 import '../../generated/rust/ffi/message.dart' as ffi_message;
 import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
 import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
+import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
@@ -64,6 +65,12 @@ abstract class MessageRepository {
 
   Future<MsgStruct> sendImageMessage({
     required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendImageMessageFromUrl({
+    required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
   });
@@ -318,6 +325,19 @@ class MessageRepositoryImpl implements MessageRepository {
     );
     return ffi_message_advanced.sendMessage(
       msgStruct: msg,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  @override
+  Future<MsgStruct> sendImageMessageFromUrl({
+    required String sourceUrl,
+    required String sourceId,
+    required SessionType sessionType,
+  }) {
+    return ffi_message_media.sendImageMessageFromUrl(
+      sourceUrl: sourceUrl,
       sourceId: sourceId,
       sessionType: sessionType,
     );

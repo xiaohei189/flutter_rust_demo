@@ -334,6 +334,18 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
         ),
   );
 
+  /// 发送 GIF（URL 图片，内容已上传）
+  Future<bool> sendGif(String url) => _sendMedia(
+    (target) => ref
+        .read(messageListProvider(arg).notifier)
+        .sendImageMessageFromUrl(
+          recvId: target.recvId,
+          sourceUrl: url,
+          sessionType: target.sessionType,
+          groupId: target.groupId,
+        ),
+  );
+
   Future<bool> sendVideo({
     required String videoPath,
     required String snapshotPath,

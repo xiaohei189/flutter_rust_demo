@@ -369,6 +369,20 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     );
   }
 
+  /// 发送 URL 图片（如 GIF，内容已上传，不走 OSS）
+  Future<MsgStruct> sendImageMessageFromUrl({
+    required String sourceUrl,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    if (client == null) throw StateError('客户端未初始化');
+    return repository.sendImageMessageFromUrl(
+      sourceUrl: sourceUrl,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
   /// 发送视频消息
   Future<MsgStruct> sendVideoMessage({
     required String videoPath,

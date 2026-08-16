@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/message.dart' show MessageType;
+import '../../../domain/models/group_member.dart';
 import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
-import '../../../generated/rust/model/group.dart' show GroupMember;
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../providers/online_status_provider.dart';
@@ -191,6 +191,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final conversation = _conversation;
     return conversation?.conversationType == 2 ||
         conversation?.conversationType == 3;
+  }
+
+  /// 群成员列表（实时 @ 用，仅群聊；成员未加载时为空，实时 @ 不激活，可走工具栏 @ 按钮）
+  List<GroupMember> get _atMembers {
+    if (!_isGroup) return const [];
+    final target = _viewModel?.sendTarget;
+    if (target == null || target.groupId.isEmpty) return const [];
+    return ref.read(groupMemberProvider(target.groupId)).members;
+  }
+
+  Future<void> _sendGif(String url) async {
+    final ok = await _viewModel?.sendGif(url) ?? false;
+    if (!ok) _showError('发送 GIF 失败');
+  }
+
+  void _onAtMemberSelected(String userId) {
+    _viewModel?.addAtUserId(userId);
   }
 
   User _getUser(UserProfileState userProfileState) {
@@ -872,6 +889,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     onCardSend: _sendCardMessage,
                     onVoiceRecord: _sendVoiceMessage,
                     onAtMention: _showAtMentionPicker,
+                    onGifSelected: _sendGif,
+                    atMembers: _atMembers,
+                    onAtMemberSelected: _onAtMemberSelected,
                     isGroupChat: _isGroup,
                   ),
                 ],

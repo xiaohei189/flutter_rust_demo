@@ -179,6 +179,27 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     }
   }
 
+  /// 发送 URL 图片（GIF/表情，内容已上传）
+  Future<bool> sendImageMessageFromUrl({
+    required String recvId,
+    required String sourceUrl,
+    required SessionType sessionType,
+    String? groupId,
+  }) async {
+    try {
+      final result = await _messageService.sendImageMessageFromUrl(
+        sourceUrl: sourceUrl,
+        sourceId: _sourceId(recvId, groupId),
+        sessionType: sessionType,
+      );
+      _addSentMessage(result);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '发送图片失败: $e');
+      return false;
+    }
+  }
+
   Future<bool> sendVideoMessage({
     required String recvId,
     required String videoPath,

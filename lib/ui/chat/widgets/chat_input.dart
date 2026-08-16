@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import '../../../domain/models/group_member.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_image.dart';
 import 'attachment_panel.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
@@ -34,6 +36,9 @@ class ChatInput extends StatefulWidget {
   final Function(int duration, String filePath)? onVoiceRecord;
   final VoidCallback? onCardSend;
   final VoidCallback? onAtMention;
+  final ValueChanged<String>? onGifSelected;
+  final List<GroupMember>? atMembers;
+  final ValueChanged<String>? onAtMemberSelected;
   final bool isGroupChat;
 
   const ChatInput({
@@ -48,6 +53,9 @@ class ChatInput extends StatefulWidget {
     this.onVoiceRecord,
     this.onCardSend,
     this.onAtMention,
+    this.onGifSelected,
+    this.atMembers,
+    this.onAtMemberSelected,
     this.isGroupChat = false,
   });
 
@@ -60,6 +68,9 @@ class _ChatInputState extends State<ChatInput> {
   bool _isMarkdownMode = false;
   bool _inputExpanded = false;
   _InputPanel _activePanel = _InputPanel.none;
+
+  /// 实时 @ 查询关键字（非 null 且输入框含 '@' 时显示成员列表）
+  String? _atKeyword;
 
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
@@ -150,10 +161,12 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _onTextChanged() {
-    final hasText = widget.controller.text.trim().isNotEmpty;
+    final text = widget.controller.text;
+    final hasText = text.trim().isNotEmpty;
     if (_hasTextNotifier.value != hasText) {
       _hasTextNotifier.value = hasText;
     }
+    _updateAtQuery(text);
   }
 
   void _doSend() {
@@ -356,6 +369,142 @@ class _ChatInputState extends State<ChatInput> {
 
   List<AttachmentItem> get _attachmentItems => _cachedAttachmentItems;
 
+  // ==================== 实时 @（Telegram 式） ====================
+
+  /// 根据输入内容更新 @ 查询状态：光标前存在 '@' 时激活成员列表
+  void _updateAtQuery(String text) {
+    if (!widget.isGroupChat ||
+        widget.atMembers == null ||
+        widget.atMembers!.isEmpty) {
+      _setAtQuery(null);
+      return;
+    }
+    final caret = widget.controller.selection.isValid
+        ? widget.controller.selection.baseOffset
+        : text.length;
+    final searchFrom = caret > 0 ? caret - 1 : 0;
+    final lastAt = text.lastIndexOf('@', searchFrom);
+    if (lastAt < 0) {
+      _setAtQuery(null);
+      return;
+    }
+    final keyword = text.substring(lastAt + 1, caret).trim();
+    _setAtQuery(keyword);
+  }
+
+  void _setAtQuery(String? keyword) {
+    if (_atKeyword == keyword) return;
+    setState(() => _atKeyword = keyword);
+  }
+
+  /// 按关键字过滤群成员（昵称 / ID 模糊匹配）
+  List<GroupMember> get _filteredAtMembers {
+    final keyword = _atKeyword;
+    if (keyword == null) return const [];
+    final members = widget.atMembers ?? const [];
+    if (keyword.isEmpty) return members;
+    final lower = keyword.toLowerCase();
+    return members
+        .where(
+          (m) =>
+              m.nickname.toLowerCase().contains(lower) ||
+              m.userId.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
+  /// 选择成员：替换 "@关键字" 为 "@昵称 "，并回调外部记录 atUserId
+  void _selectAtMember(GroupMember member) {
+    final controller = widget.controller;
+    final text = controller.text;
+    final caret = controller.selection.isValid
+        ? controller.selection.baseOffset
+        : text.length;
+    final searchFrom = caret > 0 ? caret - 1 : 0;
+    final lastAt = text.lastIndexOf('@', searchFrom);
+    if (lastAt < 0) return;
+    final displayName = member.nickname.isNotEmpty
+        ? member.nickname
+        : member.userId;
+    final newText = '${text.substring(0, lastAt)}@$displayName ';
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+    widget.onAtMemberSelected?.call(member.userId);
+    _setAtQuery(null);
+    _focusNode.requestFocus();
+  }
+
+  /// 成员选择列表（输入框上方，随关键字过滤）
+  Widget _buildAtMemberList() {
+    final members = _filteredAtMembers;
+    final colors = context.appColors;
+    return Material(
+      color: colors.surface,
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: colors.divider, width: 0.5),
+          ),
+        ),
+        child: members.isEmpty
+            ? Center(
+                child: Text(
+                  '无匹配成员',
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              )
+            : ListView.builder(
+                itemCount: members.length,
+                itemBuilder: (_, i) {
+                  final member = members[i];
+                  return ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: colors.surfaceMuted,
+                      child: member.faceUrl.isNotEmpty
+                          ? ClipOval(
+                              child: AppImage(
+                                source: member.faceUrl,
+                                width: 32,
+                                height: 32,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Icon(
+                              Icons.person,
+                              size: 18,
+                              color: colors.textSecondary,
+                            ),
+                    ),
+                    title: Text(
+                      member.nickname.isNotEmpty
+                          ? member.nickname
+                          : member.userId,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      member.userId,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    onTap: () => _selectAtMember(member),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
   // ==================== 构建 ====================
 
   @override
@@ -383,6 +532,7 @@ class _ChatInputState extends State<ChatInput> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildInputRow(),
+                if (_atKeyword != null) _buildAtMemberList(),
                 const SizedBox(height: 8),
                 _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
               ],
@@ -391,6 +541,7 @@ class _ChatInputState extends State<ChatInput> {
           if (_activePanel == _InputPanel.emoji)
             EmojiPanel(
               onEmojiSelected: _insertEmoji,
+              onGifSelected: widget.onGifSelected,
               onClose: () {
                 _closeAllPanels();
                 _focusNode.requestFocus();
