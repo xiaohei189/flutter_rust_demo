@@ -1,7 +1,7 @@
 import '../../generated/rust/ffi/client.dart' as fb;
 import '../../generated/rust/model/group.dart' show GroupInfo, GroupMember;
 import '../../generated/rust/http/group.dart' show GroupApplyInfo;
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 abstract class GroupService {
   static GroupService get instance => GroupServiceImpl.instance;
@@ -166,12 +166,12 @@ abstract class GroupService {
 /// 3. 群成员管理（邀请、踢出、禁言、设置信息）
 /// 4. 群申请管理（接受、拒绝）
 class GroupServiceImpl implements GroupService {
-  static final GroupServiceImpl _instance = GroupServiceImpl._internal();
+  static final GroupServiceImpl _instance = GroupServiceImpl();
 
   /// 全局单例实例
   static GroupServiceImpl get instance => _instance;
 
-  GroupServiceImpl._internal();
+  GroupServiceImpl();
 
   // ==================== 群组列表 ====================
 

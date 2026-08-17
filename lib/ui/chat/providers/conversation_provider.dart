@@ -7,19 +7,7 @@ import '../view_models/conversation_view_model.dart';
 
 /// 会话服务实例 Provider
 final conversationServiceProvider = Provider<ConversationService>((ref) {
-  return ConversationService.instance;
-});
-
-/// 会话列表流 Provider
-final conversationsStreamProvider = StreamProvider<List<Conversation>>((ref) {
-  final service = ref.watch(conversationServiceProvider);
-  return service.conversationsStream;
-});
-
-/// 当前会话列表 Provider（从新服务）
-final conversationsFromServiceProvider = Provider<List<Conversation>>((ref) {
-  final service = ref.watch(conversationServiceProvider);
-  return service.conversations;
+  return ConversationService();
 });
 
 /// 会话同步状态流 Provider

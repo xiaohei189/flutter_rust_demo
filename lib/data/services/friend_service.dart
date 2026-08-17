@@ -5,7 +5,7 @@ import 'package:flutter_rust_demo/generated/rust/model/friend.dart'
     show FriendInfo;
 import 'package:flutter_rust_demo/generated/rust/http/friend.dart'
     show FriendApplyInfo;
-import 'package:flutter_rust_demo/ui/core/utils/app_logger.dart';
+import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 
 abstract class FriendService {
   static FriendService get instance => FriendServiceImpl.instance;
@@ -114,12 +114,12 @@ abstract class FriendService {
 /// 3. 黑名单管理
 /// 4. 好友信息更新
 class FriendServiceImpl implements FriendService {
-  static final FriendServiceImpl _instance = FriendServiceImpl._internal();
+  static final FriendServiceImpl _instance = FriendServiceImpl();
 
   /// 全局单例实例
   static FriendServiceImpl get instance => _instance;
 
-  FriendServiceImpl._internal();
+  FriendServiceImpl();
 
   // ==================== 好友申请 ====================
 

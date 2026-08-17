@@ -12,6 +12,20 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 - `docs/` - Documentation entry point (`docs/README.md`), SDK specs in `docs/sdk-spec/`, and conventions in `docs/conventions.md`.
 - `scripts/` and `rust/scripts/` - Device and test-tier helper scripts.
 
+## 架构边界（强制）
+
+所有改动必须遵守以下依赖与分层规则，违反即视为不合规：
+
+- Dart 依赖方向固定为 `UI (lib/ui) -> Domain (lib/domain) -> Data (lib/data) -> generated/rust`。`lib/data` 与 `lib/domain` 禁止 import `lib/ui/` 或 `lib/providers/`。
+- FFI 调用只能出现在 `lib/data/` 与 `lib/main.dart`。`lib/ui/` 与 `lib/providers/` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；所有 Rust 调用必须经 Service/Repository。
+- View 与 ViewModel 只能依赖 Repository/Provider，禁止直接调用 FFI、生成客户端或 Service 单例。
+- 每个领域只保留一个状态源；派生状态用 Provider + `select`，禁止用 `ref.listen` 把全局状态复制进本地 Notifier（纯展示格式化除外）。
+- Service 必须提供抽象接口 + Impl，并由 Riverpod Provider 持有实例。业务 Provider 禁止直接返回 `X.instance`；`X.instance` 仅允许存在于低层基础设施。
+- Repository 返回 Domain Model；存量直接把 generated model 暴露给 UI 的代码应逐步迁移，新增代码禁止新增该泄漏。
+- 提交前必须运行边界检查：
+  - `rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。
+  - `rg -n "from '\.\./ui/|from '\.\./providers/|ui/core/utils/app_logger" lib/data lib/domain` 结果必须为空。
+
 ## Build, Test, and Development Commands
 
 - `flutter pub get` - Install Dart dependencies.

@@ -19,7 +19,7 @@ import '../view_models/friend_search_view_model.dart';
 /// 好友 Repository Provider
 final friendRepositoryProvider = Provider<FriendRepository>((ref) {
   return FriendRepositoryImpl(
-    friendService: FriendService.instance,
+    friendService: FriendServiceImpl(),
     imClient: ref.watch(imClientProvider),
   );
 });
@@ -36,7 +36,7 @@ final friendListProvider =
 final friendApplicationRepositoryProvider =
     Provider<FriendApplicationRepository>((ref) {
       return FriendApplicationRepositoryImpl(
-        friendService: FriendService.instance,
+        friendService: FriendServiceImpl(),
         imClient: ref.watch(imClientProvider),
       );
     });
@@ -52,7 +52,7 @@ final friendApplyProvider =
 /// 好友搜索 Repository Provider
 final friendSearchRepositoryProvider = Provider<FriendSearchRepository>((ref) {
   return FriendSearchRepositoryImpl(
-    friendService: FriendService.instance,
+    friendService: FriendServiceImpl(),
     imClient: ref.watch(imClientProvider),
   );
 });
@@ -60,7 +60,7 @@ final friendSearchRepositoryProvider = Provider<FriendSearchRepository>((ref) {
 /// 用户资料 Repository Provider
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
   return UserProfileRepositoryImpl(
-    userService: UserService.instance,
+    userService: UserServiceImpl(),
     friendRepository: ref.watch(friendRepositoryProvider),
     friendSearchRepository: ref.watch(friendSearchRepositoryProvider),
   );
@@ -77,7 +77,7 @@ final friendSearchProvider =
 /// 黑名单 Repository Provider
 final blackListRepositoryProvider = Provider<BlacklistRepository>((ref) {
   return BlacklistRepositoryImpl(
-    friendService: FriendService.instance,
+    friendService: FriendServiceImpl(),
     userService: ref.watch(userServiceProvider),
     imClient: ref.watch(imClientProvider),
   );

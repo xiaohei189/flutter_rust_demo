@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 import '../config/host_config.dart';
 
 /// 认证服务端基础 URL

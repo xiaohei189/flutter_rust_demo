@@ -1,16 +1,12 @@
 import 'dart:async';
 
-import 'package:path_provider/path_provider.dart';
-
-import '../../../generated/rust/client/config.dart';
 import '../../../generated/rust/event/events/connection.dart';
-import '../../../generated/rust/ffi/client.dart' as fb;
-import '../../../generated/rust/ffi/ffi_init.dart' show initLogger;
+import '../../../data/services/connection_service.dart';
 import '../../../data/services/login_storage.dart';
 import '../../../data/services/navigation_service.dart';
 import '../../../data/services/online_status_service.dart';
 import '../../../data/services/im_client.dart';
-import '../../core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 import 'message_service_state.dart';
 
@@ -26,9 +22,8 @@ class MessageServiceConnectionController {
     String? userId,
     String? imToken,
   }) async {
-    if (service.client != null && service.currentState.isConnected) {
-      OnlineStatusService.instance.setClient(service.client);
-      ImClient.instance.setClient(service.client);
+    if (ImClient.instance.isInitialized && service.currentState.isConnected) {
+      OnlineStatusService.instance.setClient(ImClient.instance.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
@@ -39,26 +34,22 @@ class MessageServiceConnectionController {
     }
 
     service.updateState(service.currentState.copyWith(isInitializing: true));
+    ConnectionService.instance.updateStatus(ConnectionStatus.connecting);
     appLog.i('[MessageService] initialize 开始');
     try {
-      if (service.client != null) {
+      if (ImClient.instance.isInitialized) {
         appLog.i('[MessageService] 关闭已有客户端，重新初始化');
         for (final s in service.subscriptions) {
           await s.cancel();
         }
         service.subscriptions.clear();
         try {
-          await service.client!.disconnect();
+          await ImClient.instance.close();
         } catch (e) {
           appLog.w('[MessageService] 关闭旧客户端失败: $e');
         }
-        service.client = null;
         OnlineStatusService.instance.setClient(null);
-        ImClient.instance.setClient(null);
       }
-
-      appLog.i('[MessageService] 初始化日志和 SDK 客户端...');
-      await initLogger(logLevel: 'info,rust_lib_flutter_rust_demo=debug');
 
       final String resolvedUserId;
       final String resolvedImToken;
@@ -77,45 +68,39 @@ class MessageServiceConnectionController {
         service.currentState.copyWith(currentUserId: resolvedUserId),
       );
 
-      final docDir = await getApplicationDocumentsDirectory();
-      final dataDir = '${docDir.path}/openim_data';
-      service.client = await fb.OpenImBridgeClient.newInstance(
-        config: ClientConfig(
-          userId: resolvedUserId,
-          token: resolvedImToken,
-          platformId: 5,
-          wsUrl: wsUrl,
-          apiBaseUrl: apiBaseUrl!,
-          dataDir: dataDir,
-        ),
+      await ImClient.instance.createClient(
+        userId: resolvedUserId,
+        token: resolvedImToken,
+        wsUrl: wsUrl,
+        apiBaseUrl: apiBaseUrl!,
       );
-      OnlineStatusService.instance.setClient(service.client);
-      ImClient.instance.setClient(service.client);
+      OnlineStatusService.instance.setClient(ImClient.instance.client);
       unawaited(service.loadConversations());
 
       service.subscriptions.add(
-        service.client!.connectionStream().listen(service.onConnectionEvent),
+        ImClient.instance.connectionStream.listen(service.onConnectionEvent),
       );
       service.subscriptions.add(
-        service.client!.conversationStream().listen(
+        ImClient.instance.conversationStream.listen(
           service.onConversationEvent,
         ),
       );
       service.subscriptions.add(
-        service.client!.friendStream().listen(service.onFriendEvent),
+        ImClient.instance.friendStream.listen(service.onFriendEvent),
       );
       service.subscriptions.add(
-        service.client!.groupStream().listen(service.onGroupEvent),
+        ImClient.instance.groupStream.listen(service.onGroupEvent),
       );
       service.subscriptions.add(
-        service.client!.messageStream().listen(service.onMessageEvent),
+        ImClient.instance.messageStream.listen(service.onMessageEvent),
       );
       service.subscriptions.add(
-        service.client!.userStream().listen(service.onUserEvent),
+        ImClient.instance.userStream.listen(service.onUserEvent),
       );
       appLog.i('[MessageService] 6 模块事件流已注册');
 
       service.updateState(service.currentState.copyWith(isConnected: true));
+      ConnectionService.instance.updateStatus(ConnectionStatus.connected);
       appLog.i('✅ 客户端连接成功');
 
       unawaited(service.refreshLoginUserProfile());
@@ -123,6 +108,7 @@ class MessageServiceConnectionController {
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');
       service.updateState(service.currentState.copyWith(isConnected: false));
+      ConnectionService.instance.updateStatus(ConnectionStatus.failed);
       rethrow;
     } finally {
       service.updateState(service.currentState.copyWith(isInitializing: false));
@@ -133,14 +119,25 @@ class MessageServiceConnectionController {
     appLog.i('[MsgSvc] _onConnectionEvent: ${event.runtimeType}');
     event.maybeWhen(
       connected: () {
+        ConnectionService.instance.updateStatus(ConnectionStatus.connected);
         appLog.i('[MsgSvc] connected!');
         service.updateState(service.currentState.copyWith(isConnected: true));
         unawaited(service.loadConversations());
       },
-      kickedOffline: (_) => service.updateState(
-        service.currentState.copyWith(isConnected: false),
-      ),
+      connecting: () =>
+          ConnectionService.instance.updateStatus(ConnectionStatus.connecting),
+      disconnected: (_) =>
+          ConnectionService.instance.updateStatus(ConnectionStatus.disconnected),
+      connectFailed: (_, _) =>
+          ConnectionService.instance.updateStatus(ConnectionStatus.failed),
+      reconnecting: (_, _) =>
+          ConnectionService.instance.updateStatus(ConnectionStatus.connecting),
+      kickedOffline: (_) {
+        ConnectionService.instance.updateStatus(ConnectionStatus.kickedOffline);
+        service.updateState(service.currentState.copyWith(isConnected: false));
+      },
       tokenExpired: () {
+        ConnectionService.instance.updateStatus(ConnectionStatus.tokenExpired);
         service.updateState(service.currentState.copyWith(isConnected: false));
         LoginStorage.clearCredentials().catchError((_) {});
         NavigationService.instance.goToLogin();
@@ -154,10 +151,9 @@ class MessageServiceConnectionController {
       await s.cancel();
     }
     service.subscriptions.clear();
-    await service.client?.disconnect();
-    service.client = null;
+    await ImClient.instance.close();
     OnlineStatusService.instance.setClient(null);
-    ImClient.instance.setClient(null);
+    ConnectionService.instance.updateStatus(ConnectionStatus.disconnected);
     service.updateState(const MessageServiceState());
   }
 }

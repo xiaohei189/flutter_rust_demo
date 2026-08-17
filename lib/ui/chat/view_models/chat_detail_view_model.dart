@@ -7,9 +7,6 @@ import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
-import '../../../generated/rust/ffi/message.dart' show sendMergerMessage;
-import '../../../generated/rust/ffi/message_advanced.dart'
-    as ffi_message_advanced;
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../providers/chat_aux_provider.dart';
@@ -20,7 +17,7 @@ import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
-import '../widgets/chat_input.dart' show MessageContentType;
+import '../widgets/message_content_type.dart' show MessageContentType;
 import 'message_service_notifier.dart';
 
 typedef ChatSendTarget = ({
@@ -225,7 +222,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     final target = sendTarget;
     if (target == null) return;
     unawaited(
-      ffi_message_advanced.sendTyping(
+      _messageService.sendTyping(
         sourceId: target.recvId,
         sessionType: target.sessionType,
         focus: focus,
@@ -569,7 +566,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
         : SessionType.singleChat;
     try {
       if (merge) {
-        await sendMergerMessage(
+        await _messageService.sendMergerMessage(
           title: '聊天记录',
           summaryList: messages.map((m) => m.displayText).toList(),
           sourceId: targetId,

@@ -11,7 +11,7 @@ import '../../generated/rust/event/events/group.dart';
 import '../../generated/rust/event/events/message.dart';
 import '../../generated/rust/event/events/user.dart';
 import '../../generated/rust/client/config.dart';
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 /// IM 客户端管理 - 负责 OpenImBridgeClient 的创建和管理
 /// 
@@ -117,6 +117,13 @@ class ImClient {
       _client = null;
     }
     _isInitializing = false;
+  }
+
+  /// 调用 SDK 退出登录（不关闭本地客户端）
+  Future<void> logout() async {
+    if (_client != null) {
+      await _client!.logout();
+    }
   }
   
   Stream<ConnectionEvent> get connectionStream => _client!.connectionStream();

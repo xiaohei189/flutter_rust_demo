@@ -108,6 +108,26 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 - Provider 只做依赖注册和状态桥接，不在 Provider 中实现数据获取。
 - Service 使用抽象接口 + 单例实现（如 `FriendService` / `FriendServiceImpl`），Repository 依赖接口以便单测注入 fake。
 
+### 架构边界（强制）
+
+依赖方向固定为 `UI (lib/ui) -> Domain (lib/domain) -> Data (lib/data) -> generated/rust`，任何一层都不允许反向 import：
+
+- `lib/data` 与 `lib/domain` 禁止 import `lib/ui/` 或 `lib/providers/`；日志等基础工具放在 `lib/core/`，不能放在 `lib/ui/core/`。
+- `lib/ui` 与 `lib/providers` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；FFI 调用统一收口到 Service/Repository。
+- View/ViewModel 只能依赖 Repository/Provider；禁止在 View 内直接调用 `uploadFile`、`sendMergerMessage`、`sendTyping` 等 FFI 函数。
+- 同一领域只保留一个状态源（如 `ConnectionService`、`ConversationListProvider`），其他 Provider 通过 `select` 派生；禁止创建并行的双轨 Provider。
+- 业务 Service 必须提供抽象接口 + 实现，并由 Riverpod Provider 持有实例；业务代码禁止直接访问 `X.instance`。
+- Repository 对外返回 Domain Model，禁止把 generated raw model 直接暴露给 View；存量代码逐步迁移，新增代码不得新增泄漏。
+
+提交前用以下命令做边界回归：
+
+```powershell
+rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"
+rg -n "ui/core/utils/app_logger|from '\.\./ui/|from '\.\./providers/" lib/data lib/domain
+```
+
+两项都应为空（`lib/main.dart` 的 Rust 启动初始化除外）。
+
 ```dart
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});

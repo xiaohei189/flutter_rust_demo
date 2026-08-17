@@ -5,7 +5,7 @@ import '../view_models/user_profile_view_model.dart';
 
 /// 用户服务实例 Provider
 final userServiceProvider = Provider<UserService>((ref) {
-  return UserService.instance;
+  return UserServiceImpl();
 });
 
 /// 当前登录用户资料流 Provider

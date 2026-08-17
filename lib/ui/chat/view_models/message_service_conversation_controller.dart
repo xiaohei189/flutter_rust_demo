@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter_rust_demo/data/services/im_client.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../generated/rust/event/events/conversation.dart';
 import '../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../ui/core/extensions/conversation_extensions.dart';
-import '../../core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 
 /// 会话事件、加载、草稿、已读、置顶、删除与会话管理。
@@ -76,7 +77,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> loadConversations() async {
-    if (service.client == null) {
+    if (!ImClient.instance.isInitialized) {
       appLog.w('[MessageService] _loadConversations 跳过：client 为空');
       return;
     }
@@ -187,7 +188,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> markConversationMessageAsRead(String conversationId) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       final conv = service.currentState.conversations
           .where((c) => c.conversationId == conversationId)
@@ -216,7 +217,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> saveDraft(String conversationId, String draftText) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       final newConversations = List<Conversation>.from(
         service.currentState.conversations,
@@ -246,7 +247,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> clearDraft(String conversationId) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       final newConversations = List<Conversation>.from(
         service.currentState.conversations,
@@ -276,7 +277,7 @@ class MessageServiceConversationController {
     String conversationId,
     bool isPinned,
   ) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       await service.repository.setConversationPinned(
         conversationId: conversationId,
@@ -289,7 +290,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> deleteConversation(String conversationId) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       await service.repository.deleteConversation(
         conversationId: conversationId,
@@ -301,7 +302,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> hideConversation(String conversationId) async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       await service.repository.hideConversation(conversationId: conversationId);
       await loadConversations();
@@ -311,7 +312,7 @@ class MessageServiceConversationController {
   }
 
   Future<void> markAllConversationsAsRead() async {
-    if (service.client == null) return;
+    if (!ImClient.instance.isInitialized) return;
     try {
       await service.repository.markAllConversationsAsRead();
       await loadConversations();

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../../generated/rust/model/user.dart' show UserInfo;
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 import 'im_client.dart';
 
 abstract class UserService {
@@ -36,7 +36,7 @@ abstract class UserService {
 /// 3. 批量预加载用户资料
 /// 4. 管理当前登录用户信息
 class UserServiceImpl implements UserService {
-  static final UserServiceImpl _instance = UserServiceImpl._internal();
+  static final UserServiceImpl _instance = UserServiceImpl();
 
   /// 全局单例实例
   static UserServiceImpl get instance => _instance;
@@ -54,7 +54,7 @@ class UserServiceImpl implements UserService {
 
   bool _isDisposed = false;
 
-  UserServiceImpl._internal();
+  UserServiceImpl();
 
   /// 设置当前用户ID
   @override

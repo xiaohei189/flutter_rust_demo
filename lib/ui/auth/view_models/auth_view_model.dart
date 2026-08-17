@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/auth_api.dart' as auth_api;
 import '../../../data/services/login_storage.dart';
 import '../../../providers/current_user_provider.dart';
-import '../../../ui/core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../chat/providers/message_service_provider.dart';
 
 /// 登录/注册流程状态
@@ -226,7 +226,7 @@ class AuthViewModel extends Notifier<AuthState> {
 
   Future<void> logout() async {
     try {
-      await ref.read(messageServiceProvider.notifier).client?.logout();
+      await ref.read(messageServiceProvider.notifier).logout();
     } catch (e) {
       appLog.w('[Auth] 退出登录 SDK 失败: $e');
     }

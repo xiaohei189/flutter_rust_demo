@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../../generated/rust/event/events/connection.dart';
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 import 'im_client.dart';
 
 /// 连接状态枚举
@@ -105,6 +105,11 @@ class ConnectionService {
   /// 手动设置连接状态（用于初始化等场景）
   void setConnected(bool connected) {
     _updateStatus(connected ? ConnectionStatus.connected : ConnectionStatus.disconnected);
+  }
+
+  /// 手动设置完整连接状态（用于事件转发、初始化等场景）
+  void updateStatus(ConnectionStatus newStatus) {
+    _updateStatus(newStatus);
   }
 
   /// 重置状态

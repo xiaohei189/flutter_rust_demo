@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import '../../generated/rust/ffi/client.dart' as fb;
 import '../../generated/rust/http/online.dart' show OnlineStatus;
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 class OnlineStatusService {
   static final OnlineStatusService instance = OnlineStatusService._internal();

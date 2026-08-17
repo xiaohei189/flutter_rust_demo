@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 /// 登录凭证本地存储，用于 splash 自动登录与登录页记住账号
 class LoginStorage {

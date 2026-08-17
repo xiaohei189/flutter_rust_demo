@@ -8,9 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../domain/models/user.dart';
 import '../providers/user_profile_provider.dart';
 import '../../../../router/app_router.dart';
-import '../../../../generated/rust/ffi/message_media.dart' show uploadFile;
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
@@ -98,7 +97,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     try {
       appLog.i('[MyProfile] 开始上传文件...');
       // 上传文件到服务器
-      final url = await uploadFile(filePath: savedPath, fileName: 'avatar.jpg');
+      final url = await ref
+          .read(userProfileProvider.notifier)
+          .uploadAvatar(savedPath);
       appLog.i('[MyProfile] 上传完成，返回 URL: $url');
 
       // 检查 URL 是否有效（不为空且非示例地址）

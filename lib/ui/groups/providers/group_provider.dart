@@ -13,7 +13,7 @@ import '../view_models/group_member_view_model.dart';
 /// 群组 Repository Provider
 final groupRepositoryProvider = Provider<GroupRepository>((ref) {
   return GroupRepositoryImpl(
-    groupService: GroupService.instance,
+    groupService: GroupServiceImpl(),
     imClient: ref.watch(imClientProvider),
   );
 });

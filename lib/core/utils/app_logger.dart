@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// 应用统一日志工具，输出包含 [文件:行号] 便于定位
+/// 应用统一日志工具（基础设施），输出包含 [文件:行号] 便于定位
 ///
 /// 日志同时输出到控制台和文件，便于调试。
 /// 文件路径：临时目录/app.log（热重启自动清除，每次运行生成新的）

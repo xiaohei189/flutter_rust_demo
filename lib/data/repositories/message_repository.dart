@@ -11,6 +11,7 @@ import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
 import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../generated/rust/model/message.dart' show MessageInfo;
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../../generated/rust/model/user.dart' show UserInfo;
 
@@ -128,6 +129,25 @@ abstract class MessageRepository {
     required String quoteClientMsgId,
     required String quoteSendId,
     required int quoteSendTime,
+  });
+
+  Future<void> sendTyping({
+    required String sourceId,
+    required SessionType sessionType,
+    required bool focus,
+  });
+
+  Future<void> sendMergerMessage({
+    required String title,
+    required List<String> summaryList,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> resendMessage({
+    required MessageInfo message,
+    required String sourceId,
+    required SessionType sessionType,
   });
 
   Future<void> revokeMessage({
@@ -468,6 +488,69 @@ class MessageRepositoryImpl implements MessageRepository {
       quoteClientMsgId: quoteClientMsgId,
       quoteSendId: quoteSendId,
       quoteSendTime: quoteSendTime,
+    );
+  }
+
+  @override
+  Future<void> sendTyping({
+    required String sourceId,
+    required SessionType sessionType,
+    required bool focus,
+  }) {
+    return ffi_message_advanced.sendTyping(
+      sourceId: sourceId,
+      sessionType: sessionType,
+      focus: focus,
+    );
+  }
+
+  @override
+  Future<void> sendMergerMessage({
+    required String title,
+    required List<String> summaryList,
+    required String sourceId,
+    required SessionType sessionType,
+  }) {
+    return ffi_message.sendMergerMessage(
+      title: title,
+      summaryList: summaryList,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  @override
+  Future<MsgStruct> resendMessage({
+    required MessageInfo message,
+    required String sourceId,
+    required SessionType sessionType,
+  }) {
+    final msgStruct = MsgStruct(
+      clientMsgId: message.clientMsgId,
+      serverMsgId: message.serverMsgId,
+      createTime: message.createTime,
+      sendTime: message.sendTime,
+      sessionType: message.sessionType,
+      sendId: message.sendId,
+      recvId: message.recvId,
+      msgFrom: message.msgFrom,
+      contentType: message.contentType,
+      senderPlatformId: message.senderPlatformId,
+      senderNickname: message.senderNickname,
+      senderFaceUrl: message.senderFaceUrl,
+      groupId: message.groupId,
+      content: message.content,
+      seq: message.seq,
+      isRead: message.isRead,
+      status: message.status,
+      attachedInfo: message.attachedInfo,
+      ex: message.ex,
+      localEx: '',
+    );
+    return ffi_message_advanced.sendMessage(
+      msgStruct: msgStruct,
+      sourceId: sourceId,
+      sessionType: sessionType,
     );
   }
 

@@ -6,7 +6,7 @@ import '../../../generated/rust/event/events/group.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../generated/rust/event/events/user.dart';
-import '../../core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 import 'message_service_reducer.dart';
 

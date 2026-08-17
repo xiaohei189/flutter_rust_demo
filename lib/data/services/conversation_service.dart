@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../../domain/models/conversation.dart';
 import '../../generated/rust/event/events/conversation.dart';
-import '../../ui/core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 import 'im_client.dart';
 
 /// 会话同步状态
@@ -28,7 +28,7 @@ enum ConversationSyncStatus {
 /// 3. 提供会话查询和排序
 /// 4. 处理会话同步状态
 class ConversationService {
-  static final ConversationService _instance = ConversationService._internal();
+  static final ConversationService _instance = ConversationService();
 
   /// 全局单例实例
   static ConversationService get instance => _instance;
@@ -50,7 +50,7 @@ class ConversationService {
   StreamSubscription<dynamic>? _subscription;
   bool _isDisposed = false;
 
-  ConversationService._internal();
+  ConversationService();
 
   /// 会话列表流
   Stream<List<Conversation>> get conversationsStream =>

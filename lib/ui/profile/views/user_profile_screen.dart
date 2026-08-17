@@ -10,7 +10,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../../../ui/core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../providers/user_profile_provider.dart';

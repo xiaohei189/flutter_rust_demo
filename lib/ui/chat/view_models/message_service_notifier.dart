@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/generated/rust/ffi/client.dart' as fb;
-import 'package:flutter_rust_demo/generated/rust/ffi/message_advanced.dart'
-    show sendMessage;
 import 'package:flutter_rust_demo/generated/rust/model/msg_struct.dart'
     show MsgStruct;
 import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
@@ -21,7 +19,7 @@ import 'package:flutter_rust_demo/generated/rust/event/events/friend.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/group.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/user.dart';
-import 'package:flutter_rust_demo/ui/core/utils/app_logger.dart';
+import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
@@ -34,7 +32,6 @@ import 'message_service_social_controller.dart';
 
 /// MessageService 的 Notifier
 class MessageServiceNotifier extends Notifier<MessageServiceState> {
-  fb.OpenImBridgeClient? client;
   final List<StreamSubscription<dynamic>> subscriptions = [];
 
   /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
@@ -60,6 +57,8 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
   MessageServiceState get currentState => state;
+
+  bool get _isClientReady => ImClient.instance.isInitialized;
 
   void updateState(MessageServiceState next) => state = next;
 
@@ -135,7 +134,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 拉取当前登录用户资料（通过批量接口 getUsersInfo，走缓存）并更新内存缓存
   Future<UserInfo?> refreshLoginUserProfile() async {
-    if (client == null || state.currentUserId.isEmpty) return null;
+    if (!_isClientReady || state.currentUserId.isEmpty) return null;
     try {
       final list = await repository.getUsersInfo([state.currentUserId]);
       final profile = list.isNotEmpty ? list.first : null;
@@ -156,7 +155,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 批量预加载用户资料
   Future<void> preloadUserProfiles(List<String> userIds) async {
-    if (client == null || userIds.isEmpty) return;
+    if (!_isClientReady || userIds.isEmpty) return;
     final uniq = userIds.where((id) => id.isNotEmpty).toSet().toList();
     if (uniq.isEmpty) return;
     try {
@@ -177,7 +176,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     String? ex,
     int? globalRecvMsgOpt,
   }) async {
-    if (client == null) {
+    if (!_isClientReady) {
       try {
         appLog.i('[MessageService] client 为 null，尝试重新初始化');
         final credentials = await LoginStorage.loadCredentials();
@@ -195,7 +194,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       }
     }
 
-    if (client == null) return null;
+    if (!_isClientReady) return null;
 
     try {
       await repository.updateUserProfile(
@@ -215,7 +214,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     int count = 20,
     String startClientMsgId = '',
   }) async {
-    if (client == null) return false;
+    if (!_isClientReady) return false;
 
     try {
       appLog.i(
@@ -275,7 +274,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String conversationId,
     String groupId = '',
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     if (recvId.trim().isEmpty && groupId.trim().isEmpty) {
       throw ArgumentError('recvId 与 groupId 至少填一个');
     }
@@ -296,7 +295,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String conversationId,
     String groupId = '',
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     final sourceId = groupId.isNotEmpty ? groupId : recvId;
     return repository.sendMarkdownMessage(
       text: text,
@@ -314,7 +313,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String conversationId,
     String groupId = '',
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     final sourceId = groupId.isNotEmpty ? groupId : recvId;
     return repository.sendAtTextMessage(
       text: text,
@@ -331,7 +330,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     int offset = 0,
     int count = 50,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     if (keyword.trim().isEmpty) return const [];
     return repository.searchLocalMessages(
       conversationId: conversationId,
@@ -347,7 +346,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     await repository.forwardMessage(
       clientMsgId: clientMsgId,
       sourceId: sourceId,
@@ -361,7 +360,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendImageMessage(
       filePath: filePath,
       sourceId: sourceId,
@@ -375,7 +374,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendImageMessageFromUrl(
       sourceUrl: sourceUrl,
       sourceId: sourceId,
@@ -391,7 +390,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required SessionType sessionType,
     required int duration,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendVideoMessage(
       videoPath: videoPath,
       snapshotPath: snapshotPath,
@@ -408,7 +407,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required SessionType sessionType,
     required int duration,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendSoundMessage(
       filePath: filePath,
       sourceId: sourceId,
@@ -423,7 +422,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendFileMessage(
       filePath: filePath,
       sourceId: sourceId,
@@ -439,7 +438,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendLocationMessage(
       description: description,
       latitude: latitude,
@@ -456,7 +455,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendFaceMessage(
       index: index,
       data: data,
@@ -474,7 +473,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendCardMessage(
       userId: userId,
       nickname: nickname,
@@ -495,7 +494,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String quoteSendId,
     required int quoteSendTime,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendQuoteMessage(
       text: text,
       sourceId: sourceId,
@@ -507,6 +506,34 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     );
   }
 
+  /// 发送正在输入状态
+  Future<void> sendTyping({
+    required String sourceId,
+    required SessionType sessionType,
+    required bool focus,
+  }) {
+    return repository.sendTyping(
+      sourceId: sourceId,
+      sessionType: sessionType,
+      focus: focus,
+    );
+  }
+
+  /// 合并转发
+  Future<void> sendMergerMessage({
+    required String title,
+    required List<String> summaryList,
+    required String sourceId,
+    required SessionType sessionType,
+  }) {
+    return repository.sendMergerMessage(
+      title: title,
+      summaryList: summaryList,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
   /// 撤回消息
   Future<void> revokeMessage({
     required String conversationId,
@@ -514,7 +541,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String clientMsgId,
     required int sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     await repository.revokeMessage(
       conversationId: conversationId,
       userId: state.currentUserId,
@@ -529,7 +556,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String conversationId,
     required String clientMsgId,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
+    if (!_isClientReady) throw StateError('客户端未初始化');
     await repository.deleteMessage(
       conversationId: conversationId,
       clientMsgId: clientMsgId,
@@ -600,31 +627,9 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    if (client == null) throw StateError('客户端未初始化');
-    final msgStruct = MsgStruct(
-      clientMsgId: message.clientMsgId,
-      serverMsgId: message.serverMsgId,
-      createTime: message.createTime,
-      sendTime: message.sendTime,
-      sessionType: message.sessionType,
-      sendId: message.sendId,
-      recvId: message.recvId,
-      msgFrom: message.msgFrom,
-      contentType: message.contentType,
-      senderPlatformId: message.senderPlatformId,
-      senderNickname: message.senderNickname,
-      senderFaceUrl: message.senderFaceUrl,
-      groupId: message.groupId,
-      content: message.content,
-      seq: message.seq,
-      isRead: message.isRead,
-      status: message.status,
-      attachedInfo: message.attachedInfo,
-      ex: message.ex,
-      localEx: '',
-    );
-    return sendMessage(
-      msgStruct: msgStruct,
+    if (!_isClientReady) throw StateError('客户端未初始化');
+    return repository.resendMessage(
+      message: message,
       sourceId: sourceId,
       sessionType: sessionType,
     );
@@ -719,6 +724,8 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       conversationController.removeConversation(conversationId);
 
   Future<void> disconnect() => connectionController.disconnect();
+
+  Future<void> logout() => ImClient.instance.logout();
 
   Future<void> markConversationMessageAsRead(String conversationId) =>
       conversationController.markConversationMessageAsRead(conversationId);

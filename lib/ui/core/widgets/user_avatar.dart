@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/user.dart';
 import '../../previews/app_theme_preview.dart';
-import '../../../ui/core/utils/app_logger.dart';
+import '../../../core/utils/app_logger.dart';
 import '../theme/app_theme.dart';
 import 'app_image.dart';
 

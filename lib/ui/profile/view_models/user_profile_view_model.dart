@@ -8,7 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../domain/models/user_profile.dart';
 import '../../../generated/rust/model/user.dart' show UserInfo;
-import '../../core/utils/app_logger.dart';
+import '../../../providers/im_providers.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../chat/providers/message_service_provider.dart';
 
 /// 用户资料状态
@@ -477,6 +478,12 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
     final paths = uri.pathSegments;
     if (paths.isEmpty) return '';
     return paths.last;
+  }
+
+  /// 上传头像文件，返回服务器 URL
+  Future<String> uploadAvatar(String filePath) {
+    final service = ref.read(mediaUploadServiceProvider);
+    return service.uploadFile(filePath: filePath, fileName: 'avatar.jpg');
   }
 
   /// 设置本地头像路径（用于临时显示和持久化）
