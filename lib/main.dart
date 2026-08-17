@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -28,6 +29,10 @@ String get kApiBaseUrl => 'http://${getHostAddress()}:10002';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
+    enableFlutterDriverExtension();
+  }
 
   // 1. 初始化 Rust 库（bridge 必须先 init，才能调用 setLogDirectory）
   await RustLib.init();

@@ -8,14 +8,15 @@ import 'package:record/record.dart';
 
 import '../../../domain/models/group_member.dart';
 import '../../core/theme/app_theme.dart';
+import '../../previews/app_theme_preview.dart';
 import '../../core/widgets/app_image.dart';
 import 'attachment_panel.dart';
+import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_format_bar.dart';
-
-/// 消息内容类型
-enum MessageContentType { text, markdown }
+import 'message_composer_sheet.dart';
+import 'message_content_type.dart';
 
 /// 输入面板展开状态
 enum _InputPanel { none, emoji, attachment }
@@ -69,11 +70,13 @@ class ChatInput extends StatefulWidget {
 class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
   bool _isMarkdownMode = false;
-  bool _inputExpanded = false;
   _InputPanel _activePanel = _InputPanel.none;
 
   /// 实时 @ 查询关键字（非 null 且输入框含 '@' 时显示成员列表）
   String? _atKeyword;
+
+  /// @ 成员列表当前高亮项（桌面端 ↑/↓ 键导航）
+  int _atSelectionIndex = 0;
 
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
@@ -104,9 +107,14 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _onFocusChanged() {
-    if (!_focusNode.hasFocus && _activePanel != _InputPanel.none) {
+    // 微信式互斥：面板展开时点击输入框 → 收面板、弹键盘；
+    // 失焦（如点击消息区）只收键盘，面板保持展开。
+    if (_focusNode.hasFocus && _activePanel != _InputPanel.none) {
       _closeAllPanels();
     }
+    // 焦点变化会切换“默认一行（声音+输入框+表情+更多）”与
+    // “聚焦态（输入行+底部完整工具栏）”两种布局，刷新 build
+    if (mounted) setState(() {});
   }
 
   void _initAttachmentItems() {
@@ -147,6 +155,39 @@ class _ChatInputState extends State<ChatInput> {
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
+
+    // @ 成员列表激活时：↑/↓ 切换高亮、Enter 确认、Esc 关闭
+    if (_atKeyword != null && _filteredAtMembers.isNotEmpty) {
+      if (key == LogicalKeyboardKey.arrowDown) {
+        setState(() {
+          _atSelectionIndex =
+              (_atSelectionIndex + 1) % _filteredAtMembers.length;
+        });
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.arrowUp) {
+        setState(() {
+          _atSelectionIndex = (_atSelectionIndex - 1 +
+                  _filteredAtMembers.length) %
+              _filteredAtMembers.length;
+        });
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.escape) {
+        _setAtQuery(null);
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.enter ||
+          key == LogicalKeyboardKey.numpadEnter) {
+        if (!HardwareKeyboard.instance.isShiftPressed) {
+          final members = _filteredAtMembers;
+          final index = _atSelectionIndex % members.length;
+          _selectAtMember(members[index]);
+          return KeyEventResult.handled;
+        }
+      }
+    }
+
     if (key != LogicalKeyboardKey.enter &&
         key != LogicalKeyboardKey.numpadEnter) {
       return KeyEventResult.ignored;
@@ -188,14 +229,48 @@ class _ChatInputState extends State<ChatInput> {
 
   // ==================== 面板管理 ====================
 
+  /// 面板与键盘互斥切换（微信式）：
+  /// - 键盘态点面板按钮 → 收键盘、展开面板
+  /// - 面板态再点同一按钮 → 收面板、弹键盘
   void _togglePanel(_InputPanel panel) {
-    setState(() {
-      _activePanel = _activePanel == panel ? _InputPanel.none : panel;
-    });
+    final opening = _activePanel != panel;
+    setState(() => _activePanel = opening ? panel : _InputPanel.none);
+    if (opening) {
+      FocusScope.of(context).unfocus();
+    } else {
+      _focusNode.requestFocus();
+    }
   }
 
   void _closeAllPanels() {
     setState(() => _activePanel = _InputPanel.none);
+  }
+
+  /// 打开"展开编辑"抽屉（飞书式半屏大编辑区）。
+  /// 与输入框共享同一个 controller，草稿天然同步；只编辑不发送，关闭后回主界面发送。
+  void _openComposerSheet() {
+    _closeAllPanels();
+    FocusScope.of(context).unfocus(); // 收起键盘，给抽屉让位
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      // 覆盖 M3 BottomSheet 默认 maxWidth 640，抽屉全宽
+      constraints: const BoxConstraints(maxWidth: double.infinity),
+      // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => MessageComposerSheet(
+        controller: widget.controller,
+        hasText: _hasTextNotifier,
+        onSend: widget.onSend,
+        onImagePick: widget.onImagePick,
+        onAtMention: widget.onAtMention,
+        onGifSelected: widget.onGifSelected,
+        attachmentItems: _attachmentItems,
+      ),
+    );
   }
 
   // ==================== Markdown 格式插入 ====================
@@ -241,8 +316,10 @@ class _ChatInputState extends State<ChatInput> {
       );
     }
 
-    // 插入后聚焦输入框
-    _focusNode.requestFocus();
+    // 键盘态下插入后保持焦点；面板展开时聚焦会打断面板操作
+    if (_activePanel == _InputPanel.none) {
+      _focusNode.requestFocus();
+    }
   }
 
   String _placeholderFor(String prefix) {
@@ -342,11 +419,16 @@ class _ChatInputState extends State<ChatInput> {
 
     if (_recordingPath == null || _recordingStart == null) return;
 
-    // 横滑/上滑取消：丢弃录音文件，不发送
+    // 横滑/上滑取消：先停止录音（否则麦克风会一直占用），再丢弃文件
     if (_recordingCancel) {
       final path = _recordingPath;
       _recordingPath = null;
       _recordingStart = null;
+      try {
+        await _recorder.stop();
+      } catch (_) {
+        // 停止失败也要继续清理文件
+      }
       if (path != null) {
         try {
           await File(path).delete();
@@ -372,6 +454,14 @@ class _ChatInputState extends State<ChatInput> {
     _recordingStart = null;
 
     if (duration < 1) {
+      // 过短录音不发送，清理临时文件
+      if (path != null) {
+        try {
+          await File(path).delete();
+        } catch (_) {
+          // 删除临时文件失败可忽略
+        }
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -429,7 +519,7 @@ class _ChatInputState extends State<ChatInput> {
     controller.selection = TextSelection.fromPosition(
       TextPosition(offset: start + emoji.length),
     );
-    _focusNode.requestFocus();
+    // 面板态插入不弹键盘，保持连续选择；切回键盘用面板内"键盘"按钮
   }
 
   // ==================== 附件列表 ====================
@@ -461,7 +551,10 @@ class _ChatInputState extends State<ChatInput> {
 
   void _setAtQuery(String? keyword) {
     if (_atKeyword == keyword) return;
-    setState(() => _atKeyword = keyword);
+    setState(() {
+      _atKeyword = keyword;
+      _atSelectionIndex = 0;
+    });
   }
 
   /// 按关键字过滤群成员（昵称 / ID 模糊匹配）
@@ -532,6 +625,8 @@ class _ChatInputState extends State<ChatInput> {
                   final member = members[i];
                   return ListTile(
                     dense: true,
+                    selected: i == _atSelectionIndex,
+                    selectedTileColor: colors.surfaceMuted,
                     leading: CircleAvatar(
                       radius: 16,
                       backgroundColor: colors.surfaceMuted,
@@ -576,6 +671,7 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
+    final isFocused = _focusNode.hasFocus;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -598,30 +694,91 @@ class _ChatInputState extends State<ChatInput> {
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              // 子项撑满宽度，避免工具栏/面板被默认居中
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildInputRow(),
-                if (_atKeyword != null) _buildAtMemberList(),
-                const SizedBox(height: 8),
-                _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
+                // 聚焦态：输入行(含放大箭头) + 底部完整工具栏
+                // 未聚焦态：默认一行（声音+输入框+表情+更多）
+                if (isFocused)
+                  ...[
+                    _buildInputRow(),
+                    if (_atKeyword != null) _buildAtMemberList(),
+                    const SizedBox(height: 8),
+                    _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
+                  ]
+                else
+                  _buildCollapsedRow(),
               ],
             ),
           ),
-          if (_activePanel == _InputPanel.emoji)
-            EmojiPanel(
-              onEmojiSelected: _insertEmoji,
-              onGifSelected: widget.onGifSelected,
-              onClose: () {
-                _closeAllPanels();
-                _focusNode.requestFocus();
-              },
+          // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Offstage(
+                  offstage: _activePanel != _InputPanel.emoji,
+                  child: EmojiPanel(
+                    onEmojiSelected: _insertEmoji,
+                    onGifSelected: widget.onGifSelected,
+                    onClose: () {
+                      _closeAllPanels();
+                      _focusNode.requestFocus();
+                    },
+                  ),
+                ),
+                Offstage(
+                  offstage: _activePanel != _InputPanel.attachment,
+                  child: AttachmentPanel(
+                    items: _attachmentItems,
+                    onItemTap: _closeAllPanels,
+                  ),
+                ),
+              ],
             ),
-          if (_activePanel == _InputPanel.attachment)
-            AttachmentPanel(
-              items: _attachmentItems,
-              onItemTap: _closeAllPanels,
-            ),
+          ),
         ],
       ),
+    );
+  }
+
+  /// 未聚焦默认态：一行 [🎤] [输入框] [😊] [➕]。
+  /// 点击输入框聚焦后切换到“输入行 + 底部完整工具栏”。
+  Widget _buildCollapsedRow() {
+    return Row(
+      children: [
+        // 声音切换按钮（长按录音 / 点击聚焦弹键盘）
+        _buildToolbarIcon(
+          icon: Icons.mic_none,
+          tooltip: '语音（长按录音，上滑取消）',
+          onLongPressStart: _startRecording,
+          onLongPressMoveUpdate: _onRecordingMove,
+          onLongPressEnd: _stopRecording,
+          onTap: () => _focusNode.requestFocus(),
+        ),
+        const SizedBox(width: 4),
+        // 输入框占满剩余宽度
+        Expanded(child: _buildInputRow()),
+        // 表情（面板互斥展开）
+        _buildToolbarIcon(
+          icon: _activePanel == _InputPanel.emoji
+              ? Icons.emoji_emotions
+              : Icons.emoji_emotions_outlined,
+          tooltip: '表情',
+          onTap: () => _togglePanel(_InputPanel.emoji),
+        ),
+        // 更多（附件面板互斥展开）
+        _buildToolbarIcon(
+          icon: _activePanel == _InputPanel.attachment
+              ? Icons.add_circle
+              : Icons.add_circle_outline,
+          tooltip: '更多',
+          onTap: () => _togglePanel(_InputPanel.attachment),
+        ),
+      ],
     );
   }
 
@@ -631,7 +788,13 @@ class _ChatInputState extends State<ChatInput> {
       controller: widget.controller,
       focusNode: _focusNode,
       minLines: 1,
-      maxLines: _inputExpanded ? null : 5,
+      // 自动增高：普通 1-8 行、Markdown 1-12 行，超出内部滚动；长文用 ⤢ 抽屉
+      maxLines: _isMarkdownMode ? 12 : 8,
+      // 对齐 OpenIM 服务端消息长度限制
+      maxLength: 4000,
+      buildCounter:
+          (_, {required currentLength, required isFocused, int? maxLength}) =>
+              const SizedBox.shrink(),
       textInputAction: TextInputAction.send,
       style: TextStyle(
         fontSize: 16,
@@ -645,7 +808,8 @@ class _ChatInputState extends State<ChatInput> {
           fontSize: 16,
         ),
         filled: true,
-        fillColor: context.appColors.inputBackground,
+        // 与抽屉/卡片统一为 surface（浅色纯白、深色深灰）
+        fillColor: context.appColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -663,21 +827,13 @@ class _ChatInputState extends State<ChatInput> {
           horizontal: 16,
           vertical: 10,
         ),
-        suffixIcon: ValueListenableBuilder<bool>(
-          valueListenable: _hasTextNotifier,
-          builder: (_, hasText, __) {
-            if (hasText) return const SizedBox(width: 32, height: 32);
-            return IconButton(
-              icon: Icon(
-                _inputExpanded ? Icons.zoom_in_map : Icons.zoom_out_map,
-                size: 18,
-                color: context.appColors.textSecondary,
-              ),
-              onPressed: () => setState(() => _inputExpanded = !_inputExpanded),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            );
-          },
+        // 飞书式展开：点击打开半屏大编辑抽屉（长文 / Markdown）
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.open_in_full, size: 18),
+          tooltip: '展开编辑',
+          onPressed: _openComposerSheet,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
         suffixIconConstraints: const BoxConstraints(
           minWidth: 32,
@@ -688,81 +844,54 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  /// 第三层：工具栏行（飞书风格，图标均匀排列）
+  /// 第三层：工具栏行（与展开抽屉共用 [ChatActionToolbar]）。
   Widget _buildToolbarRow() {
-    return SizedBox(
-      height: 44,
-      child: Row(
-        children: [
-          // 😊 表情
-          _buildToolbarIcon(
-            icon: _activePanel == _InputPanel.emoji
-                ? Icons.emoji_emotions
-                : Icons.emoji_emotions_outlined,
-            tooltip: '表情',
-            onTap: () => _togglePanel(_InputPanel.emoji),
-          ),
-          // @ 提及
-          if (widget.isGroupChat)
-            _buildToolbarIcon(
-              icon: Icons.alternate_email,
-              tooltip: '@ 提及',
-              onTap: () => widget.onAtMention?.call(),
-            ),
-          // 🎤 语音（长按录音，上滑取消）
-          _buildToolbarIcon(
-            icon: Icons.mic_none,
-            tooltip: '语音（长按录音，上滑取消）',
-            onLongPressStart: _startRecording,
-            onLongPressMoveUpdate: _onRecordingMove,
-            onLongPressEnd: _stopRecording,
-            onTap: () {
-              _focusNode.requestFocus();
-              _closeAllPanels();
-            },
-          ),
-          // 🖼️ 相册
-          _buildToolbarIcon(
-            icon: Icons.photo_library_outlined,
-            tooltip: '相册',
-            onTap: widget.onImagePick ?? () {},
-            enabled: widget.onImagePick != null,
-          ),
-          // Aa 格式
-          _buildToolbarIcon(
-            icon: Icons.text_fields,
-            tooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
-            active: _isMarkdownMode,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              setState(() => _isMarkdownMode = !_isMarkdownMode);
-              if (_isMarkdownMode) {
-                _focusNode.requestFocus();
-              }
-            },
-          ),
-          // ➕ 更多
-          _buildToolbarIcon(
-            icon: _activePanel == _InputPanel.attachment
-                ? Icons.add_circle
-                : Icons.add_circle_outline,
-            tooltip: '更多',
-            onTap: () => _togglePanel(_InputPanel.attachment),
-          ),
-          const Spacer(),
-          // ➡️ 发送
-          _buildSendButton(),
-        ],
-      ),
+    return ChatActionToolbar(
+      emojiActive: _activePanel == _InputPanel.emoji,
+      moreActive: _activePanel == _InputPanel.attachment,
+      markdownActive: _isMarkdownMode,
+      markdownTooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+      hasText: _hasTextNotifier,
+      // 😊
+      onEmoji: () => _togglePanel(_InputPanel.emoji),
+      // @ 提及
+      onAt: () => widget.onAtMention?.call(),
+      // 🎤 语音（长按录音，上滑取消）
+      onVoiceLongPressStart: _startRecording,
+      onVoiceLongPressMoveUpdate: _onRecordingMove,
+      onVoiceLongPressEnd: _stopRecording,
+      onVoiceTap: () => _focusNode.requestFocus(), // 聚焦自动收起面板
+      // 🖼️ 相册
+      onImage: widget.onImagePick ?? () {},
+      imageEnabled: widget.onImagePick != null,
+      // Aa 格式
+      onFormat: () {
+        HapticFeedback.lightImpact();
+        final enteringMarkdown = !_isMarkdownMode;
+        setState(() {
+          _isMarkdownMode = enteringMarkdown;
+          // 进入 Markdown 模式时收起面板，避免面板+格式栏同屏
+          if (enteringMarkdown) _activePanel = _InputPanel.none;
+        });
+        if (enteringMarkdown) _focusNode.requestFocus();
+      },
+      // ➕ 更多
+      onMore: () => _togglePanel(_InputPanel.attachment),
+      // ➡️ 发送
+      onSend: _doSend,
     );
   }
 
-  /// 第二层（Markdown 模式）：格式按钮栏，替换普通工具栏
+  /// 第二层（Markdown 模式）：格式按钮栏，替换普通工具栏。
+  /// 发送统一走普通工具栏：先点 ↩ 退出 Markdown，再点发送（右侧只留返回按钮）。
+  /// 退出后聚焦输入框继续输入（与进入时对称）。
   Widget _buildFormatBar() {
     return MarkdownFormatBar(
       onFormat: _handleFormat,
-      onClose: () => setState(() => _isMarkdownMode = false),
-      trailing: _buildSendButton(),
+      onClose: () {
+        setState(() => _isMarkdownMode = false);
+        _focusNode.requestFocus();
+      },
     );
   }
 
@@ -814,36 +943,55 @@ class _ChatInputState extends State<ChatInput> {
     return btn;
   }
 
-  /// 发送按钮（工具栏最右侧），只随 _hasText 变化重建
-  Widget _buildSendButton() {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _hasTextNotifier,
-      builder: (_, hasText, __) {
-        final enabled = hasText;
-        return GestureDetector(
-          onTap: enabled ? _doSend : null,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: enabled
-                  ? (_isMarkdownMode
-                        ? context.appColors.textSecondary
-                        : context.appColors.primary)
-                  : context.appColors.background,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Icon(
-              Icons.arrow_forward,
-              size: 22,
-              color: enabled ? Colors.white : context.appColors.textSecondary,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   // ==================== 辅助 ====================
 }
+
+// ==================== 预览 ====================
+
+/// 预览宿主：持有并管理输入框 controller，保证可交互、可输入、可展开面板。
+class _ChatInputPreviewHost extends StatefulWidget {
+  final bool isGroupChat;
+
+  const _ChatInputPreviewHost({this.isGroupChat = false});
+
+  @override
+  State<_ChatInputPreviewHost> createState() => _ChatInputPreviewHostState();
+}
+
+class _ChatInputPreviewHostState extends State<_ChatInputPreviewHost> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ChatInput(
+          controller: _controller,
+          onSend: (_, __) {},
+          isGroupChat: widget.isGroupChat,
+          onImagePick: () {},
+          onImagesPick: () {},
+          onCameraPick: () {},
+          onFilePick: () {},
+          onLocationPick: () {},
+        ),
+      ),
+    );
+  }
+}
+
+@AppThemePreview(name: '单聊 - 默认', group: 'ChatInput')
+Widget chatInputSinglePreview() => const _ChatInputPreviewHost();
+
+@AppThemePreview(name: '群聊 - 带 @ 按钮', group: 'ChatInput')
+Widget chatInputGroupPreview() =>
+    const _ChatInputPreviewHost(isGroupChat: true);
+

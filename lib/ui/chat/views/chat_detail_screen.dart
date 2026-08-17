@@ -23,7 +23,8 @@ import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../view_models/chat_detail_view_model.dart';
-import '../widgets/chat_input.dart' show ChatInput, MessageContentType;
+import '../widgets/chat_input.dart' show ChatInput;
+import '../widgets/message_content_type.dart' show MessageContentType;
 import '../widgets/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
@@ -635,6 +636,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       child: Scaffold(
         backgroundColor: context.appColors.background,
         appBar: AppBar(
+          centerTitle: false, // 标题靠左（IM 惯例，避免居中怪异感）
           leading: IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
@@ -672,77 +674,69 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               Navigator.of(context).pop();
             },
           ),
-          title: LayoutBuilder(
-            builder: (context, constraints) {
-              return InkWell(
-                onTap: () {
-                  AppRouter.goToChatSettings(context, conversation);
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    UserAvatar(user: user, radius: 18),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width:
-                          constraints.maxWidth.isFinite &&
-                              constraints.maxWidth > 56
-                          ? constraints.maxWidth - 56
-                          : 200,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: context.appColors.textPrimary,
+          title: InkWell(
+            onTap: () {
+              AppRouter.goToChatSettings(context, conversation);
+            },
+            child: Row(
+              children: [
+                UserAvatar(user: user, radius: 18),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: context.appColors.textPrimary,
+                        ),
+                      ),
+                      if (isTyping)
+                        Text(
+                          '对方正在输入...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appColors.primary.withValues(
+                              alpha: 0.9,
                             ),
                           ),
-                          if (isTyping)
-                            Text(
-                              '对方正在输入...',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.appColors.primary.withValues(
-                                  alpha: 0.9,
-                                ),
-                              ),
-                            )
-                          else if (_isGroup)
-                            Text(
-                              '群聊',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.appColors.textSecondary
-                                    .withValues(alpha: 0.9),
-                              ),
-                            )
-                          else
-                            Text(
-                              switch (online) {
-                                true => '在线',
-                                false => '离线',
-                                null => '未知',
-                              },
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: context.appColors.textSecondary
-                                    .withValues(alpha: 0.9),
-                              ),
+                        )
+                      else if (_isGroup)
+                        Text(
+                          '群聊',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appColors.textSecondary.withValues(
+                              alpha: 0.9,
                             ),
-                        ],
-                      ),
-                    ),
-                  ],
+                          ),
+                        )
+                      else
+                        Text(
+                          switch (online) {
+                            true => '在线',
+                            false => '离线',
+                            null => '未知',
+                          },
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appColors.textSecondary.withValues(
+                              alpha: 0.9,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
           actions: [
             Semantics(
