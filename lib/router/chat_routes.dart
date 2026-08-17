@@ -47,19 +47,31 @@ List<RouteBase> buildChatRoutes() {
     ),
     GoRoute(
       path: AppPaths.mediaImage,
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final query = state.uri.queryParameters;
-        return ImagePreviewScreen(
-          source: query['source'] ?? '',
-          suggestedName: query['name'] ?? 'image.jpg',
+        return CustomTransitionPage<void>(
+          key: state.pageKey,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          transitionsBuilder: (_, _, _, child) => child,
+          child: ImagePreviewScreen(
+            source: query['source'] ?? '',
+            suggestedName: query['name'] ?? 'image.jpg',
+          ),
         );
       },
     ),
     GoRoute(
       path: AppPaths.mediaVideo,
-      builder: (context, state) {
+      pageBuilder: (context, state) {
         final source = state.uri.queryParameters['source'] ?? '';
-        return VideoPreviewScreen(source: source);
+        return CustomTransitionPage<void>(
+          key: state.pageKey,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          transitionsBuilder: (_, _, _, child) => child,
+          child: VideoPreviewScreen(source: source),
+        );
       },
     ),
   ];

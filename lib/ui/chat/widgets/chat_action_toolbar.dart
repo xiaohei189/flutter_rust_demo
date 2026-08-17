@@ -70,10 +70,8 @@ class ChatActionToolbar extends StatelessWidget {
                 children: [
                   // 😊 表情
                   _ToolbarIcon(
-                    icon: emojiActive
-                        ? Icons.emoji_emotions
-                        : Icons.emoji_emotions_outlined,
-                    tooltip: '表情',
+                    icon: emojiActive ? Icons.keyboard : Icons.emoji_emotions_outlined,
+                    tooltip: emojiActive ? '键盘' : '表情',
                     onTap: onEmoji,
                   ),
                   // @ 提及
@@ -105,7 +103,7 @@ class ChatActionToolbar extends StatelessWidget {
                   ),
                   // Aa 格式
                   _ToolbarIcon(
-                    icon: Icons.text_fields,
+                    textLabel: 'Aa',
                     tooltip: markdownTooltip,
                     active: markdownActive,
                     onTap: onFormat,
@@ -124,7 +122,7 @@ class ChatActionToolbar extends StatelessWidget {
           ValueListenableBuilder<bool>(
             valueListenable: hasText,
             builder: (_, hasTextValue, __) {
-              return _SendButton(enabled: hasTextValue, onSend: onSend);
+              return SendButton(enabled: hasTextValue, onSend: onSend);
             },
           ),
         ],
@@ -135,19 +133,21 @@ class ChatActionToolbar extends StatelessWidget {
 
 /// 普通工具栏图标按钮（飞书风格：24px 线性图标，等宽）
 class _ToolbarIcon extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? textLabel;
   final String tooltip;
   final VoidCallback onTap;
   final bool enabled;
   final bool active;
 
   const _ToolbarIcon({
-    required this.icon,
+    this.icon,
+    this.textLabel,
     required this.tooltip,
     required this.onTap,
     this.enabled = true,
     this.active = false,
-  });
+  }) : assert(icon != null || textLabel != null);
 
   @override
   Widget build(BuildContext context) {
@@ -161,15 +161,29 @@ class _ToolbarIcon extends StatelessWidget {
           width: 44,
           height: 44,
           child: IconButton(
-            icon: Icon(
-              icon,
-              size: 24,
-              color: enabled
-                  ? (active
-                        ? colors.primary
-                        : colors.textPrimary.withValues(alpha: 0.7))
-                  : colors.textSecondary.withValues(alpha: 0.3),
-            ),
+            icon: textLabel != null
+                ? Text(
+                    textLabel!,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      color: enabled
+                          ? (active
+                                ? colors.primary
+                                : colors.textPrimary.withValues(alpha: 0.7))
+                          : colors.textSecondary.withValues(alpha: 0.3),
+                    ),
+                  )
+                : Icon(
+                    icon!,
+                    size: 24,
+                    color: enabled
+                        ? (active
+                              ? colors.primary
+                              : colors.textPrimary.withValues(alpha: 0.7))
+                        : colors.textSecondary.withValues(alpha: 0.3),
+                  ),
             onPressed: enabled ? onTap : null,
             padding: EdgeInsets.zero,
           ),
@@ -227,11 +241,11 @@ class _VoiceToolbarIcon extends StatelessWidget {
 }
 
 /// 发送文字按钮：始终显示，无文字时置灰不可点
-class _SendButton extends StatelessWidget {
+class SendButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onSend;
 
-  const _SendButton({required this.enabled, required this.onSend});
+  const SendButton({super.key, required this.enabled, required this.onSend});
 
   @override
   Widget build(BuildContext context) {

@@ -28,11 +28,12 @@ String get kWsUrl => 'ws://${getHostAddress()}:10001';
 String get kApiBaseUrl => 'http://${getHostAddress()}:10002';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
+  // Flutter Driver 会创建自己的 Binding，必须在 WidgetsFlutterBinding 初始化前启用。
   if (const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     enableFlutterDriverExtension();
   }
+
+  WidgetsFlutterBinding.ensureInitialized();
 
   // 1. 初始化 Rust 库（bridge 必须先 init，才能调用 setLogDirectory）
   await RustLib.init();

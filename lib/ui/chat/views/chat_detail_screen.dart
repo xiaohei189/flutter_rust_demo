@@ -14,6 +14,7 @@ import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
+import '../../contacts/views/contact_picker_screen.dart';
 import '../../contacts/widgets/contact_pick_item.dart';
 import '../../groups/providers/group_provider.dart';
 import '../../profile/providers/user_profile_provider.dart';
@@ -258,7 +259,24 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _showAtMentionPicker() async {
     final target = _viewModel?.sendTarget;
-    if (target == null || target.groupId.isEmpty) return;
+    if (target == null) return;
+
+    if (!_isGroup) {
+      final items = await Navigator.of(context).push<List<ContactPickItem>>(
+        MaterialPageRoute(
+          builder: (_) => const ContactPickerScreen(
+            title: '@ 选择联系人',
+            includeGroups: false,
+          ),
+        ),
+      );
+      if (items == null || items.isEmpty || !mounted) return;
+      final selected = items.first;
+      _insertAtMention(selected.name, selected.id);
+      return;
+    }
+
+    if (target.groupId.isEmpty) return;
 
     final memberState = ref.read(groupMemberProvider(target.groupId));
     if (memberState.members.isEmpty) {
@@ -324,17 +342,21 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
 
     if (selected == null || !mounted) return;
-    final text = _textController.text;
-    final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
     final displayName = selected.nickname.isNotEmpty
         ? selected.nickname
         : selected.userId;
+    _insertAtMention(displayName, selected.userId);
+  }
+
+  void _insertAtMention(String displayName, String userId) {
+    final text = _textController.text;
+    final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
     final inserted = '$text$suffix@$displayName ';
     _textController.value = TextEditingValue(
       text: inserted,
       selection: TextSelection.collapsed(offset: inserted.length),
     );
-    _viewModel?.addAtUserId(selected.userId);
+    _viewModel?.addAtUserId(userId);
   }
 
   void _showMessageSearch() {

@@ -7,13 +7,14 @@ import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'markdown_format_bar.dart';
 import 'message_content_type.dart';
 
 /// 展开编辑抽屉（飞书式）：全宽大编辑区，用于长文 / Markdown 输入。
 ///
 /// - 底部与主输入框共用同一套完整工具栏 [ChatActionToolbar]（含表情/更多面板）、
 ///   「发送」按钮直接发送并缩回抽屉
-/// - Aa 在底部工具栏中切换，Markdown 模式下顶部展开格式按钮栏
+/// - Aa 在底部工具栏中切换 Markdown 模式
 /// - 与主输入框共享同一个 [TextEditingController]，草稿天然同步
 class MessageComposerSheet extends StatefulWidget {
   const MessageComposerSheet({
@@ -48,10 +49,41 @@ class MessageComposerSheet extends StatefulWidget {
 enum _Panel { none, emoji, attachment }
 
 class _MessageComposerSheetState extends State<MessageComposerSheet> {
-  /// 是否 Markdown 模式（底部工具栏 Aa 切换，Markdown 时顶部展开格式栏）
-  bool _isMarkdownMode = true;
+  /// 是否 Markdown 模式（底部工具栏 Aa 切换，Markdown 时显示格式栏）
+  bool _isMarkdownMode = false;
 
   _Panel _activePanel = _Panel.none;
+
+  void _insertEmoji(String emoji) {
+    final controller = widget.controller;
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.start >= 0 ? selection.start : text.length;
+    final end = selection.end >= 0 ? selection.end : text.length;
+    final newText = text.replaceRange(start, end, emoji);
+    controller.text = newText;
+    controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: start + emoji.length),
+    );
+  }
+
+  void _togglePanel(_Panel panel) {
+    setState(() => _activePanel = _activePanel == panel ? _Panel.none : panel);
+  }
+
+  void _closeAllPanels() {
+    setState(() => _activePanel = _Panel.none);
+  }
+
+  void _send() {
+    final text = widget.controller.text.trim();
+    if (text.isEmpty) return;
+    widget.onSend(
+      text,
+      _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
+    );
+    Navigator.of(context).pop();
+  }
 
   // ==================== Markdown 格式插入（与主输入框同逻辑） ====================
 
@@ -82,7 +114,6 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
     final selection = controller.selection;
 
     if (selection.isValid && selection.start < selection.end) {
-      // 有选中文字：包裹选中内容
       final selected = selection.textInside(text);
       final newText = text.replaceRange(
         selection.start,
@@ -97,7 +128,6 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
         ),
       );
     } else {
-      // 无选中：插入标记，光标放在标记中间
       final offset = selection.baseOffset >= 0
           ? selection.baseOffset
           : text.length;
@@ -131,37 +161,6 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
     };
   }
 
-  void _insertEmoji(String emoji) {
-    final controller = widget.controller;
-    final text = controller.text;
-    final selection = controller.selection;
-    final start = selection.start >= 0 ? selection.start : text.length;
-    final end = selection.end >= 0 ? selection.end : text.length;
-    final newText = text.replaceRange(start, end, emoji);
-    controller.text = newText;
-    controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: start + emoji.length),
-    );
-  }
-
-  void _togglePanel(_Panel panel) {
-    setState(() => _activePanel = _activePanel == panel ? _Panel.none : panel);
-  }
-
-  void _closeAllPanels() {
-    setState(() => _activePanel = _Panel.none);
-  }
-
-  void _send() {
-    final text = widget.controller.text.trim();
-    if (text.isEmpty) return;
-    widget.onSend(
-      text,
-      _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
-    );
-    Navigator.of(context).pop();
-  }
-
   // ==================== 构建 ====================
 
   @override
@@ -186,56 +185,17 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            // 顶栏：仅保留 Markdown 格式区 + 回缩按钮
+            // 最小头部：仅保留缩回按钮
             SizedBox(
               height: 44,
               child: Row(
                 children: [
-                  Expanded(
-                    child: _isMarkdownMode
-                        ? SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            child: Row(
-                              children: [
-                                _formatBtn('B', '粗体', MarkdownFormat.bold),
-                                _formatBtn(
-                                  'I',
-                                  '斜体',
-                                  MarkdownFormat.italic,
-                                  italic: true,
-                                ),
-                                _formatBtn(
-                                  'S',
-                                  '删除线',
-                                  MarkdownFormat.strikethrough,
-                                  strikethrough: true,
-                                ),
-                                _formatBtn('H', '标题', MarkdownFormat.heading),
-                                _formatBtn(
-                                  '<>',
-                                  '行内代码',
-                                  MarkdownFormat.inlineCode,
-                                  mono: true,
-                                ),
-                                _formatBtn('"', '引用', MarkdownFormat.quote),
-                                _formatBtn(
-                                  '•',
-                                  '列表',
-                                  MarkdownFormat.bulletList,
-                                ),
-                                _formatBtn('🔗', '链接', MarkdownFormat.link),
-                              ],
-                            ),
-                          )
-                        : const Spacer(),
-                  ),
-                  // 回缩按钮：与主输入框的 open_in_full 展开按钮成对（close_fullscreen）
+                  const Spacer(),
                   IconButton(
                     icon: Icon(
                       Icons.close_fullscreen,
                       size: 20,
-                      color: colors.textSecondary, // 与其他图标统一
+                      color: colors.textSecondary,
                     ),
                     tooltip: '缩回',
                     onPressed: () => Navigator.of(context).pop(),
@@ -244,7 +204,6 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 ],
               ),
             ),
-            Divider(color: colors.divider, height: 1),
             // 大编辑区：无填充背景，与抽屉融为一体
             Expanded(
               child: Padding(
@@ -271,11 +230,8 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                     fontFamily: _isMarkdownMode ? 'monospace' : null,
                   ),
                   decoration: InputDecoration(
-                    hintText: _isMarkdownMode ? '输入 Markdown...' : '输入长消息...',
-                    hintStyle: TextStyle(
-                      color: colors.textSecondary,
-                      fontSize: 16,
-                    ),
+                    filled: true,
+                    fillColor: colors.surface,
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,
@@ -283,6 +239,40 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 ),
               ),
             ),
+            // 底部工具栏：Markdown 模式切换为格式栏
+            if (_isMarkdownMode)
+              MarkdownFormatBar(
+                onFormat: _handleFormat,
+                onClose: () {
+                  setState(() => _isMarkdownMode = false);
+                  _closeAllPanels();
+                },
+                trailing: ValueListenableBuilder<bool>(
+                  valueListenable: widget.hasText,
+                  builder: (_, hasText, __) {
+                    return SendButton(enabled: hasText, onSend: _send);
+                  },
+                ),
+              )
+            else
+              ChatActionToolbar(
+                emojiActive: _activePanel == _Panel.emoji,
+                moreActive: _activePanel == _Panel.attachment,
+                markdownActive: _isMarkdownMode,
+                markdownTooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+                hasText: widget.hasText,
+                onEmoji: () => _togglePanel(_Panel.emoji),
+                onAt: widget.onAtMention ?? () {},
+                onImage: widget.onImagePick ?? () {},
+                imageEnabled: widget.onImagePick != null,
+                onFormat: () {
+                  HapticFeedback.lightImpact();
+                  setState(() => _isMarkdownMode = !_isMarkdownMode);
+                  _closeAllPanels();
+                },
+                onMore: () => _togglePanel(_Panel.attachment),
+                onSend: _send,
+              ),
             // 表情/附件面板（互斥展开，与主输入框一致）
             AnimatedSize(
               duration: const Duration(milliseconds: 200),
@@ -296,7 +286,6 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                     child: EmojiPanel(
                       onEmojiSelected: _insertEmoji,
                       onGifSelected: widget.onGifSelected,
-                      onClose: () => _closeAllPanels(),
                     ),
                   ),
                   Offstage(
@@ -309,66 +298,7 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 ],
               ),
             ),
-            Divider(color: colors.divider, height: 1),
-            // 底部完整工具栏（与主输入框共用）
-            ChatActionToolbar(
-              emojiActive: _activePanel == _Panel.emoji,
-              moreActive: _activePanel == _Panel.attachment,
-              markdownActive: _isMarkdownMode,
-              markdownTooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
-              hasText: widget.hasText,
-              onEmoji: () => _togglePanel(_Panel.emoji),
-              onAt: widget.onAtMention ?? () {},
-              onImage: widget.onImagePick ?? () {},
-              imageEnabled: widget.onImagePick != null,
-              onFormat: () {
-                HapticFeedback.lightImpact();
-                setState(() => _isMarkdownMode = !_isMarkdownMode);
-                _closeAllPanels();
-              },
-              onMore: () => _togglePanel(_Panel.attachment),
-              onSend: _send,
-            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  /// 透明背景格式按钮（与抽屉背景融为一体）
-  Widget _formatBtn(
-    String label,
-    String tooltip,
-    MarkdownFormat format, {
-    bool italic = false,
-    bool strikethrough = false,
-    bool mono = false,
-  }) {
-    final colors = context.appColors;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleFormat(format),
-          borderRadius: BorderRadius.circular(6),
-          child: SizedBox(
-            width: 36,
-            height: 44,
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary.withValues(alpha: 0.7),
-                  fontStyle: italic ? FontStyle.italic : null,
-                  decoration: strikethrough ? TextDecoration.lineThrough : null,
-                  fontFamily: mono ? 'monospace' : null,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

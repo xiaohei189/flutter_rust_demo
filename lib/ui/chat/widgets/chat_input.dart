@@ -78,6 +78,10 @@ class _ChatInputState extends State<ChatInput> {
   /// @ 成员列表当前高亮项（桌面端 ↑/↓ 键导航）
   int _atSelectionIndex = 0;
 
+  /// 聚焦或面板展开时保持完整输入布局，避免打开面板后工具栏被折叠行替换。
+  bool get _isInputExpanded =>
+      _focusNode.hasFocus || _activePanel != _InputPanel.none;
+
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
 
@@ -671,7 +675,7 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
-    final isFocused = _focusNode.hasFocus;
+    final isExpanded = _isInputExpanded;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -697,9 +701,9 @@ class _ChatInputState extends State<ChatInput> {
               // 子项撑满宽度，避免工具栏/面板被默认居中
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 聚焦态：输入行(含放大箭头) + 底部完整工具栏
+                // 聚焦/面板展开态：输入行 + 底部完整工具栏
                 // 未聚焦态：默认一行（声音+输入框+表情+更多）
-                if (isFocused)
+                if (isExpanded)
                   ...[
                     _buildInputRow(),
                     if (_atKeyword != null) _buildAtMemberList(),
@@ -719,17 +723,13 @@ class _ChatInputState extends State<ChatInput> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Offstage(
-                  offstage: _activePanel != _InputPanel.emoji,
-                  child: EmojiPanel(
-                    onEmojiSelected: _insertEmoji,
-                    onGifSelected: widget.onGifSelected,
-                    onClose: () {
-                      _closeAllPanels();
-                      _focusNode.requestFocus();
-                    },
+                  Offstage(
+                    offstage: _activePanel != _InputPanel.emoji,
+                    child: EmojiPanel(
+                      onEmojiSelected: _insertEmoji,
+                      onGifSelected: widget.onGifSelected,
+                    ),
                   ),
-                ),
                 Offstage(
                   offstage: _activePanel != _InputPanel.attachment,
                   child: AttachmentPanel(
@@ -802,7 +802,7 @@ class _ChatInputState extends State<ChatInput> {
         fontFamily: _isMarkdownMode ? 'monospace' : null,
       ),
       decoration: InputDecoration(
-        hintText: _isMarkdownMode ? 'Markdown...' : '输入消息...',
+        hintText: '输入消息...',
         hintStyle: TextStyle(
           color: context.appColors.textSecondary,
           fontSize: 16,
@@ -840,6 +840,8 @@ class _ChatInputState extends State<ChatInput> {
           minHeight: 32,
         ),
       ),
+      // 点击发送/工具栏按钮时保持输入焦点，避免 TapRegion 先收起工具栏吞掉点击。
+      onTapOutside: (_) {},
       onSubmitted: (_) => _doSend(),
     );
   }
@@ -892,6 +894,12 @@ class _ChatInputState extends State<ChatInput> {
         setState(() => _isMarkdownMode = false);
         _focusNode.requestFocus();
       },
+      trailing: ValueListenableBuilder<bool>(
+        valueListenable: _hasTextNotifier,
+        builder: (_, hasText, __) {
+          return SendButton(enabled: hasText, onSend: _doSend);
+        },
+      ),
     );
   }
 
@@ -994,4 +1002,3 @@ Widget chatInputSinglePreview() => const _ChatInputPreviewHost();
 @AppThemePreview(name: '群聊 - 带 @ 按钮', group: 'ChatInput')
 Widget chatInputGroupPreview() =>
     const _ChatInputPreviewHost(isGroupChat: true);
-

@@ -13,12 +13,10 @@ class EmojiPanel extends StatefulWidget {
   const EmojiPanel({
     super.key,
     required this.onEmojiSelected,
-    required this.onClose,
     this.onGifSelected,
   });
 
   final ValueChanged<String> onEmojiSelected;
-  final VoidCallback onClose;
   final ValueChanged<String>? onGifSelected;
 
   /// 默认表情列表（Unicode Emoji）
@@ -180,9 +178,9 @@ class _EmojiPanelState extends State<EmojiPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(child: _buildContent(context)),
-          const Divider(height: 1),
           _buildTabBar(context),
+          const Divider(height: 1),
+          Flexible(child: _buildContent(context)),
         ],
       ),
     );
@@ -338,13 +336,6 @@ class _EmojiPanelState extends State<EmojiPanel> {
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.keyboard, size: 20, color: colors.textSecondary),
-            tooltip: '键盘',
-            onPressed: widget.onClose,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          ),
         ],
       ),
     );
@@ -357,10 +348,8 @@ class _EmojiPanelState extends State<EmojiPanel> {
 Widget emojiPanelPreview() {
   return const Padding(
     padding: EdgeInsets.all(16),
-    child: EmojiPanel(onEmojiSelected: _noopString, onClose: _noop),
+    child: EmojiPanel(onEmojiSelected: _noopString),
   );
 }
 
 void _noopString(String value) {}
-
-void _noop() {}

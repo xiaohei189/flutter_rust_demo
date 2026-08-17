@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/user.dart';
 import '../../previews/app_theme_preview.dart';
-import '../../../core/utils/app_logger.dart';
 import '../theme/app_theme.dart';
 import 'app_image.dart';
 
@@ -79,7 +78,6 @@ class UserAvatar extends StatelessWidget {
 
     // Windows 路径（如 C:\Users\... 或 D:/...）
     if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
-      appLog.i('[UserAvatar] 检测到 Windows 路径');
       return true;
     }
 
@@ -88,7 +86,6 @@ class UserAvatar extends StatelessWidget {
       return true;
     }
 
-    appLog.i('[UserAvatar] 不是本地路径');
     return false;
   }
 

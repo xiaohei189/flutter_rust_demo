@@ -16,12 +16,14 @@ class ContactPickerScreen extends ConsumerStatefulWidget {
   final bool multiSelect;
   final String? title;
   final List<String>? excludeIds;
+  final bool includeGroups;
 
   const ContactPickerScreen({
     super.key,
     this.multiSelect = false,
     this.title,
     this.excludeIds,
+    this.includeGroups = true,
   });
 
   @override
@@ -37,11 +39,11 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
   void initState() {
     super.initState();
     _viewModel = ref.read(contactPickerViewModelProvider.notifier);
-    _viewModel.initialize(
-      multiSelect: widget.multiSelect,
-      excludeIds: widget.excludeIds ?? const [],
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewModel.initialize(
+        multiSelect: widget.multiSelect,
+        excludeIds: widget.excludeIds ?? const [],
+      );
       unawaited(_viewModel.ensureDataLoaded());
     });
   }
@@ -106,7 +108,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : ContactPickerList(
                     friends: filteredFriends,
-                    groups: filteredGroups,
+                    groups: widget.includeGroups ? filteredGroups : const [],
                     keyword: pickerState.keyword,
                     multiSelect: widget.multiSelect,
                     selectedIds: pickerState.selectedIds,

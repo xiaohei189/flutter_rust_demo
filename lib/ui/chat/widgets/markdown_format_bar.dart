@@ -23,6 +23,13 @@ class MarkdownFormatBar extends StatelessWidget {
       height: 44,
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.swap_vert, size: 20),
+            tooltip: '返回普通输入',
+            color: context.appColors.primary,
+            onPressed: onClose,
+          ),
+          const SizedBox(width: 4),
           // 格式按钮区可横向滚动，窄屏不溢出；关闭/发送固定右侧
           Expanded(
             child: SingleChildScrollView(
@@ -69,12 +76,6 @@ class MarkdownFormatBar extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.keyboard_return, size: 20),
-            tooltip: '返回普通输入',
-            color: context.appColors.primary,
-            onPressed: onClose,
           ),
           if (trailing != null) trailing!,
         ],
