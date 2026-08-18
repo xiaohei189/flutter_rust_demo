@@ -19,6 +19,8 @@ enum MessageType {
 
 /// 将 OpenIM contentType 整数转为 MessageType
 MessageType messageTypeFromContentType(int ct) {
+  // OpenIM 通知类型区间：1000-5000（好友、用户、群组、会话、业务通知等）
+  if (ct >= 1000 && ct <= 5000) return MessageType.system;
   return switch (ct) {
     101 => MessageType.text,
     102 => MessageType.image,

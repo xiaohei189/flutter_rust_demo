@@ -8,6 +8,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../../../../providers/current_user_provider.dart';
+import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/state_views.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../providers/friend_provider.dart';
@@ -43,6 +44,37 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
   Widget _buildBody(FriendListState friendState) {
     if (friendState.isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    final error = friendState.error;
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 56,
+                color: context.appColors.danger,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.appColors.danger),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () =>
+                    ref.read(friendListProvider.notifier).loadFriends(),
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (friendState.friends.isEmpty) {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../domain/extensions/message_ext.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../core/theme/app_theme.dart';
@@ -154,7 +155,7 @@ class _ChatMessageSearchSheetState
             radius: 18,
           ),
           title: Text(
-            log.content,
+            log.displayText,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

@@ -152,6 +152,7 @@ class ConversationTitleBar extends StatelessWidget
               label: '搜索',
               button: true,
               child: IconButton(
+                key: const ValueKey('chat_search_button'),
                 icon: const Icon(Icons.search, size: 26),
                 color: colors.textPrimary,
                 onPressed: onSearchTap,

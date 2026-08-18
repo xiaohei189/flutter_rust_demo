@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
+import 'package:flutter_rust_demo/generated/rust/model/local.dart' show LocalChatLog;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
 
@@ -40,6 +41,9 @@ void main() {
     });
     test('10000 → system', () {
       expect(messageTypeFromContentType(10000), MessageType.system);
+    });
+    test('1203 好友申请通知 → system', () {
+      expect(messageTypeFromContentType(1203), MessageType.system);
     });
     test('未知类型 → text（默认）', () {
       expect(messageTypeFromContentType(9999), MessageType.text);
@@ -273,6 +277,59 @@ void main() {
 
     test('空列表返回空', () {
       expect(sortMessagesByTime([]), isEmpty);
+    });
+  });
+  group('LocalChatLogExt.displayText', () {
+    LocalChatLog log0(int contentType, String content) => LocalChatLog(
+          conversationId: 'c1',
+          clientMsgId: 'id1',
+          serverMsgId: 'sid1',
+          sendId: 'user1',
+          recvId: 'user2',
+          senderPlatformId: 0,
+          senderNickName: 'test',
+          senderFaceUrl: '',
+          sessionType: 1,
+          msgFrom: 0,
+          contentType: contentType,
+          content: content,
+          isRead: 0,
+          status: 2,
+          seq: 1,
+          sendTime: 1700000000000,
+          createTime: 1700000000000,
+          attachedInfo: '',
+          ex: '',
+          localEx: '',
+          groupId: '',
+        );
+
+    test('文本消息取 content.content', () {
+      final log = log0(101, jsonEncode({'content': '搜索到你好'}));
+      expect(log.displayText, '搜索到你好');
+    });
+
+    test('图片消息显示占位文本而不是原始 JSON', () {
+      final log = log0(102, jsonEncode({'bigPicture': {'url': 'x.jpg'}}));
+      expect(log.displayText, '[图片]');
+    });
+
+    test('系统消息返回可读文本', () {
+      final log = log0(10000, jsonEncode({'content': '对方已撤回'}));
+      expect(log.displayText, '对方已撤回');
+    });
+
+    test('好友申请通知从 detail 提取 reqMsg', () {
+      final log = log0(
+        1203,
+        jsonEncode({
+          'detail': jsonEncode({
+            'request': {'reqMsg': '重复添加'},
+          }),
+        }),
+      );
+      expect(log.messageType, MessageType.system);
+      expect(log.displayText, '重复添加');
     });
   });
 }

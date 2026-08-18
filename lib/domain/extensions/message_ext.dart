@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../generated/rust/model/message.dart' show MessageInfo;
 import '../models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
@@ -34,18 +35,8 @@ extension MessageInfoExt on MessageInfo {
     };
   }
 
-  String _systemDisplayText(Map<String, dynamic> json) {
-    // 撤回通知（contentType=2101，DB 中存储的完整撤回信息）
-    if (json.containsKey('revokerID') || json.containsKey('revokerNickname')) {
-      final nickname = json['revokerNickname'] as String?;
-      return '$nickname 撤回了一条消息';
-    }
-    // 撤回通知（实时回调，简化格式 {"content":"xxx"}）
-    if (json.containsKey('content')) {
-      return json['content'] as String? ?? content;
-    }
-    return content;
-  }
+  String _systemDisplayText(Map<String, dynamic> json) =>
+      _readableSystemMessage(json, content);
 
   /// 发送时间 DateTime
   DateTime get sendDateTime {
@@ -272,6 +263,98 @@ extension MessageInfoExt on MessageInfo {
     }
     return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
+}
+
+/// 给 Rust 生成的 LocalChatLog 添加 UI 展示文本
+extension LocalChatLogExt on LocalChatLog {
+  MessageType get messageType => messageTypeFromContentType(contentType);
+
+  Map<String, dynamic> get parsedContent {
+    if (content.isEmpty || !content.startsWith('{')) return {};
+    try {
+      return jsonDecode(content) as Map<String, dynamic>;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  String get displayText {
+    final json = parsedContent;
+    return switch (messageType) {
+      MessageType.text => json['content'] as String? ?? content,
+      MessageType.advancedText => json['content'] as String? ?? '',
+      MessageType.markdown => json['content'] as String? ?? '',
+      MessageType.quote => json['text'] as String? ?? '',
+      MessageType.at => json['text'] as String? ?? '',
+      MessageType.image => '[图片]',
+      MessageType.video => '[视频]',
+      MessageType.audio => '[语音]',
+      MessageType.file => '[文件]',
+      MessageType.location => '[位置]',
+      MessageType.card => '[名片]',
+      MessageType.merge => '[聊天记录]',
+      MessageType.system => _systemDisplayText(json),
+      _ => content,
+    };
+  }
+
+  String _systemDisplayText(Map<String, dynamic> json) =>
+      _readableSystemMessage(json, content);
+}
+
+String _readableSystemMessage(
+  Map<String, dynamic> json,
+  String fallback,
+) {
+  if (json.containsKey('revokerID') || json.containsKey('revokerNickname')) {
+    final nickname = json['revokerNickname'] as String?;
+    return '$nickname 撤回了一条消息';
+  }
+  if (json.containsKey('content')) {
+    final value = json['content'];
+    if (value is String && value.isNotEmpty && !value.contains('"')) {
+      return value;
+    }
+  }
+  for (final key in ['detail', 'msgTips', 'tips', 'text']) {
+    final value = json[key];
+    if (value is! String || value.isEmpty) continue;
+    if (value.startsWith('{') || value.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map<String, dynamic>) {
+          final readable = _firstReadableMessageField(decoded);
+          if (readable != null) return readable;
+        }
+      } catch (_) {}
+    } else if (!value.contains('"')) {
+      return value;
+    }
+  }
+  if (fallback.isNotEmpty && !fallback.contains('"')) return fallback;
+  return '[系统消息]';
+}
+
+String? _firstReadableMessageField(Map<String, dynamic> map) {
+  for (final field in [
+    'reqMsg',
+    'content',
+    'msgTips',
+    'tips',
+    'text',
+    'nickname',
+    'fromNickname',
+    'toNickname',
+    'handleMsg',
+  ]) {
+    final item = map[field];
+    if (item is String && item.isNotEmpty) return item;
+  }
+  final request = map['request'];
+  if (request is Map<String, dynamic>) {
+    return _firstReadableMessageField(request);
+  }
+  return null;
 }
 
 /// 从 messageSent 事件构造 MessageInfo
