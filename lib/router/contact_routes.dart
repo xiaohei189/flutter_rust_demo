@@ -35,7 +35,7 @@ List<RouteBase> buildContactRoutes() {
       builder: (context, state) {
         final mode = state.uri.queryParameters['mode'] ?? 'forward';
         final title = state.uri.queryParameters['title'] ?? '';
-        final multiSelect = mode == 'group';
+        final multiSelect = mode == 'group' || mode == 'multi';
         return ContactPickerScreen(
           multiSelect: multiSelect,
           title: title.isNotEmpty ? title : (multiSelect ? '选择群成员' : '选择联系人'),

@@ -10,29 +10,31 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'group.freezed.dart';
 
-            
+@freezed
+sealed class GroupEvent with _$GroupEvent {
+  const GroupEvent._();
 
-            
-
-            @freezed
-                sealed class GroupEvent with _$GroupEvent  {
-                    const GroupEvent._();
-
-                     const factory GroupEvent.joinedGroupAdded(  GroupInfo field0,) = GroupEvent_JoinedGroupAdded;
- const factory GroupEvent.joinedGroupDeleted(  GroupInfo field0,) = GroupEvent_JoinedGroupDeleted;
- const factory GroupEvent.groupInfoChanged(  GroupInfo field0,) = GroupEvent_GroupInfoChanged;
- const factory GroupEvent.memberAdded(  GroupMember field0,) = GroupEvent_MemberAdded;
- const factory GroupEvent.memberDeleted(  GroupMember field0,) = GroupEvent_MemberDeleted;
- const factory GroupEvent.memberInfoChanged(  GroupMember field0,) = GroupEvent_MemberInfoChanged;
- const factory GroupEvent.groupReadReceipt(  List<GroupReadReceipt> field0,) = GroupEvent_GroupReadReceipt;
- const factory GroupEvent.applicationAdded(  String field0,) = GroupEvent_ApplicationAdded;
- const factory GroupEvent.applicationDeleted(  String field0,) = GroupEvent_ApplicationDeleted;
- const factory GroupEvent.applicationApproved(  String field0,) = GroupEvent_ApplicationApproved;
- const factory GroupEvent.applicationRejected(  String field0,) = GroupEvent_ApplicationRejected;
- const factory GroupEvent.dismissed(  GroupInfo field0,) = GroupEvent_Dismissed;
-
-                    
-
-                    
-                }
-            
+  const factory GroupEvent.joinedGroupAdded(GroupInfo field0) =
+      GroupEvent_JoinedGroupAdded;
+  const factory GroupEvent.joinedGroupDeleted(GroupInfo field0) =
+      GroupEvent_JoinedGroupDeleted;
+  const factory GroupEvent.groupInfoChanged(GroupInfo field0) =
+      GroupEvent_GroupInfoChanged;
+  const factory GroupEvent.memberAdded(GroupMember field0) =
+      GroupEvent_MemberAdded;
+  const factory GroupEvent.memberDeleted(GroupMember field0) =
+      GroupEvent_MemberDeleted;
+  const factory GroupEvent.memberInfoChanged(GroupMember field0) =
+      GroupEvent_MemberInfoChanged;
+  const factory GroupEvent.groupReadReceipt(List<GroupReadReceipt> field0) =
+      GroupEvent_GroupReadReceipt;
+  const factory GroupEvent.applicationAdded(String field0) =
+      GroupEvent_ApplicationAdded;
+  const factory GroupEvent.applicationDeleted(String field0) =
+      GroupEvent_ApplicationDeleted;
+  const factory GroupEvent.applicationApproved(String field0) =
+      GroupEvent_ApplicationApproved;
+  const factory GroupEvent.applicationRejected(String field0) =
+      GroupEvent_ApplicationRejected;
+  const factory GroupEvent.dismissed(GroupInfo field0) = GroupEvent_Dismissed;
+}

@@ -32,6 +32,7 @@ pub trait ConversationApi: Send + Sync {
     async fn get_conversation_ids(&self) -> std::result::Result<Vec<String>, SdkError>;
     async fn search_conversations(&self, keyword: &str) -> std::result::Result<Vec<LocalConversation>, SdkError>;
     async fn hide_conversation(&self, conversation_id: &str) -> std::result::Result<(), SdkError>;
+    async fn hide_all_conversations(&self) -> std::result::Result<(), SdkError>;
     async fn set_conversation(
         &self,
         conversation_id: &str,
@@ -163,6 +164,12 @@ impl ConversationApi for OpenIMClient {
     #[tracing::instrument(skip_all, fields(conversation_id = %conversation_id))]
     async fn hide_conversation(&self, conversation_id: &str) -> std::result::Result<(), SdkError> {
         self.conversation.reset(conversation_id).await
+    }
+
+    /// 隐藏全部会话（对齐 Go SDK `HideAllConversations`）
+    #[tracing::instrument(skip_all)]
+    async fn hide_all_conversations(&self) -> std::result::Result<(), SdkError> {
+        self.conversation.hide_all_conversations().await
     }
 
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）

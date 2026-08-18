@@ -130,11 +130,23 @@ pub async fn send_quote_message(
 
 /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
 #[flutter_rust_bridge::frb]
-pub async fn send_merger_message(title: String, summary_list: Vec<String>, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
+pub async fn send_merger_message(
+    client_msg_ids: Vec<String>,
+    source_conversation_id: String,
+    title: String,
+    summary_list: Vec<String>,
+    source_id: String,
+    session_type: SessionType,
+) -> Result<MsgStruct> {
     let client = client_holder()?;
-    // 将 summary_list 中的内容作为 MsgStruct 文本消息
-    let context_list: Vec<MsgStruct> = summary_list.iter().map(|s| MsgStruct::create_text_message(s)).collect();
-    let result = client.send_merger_message(&title, summary_list, context_list, &source_id, session_type.into()).await?;
+    let logs = client.find_message_list(&source_conversation_id, client_msg_ids.clone()).await?;
+    let context_list: Vec<MsgStruct> = client_msg_ids.iter().filter_map(|id| logs.iter().find(|log| log.client_msg_id == *id).map(MsgStruct::from)).collect();
+    if context_list.len() != client_msg_ids.len() {
+        anyhow::bail!("合并转发失败：部分原消息不存在");
+    }
+    let result = client
+        .send_merger_message(&source_conversation_id, &title, summary_list, context_list, &source_id, session_type.into())
+        .await?;
     Ok(result.into())
 }
 

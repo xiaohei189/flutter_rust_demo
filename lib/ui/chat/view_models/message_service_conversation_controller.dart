@@ -311,6 +311,16 @@ class MessageServiceConversationController {
     }
   }
 
+  Future<void> hideAllConversations() async {
+    if (!ImClient.instance.isInitialized) return;
+    try {
+      await service.repository.hideAllConversations();
+      await loadConversations();
+    } catch (e) {
+      appLog.e('[MessageService] 隐藏全部会话失败: $e');
+    }
+  }
+
   Future<void> markAllConversationsAsRead() async {
     if (!ImClient.instance.isInitialized) return;
     try {

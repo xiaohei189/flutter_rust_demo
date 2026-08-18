@@ -6,89 +6,96 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 删除消息请求体（对齐服务端 `/msg/delete_msgs` API）
+class DeleteMessagesReq {
+  final String conversationId;
+  final List<String> clientMsgIds;
 
-            
+  const DeleteMessagesReq({
+    required this.conversationId,
+    required this.clientMsgIds,
+  });
 
-            
+  @override
+  int get hashCode => conversationId.hashCode ^ clientMsgIds.hashCode;
 
-            /// 删除消息请求体（对齐服务端 `/msg/delete_msgs` API）
-class DeleteMessagesReq  {
-                final String conversationId;
-final List<String> clientMsgIds;
-
-                const DeleteMessagesReq({required this.conversationId ,required this.clientMsgIds ,});
-
-                
-                
-
-                
-        @override
-        int get hashCode => conversationId.hashCode^clientMsgIds.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is DeleteMessagesReq &&
-                runtimeType == other.runtimeType
-                && conversationId == other.conversationId&& clientMsgIds == other.clientMsgIds;
-        
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DeleteMessagesReq &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          clientMsgIds == other.clientMsgIds;
+}
 
 /// 按 seq 列表标记消息已读请求体（对齐服务端 `/msg/mark_msgs_as_read` API）
-class MarkMessagesAsReadReq  {
-                final String conversationId;
-final String userId;
-final int sessionType;
-final int hasReadSeq;
-final List<int> seqs;
+class MarkMessagesAsReadReq {
+  final String conversationId;
+  final String userId;
+  final int sessionType;
+  final int hasReadSeq;
+  final List<int> seqs;
 
-                const MarkMessagesAsReadReq({required this.conversationId ,required this.userId ,required this.sessionType ,required this.hasReadSeq ,required this.seqs ,});
+  const MarkMessagesAsReadReq({
+    required this.conversationId,
+    required this.userId,
+    required this.sessionType,
+    required this.hasReadSeq,
+    required this.seqs,
+  });
 
-                
-                
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      userId.hashCode ^
+      sessionType.hashCode ^
+      hasReadSeq.hashCode ^
+      seqs.hashCode;
 
-                
-        @override
-        int get hashCode => conversationId.hashCode^userId.hashCode^sessionType.hashCode^hasReadSeq.hashCode^seqs.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is MarkMessagesAsReadReq &&
-                runtimeType == other.runtimeType
-                && conversationId == other.conversationId&& userId == other.userId&& sessionType == other.sessionType&& hasReadSeq == other.hasReadSeq&& seqs == other.seqs;
-        
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarkMessagesAsReadReq &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          userId == other.userId &&
+          sessionType == other.sessionType &&
+          hasReadSeq == other.hasReadSeq &&
+          seqs == other.seqs;
+}
 
 /// 撤回消息请求体（对齐服务端 `/msg/revoke_msg` API）
-class RevokeMessageReq  {
-                final String conversationId;
-final int seq;
-final String userId;
-final String clientMsgId;
-final int sessionType;
+class RevokeMessageReq {
+  final String conversationId;
+  final int seq;
+  final String userId;
+  final String clientMsgId;
+  final int sessionType;
 
-                const RevokeMessageReq({required this.conversationId ,required this.seq ,required this.userId ,required this.clientMsgId ,required this.sessionType ,});
+  const RevokeMessageReq({
+    required this.conversationId,
+    required this.seq,
+    required this.userId,
+    required this.clientMsgId,
+    required this.sessionType,
+  });
 
-                
-                
+  @override
+  int get hashCode =>
+      conversationId.hashCode ^
+      seq.hashCode ^
+      userId.hashCode ^
+      clientMsgId.hashCode ^
+      sessionType.hashCode;
 
-                
-        @override
-        int get hashCode => conversationId.hashCode^seq.hashCode^userId.hashCode^clientMsgId.hashCode^sessionType.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is RevokeMessageReq &&
-                runtimeType == other.runtimeType
-                && conversationId == other.conversationId&& seq == other.seq&& userId == other.userId&& clientMsgId == other.clientMsgId&& sessionType == other.sessionType;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RevokeMessageReq &&
+          runtimeType == other.runtimeType &&
+          conversationId == other.conversationId &&
+          seq == other.seq &&
+          userId == other.userId &&
+          clientMsgId == other.clientMsgId &&
+          sessionType == other.sessionType;
+}

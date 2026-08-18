@@ -521,12 +521,16 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 合并转发
   Future<void> sendMergerMessage({
+    required List<String> clientMsgIds,
+    required String sourceConversationId,
     required String title,
     required List<String> summaryList,
     required String sourceId,
     required SessionType sessionType,
   }) {
     return repository.sendMergerMessage(
+      clientMsgIds: clientMsgIds,
+      sourceConversationId: sourceConversationId,
       title: title,
       summaryList: summaryList,
       sourceId: sourceId,
@@ -744,6 +748,9 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   Future<void> hideConversation(String conversationId) =>
       conversationController.hideConversation(conversationId);
+
+  Future<void> hideAllConversations() =>
+      conversationController.hideAllConversations();
 
   Future<void> markAllConversationsAsRead() =>
       conversationController.markAllConversationsAsRead();

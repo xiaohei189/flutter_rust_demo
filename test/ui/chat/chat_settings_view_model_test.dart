@@ -30,10 +30,11 @@ class FakeMessageRepository implements MessageRepository {
   @override
   Future<void> setConversation({
     required String conversationId,
-    required int recvMsgOpt,
+    int? recvMsgOpt,
+    String? ex,
   }) async {
     if (shouldFail) throw Exception('设置失败');
-    recvMsgOptCalls.add(recvMsgOpt);
+    if (recvMsgOpt != null) recvMsgOptCalls.add(recvMsgOpt);
   }
 
   @override

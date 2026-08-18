@@ -6,37 +6,45 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class GroupApplyInfo {
+  final String groupId;
+  final String userId;
+  final String nickname;
+  final String faceUrl;
+  final String reason;
+  final int handleResult;
+  final String? ex;
 
-            
+  const GroupApplyInfo({
+    required this.groupId,
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.reason,
+    required this.handleResult,
+    this.ex,
+  });
 
-            
+  @override
+  int get hashCode =>
+      groupId.hashCode ^
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      reason.hashCode ^
+      handleResult.hashCode ^
+      ex.hashCode;
 
-            class GroupApplyInfo  {
-                final String groupId;
-final String userId;
-final String nickname;
-final String faceUrl;
-final String reason;
-final int handleResult;
-final String? ex;
-
-                const GroupApplyInfo({required this.groupId ,required this.userId ,required this.nickname ,required this.faceUrl ,required this.reason ,required this.handleResult ,this.ex ,});
-
-                
-                
-
-                
-        @override
-        int get hashCode => groupId.hashCode^userId.hashCode^nickname.hashCode^faceUrl.hashCode^reason.hashCode^handleResult.hashCode^ex.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is GroupApplyInfo &&
-                runtimeType == other.runtimeType
-                && groupId == other.groupId&& userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& reason == other.reason&& handleResult == other.handleResult&& ex == other.ex;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupApplyInfo &&
+          runtimeType == other.runtimeType &&
+          groupId == other.groupId &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          reason == other.reason &&
+          handleResult == other.handleResult &&
+          ex == other.ex;
+}

@@ -48,7 +48,15 @@ pub trait MessageApi: Send + Sync {
     async fn send_at_text_message(&self, text: &str, at_user_ids: Vec<String>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_quote_message(&self, text: &str, quote: crate::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
-    async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
+    async fn send_merger_message(
+        &self,
+        source_conversation_id: &str,
+        title: &str,
+        summary_list: Vec<String>,
+        context_list: Vec<MsgStruct>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_card_message(&self, user_id: &str, nickname: &str, face_url: &str, ex: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_location_message(&self, description: &str, longitude: f64, latitude: f64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_face_message(&self, index: i32, data: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
@@ -217,8 +225,18 @@ impl MessageApi for OpenIMClient {
 
     /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        self.sender.send_merger_message(title, summary_list, context_list, source_id, session_type).await
+    async fn send_merger_message(
+        &self,
+        source_conversation_id: &str,
+        title: &str,
+        summary_list: Vec<String>,
+        context_list: Vec<MsgStruct>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError> {
+        self.sender
+            .send_merger_message(source_conversation_id, title, summary_list, context_list, source_id, session_type)
+            .await
     }
 
     /// 发送名片消息（对齐 Go SDK `CreateCardMessage` + `SendMessage`）

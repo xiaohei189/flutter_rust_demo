@@ -203,6 +203,15 @@ impl ConversationService {
         self.repositories.conversation_repo.reset(conversation_id).await
     }
 
+    /// 隐藏全部会话（对齐 Go SDK `HideAllConversations`）
+    pub async fn hide_all_conversations(&self) -> Result<()> {
+        let conversations = self.get_all().await?;
+        for conversation in conversations {
+            self.reset(&conversation.conversation_id).await?;
+        }
+        Ok(())
+    }
+
     /// 通用会话信息设置：按 conversation_id 查找已有会话，更新非空字段后 upsert
     /// 同步到服务器（如果 server_api 已设置）
     pub async fn set_conversation(
@@ -637,6 +646,19 @@ mod tests {
         let pool = create_pool_memory().await.unwrap();
         let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
         assert!(manager.reset("conv_missing").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_hide_all_conversations_hides_all() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_1", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_2", 2000, false)).await.unwrap();
+
+        manager.hide_all_conversations().await.unwrap();
+
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert!(list.is_empty());
     }
 
     #[tokio::test]

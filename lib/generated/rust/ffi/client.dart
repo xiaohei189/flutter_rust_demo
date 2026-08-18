@@ -25,383 +25,452 @@ import '../model/msg_struct.dart';
 import '../model/user.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
+abstract class OpenImBridgeClient implements RustOpaqueInterface {
+  Future<void> acceptFriendApplication({
+    required String userId,
+    String? handleMsg,
+  });
 
-            
+  Future<void> acceptGroupApplication({
+    required String groupId,
+    required String userId,
+    String? handleMsg,
+  });
 
-            
+  Future<void> addBlack({required String userId});
 
-            
-                // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>
-                abstract class OpenImBridgeClient implements RustOpaqueInterface {
-                     Future<void>  acceptFriendApplication({required String userId , String? handleMsg });
+  Future<void> addFriend({required String userId, required String reqMsg});
 
+  Future<List<CheckFriendResult>> checkFriend({required List<String> userIds});
 
- Future<void>  acceptGroupApplication({required String groupId , required String userId , String? handleMsg });
+  /// 检查群成员是否已全量同步（对齐 Go SDK `CheckGroupMemberFullSync`）
+  Future<bool> checkGroupMemberFullSync({required String groupId});
 
+  /// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
+  Future<bool> checkLocalGroupFullSync();
 
- Future<void>  addBlack({required String userId });
+  Future<void> clearConversationDraft({required String conversationId});
 
+  Stream<ConnectionEvent> connectionStream();
 
- Future<void>  addFriend({required String userId , required String reqMsg });
+  Stream<ConversationEvent> conversationStream();
 
+  Future<GroupInfo> createGroup({
+    required String groupName,
+    required int groupType,
+    required List<String> memberIds,
+  });
 
- Future<List<CheckFriendResult>>  checkFriend({required List<String> userIds });
+  Future<void> deleteConversation({required String conversationId});
 
+  Future<void> deleteFriend({required String userId});
 
-/// 检查群成员是否已全量同步（对齐 Go SDK `CheckGroupMemberFullSync`）
- Future<bool>  checkGroupMemberFullSync({required String groupId });
+  Future<void> deleteMessages({required DeleteMessagesReq req});
 
+  Future<void> disconnect();
 
-/// 检查本地群组是否已全量同步（对齐 Go SDK `CheckLocalGroupFullSync`）
- Future<bool>  checkLocalGroupFullSync();
+  Future<void> dismissGroup({required String groupId});
 
+  Stream<FriendEvent> friendStream();
 
- Future<void>  clearConversationDraft({required String conversationId });
+  Future<List<String>> getBlackList();
 
+  Future<ConnectionState> getConnectionState();
 
- Stream<ConnectionEvent>  connectionStream();
+  Future<LocalConversation?> getConversation({required String conversationId});
 
+  /// 根据会话类型和 sourceID 生成 conversationID（对齐 Go SDK `GetConversationIDBySessionType`）
+  ///
+  /// - sessionType=1 单聊: `si_{sorted(userID, sourceID)}`
+  /// - sessionType=2 普通群聊: `g_{groupID}`
+  /// - sessionType=3 超级群聊: `sg_{groupID}`
+  /// - sessionType=4 服务端通知会话: `sn_{sorted(userID, sourceID)}`
+  Future<String> getConversationIdBySessionType({
+    required String sourceId,
+    required SessionType sessionType,
+  });
 
- Stream<ConversationEvent>  conversationStream();
+  /// 获取所有会话 ID（对齐 Go SDK `GetAllConversationIDs`）
+  Future<List<String>> getConversationIds();
 
+  /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
+  Future<List<LocalConversation>> getConversationListSplit({
+    required int offset,
+    required int count,
+  });
 
- Future<GroupInfo>  createGroup({required String groupName , required int groupType , required List<String> memberIds });
+  Future<List<LocalConversation>> getConversations();
 
+  Future<int> getFriendApplicationUnhandledCount();
 
- Future<void>  deleteConversation({required String conversationId });
+  Future<List<FriendApplyInfo>> getFriendApplyList();
 
+  Future<List<FriendApplyInfo>> getFriendApplyListAsApplicant();
 
- Future<void>  deleteFriend({required String userId });
+  Future<List<String>> getFriendIdList();
 
+  Future<List<FriendInfo>> getFriendList();
 
- Future<void>  deleteMessages({required DeleteMessagesReq req });
+  /// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
+  ///
+  /// 从本地 DB 按置顶优先、创建时间倒序分页获取。
+  /// filter_black=true 时过滤黑名单好友。
+  Future<List<FriendInfo>> getFriendListPage({
+    required int offset,
+    required int count,
+    required bool filterBlack,
+  });
 
+  Future<List<GroupApplyInfo>> getGroupApplicationList();
 
- Future<void>  disconnect();
+  Future<List<GroupApplyInfo>> getGroupApplicationListAsApplicant();
 
+  Future<List<GroupApplyInfo>> getGroupApplicationListAsRecipient();
 
- Future<void>  dismissGroup({required String groupId });
+  Future<int> getGroupApplicationUnhandledCount();
 
+  Future<List<GroupInfo>> getGroupList();
 
- Stream<FriendEvent>  friendStream();
+  /// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
+  Future<List<GroupMember>> getGroupMemberListByJoinTimeFilter({
+    required String groupId,
+    required int offset,
+    required int count,
+    required int joinTimeBegin,
+    required int joinTimeEnd,
+    required List<String> filterUserIds,
+  });
 
+  /// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
+  Future<List<GroupMember>> getGroupMemberOwnerAndAdmin({
+    required String groupId,
+  });
 
- Future<List<String>>  getBlackList();
+  Future<List<GroupMember>> getGroupMembers({required String groupId});
 
+  Future<List<GroupMember>> getGroupMembersInfo({
+    required String groupId,
+    required List<String> userIds,
+  });
 
- Future<ConnectionState>  getConnectionState();
+  Future<List<GroupInfo>> getGroupsInfo({required List<String> groupIds});
 
+  Future<GetHistoryMessagesResult> getHistoryMessages({
+    required GetHistoryMessagesReq req,
+  });
 
- Future<LocalConversation?>  getConversation({required String conversationId });
+  /// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
+  Future<List<GroupInfo>> getJoinedGroupListPage({
+    required int offset,
+    required int count,
+  });
 
+  /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
+  Future<List<LocalConversation>> getMultipleConversations({
+    required List<String> conversationIds,
+  });
 
-/// 根据会话类型和 sourceID 生成 conversationID（对齐 Go SDK `GetConversationIDBySessionType`）
-///
-/// - sessionType=1 单聊: `si_{sorted(userID, sourceID)}`
-/// - sessionType=2 普通群聊: `g_{groupID}`
-/// - sessionType=3 超级群聊: `sg_{groupID}`
-/// - sessionType=4 服务端通知会话: `sn_{sorted(userID, sourceID)}`
- Future<String>  getConversationIdBySessionType({required String sourceId , required SessionType sessionType });
+  Future<List<LocalConversation>> getPinnedConversations();
 
+  Future<UserInfo> getSelfUserInfo();
 
-/// 获取所有会话 ID（对齐 Go SDK `GetAllConversationIDs`）
- Future<List<String>>  getConversationIds();
+  /// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
+  ///
+  /// 先查本地 DB，缺失的从服务端拉取并缓存。
+  /// filter_black=true 时过滤掉黑名单中的好友。
+  Future<List<FriendInfo>> getSpecifiedFriendsInfo({
+    required List<String> friendUserIds,
+    required bool filterBlack,
+  });
 
+  Future<List<OnlineStatus>> getSubscribeUsersStatus();
 
-/// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
- Future<List<LocalConversation>>  getConversationListSplit({required int offset , required int count });
+  /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
+  Future<Map<String, String>> getUserClientConfig();
 
+  Future<List<OnlineStatus>> getUserStatus({required List<String> userIds});
 
- Future<List<LocalConversation>>  getConversations();
+  /// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
+  Future<List<String>> getUsersInGroup({
+    required String groupId,
+    required List<String> userIds,
+  });
 
+  Future<List<UserInfo>> getUsersInfo({required List<String> userIds});
 
- Future<int>  getFriendApplicationUnhandledCount();
+  Stream<GroupEvent> groupStream();
 
+  /// 隐藏全部会话（对齐 Go SDK `HideAllConversations`）
+  Future<void> hideAllConversations();
 
- Future<List<FriendApplyInfo>>  getFriendApplyList();
+  /// 隐藏会话（对齐 Go SDK `HideConversation`）
+  Future<void> hideConversation({required String conversationId});
 
+  Future<void> inviteGroupMembers({
+    required String groupId,
+    required List<String> memberIds,
+  });
 
- Future<List<FriendApplyInfo>>  getFriendApplyListAsApplicant();
+  Future<bool> isConnected();
 
+  Future<bool> isFriend({required String userId});
 
- Future<List<String>>  getFriendIdList();
+  Future<bool> isInBlacklist({required String userId});
 
+  Future<bool> isInGroup({required String groupId});
 
- Future<List<FriendInfo>>  getFriendList();
+  Future<void> joinGroup({required String groupId, required String reqMsg});
 
+  Future<void> kickGroupMembers({
+    required String groupId,
+    required List<String> memberIds,
+  });
 
-/// 分页获取好友列表（对齐 Go SDK GetFriendListPage）
-///
-/// 从本地 DB 按置顶优先、创建时间倒序分页获取。
-/// filter_black=true 时过滤黑名单好友。
- Future<List<FriendInfo>>  getFriendListPage({required int offset , required int count , required bool filterBlack });
+  Future<void> logout();
 
+  Future<void> markConversationMessageAsRead({
+    required String conversationId,
+    required SessionType sessionType,
+  });
 
- Future<List<GroupApplyInfo>>  getGroupApplicationList();
+  Future<void> markMessagesAsRead({required MarkMessagesAsReadReq req});
 
+  Stream<MessageEvent> messageStream();
 
- Future<List<GroupApplyInfo>>  getGroupApplicationListAsApplicant();
+  Future<void> muteGroup({required String groupId, required bool isMute});
 
-
- Future<List<GroupApplyInfo>>  getGroupApplicationListAsRecipient();
-
-
- Future<int>  getGroupApplicationUnhandledCount();
-
-
- Future<List<GroupInfo>>  getGroupList();
-
-
-/// 按加入时间筛选群成员（对齐 Go SDK `GetGroupMemberListByJoinTimeFilter`）
- Future<List<GroupMember>>  getGroupMemberListByJoinTimeFilter({required String groupId , required int offset , required int count , required int joinTimeBegin , required int joinTimeEnd , required List<String> filterUserIds });
-
-
-/// 获取群主和管理员列表（对齐 Go SDK `GetGroupMemberOwnerAndAdmin`）
- Future<List<GroupMember>>  getGroupMemberOwnerAndAdmin({required String groupId });
-
-
- Future<List<GroupMember>>  getGroupMembers({required String groupId });
-
-
- Future<List<GroupMember>>  getGroupMembersInfo({required String groupId , required List<String> userIds });
-
-
- Future<List<GroupInfo>>  getGroupsInfo({required List<String> groupIds });
-
-
- Future<GetHistoryMessagesResult>  getHistoryMessages({required GetHistoryMessagesReq req });
-
-
-/// 分页获取已加入群组列表（对齐 Go SDK `GetJoinedGroupListPage`）
- Future<List<GroupInfo>>  getJoinedGroupListPage({required int offset , required int count });
-
-
-/// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
- Future<List<LocalConversation>>  getMultipleConversations({required List<String> conversationIds });
-
-
- Future<List<LocalConversation>>  getPinnedConversations();
-
-
- Future<UserInfo>  getSelfUserInfo();
-
-
-/// 获取指定好友信息（对齐 Go SDK GetSpecifiedFriendsInfo）
-///
-/// 先查本地 DB，缺失的从服务端拉取并缓存。
-/// filter_black=true 时过滤掉黑名单中的好友。
- Future<List<FriendInfo>>  getSpecifiedFriendsInfo({required List<String> friendUserIds , required bool filterBlack });
-
-
- Future<List<OnlineStatus>>  getSubscribeUsersStatus();
-
-
-/// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig`）
- Future<Map<String, String>>  getUserClientConfig();
-
-
- Future<List<OnlineStatus>>  getUserStatus({required List<String> userIds });
-
-
-/// 获取指定用户在群组中的存在情况（对齐 Go SDK `GetUsersInGroup`）
- Future<List<String>>  getUsersInGroup({required String groupId , required List<String> userIds });
-
-
- Future<List<UserInfo>>  getUsersInfo({required List<String> userIds });
-
-
- Stream<GroupEvent>  groupStream();
-
-
-/// 隐藏会话（对齐 Go SDK `HideConversation`）
- Future<void>  hideConversation({required String conversationId });
-
-
- Future<void>  inviteGroupMembers({required String groupId , required List<String> memberIds });
-
-
- Future<bool>  isConnected();
-
-
- Future<bool>  isFriend({required String userId });
-
-
- Future<bool>  isInBlacklist({required String userId });
-
-
- Future<bool>  isInGroup({required String groupId });
-
-
- Future<void>  joinGroup({required String groupId , required String reqMsg });
-
-
- Future<void>  kickGroupMembers({required String groupId , required List<String> memberIds });
-
-
- Future<void>  logout();
-
-
- Future<void>  markConversationMessageAsRead({required String conversationId , required SessionType sessionType });
-
-
- Future<void>  markMessagesAsRead({required MarkMessagesAsReadReq req });
-
-
- Stream<MessageEvent>  messageStream();
-
-
- Future<void>  muteGroup({required String groupId , required bool isMute });
-
-
- Future<void>  muteGroupMember({required String groupId , required String userId , required int mutedSeconds });
-
+  Future<void> muteGroupMember({
+    required String groupId,
+    required String userId,
+    required int mutedSeconds,
+  });
 
   // HINT: Make it `#[frb(sync)]` to let it become the default constructor of Dart class.
-static Future<OpenImBridgeClient>  newInstance({required ClientConfig config })=>RustLib.instance.api.crateFfiClientOpenImBridgeClientNew(config: config);
-
-
- Future<void>  quitGroup({required String groupId });
-
-
- Future<void>  refuseFriendApplication({required String userId , String? handleMsg });
-
-
- Future<void>  refuseGroupApplication({required String groupId , required String userId , String? handleMsg });
-
-
- Future<void>  removeBlack({required String userId });
-
-
- Future<void>  revokeMessage({required RevokeMessageReq req });
-
-
-/// 搜索会话（对齐 Go SDK `SearchConversation`）
- Future<List<LocalConversation>>  searchConversations({required String keyword });
-
-
-/// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
-///
-/// keyword: 搜索关键词，匹配 nickname / user_id / remark
- Future<List<SearchFriendItem>>  searchFriends({required String keyword });
-
-
-/// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
- Future<List<GroupMember>>  searchGroupMembers({required String groupId , required String keyword });
-
-
-/// 搜索群组（对齐 Go SDK `SearchGroups`）
- Future<List<GroupInfo>>  searchGroups({required String keyword });
-
-
- Future<List<LocalChatLog>>  searchLocalMessages({required SearchMessagesReq req });
-
-
- Future<MsgStruct>  sendAdvancedTextMessage({required String text , required List<MessageEntity> entities , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendAtTextMessage({required String text , required List<String> atUserIds , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendCustomMessage({required String data , required String desc , required String extension_ , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendFileMessage({required String filePath , required String sourceId , required SessionType sessionType });
-
-
-/// 发送文件消息（带上传进度回调）
- Stream<int>  sendFileMessageWithProgress({required String filePath , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendImageMessage({required String filePath , required String sourceId , required SessionType sessionType });
-
-
-/// 发送图片消息（带上传进度回调）
- Stream<int>  sendImageMessageWithProgress({required String filePath , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendMarkdownMessage({required String text , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendSoundMessage({required String filePath , required String sourceId , required SessionType sessionType , required int duration });
-
-
-/// 发送语音消息（带上传进度回调）
- Stream<int>  sendSoundMessageWithProgress({required String filePath , required String sourceId , required SessionType sessionType , required int duration });
-
-
- Future<MsgStruct>  sendTextMessage({required String text , required String sourceId , required SessionType sessionType });
-
-
- Future<MsgStruct>  sendVideoMessage({required String videoPath , required String snapshotPath , required String sourceId , required SessionType sessionType , required int duration });
-
-
-/// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
- Stream<int>  sendVideoMessageWithProgress({required String videoPath , required String snapshotPath , required String sourceId , required SessionType sessionType , required int duration });
-
-
-/// 通用会话信息设置（对齐 Go SDK `SetConversation`）
-///
-/// 只更新传入的非空字段，其余保持不变。
- Future<void>  setConversation({required String conversationId , int? recvMsgOpt , bool? isPinned , bool? isPrivateChat , int? groupAtType , String? ex });
-
-
- Future<void>  setConversationDraft({required String conversationId , required String draftText });
-
-
- Future<void>  setConversationPinned({required String conversationId , required bool isPinned });
-
-
- Future<void>  setConversationPrivate({required String conversationId , required bool isPrivate });
-
-
- Future<void>  setGlobalMsgRecvOpt({required int globalRecvOpt });
-
-
- Future<void>  setGroupInfo({required String groupId , String? groupName , String? faceUrl , String? introduction , String? notification });
-
-
-/// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）
- Future<void>  setGroupMemberInfo({required String groupId , required String userId , String? nickname , String? faceUrl , int? roleLevel , String? ex });
-
-
- Future<List<OnlineStatus>>  subscribeUsersStatus({required List<String> userIds });
-
-
- Future<void>  syncFriends();
-
-
-/// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
- Future<void>  syncFriendsIncremental();
-
-
-/// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
- Future<void>  syncGroupsIncremental();
-
-
- Future<void>  transferGroupOwner({required String groupId , required String newOwnerUserId });
-
-
- Future<void>  unsubscribeUsersStatus({required List<String> userIds });
-
-
- Future<void>  updateConversationUnreadCount({required String conversationId , required int unreadCount });
-
-
-/// 批量更新好友信息（对齐 Go SDK UpdateFriends）
-///
-/// 支持部分更新：is_pinned / remark / ex 为 null 时不修改对应字段。
-/// 更新成功后自动执行增量同步刷新本地数据。
- Future<void>  updateFriends({required List<String> friendUserIds , bool? isPinned , String? remark , String? ex });
-
-
- Future<void>  updateUserProfile({String? nickname , String? faceUrl , String? ex });
-
-
- Stream<UserEvent>  userStream();
-
-
-
-                    
-                }
-                
-            
+  static Future<OpenImBridgeClient> newInstance({
+    required ClientConfig config,
+  }) =>
+      RustLib.instance.api.crateFfiClientOpenImBridgeClientNew(config: config);
+
+  Future<void> quitGroup({required String groupId});
+
+  Future<void> refuseFriendApplication({
+    required String userId,
+    String? handleMsg,
+  });
+
+  Future<void> refuseGroupApplication({
+    required String groupId,
+    required String userId,
+    String? handleMsg,
+  });
+
+  Future<void> removeBlack({required String userId});
+
+  Future<void> revokeMessage({required RevokeMessageReq req});
+
+  /// 搜索会话（对齐 Go SDK `SearchConversation`）
+  Future<List<LocalConversation>> searchConversations({
+    required String keyword,
+  });
+
+  /// 搜索好友（本地 SQLite 模糊查询，对齐 Go SDK SearchFriends）
+  ///
+  /// keyword: 搜索关键词，匹配 nickname / user_id / remark
+  Future<List<SearchFriendItem>> searchFriends({required String keyword});
+
+  /// 搜索群成员（对齐 Go SDK `SearchGroupMembers`）
+  Future<List<GroupMember>> searchGroupMembers({
+    required String groupId,
+    required String keyword,
+  });
+
+  /// 搜索群组（对齐 Go SDK `SearchGroups`）
+  Future<List<GroupInfo>> searchGroups({required String keyword});
+
+  Future<List<LocalChatLog>> searchLocalMessages({
+    required SearchMessagesReq req,
+  });
+
+  Future<MsgStruct> sendAdvancedTextMessage({
+    required String text,
+    required List<MessageEntity> entities,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendAtTextMessage({
+    required String text,
+    required List<String> atUserIds,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendCustomMessage({
+    required String data,
+    required String desc,
+    required String extension_,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendFileMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  /// 发送文件消息（带上传进度回调）
+  Stream<int> sendFileMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendImageMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  /// 发送图片消息（带上传进度回调）
+  Stream<int> sendImageMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendMarkdownMessage({
+    required String text,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendSoundMessage({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  });
+
+  /// 发送语音消息（带上传进度回调）
+  Stream<int> sendSoundMessageWithProgress({
+    required String filePath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  });
+
+  Future<MsgStruct> sendTextMessage({
+    required String text,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  Future<MsgStruct> sendVideoMessage({
+    required String videoPath,
+    required String snapshotPath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  });
+
+  /// 发送视频消息（带上传进度回调，进度跟踪主视频文件）
+  Stream<int> sendVideoMessageWithProgress({
+    required String videoPath,
+    required String snapshotPath,
+    required String sourceId,
+    required SessionType sessionType,
+    required int duration,
+  });
+
+  /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
+  ///
+  /// 只更新传入的非空字段，其余保持不变。
+  Future<void> setConversation({
+    required String conversationId,
+    int? recvMsgOpt,
+    bool? isPinned,
+    bool? isPrivateChat,
+    int? groupAtType,
+    String? ex,
+  });
+
+  Future<void> setConversationDraft({
+    required String conversationId,
+    required String draftText,
+  });
+
+  Future<void> setConversationPinned({
+    required String conversationId,
+    required bool isPinned,
+  });
+
+  Future<void> setConversationPrivate({
+    required String conversationId,
+    required bool isPrivate,
+  });
+
+  Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt});
+
+  Future<void> setGroupInfo({
+    required String groupId,
+    String? groupName,
+    String? faceUrl,
+    String? introduction,
+    String? notification,
+  });
+
+  /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）
+  Future<void> setGroupMemberInfo({
+    required String groupId,
+    required String userId,
+    String? nickname,
+    String? faceUrl,
+    int? roleLevel,
+    String? ex,
+  });
+
+  Future<List<OnlineStatus>> subscribeUsersStatus({
+    required List<String> userIds,
+  });
+
+  Future<void> syncFriends();
+
+  /// 增量同步好友列表（对齐 Go SDK IncrSyncFriends）
+  Future<void> syncFriendsIncremental();
+
+  /// 增量同步群组列表（对齐 Go SDK IncrSyncJoinGroup）
+  Future<void> syncGroupsIncremental();
+
+  Future<void> transferGroupOwner({
+    required String groupId,
+    required String newOwnerUserId,
+  });
+
+  Future<void> unsubscribeUsersStatus({required List<String> userIds});
+
+  Future<void> updateConversationUnreadCount({
+    required String conversationId,
+    required int unreadCount,
+  });
+
+  /// 批量更新好友信息（对齐 Go SDK UpdateFriends）
+  ///
+  /// 支持部分更新：is_pinned / remark / ex 为 null 时不修改对应字段。
+  /// 更新成功后自动执行增量同步刷新本地数据。
+  Future<void> updateFriends({
+    required List<String> friendUserIds,
+    bool? isPinned,
+    String? remark,
+    String? ex,
+  });
+
+  Future<void> updateUserProfile({
+    String? nickname,
+    String? faceUrl,
+    String? ex,
+  });
+
+  Stream<UserEvent> userStream();
+}

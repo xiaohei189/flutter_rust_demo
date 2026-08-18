@@ -11,80 +11,169 @@ import '../model/message.dart';
 import '../model/msg_struct.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`, `from`
 
-            // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`, `from`
-
-
-            /// 转发消息（对齐 Go SDK `ForwardMessage`）
-Future<MsgStruct>  forwardMessage({required MsgStruct msgStruct , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageAdvancedForwardMessage(msgStruct: msgStruct, sourceId: sourceId, sessionType: sessionType);
+/// 转发消息（对齐 Go SDK `ForwardMessage`）
+Future<MsgStruct> forwardMessage({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateFfiMessageAdvancedForwardMessage(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
 
 /// 转发消息（按 clientMsgId 查找消息并转发）
-Future<MsgStruct>  forwardMessageByClientId({required String clientMsgId , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageAdvancedForwardMessageByClientId(clientMsgId: clientMsgId, sourceId: sourceId, sessionType: sessionType);
+Future<MsgStruct> forwardMessageByClientId({
+  required String clientMsgId,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateFfiMessageAdvancedForwardMessageByClientId(
+  clientMsgId: clientMsgId,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
 
 /// 按 seq 获取单条历史消息（对齐 Go SDK `GetHistoryMessageBySeq`）
-Future<LocalChatLog>  getHistoryMessageBySeq({required int seq }) => RustLib.instance.api.crateFfiMessageAdvancedGetHistoryMessageBySeq(seq: seq);
+Future<LocalChatLog> getHistoryMessageBySeq({required int seq}) => RustLib
+    .instance
+    .api
+    .crateFfiMessageAdvancedGetHistoryMessageBySeq(seq: seq);
 
 /// 按 seq 范围获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListBySeq`）
-Future<List<LocalChatLog>>  getAdvancedHistoryMessageListBySeq({required String conversationId , required int startSeq , required int endSeq , required int count }) => RustLib.instance.api.crateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeq(conversationId: conversationId, startSeq: startSeq, endSeq: endSeq, count: count);
+Future<List<LocalChatLog>> getAdvancedHistoryMessageListBySeq({
+  required String conversationId,
+  required int startSeq,
+  required int endSeq,
+  required int count,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedGetAdvancedHistoryMessageListBySeq(
+      conversationId: conversationId,
+      startSeq: startSeq,
+      endSeq: endSeq,
+      count: count,
+    );
 
 /// 反向获取历史消息（对齐 Go SDK `GetAdvancedHistoryMessageListReverse`）
 ///
 /// 与 `get_history_messages` 相同参数，但返回 start 之后（更新）的消息，
 /// 按 send_time/seq 升序；start 为空时从最早消息开始。
-Future<GetHistoryMessagesResult>  getHistoryMessagesReverse({required String conversationId , required String startClientMsgId , required int count }) => RustLib.instance.api.crateFfiMessageAdvancedGetHistoryMessagesReverse(conversationId: conversationId, startClientMsgId: startClientMsgId, count: count);
+Future<GetHistoryMessagesResult> getHistoryMessagesReverse({
+  required String conversationId,
+  required String startClientMsgId,
+  required int count,
+}) => RustLib.instance.api.crateFfiMessageAdvancedGetHistoryMessagesReverse(
+  conversationId: conversationId,
+  startClientMsgId: startClientMsgId,
+  count: count,
+);
 
 /// 按 clientMsgID 列表查找消息（对齐 Go SDK `FindMessageList`）
-Future<List<LocalChatLog>>  findMessageList({required String conversationId , required List<String> clientMsgIds }) => RustLib.instance.api.crateFfiMessageAdvancedFindMessageList(conversationId: conversationId, clientMsgIds: clientMsgIds);
+Future<List<LocalChatLog>> findMessageList({
+  required String conversationId,
+  required List<String> clientMsgIds,
+}) => RustLib.instance.api.crateFfiMessageAdvancedFindMessageList(
+  conversationId: conversationId,
+  clientMsgIds: clientMsgIds,
+);
 
 /// 删除单条消息（本地 + 服务端，对齐 Go SDK `DeleteMessage`）
 ///
 /// 先从服务端删除，再从本地删除
-Future<void>  deleteMessage({required String conversationId , required String clientMsgId }) => RustLib.instance.api.crateFfiMessageAdvancedDeleteMessage(conversationId: conversationId, clientMsgId: clientMsgId);
+Future<void> deleteMessage({
+  required String conversationId,
+  required String clientMsgId,
+}) => RustLib.instance.api.crateFfiMessageAdvancedDeleteMessage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+);
 
 /// 仅从本地删除单条消息（对齐 Go SDK `DeleteMessageFromLocalStorage`）
-Future<void>  deleteMessageFromLocalStorage({required String conversationId , required String clientMsgId }) => RustLib.instance.api.crateFfiMessageAdvancedDeleteMessageFromLocalStorage(conversationId: conversationId, clientMsgId: clientMsgId);
+Future<void> deleteMessageFromLocalStorage({
+  required String conversationId,
+  required String clientMsgId,
+}) => RustLib.instance.api.crateFfiMessageAdvancedDeleteMessageFromLocalStorage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+);
 
 /// 删除所有消息（本地 + 服务端，对齐 Go SDK `DeleteAllMsgFromLocalAndSvr`）
-Future<void>  deleteAllMsgFromLocalAndSvr() => RustLib.instance.api.crateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvr();
+Future<void> deleteAllMsgFromLocalAndSvr() =>
+    RustLib.instance.api.crateFfiMessageAdvancedDeleteAllMsgFromLocalAndSvr();
 
 /// 仅从本地删除所有消息（软删除，对齐 Go SDK `DeleteAllMsgFromLocal`）
-Future<void>  deleteAllMsgFromLocal() => RustLib.instance.api.crateFfiMessageAdvancedDeleteAllMsgFromLocal();
+Future<void> deleteAllMsgFromLocal() =>
+    RustLib.instance.api.crateFfiMessageAdvancedDeleteAllMsgFromLocal();
 
 /// 清除指定会话并删除所有消息（保留会话记录，对齐 Go SDK `ClearConversationAndDeleteAllMsg`）
-Future<void>  clearConversationAndDeleteAllMsg({required String conversationId }) => RustLib.instance.api.crateFfiMessageAdvancedClearConversationAndDeleteAllMsg(conversationId: conversationId);
+Future<void> clearConversationAndDeleteAllMsg({
+  required String conversationId,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedClearConversationAndDeleteAllMsg(
+      conversationId: conversationId,
+    );
 
 /// 删除会话并删除该会话的所有消息（对齐 Go SDK `DeleteConversationAndDeleteAllMsg`）
-Future<void>  deleteConversationAndDeleteAllMsg({required String conversationId }) => RustLib.instance.api.crateFfiMessageAdvancedDeleteConversationAndDeleteAllMsg(conversationId: conversationId);
+Future<void> deleteConversationAndDeleteAllMsg({
+  required String conversationId,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedDeleteConversationAndDeleteAllMsg(
+      conversationId: conversationId,
+    );
 
 /// 获取服务端时间（对齐 Go SDK `GetServerTime`）
-Future<int>  getServerTime() => RustLib.instance.api.crateFfiMessageAdvancedGetServerTime();
+Future<int> getServerTime() =>
+    RustLib.instance.api.crateFfiMessageAdvancedGetServerTime();
 
 /// 获取全局未读消息数（对齐 Go SDK `GetTotalUnreadMsgCount`）
-Future<int>  getTotalUnreadMsgCount() => RustLib.instance.api.crateFfiMessageAdvancedGetTotalUnreadMsgCount();
+Future<int> getTotalUnreadMsgCount() =>
+    RustLib.instance.api.crateFfiMessageAdvancedGetTotalUnreadMsgCount();
 
 /// 标记所有会话已读（对齐 Go SDK `MarkAllConversationMessageAsRead`）
 ///
 /// 遍历所有未读会话，逐个通知服务端 + 标记本地已读
-Future<void>  markAllConversationMessageAsRead() => RustLib.instance.api.crateFfiMessageAdvancedMarkAllConversationMessageAsRead();
+Future<void> markAllConversationMessageAsRead() => RustLib.instance.api
+    .crateFfiMessageAdvancedMarkAllConversationMessageAsRead();
 
 /// 发送正在输入通知（对齐 Go SDK `TypingStatusUpdate` / `ChangeInputStates`）
 ///
 /// source_id: 对方用户 ID 或群组 ID
 /// session_type: 会话类型（1=单聊, 2=群聊）
 /// focus: true=正在输入, false=停止输入
-Future<SendTypingResp>  sendTyping({required String sourceId , required SessionType sessionType , required bool focus }) => RustLib.instance.api.crateFfiMessageAdvancedSendTyping(sourceId: sourceId, sessionType: sessionType, focus: focus);
+Future<SendTypingResp> sendTyping({
+  required String sourceId,
+  required SessionType sessionType,
+  required bool focus,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendTyping(
+  sourceId: sourceId,
+  sessionType: sessionType,
+  focus: focus,
+);
 
 /// 切换输入状态（对齐 Go SDK `ChangeInputStates` entering.go L65-101）
 ///
 /// 按 conversationID 查会话确定发送目标（对齐 Go：GetConversation → sendMsg），
 /// focus=true 发 "yes"，false 发 "no"。
 /// 注：Go 有 10 秒发送节流防抖，Rust 暂不实现（无状态直发）。
-Future<void>  changeInputStates({required String conversationId , required bool focus }) => RustLib.instance.api.crateFfiMessageAdvancedChangeInputStates(conversationId: conversationId, focus: focus);
+Future<void> changeInputStates({
+  required String conversationId,
+  required bool focus,
+}) => RustLib.instance.api.crateFfiMessageAdvancedChangeInputStates(
+  conversationId: conversationId,
+  focus: focus,
+);
 
 /// 查询会话中某用户的输入状态（对齐 Go SDK `GetInputStates` entering.go L207-216）
 ///
 /// 返回正在输入的平台 ID 列表（状态由 typing 推送维护，15 秒过期）。
-Future<Int32List>  getInputStates({required String conversationId , required String userId }) => RustLib.instance.api.crateFfiMessageAdvancedGetInputStates(conversationId: conversationId, userId: userId);
+Future<Int32List> getInputStates({
+  required String conversationId,
+  required String userId,
+}) => RustLib.instance.api.crateFfiMessageAdvancedGetInputStates(
+  conversationId: conversationId,
+  userId: userId,
+);
 
 /// 编辑消息（对齐 Go SDK 消息修改功能）
 ///
@@ -93,61 +182,129 @@ Future<Int32List>  getInputStates({required String conversationId , required Str
 /// - `client_msg_id`: 要编辑的消息的 clientMsgId
 /// - `content`: 编辑后的新内容（JSON 字符串，如 `{"text":"新内容"}`）
 /// - `content_type`: 消息内容类型（如 101=文本, 117=富文本, 118=Markdown）
-Future<MsgStruct>  editMessage({required String conversationId , required String clientMsgId , required String content , required int contentType }) => RustLib.instance.api.crateFfiMessageAdvancedEditMessage(conversationId: conversationId, clientMsgId: clientMsgId, content: content, contentType: contentType);
+Future<MsgStruct> editMessage({
+  required String conversationId,
+  required String clientMsgId,
+  required String content,
+  required int contentType,
+}) => RustLib.instance.api.crateFfiMessageAdvancedEditMessage(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+  content: content,
+  contentType: contentType,
+);
 
 /// 增量同步会话列表（对齐 Go SDK `IncrSyncConversations`）
 ///
 /// 版本号持久化到数据库，重连后无需全量同步。
 /// 收到会话变更通知时调用。
-Future<void>  incrSyncConversations() => RustLib.instance.api.crateFfiMessageAdvancedIncrSyncConversations();
+Future<void> incrSyncConversations() =>
+    RustLib.instance.api.crateFfiMessageAdvancedIncrSyncConversations();
 
 /// 设置消息本地扩展字段（对齐 Go SDK `SetMessageLocalEx`）
-Future<void>  setMessageLocalEx({required String conversationId , required String clientMsgId , required String localEx }) => RustLib.instance.api.crateFfiMessageAdvancedSetMessageLocalEx(conversationId: conversationId, clientMsgId: clientMsgId, localEx: localEx);
+Future<void> setMessageLocalEx({
+  required String conversationId,
+  required String clientMsgId,
+  required String localEx,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSetMessageLocalEx(
+  conversationId: conversationId,
+  clientMsgId: clientMsgId,
+  localEx: localEx,
+);
 
 /// 插入群聊消息到本地存储（对齐 Go SDK `InsertGroupMessageToLocalStorage`）
 ///
 /// 用于插入自定义/系统消息到本地数据库
-Future<LocalChatLog>  insertGroupMessageToLocalStorage({required String groupId , required String content , required int contentType , required String sendId }) => RustLib.instance.api.crateFfiMessageAdvancedInsertGroupMessageToLocalStorage(groupId: groupId, content: content, contentType: contentType, sendId: sendId);
+Future<LocalChatLog> insertGroupMessageToLocalStorage({
+  required String groupId,
+  required String content,
+  required int contentType,
+  required String sendId,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedInsertGroupMessageToLocalStorage(
+      groupId: groupId,
+      content: content,
+      contentType: contentType,
+      sendId: sendId,
+    );
 
 /// 插入单聊消息到本地存储（对齐 Go SDK `InsertSingleMessageToLocalStorage`）
-Future<LocalChatLog>  insertSingleMessageToLocalStorage({required String recvId , required String content , required int contentType , required String sendId }) => RustLib.instance.api.crateFfiMessageAdvancedInsertSingleMessageToLocalStorage(recvId: recvId, content: content, contentType: contentType, sendId: sendId);
+Future<LocalChatLog> insertSingleMessageToLocalStorage({
+  required String recvId,
+  required String content,
+  required int contentType,
+  required String sendId,
+}) => RustLib.instance.api
+    .crateFfiMessageAdvancedInsertSingleMessageToLocalStorage(
+      recvId: recvId,
+      content: content,
+      contentType: contentType,
+      sendId: sendId,
+    );
 
 /// 发送仅在线消息（对齐 Go SDK `SendMessage` isOnlineOnly=true）
-Future<MsgStruct>  sendMessageOnlineOnly({required MsgStruct msgStruct , required String sourceId , required SessionType sessionType }) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageOnlineOnly(msgStruct: msgStruct, sourceId: sourceId, sessionType: sessionType);
+Future<MsgStruct> sendMessageOnlineOnly({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageOnlineOnly(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+);
 
 /// 通用消息发送（对齐 Go SDK `SendMessage`，支持离线推送参数）
-Future<MsgStruct>  sendMessage({required MsgStruct msgStruct , required String sourceId , required SessionType sessionType , OfflinePushInfo? offlinePushInfo }) => RustLib.instance.api.crateFfiMessageAdvancedSendMessage(msgStruct: msgStruct, sourceId: sourceId, sessionType: sessionType, offlinePushInfo: offlinePushInfo);
+Future<MsgStruct> sendMessage({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+  OfflinePushInfo? offlinePushInfo,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessage(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  offlinePushInfo: offlinePushInfo,
+);
 
 /// 发送已上传媒体消息（对齐 Go SDK `SendMessageNotOss`）
 ///
 /// 用于 ByURL 系列构造的消息：内容 URL 已填好、无 sourcePath，
 /// 发送时跳过 OSS 上传流程（process_media_content_impl 对无 sourcePath
 /// 的消息天然跳过上传，与 Go sendMessageNotOss 语义一致）。
-Future<MsgStruct>  sendMessageNotOss({required MsgStruct msgStruct , required String sourceId , required SessionType sessionType , OfflinePushInfo? offlinePushInfo }) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageNotOss(msgStruct: msgStruct, sourceId: sourceId, sessionType: sessionType, offlinePushInfo: offlinePushInfo);
+Future<MsgStruct> sendMessageNotOss({
+  required MsgStruct msgStruct,
+  required String sourceId,
+  required SessionType sessionType,
+  OfflinePushInfo? offlinePushInfo,
+}) => RustLib.instance.api.crateFfiMessageAdvancedSendMessageNotOss(
+  msgStruct: msgStruct,
+  sourceId: sourceId,
+  sessionType: sessionType,
+  offlinePushInfo: offlinePushInfo,
+);
 
-            /// Typing 响应结果
-class SendTypingResp  {
-                final String serverMsgId;
-final String clientMsgId;
-final int sendTime;
+/// Typing 响应结果
+class SendTypingResp {
+  final String serverMsgId;
+  final String clientMsgId;
+  final int sendTime;
 
-                const SendTypingResp({required this.serverMsgId ,required this.clientMsgId ,required this.sendTime ,});
+  const SendTypingResp({
+    required this.serverMsgId,
+    required this.clientMsgId,
+    required this.sendTime,
+  });
 
-                
-                
+  @override
+  int get hashCode =>
+      serverMsgId.hashCode ^ clientMsgId.hashCode ^ sendTime.hashCode;
 
-                
-        @override
-        int get hashCode => serverMsgId.hashCode^clientMsgId.hashCode^sendTime.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is SendTypingResp &&
-                runtimeType == other.runtimeType
-                && serverMsgId == other.serverMsgId&& clientMsgId == other.clientMsgId&& sendTime == other.sendTime;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SendTypingResp &&
+          runtimeType == other.runtimeType &&
+          serverMsgId == other.serverMsgId &&
+          clientMsgId == other.clientMsgId &&
+          sendTime == other.sendTime;
+}

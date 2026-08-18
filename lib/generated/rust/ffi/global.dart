@@ -6,24 +6,25 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `client_holder`, `set_client`
 
-            // These functions are ignored because they are not marked as `pub`: `client_holder`, `set_client`
-
-
-            /// 设置 App 前后台状态（对齐 Go SDK SetAppBackgroundStatus）
-Future<void>  setAppBackgroundStatus({required bool isBackground }) => RustLib.instance.api.crateFfiGlobalSetAppBackgroundStatus(isBackground: isBackground);
+/// 设置 App 前后台状态（对齐 Go SDK SetAppBackgroundStatus）
+Future<void> setAppBackgroundStatus({required bool isBackground}) => RustLib
+    .instance
+    .api
+    .crateFfiGlobalSetAppBackgroundStatus(isBackground: isBackground);
 
 /// 网络状态变化通知（对齐 Go SDK NetworkStatusChanged）
-Future<void>  networkStatusChanged() => RustLib.instance.api.crateFfiGlobalNetworkStatusChanged();
+Future<void> networkStatusChanged() =>
+    RustLib.instance.api.crateFfiGlobalNetworkStatusChanged();
 
 /// 获取当前登录用户 ID（对齐 Go SDK GetLoginUserID）
-Future<String>  getLoginUserId() => RustLib.instance.api.crateFfiGlobalGetLoginUserId();
+Future<String> getLoginUserId() =>
+    RustLib.instance.api.crateFfiGlobalGetLoginUserId();
 
 /// 获取 SDK 版本号（对齐 Go SDK GetSdkVersion）
-Future<String>  getSdkVersion() => RustLib.instance.api.crateFfiGlobalGetSdkVersion();
+Future<String> getSdkVersion() =>
+    RustLib.instance.api.crateFfiGlobalGetSdkVersion();
 
 /// 反初始化 SDK（对齐 Go SDK UnInitSDK）
-Future<void>  unInitSdk() => RustLib.instance.api.crateFfiGlobalUnInitSdk();
-
-            
-            
+Future<void> unInitSdk() => RustLib.instance.api.crateFfiGlobalUnInitSdk();

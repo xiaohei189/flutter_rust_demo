@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';
+import '../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../chat/providers/message_service_provider.dart';
+import '../../contacts/widgets/contact_pick_item.dart';
 import '../providers/search_provider.dart';
 import '../view_models/search_view_model.dart';
 import '../widgets/category_chip.dart';
@@ -261,7 +264,46 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId,
         style: const TextStyle(fontSize: 12),
       ),
+      onTap: () => AppRouter.goToChatDetailById(context, log.conversationId),
+      onLongPress: () => _forwardMessage(log),
     );
+  }
+
+  Future<void> _forwardMessage(LocalChatLog log) async {
+    final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
+      context,
+      title: '转发给',
+    );
+    if (result == null || result.isEmpty || !mounted) return;
+    final target = result.first;
+    try {
+      await ref
+          .read(messageServiceProvider.notifier)
+          .forwardMessage(
+            clientMsgId: log.clientMsgId,
+            sourceId: target.id,
+            sessionType: target.isGroup
+                ? SessionType.writeGroupChat
+                : SessionType.singleChat,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已转发给 ${target.name}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('转发失败: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildFriendItem(FriendSearchResult item) {

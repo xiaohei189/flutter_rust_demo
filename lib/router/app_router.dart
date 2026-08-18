@@ -206,9 +206,11 @@ class AppRouter {
     BuildContext context, {
     required String title,
     String mode = 'forward',
+    bool multiSelect = false,
   }) {
+    final resolvedMode = multiSelect ? 'multi' : mode;
     return context.push<T>(
-      '${AppPaths.contactPicker}?mode=$mode'
+      '${AppPaths.contactPicker}?mode=$resolvedMode'
       '&title=${Uri.encodeQueryComponent(title)}',
     );
   }

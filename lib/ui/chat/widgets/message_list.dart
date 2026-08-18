@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../../domain/extensions/message_ext.dart';
+import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/user.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
@@ -11,7 +12,9 @@ import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
+import 'message_action_menu.dart' show MessageActions, showMessageToolPanel;
 import 'message_bubble.dart';
+import 'message_hover_toolbar.dart' show MessageReactionGroup;
 import 'message_skeleton.dart';
 
 /// 消息列表组件
@@ -34,6 +37,8 @@ class MessageList extends StatefulWidget {
     this.selectedClientMsgIds = const {},
     this.uploadProgress,
     this.groupReadReceipts,
+    this.messageActionsBuilder,
+    this.messageReactions = const {},
   });
 
   final List<MessageInfo> messages;
@@ -51,6 +56,8 @@ class MessageList extends StatefulWidget {
   final Set<String> selectedClientMsgIds;
   final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
+  final MessageActions Function(MessageInfo message)? messageActionsBuilder;
+  final Map<String, List<MessageReactionGroup>> messageReactions;
 
   @override
   State<MessageList> createState() => MessageListState();
@@ -59,6 +66,7 @@ class MessageList extends StatefulWidget {
 class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
+
 
   void _pruneMessageKeys(List<MessageInfo> messages) {
     if (_messageKeys.length <= _maxMessageKeys) return;
@@ -79,6 +87,29 @@ class MessageListState extends State<MessageList> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
       alignment: 0.5,
+    );
+  }
+
+  void _openMessageToolPanel(MessageInfo message, GlobalKey messageKey) {
+    if (widget.selectMode) return;
+    final actions = widget.messageActionsBuilder?.call(message);
+    if (actions == null) {
+      widget.onMessageLongPress?.call(message);
+      return;
+    }
+    final renderObject = messageKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox) return;
+    final anchor = renderObject.localToGlobal(Offset.zero) & renderObject.size;
+    showMessageToolPanel(
+      context: context,
+      anchor: anchor,
+      message: message,
+      currentUserId: widget.currentUserId ?? '',
+      actions: actions,
+      reactions: widget.messageReactions[message.clientMsgId]
+          ?.map((group) => group.emoji)
+          .toSet() ??
+      const {},
     );
   }
 
@@ -144,41 +175,36 @@ class MessageListState extends State<MessageList> {
             widget.selectMode &&
             widget.selectedClientMsgIds.contains(message.clientMsgId);
 
+        final Widget messageBody = _VisibleMessageBubble(
+          message: message,
+          otherUser: widget.otherUser,
+          currentUserId: widget.currentUserId,
+          currentUserAvatar: widget.currentUserAvatar,
+          cachedSenderProfile:
+              widget.cachedSenderProfiles?[message.sendId],
+          cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
+          onLongPress: (msg) => _openMessageToolPanel(msg, messageKey),
+          onVisible: widget.onMessageVisible,
+          onTap: widget.onMessageTap,
+          selectionIndicator: widget.selectMode &&
+                  message.messageType != MessageType.system
+              ? _SelectionCheckbox(
+                  selected: selected,
+                  onTap: () => widget.onMessageTap?.call(message),
+                )
+              : null,
+          reactionGroups:
+              widget.messageReactions[message.clientMsgId] ?? const [],
+          uploadProgress: widget.uploadProgress,
+          groupReadReceipts: widget.groupReadReceipts,
+        );
+
         return Column(
           key: messageKey,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (dateLabel != null) _buildDateSeparator(context, dateLabel),
-            Stack(
-              children: [
-                _VisibleMessageBubble(
-                  message: message,
-                  otherUser: widget.otherUser,
-                  currentUserId: widget.currentUserId,
-                  currentUserAvatar: widget.currentUserAvatar,
-                  cachedSenderProfile:
-                      widget.cachedSenderProfiles?[message.sendId],
-                  cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
-                  onLongPress: widget.onMessageLongPress,
-                  onVisible: widget.onMessageVisible,
-                  onTap: widget.onMessageTap,
-                  uploadProgress: widget.uploadProgress,
-                  groupReadReceipts: widget.groupReadReceipts,
-                ),
-                if (widget.selectMode)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Icon(
-                      selected
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      size: 20,
-                      color: selected ? colors.primary : colors.textSecondary,
-                    ),
-                  ),
-              ],
-            ),
+            messageBody,
           ],
         );
       },
@@ -255,6 +281,8 @@ class _VisibleMessageBubble extends StatelessWidget {
     required this.onLongPress,
     required this.onVisible,
     this.onTap,
+    this.selectionIndicator,
+    this.reactionGroups = const [],
     this.uploadProgress,
     this.groupReadReceipts,
   });
@@ -268,6 +296,8 @@ class _VisibleMessageBubble extends StatelessWidget {
   final void Function(MessageInfo message)? onLongPress;
   final void Function(MessageInfo message)? onVisible;
   final void Function(MessageInfo message)? onTap;
+  final Widget? selectionIndicator;
+  final List<MessageReactionGroup> reactionGroups;
   final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
 
@@ -283,6 +313,8 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
         onTap: onTap,
+        selectionIndicator: selectionIndicator,
+        reactionGroups: reactionGroups,
         uploadProgress: uploadProgress?[message.clientMsgId],
         groupReadReceipt:
             groupReadReceipts?[message.clientMsgId] ??
@@ -306,10 +338,46 @@ class _VisibleMessageBubble extends StatelessWidget {
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
         onTap: onTap,
+        selectionIndicator: selectionIndicator,
+        reactionGroups: reactionGroups,
         uploadProgress: uploadProgress?[message.clientMsgId],
         groupReadReceipt:
             groupReadReceipts?[message.clientMsgId] ??
             groupReadReceipts?[message.serverMsgId],
+      ),
+    );
+  }
+}
+
+/// 多选模式下显示在消息气泡同行的圆形勾选框。
+class _SelectionCheckbox extends StatelessWidget {
+  const _SelectionCheckbox({
+    required this.selected,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Semantics(
+      checked: selected,
+      label: selected ? '取消选择消息' : '选择消息',
+      button: true,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 18,
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Icon(
+            selected ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 22,
+            color: selected ? colors.primary : colors.textSecondary,
+          ),
+        ),
       ),
     );
   }

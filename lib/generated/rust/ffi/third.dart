@@ -6,14 +6,15 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-
-            
-
-            /// 更新 FCM Token（对齐 Go SDK `UpdateFcmToken`）
-Future<void>  updateFcmToken({required String fcmToken , required int expireTime }) => RustLib.instance.api.crateFfiThirdUpdateFcmToken(fcmToken: fcmToken, expireTime: expireTime);
+/// 更新 FCM Token（对齐 Go SDK `UpdateFcmToken`）
+Future<void> updateFcmToken({
+  required String fcmToken,
+  required int expireTime,
+}) => RustLib.instance.api.crateFfiThirdUpdateFcmToken(
+  fcmToken: fcmToken,
+  expireTime: expireTime,
+);
 
 /// 设置 App 角标未读数（对齐 Go SDK `SetAppBadge`）
-Future<void>  setAppBadge({required int appUnreadCount }) => RustLib.instance.api.crateFfiThirdSetAppBadge(appUnreadCount: appUnreadCount);
-
-            
-            
+Future<void> setAppBadge({required int appUnreadCount}) => RustLib.instance.api
+    .crateFfiThirdSetAppBadge(appUnreadCount: appUnreadCount);

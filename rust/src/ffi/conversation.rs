@@ -76,6 +76,12 @@ impl OpenIMBridgeClient {
         self.inner.hide_conversation(&conversation_id).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
+    /// 隐藏全部会话（对齐 Go SDK `HideAllConversations`）
+    #[flutter_rust_bridge::frb]
+    pub async fn hide_all_conversations(&self) -> Result<()> {
+        self.inner.hide_all_conversations().await.map_err(|e| anyhow::anyhow!("{}", e))
+    }
+
     /// 通用会话信息设置（对齐 Go SDK `SetConversation`）
     ///
     /// 只更新传入的非空字段，其余保持不变。

@@ -16,23 +16,61 @@ void main() {
     expect(find.text('暂无好友'), findsOneWidget);
   });
 
-  testWidgets('MessageSelectionBar 显示数量并触发关闭', (tester) async {
+  testWidgets('MessageSelectionTopBar 显示数量并支持全选/关闭', (tester) async {
+    var selectAll = false;
     var closed = false;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MessageSelectionBar(
-            count: 2,
+          body: MessageSelectionTopBar(
+            count: 3,
+            totalCount: 10,
+            onSelectAll: () => selectAll = true,
+            onClose: () => closed = true,
+            onDelete: () {},
             onForwardOneByOne: () {},
             onMergeForward: () {},
-            onClose: () => closed = true,
           ),
         ),
       ),
     );
 
-    expect(find.text('已选 2 条'), findsOneWidget);
+    expect(find.text('已选 3 项'), findsOneWidget);
+    expect(find.text('全选'), findsOneWidget);
+    expect(find.text('逐条转发'), findsOneWidget);
+    expect(find.text('合并转发'), findsOneWidget);
+    expect(find.text('删除'), findsOneWidget);
+    await tester.tap(find.text('全选'));
+    expect(selectAll, isTrue);
     await tester.tap(find.byIcon(Icons.close));
     expect(closed, isTrue);
+  });
+
+  testWidgets('MessageSelectionTopBar 操作按钮触发转发与删除', (tester) async {
+    var deleted = false;
+    var forwarded = false;
+    var merged = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MessageSelectionTopBar(
+            count: 2,
+            totalCount: 5,
+            onSelectAll: () {},
+            onClose: () {},
+            onDelete: () => deleted = true,
+            onForwardOneByOne: () => forwarded = true,
+            onMergeForward: () => merged = true,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('逐条转发'));
+    expect(forwarded, isTrue);
+    await tester.tap(find.text('合并转发'));
+    expect(merged, isTrue);
+    await tester.tap(find.text('删除'));
+    expect(deleted, isTrue);
   });
 }

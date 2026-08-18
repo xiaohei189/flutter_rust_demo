@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,6 +54,37 @@ class ChatListViewModel extends Notifier<ChatListState> {
       .where((c) => c.conversationType == 2 || c.conversationType == 3)
       .length;
 
+  static bool isAtMeConversation(Conversation conversation) =>
+      conversation.groupAtType == 1 || conversation.groupAtType == 3;
+
+  static bool _flagValue(Conversation conversation, String key) {
+    if (conversation.ex.isEmpty) return false;
+    try {
+      final map = jsonDecode(conversation.ex) as Map<String, dynamic>;
+      return map[key] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static bool isFlagged(Conversation conversation) =>
+      _flagValue(conversation, 'flagged');
+
+  static bool isDone(Conversation conversation) =>
+      _flagValue(conversation, 'done');
+
+  static String flagsEx({required bool flagged, required bool done}) =>
+      jsonEncode({'flagged': flagged, 'done': done});
+
+  int atMeCount(List<Conversation> conversations) =>
+      conversations.where(isAtMeConversation).length;
+
+  int flaggedCount(List<Conversation> conversations) =>
+      conversations.where(isFlagged).length;
+
+  int doneCount(List<Conversation> conversations) =>
+      conversations.where(isDone).length;
+
   List<Conversation> filteredConversations(List<Conversation> conversations) {
     switch (state.activeFilter) {
       case GroupFilter.unread:
@@ -62,10 +95,12 @@ class ChatListViewModel extends Notifier<ChatListState> {
         return conversations
             .where((c) => c.conversationType == 2 || c.conversationType == 3)
             .toList();
-      case GroupFilter.flagged:
       case GroupFilter.atMe:
+        return conversations.where(isAtMeConversation).toList();
+      case GroupFilter.flagged:
+        return conversations.where(isFlagged).toList();
       case GroupFilter.done:
-        return [];
+        return conversations.where(isDone).toList();
       case GroupFilter.all:
         return conversations;
     }
@@ -108,9 +143,61 @@ class ChatListViewModel extends Notifier<ChatListState> {
         .markConversationMessageAsRead(conversationId);
   }
 
+  Future<void> toggleConversationMute(String conversationId, bool muted) async {
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          recvMsgOpt: muted ? 1 : 0,
+        );
+    await refreshConversations();
+  }
+
+  Future<void> clearConversation(String conversationId) async {
+    await ref
+        .read(messageRepositoryProvider)
+        .clearConversationAndDeleteAllMsg(conversationId);
+    await refreshConversations();
+  }
+
+  Future<void> toggleConversationFlagged(
+    String conversationId,
+    bool flagged,
+  ) async {
+    final conversation = ref
+        .read(conversationListProvider.notifier)
+        .getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: flagsEx(flagged: flagged, done: isDone(conversation)),
+        );
+    await refreshConversations();
+  }
+
+  Future<void> toggleConversationDone(String conversationId, bool done) async {
+    final conversation = ref
+        .read(conversationListProvider.notifier)
+        .getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: flagsEx(flagged: isFlagged(conversation), done: done),
+        );
+    await refreshConversations();
+  }
+
   Future<void> hideConversation(String conversationId) {
     return ref
         .read(messageServiceProvider.notifier)
         .hideConversation(conversationId);
+  }
+
+  Future<void> hideAllConversations() {
+    return ref.read(messageServiceProvider.notifier).hideAllConversations();
   }
 }

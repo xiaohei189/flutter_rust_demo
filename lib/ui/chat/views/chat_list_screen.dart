@@ -44,6 +44,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final groupCount = _viewModel.groupChatCount(
       conversationState.conversations,
     );
+    final atMeCount = _viewModel.atMeCount(conversationState.conversations);
+    final flaggedCount = _viewModel.flaggedCount(
+      conversationState.conversations,
+    );
+    final doneCount = _viewModel.doneCount(conversationState.conversations);
 
     Navigator.of(context).push(
       LeftSlideRoute(
@@ -52,6 +57,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           totalMessages: totalMessages,
           unreadCount: totalUnread,
           groupCount: groupCount,
+          atMeCount: atMeCount,
+          flaggedCount: flaggedCount,
+          doneCount: doneCount,
           onSelect: (filter) {
             AppRouter.goBack(context);
             _viewModel.setFilter(filter);
@@ -109,6 +117,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           if (raw == null || !mounted) return;
           _handleScanResult(raw);
         },
+        onHideAll: _confirmHideAllConversations,
       ),
       body: Column(
         children: [
@@ -168,6 +177,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           itemIndex: index,
                           currentUserId: currentUserId,
                           onTap: () {
+                            if (conversation.isNotInGroup) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('已不在该群，无法进入会话'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              return;
+                            }
                             AppRouter.goToChatDetail(context, conversation);
                           },
                           onDelete: () async {
@@ -184,6 +202,29 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           onMarkRead: () async {
                             await _viewModel.markConversationMessageAsRead(
                               conversation.conversationId,
+                            );
+                          },
+                          onMuteToggle: () async {
+                            await _viewModel.toggleConversationMute(
+                              conversation.conversationId,
+                              conversation.recvMsgOpt == 1,
+                            );
+                          },
+                          onClear: () async {
+                            await _viewModel.clearConversation(
+                              conversation.conversationId,
+                            );
+                          },
+                          onFlagToggle: () async {
+                            await _viewModel.toggleConversationFlagged(
+                              conversation.conversationId,
+                              !ChatListViewModel.isFlagged(conversation),
+                            );
+                          },
+                          onDoneToggle: () async {
+                            await _viewModel.toggleConversationDone(
+                              conversation.conversationId,
+                              !ChatListViewModel.isDone(conversation),
                             );
                           },
                           onHide: () async {
@@ -237,6 +278,32 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmHideAllConversations() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('隐藏全部会话'),
+        content: const Text('确定隐藏所有会话吗？会话记录仍会保留，重新收到消息后会再次出现。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              '隐藏',
+              style: TextStyle(color: context.appColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _viewModel.hideAllConversations();
+    }
   }
 
   void _handleScanResult(String raw) {

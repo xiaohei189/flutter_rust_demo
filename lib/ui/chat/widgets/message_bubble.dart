@@ -12,6 +12,7 @@ import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../../router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import 'message_hover_toolbar.dart';
 import '../../core/widgets/user_avatar.dart';
 import 'message_parts/media_message_content.dart';
 import 'message_parts/quote_message_content.dart';
@@ -32,6 +33,8 @@ class MessageBubble extends StatelessWidget {
   final UserInfo? cachedCurrentUserProfile;
   final void Function(MessageInfo message)? onLongPress;
   final void Function(MessageInfo message)? onTap;
+  final Widget? selectionIndicator;
+  final List<MessageReactionGroup> reactionGroups;
   final int? uploadProgress;
   final GroupReadReceipt? groupReadReceipt;
 
@@ -45,6 +48,8 @@ class MessageBubble extends StatelessWidget {
     this.cachedCurrentUserProfile,
     this.onLongPress,
     this.onTap,
+    this.selectionIndicator,
+    this.reactionGroups = const [],
     this.uploadProgress,
     this.groupReadReceipt,
   });
@@ -154,6 +159,10 @@ class MessageBubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isFromMe) ...[
+                if (selectionIndicator != null) ...[
+                  selectionIndicator!,
+                  const SizedBox(width: 8),
+                ],
                 GestureDetector(
                   onTap: () => _navigateToProfile(context, senderUser, false),
                   child: UserAvatar(user: senderUser, radius: 18),
@@ -175,7 +184,7 @@ class MessageBubble extends StatelessWidget {
                       crossAxisAlignment: isFromMe
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
-                      children: [quotePreview, bubble],
+                      children: [quotePreview, _buildBubbleWithReactions(bubble, isFromMe)],
                     ),
                   ),
                 ),
@@ -186,6 +195,10 @@ class MessageBubble extends StatelessWidget {
                   onTap: () => _navigateToProfile(context, senderUser, true),
                   child: UserAvatar(user: senderUser, radius: 18),
                 ),
+                if (selectionIndicator != null) ...[
+                  const SizedBox(width: 8),
+                  selectionIndicator!,
+                ],
               ],
             ],
           ),
@@ -211,6 +224,7 @@ class MessageBubble extends StatelessWidget {
               ],
             ),
           ),
+
           if (isFromMe &&
               isGroupChat &&
               groupReadReceipt != null &&
@@ -264,6 +278,23 @@ class MessageBubble extends StatelessWidget {
       return Icon(Icons.done, size: 16, color: Colors.grey.shade400);
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _buildBubbleWithReactions(Widget bubble, bool isFromMe) {
+    if (reactionGroups.isEmpty) return bubble;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: isFromMe
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        bubble,
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: MessageReactionBar(groups: reactionGroups),
+        ),
+      ],
+    );
   }
 
   Widget _buildMessageContent(BuildContext context, bool isFromMe) {

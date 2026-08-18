@@ -138,6 +138,8 @@ abstract class MessageRepository {
   });
 
   Future<void> sendMergerMessage({
+    required List<String> clientMsgIds,
+    required String sourceConversationId,
     required String title,
     required List<String> summaryList,
     required String sourceId,
@@ -186,7 +188,8 @@ abstract class MessageRepository {
 
   Future<void> setConversation({
     required String conversationId,
-    required int recvMsgOpt,
+    int? recvMsgOpt,
+    String? ex,
   });
 
   Future<void> setConversationPrivate({
@@ -202,6 +205,8 @@ abstract class MessageRepository {
   Future<void> deleteConversation({required String conversationId});
 
   Future<void> hideConversation({required String conversationId});
+
+  Future<void> hideAllConversations();
 
   Future<void> clearConversationAndDeleteAllMsg(String conversationId);
 
@@ -506,12 +511,16 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<void> sendMergerMessage({
+    required List<String> clientMsgIds,
+    required String sourceConversationId,
     required String title,
     required List<String> summaryList,
     required String sourceId,
     required SessionType sessionType,
   }) {
     return ffi_message.sendMergerMessage(
+      clientMsgIds: clientMsgIds,
+      sourceConversationId: sourceConversationId,
       title: title,
       summaryList: summaryList,
       sourceId: sourceId,
@@ -638,11 +647,13 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<void> setConversation({
     required String conversationId,
-    required int recvMsgOpt,
+    int? recvMsgOpt,
+    String? ex,
   }) {
     return _client.setConversation(
       conversationId: conversationId,
       recvMsgOpt: recvMsgOpt,
+      ex: ex,
     );
   }
 
@@ -676,6 +687,11 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<void> hideConversation({required String conversationId}) {
     return _client.hideConversation(conversationId: conversationId);
+  }
+
+  @override
+  Future<void> hideAllConversations() {
+    return _client.hideAllConversations();
   }
 
   @override

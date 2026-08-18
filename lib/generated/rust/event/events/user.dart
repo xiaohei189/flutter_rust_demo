@@ -9,21 +9,18 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'user.freezed.dart';
 
-            
+@freezed
+sealed class UserEvent with _$UserEvent {
+  const UserEvent._();
 
-            
+  /// 用户资料更新
+  const factory UserEvent.userInfoUpdated({required UserInfo user}) =
+      UserEvent_UserInfoUpdated;
 
-            @freezed
-                sealed class UserEvent with _$UserEvent  {
-                    const UserEvent._();
-
-                     /// 用户资料更新
-const factory UserEvent.userInfoUpdated({   required UserInfo user , }) = UserEvent_UserInfoUpdated;
- /// 在线状态变更
-const factory UserEvent.userStatusChanged({   required String userId ,  required int status ,  required Int32List platformIds , }) = UserEvent_UserStatusChanged;
-
-                    
-
-                    
-                }
-            
+  /// 在线状态变更
+  const factory UserEvent.userStatusChanged({
+    required String userId,
+    required int status,
+    required Int32List platformIds,
+  }) = UserEvent_UserStatusChanged;
+}

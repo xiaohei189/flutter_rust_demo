@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
@@ -30,6 +31,7 @@ import '../widgets/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/message_action_menu.dart';
+import '../widgets/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/message_list.dart';
 import '../widgets/message_selection_bar.dart';
 import '../widgets/quote_preview_bar.dart';
@@ -58,6 +60,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       GlobalKey<MessageListState>();
   bool _bodyReady = false;
   String _lastMessageListTailId = '';
+  final Map<String, List<MessageReactionGroup>> _messageReactions = {};
+  final Set<String> _pinnedMessageIds = {};
   ChatDetailViewModel? _viewModel;
   late final ChatMediaActions _mediaActions;
 
@@ -264,10 +268,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (!_isGroup) {
       final items = await Navigator.of(context).push<List<ContactPickItem>>(
         MaterialPageRoute(
-          builder: (_) => const ContactPickerScreen(
-            title: '@ 选择联系人',
-            includeGroups: false,
-          ),
+          builder: (_) =>
+              const ContactPickerScreen(title: '@ 选择联系人', includeGroups: false),
         ),
       );
       if (items == null || items.isEmpty || !mounted) return;
@@ -430,6 +432,105 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (!ok) _showError(_chatState.errorText ?? '消息重发失败');
   }
 
+  void _copyMessage(MessageInfo msg) {
+    Clipboard.setData(ClipboardData(text: msg.content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
+    );
+  }
+
+  void _toggleMessageReaction(MessageInfo msg, String emoji) {
+    setState(() {
+      final groups = List<MessageReactionGroup>.from(
+        _messageReactions[msg.clientMsgId] ?? const [],
+      );
+      final index = groups.indexWhere((group) => group.emoji == emoji);
+      if (index == -1) {
+        groups.add(
+          MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
+        );
+      } else {
+        final group = groups[index];
+        if (group.names.contains('我')) {
+          final names = group.names.where((name) => name != '我').toList();
+          if (names.isEmpty) {
+            groups.removeAt(index);
+          } else {
+            groups[index] = MessageReactionGroup(
+              emoji: emoji,
+              count: names.length,
+              names: names,
+            );
+          }
+        } else {
+          groups[index] = MessageReactionGroup(
+            emoji: emoji,
+            count: group.count + 1,
+            names: [...group.names, '我'],
+          );
+        }
+      }
+      _messageReactions[msg.clientMsgId] = groups;
+    });
+  }
+
+  void _toggleMessagePin(MessageInfo msg) {
+    final isPinned = _pinnedMessageIds.contains(msg.clientMsgId);
+    setState(() {
+      if (isPinned) {
+        _pinnedMessageIds.remove(msg.clientMsgId);
+      } else {
+        _pinnedMessageIds.add(msg.clientMsgId);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isPinned ? '已取消置顶' : '已置顶'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _sendQuickReply(MessageInfo msg, String text) =>
+      _sendMessage(text, MessageContentType.text);
+
+  MessageActions _buildMessageActions(MessageInfo msg) {
+    return MessageActions(
+      onCopy: _copyMessage,
+      onRevoke: _revokeMessage,
+      onDelete: _deleteMessage,
+      onForward: (message) => _forwardMessage(message),
+      onQuote: (message) => _viewModel?.setQuotedMessage(message),
+      onMultiSelect: () => _viewModel?.enterSelectMode(),
+      onResend: _resendMessage,
+      onPin: _toggleMessagePin,
+      onReaction: _toggleMessageReaction,
+      onQuickReply: _sendQuickReply,
+    );
+  }
+
+  Future<void> _forwardMessage(MessageInfo msg) async {
+    final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
+      context,
+      title: '转发给',
+    );
+    if (result == null || result.isEmpty || !mounted) return;
+    final target = result.first;
+    final ok =
+        await _viewModel?.forwardSelectedMessages(
+              messages: [msg],
+              targetId: target.id,
+              isGroup: target.isGroup,
+              merge: false,
+            ) ??
+        false;
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已转发给 ${target.name}')),
+      );
+    }
+  }
+
   void _handleMessageTap(MessageInfo msg) {
     final state = _chatState;
     if (state.selectMode) {
@@ -572,29 +673,123 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         .read(chatDetailViewModelProvider(widget.conversationId))
         .selectedMessages;
     if (selected.isEmpty) return;
+    final forwardable = selected
+        .where((m) => m.status != 3 && m.status != 4)
+        .toList();
+    if (forwardable.isEmpty) {
+      _showError('暂无可转发的消息');
+      return;
+    }
+    if (forwardable.length > 100) {
+      _showError('最多可一次转发 100 条消息');
+      return;
+    }
+    var title = '聊天记录';
+    if (merge) {
+      var input = title;
+      final edited = await showDialog<String>(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('合并转发标题'),
+            content: TextField(
+              maxLength: 40,
+              onChanged: (value) => input = value,
+              decoration: const InputDecoration(hintText: '请输入合并转发标题'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(input),
+                child: const Text('确定'),
+              ),
+            ],
+          );
+        },
+      );
+      if (edited == null || !mounted) return;
+      title = edited.trim().isEmpty ? '聊天记录' : edited.trim();
+    }
     final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
       context,
       title: '选择转发目标',
+      multiSelect: true,
     );
     if (result == null || result.isEmpty || !mounted) return;
-    final target = result.first;
     final ok =
-        await _viewModel?.forwardSelectedMessages(
-          messages: selected,
-          targetId: target.id,
-          isGroup: target.isGroup,
+        await _viewModel?.forwardSelectedMessagesToTargets(
+          messages: forwardable,
+          targets: result.map((t) => (id: t.id, isGroup: t.isGroup)).toList(),
           merge: merge,
+          title: title,
         ) ??
         false;
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('已转发 ${selected.length} 条消息给 ${target.name}'),
+          content: Text('已转发 ${forwardable.length} 条消息给 ${result.length} 个会话'),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } else if (mounted) {
-      _showError(_chatState.errorText ?? '转发失败');
+      final error = _chatState.errorText ?? '转发失败';
+      if (_viewModel?.hasFailedForwardTargets == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(label: '重试', onPressed: _retryForward),
+          ),
+        );
+      } else {
+        _showError(error);
+      }
+    }
+  }
+
+  Future<void> _deleteSelected() async {
+    final count = _chatState.selectedMessages.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除选中消息'),
+        content: Text('确定删除选中的 $count 条消息吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              '删除',
+              style: TextStyle(color: context.appColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final ok = await _viewModel?.deleteSelectedMessages() ?? false;
+    if (!ok && mounted) {
+      _showError(_chatState.errorText ?? '删除失败');
+    }
+  }
+
+  Future<void> _retryForward() async {
+    final ok = await _viewModel?.retryFailedForwardTargets() ?? false;
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('重试转发成功'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (mounted) {
+      _showError(_chatState.errorText ?? '重试转发失败');
     }
   }
 
@@ -786,6 +981,26 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         body: _bodyReady
             ? Column(
                 children: [
+                  if (chatDetailState.selectMode)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final messages = ref
+                            .watch(messageListProvider(widget.conversationId))
+                            .messages
+                            .where((m) => m.messageType != MessageType.system)
+                            .toList();
+                        return MessageSelectionTopBar(
+                          count: chatDetailState.selectedMessages.length,
+                          totalCount: messages.length,
+                          onSelectAll: () => _viewModel?.toggleSelectAll(),
+                          onClose: () => _viewModel?.exitSelectMode(),
+                          onDelete: _deleteSelected,
+                          onForwardOneByOne: () =>
+                              _forwardSelected(merge: false),
+                          onMergeForward: () => _forwardSelected(merge: true),
+                        );
+                      },
+                    ),
                   Expanded(
                     child: Listener(
                       behavior: HitTestBehavior.translucent,
@@ -836,60 +1051,45 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                                 _viewModel?.markConversationMessageAsRead();
                               }
                             },
-                            onMessageLongPress: (msg) => showMessageActionMenu(
-                              context,
-                              message: msg,
-                              currentUserId: currentUserId,
-                              actions: MessageActions(
-                                onCopy: (_) {},
-                                onRevoke: _revokeMessage,
-                                onDelete: _deleteMessage,
-                                onForward: (msg) async {
-                                  final result =
-                                      await AppRouter.goToContactPicker<
-                                        List<ContactPickItem>
-                                      >(context, title: '转发给');
-                                  if (result != null && result.isNotEmpty) {
-                                    final target = result.first;
-                                    final ok =
-                                        await _viewModel
-                                            ?.forwardSelectedMessages(
-                                              messages: [msg],
-                                              targetId: target.id,
-                                              isGroup: target.isGroup,
-                                              merge: false,
-                                            ) ??
-                                        false;
-                                    if (ok && context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text('已转发给 ${target.name}'),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                                onQuote: (msg) =>
-                                    _viewModel?.setQuotedMessage(msg),
-                                onMultiSelect: () =>
-                                    _viewModel?.enterSelectMode(),
-                                onResend: _resendMessage,
-                              ),
-                            ),
+                            messageActionsBuilder: _buildMessageActions,
+                            messageReactions: _messageReactions,
                             onMessageTap: _handleMessageTap,
                           );
                         },
                       ),
                     ),
                   ),
-                  if (chatDetailState.selectMode)
-                    MessageSelectionBar(
-                      count: chatDetailState.selectedMessages.length,
-                      onForwardOneByOne: () => _forwardSelected(merge: false),
-                      onMergeForward: () => _forwardSelected(merge: true),
-                      onClose: () => _viewModel?.exitSelectMode(),
+                  if (chatDetailState.isForwarding)
+                    Container(
+                      color: context.appColors.surface,
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                      child: Row(
+                        children: [
+                          Text(
+                            '转发中 ${chatDetailState.forwardDone}/${chatDetailState.forwardTotal}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.appColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: chatDetailState.forwardTotal == 0
+                                  ? 0
+                                  : chatDetailState.forwardDone /
+                                        chatDetailState.forwardTotal,
+                              minHeight: 3,
+                              backgroundColor: context.appColors.surfaceMuted,
+                              color: context.appColors.primary,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _viewModel?.cancelForward(),
+                            child: const Text('取消'),
+                          ),
+                        ],
+                      ),
                     ),
                   if (chatDetailState.quotedMessage != null)
                     QuotePreviewBar(

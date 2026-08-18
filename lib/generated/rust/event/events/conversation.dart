@@ -9,28 +9,38 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'conversation.freezed.dart';
 
-            
+@freezed
+sealed class ConversationEvent with _$ConversationEvent {
+  const ConversationEvent._();
 
-            
+  const factory ConversationEvent.changed(List<LocalConversation> field0) =
+      ConversationEvent_Changed;
+  const factory ConversationEvent.deleted(List<String> field0) =
+      ConversationEvent_Deleted;
+  const factory ConversationEvent.new_(List<LocalConversation> field0) =
+      ConversationEvent_New;
+  const factory ConversationEvent.totalUnreadCountChanged(int field0) =
+      ConversationEvent_TotalUnreadCountChanged;
+  const factory ConversationEvent.syncStarted(bool field0) =
+      ConversationEvent_SyncStarted;
+  const factory ConversationEvent.syncFinished(bool field0) =
+      ConversationEvent_SyncFinished;
+  const factory ConversationEvent.syncFailed({
+    required bool reinstalled,
+    required String error,
+  }) = ConversationEvent_SyncFailed;
+  const factory ConversationEvent.syncProgress({
+    required int progress,
+    required String message,
+  }) = ConversationEvent_SyncProgress;
+  const factory ConversationEvent.userInputStatusChanged({
+    required String conversationId,
+    required String userId,
+    required Int32List platformIds,
+  }) = ConversationEvent_UserInputStatusChanged;
 
-            @freezed
-                sealed class ConversationEvent with _$ConversationEvent  {
-                    const ConversationEvent._();
-
-                     const factory ConversationEvent.changed(  List<LocalConversation> field0,) = ConversationEvent_Changed;
- const factory ConversationEvent.deleted(  List<String> field0,) = ConversationEvent_Deleted;
- const factory ConversationEvent.new_(  List<LocalConversation> field0,) = ConversationEvent_New;
- const factory ConversationEvent.totalUnreadCountChanged(  int field0,) = ConversationEvent_TotalUnreadCountChanged;
- const factory ConversationEvent.syncStarted(  bool field0,) = ConversationEvent_SyncStarted;
- const factory ConversationEvent.syncFinished(  bool field0,) = ConversationEvent_SyncFinished;
- const factory ConversationEvent.syncFailed({   required bool reinstalled ,  required String error , }) = ConversationEvent_SyncFailed;
- const factory ConversationEvent.syncProgress({   required int progress ,  required String message , }) = ConversationEvent_SyncProgress;
- const factory ConversationEvent.userInputStatusChanged({   required String conversationId ,  required String userId ,  required Int32List platformIds , }) = ConversationEvent_UserInputStatusChanged;
- /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
-const factory ConversationEvent.updateLatestMessageReadState({   required String conversationId , }) = ConversationEvent_UpdateLatestMessageReadState;
-
-                    
-
-                    
-                }
-            
+  /// 最新消息已读状态变更（对齐 Go SDK `UpdateLatestMessageReadState`）
+  const factory ConversationEvent.updateLatestMessageReadState({
+    required String conversationId,
+  }) = ConversationEvent_UpdateLatestMessageReadState;
+}

@@ -23,6 +23,7 @@ class ConversationTitleBar extends StatelessWidget
     this.onAddGroup,
     this.onCreateGroup,
     this.onScan,
+    this.onHideAll,
     this.onRefresh,
   });
 
@@ -38,6 +39,7 @@ class ConversationTitleBar extends StatelessWidget
   final VoidCallback? onAddGroup;
   final VoidCallback? onCreateGroup;
   final VoidCallback? onScan;
+  final VoidCallback? onHideAll;
   final VoidCallback? onRefresh;
 
   String get _displayName {
@@ -176,6 +178,9 @@ class ConversationTitleBar extends StatelessWidget
                   case 'scan':
                     onScan?.call();
                     break;
+                  case 'hide_all':
+                    onHideAll?.call();
+                    break;
                 }
               },
               itemBuilder: (context) => [
@@ -208,6 +213,14 @@ class ConversationTitleBar extends StatelessWidget
                   child: ListTile(
                     leading: Icon(Icons.qr_code_scanner_outlined),
                     title: Text('扫一扫'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'hide_all',
+                  child: ListTile(
+                    leading: Icon(Icons.visibility_off_outlined),
+                    title: Text('隐藏全部会话'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

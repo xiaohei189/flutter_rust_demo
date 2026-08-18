@@ -139,10 +139,10 @@ void main() {
               ],
             ),
             WidgetbookComponent(
-              name: 'MessageSelectionBar',
+              name: 'MessageSelectionTopBar',
               useCases: [
                 WidgetbookUseCase(
-                  name: '多选操作栏',
+                  name: '多选工具栏',
                   builder: (_) => messageSelectionBarPreview(),
                 ),
               ],

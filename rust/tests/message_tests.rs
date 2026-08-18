@@ -671,8 +671,9 @@ async fn test_message_flow() {
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let context_list: Vec<rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct> = vec![merger_msg_1.clone(), merger_msg_2.clone()];
+    let source_conv_id = a_sdk.get_conversation_id_by_session_type(target, st);
     let merger_result = a_sdk
-        .send_merger_message("合并转发标题", vec!["合并内容1".to_string(), "合并内容2".to_string()], context_list, target, st)
+        .send_merger_message(&source_conv_id, "合并转发标题", vec!["合并内容1".to_string(), "合并内容2".to_string()], context_list, target, st)
         .await;
     assert!(merger_result.is_ok(), "A 发送合并消息失败: {:?}", merger_result.err());
 

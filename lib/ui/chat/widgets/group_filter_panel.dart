@@ -14,6 +14,9 @@ class GroupFilterPanel extends StatelessWidget {
     required this.totalMessages,
     required this.unreadCount,
     required this.groupCount,
+    required this.atMeCount,
+    required this.flaggedCount,
+    required this.doneCount,
     required this.onSelect,
   });
 
@@ -21,6 +24,9 @@ class GroupFilterPanel extends StatelessWidget {
   final int totalMessages;
   final int unreadCount;
   final int groupCount;
+  final int atMeCount;
+  final int flaggedCount;
+  final int doneCount;
   final ValueChanged<GroupFilter> onSelect;
 
   @override
@@ -88,6 +94,27 @@ class GroupFilterPanel extends StatelessWidget {
                             label: '未读',
                             count: unreadCount,
                             filter: GroupFilter.unread,
+                          ),
+                          _buildItem(
+                            context,
+                            icon: Icons.alternate_email,
+                            label: '@我',
+                            count: atMeCount,
+                            filter: GroupFilter.atMe,
+                          ),
+                          _buildItem(
+                            context,
+                            icon: Icons.flag_outlined,
+                            label: '标记',
+                            count: flaggedCount,
+                            filter: GroupFilter.flagged,
+                          ),
+                          _buildItem(
+                            context,
+                            icon: Icons.check_circle_outline,
+                            label: '已完成',
+                            count: doneCount,
+                            filter: GroupFilter.done,
                           ),
                           _buildItem(
                             context,

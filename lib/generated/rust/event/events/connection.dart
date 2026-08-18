@@ -8,27 +8,28 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'connection.freezed.dart';
 
-            
+@freezed
+sealed class ConnectionEvent with _$ConnectionEvent {
+  const ConnectionEvent._();
 
-            
-
-            @freezed
-                sealed class ConnectionEvent with _$ConnectionEvent  {
-                    const ConnectionEvent._();
-
-                     const factory ConnectionEvent.connecting() = ConnectionEvent_Connecting;
- const factory ConnectionEvent.connected() = ConnectionEvent_Connected;
- const factory ConnectionEvent.disconnected(  String field0,) = ConnectionEvent_Disconnected;
- const factory ConnectionEvent.connectFailed({   required int errCode ,  required String error , }) = ConnectionEvent_ConnectFailed;
- const factory ConnectionEvent.kickedOffline(  String field0,) = ConnectionEvent_KickedOffline;
- const factory ConnectionEvent.tokenExpired() = ConnectionEvent_TokenExpired;
- const factory ConnectionEvent.tokenInvalid({   required String error , }) = ConnectionEvent_TokenInvalid;
- const factory ConnectionEvent.reconnecting({   required int attempt ,  required int maxAttempts , }) = ConnectionEvent_Reconnecting;
- const factory ConnectionEvent.loginSuccess(  String field0,) = ConnectionEvent_LoginSuccess;
- const factory ConnectionEvent.logout() = ConnectionEvent_Logout;
-
-                    
-
-                    
-                }
-            
+  const factory ConnectionEvent.connecting() = ConnectionEvent_Connecting;
+  const factory ConnectionEvent.connected() = ConnectionEvent_Connected;
+  const factory ConnectionEvent.disconnected(String field0) =
+      ConnectionEvent_Disconnected;
+  const factory ConnectionEvent.connectFailed({
+    required int errCode,
+    required String error,
+  }) = ConnectionEvent_ConnectFailed;
+  const factory ConnectionEvent.kickedOffline(String field0) =
+      ConnectionEvent_KickedOffline;
+  const factory ConnectionEvent.tokenExpired() = ConnectionEvent_TokenExpired;
+  const factory ConnectionEvent.tokenInvalid({required String error}) =
+      ConnectionEvent_TokenInvalid;
+  const factory ConnectionEvent.reconnecting({
+    required int attempt,
+    required int maxAttempts,
+  }) = ConnectionEvent_Reconnecting;
+  const factory ConnectionEvent.loginSuccess(String field0) =
+      ConnectionEvent_LoginSuccess;
+  const factory ConnectionEvent.logout() = ConnectionEvent_Logout;
+}

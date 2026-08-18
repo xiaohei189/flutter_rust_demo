@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
+import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
@@ -35,6 +36,9 @@ class ChatDetailState {
   final List<MessageInfo> selectedMessages;
   final List<String> atUserIds;
   final String? errorText;
+  final bool isForwarding;
+  final int forwardDone;
+  final int forwardTotal;
 
   const ChatDetailState({
     this.isLoading = false,
@@ -44,6 +48,9 @@ class ChatDetailState {
     this.selectedMessages = const [],
     this.atUserIds = const [],
     this.errorText,
+    this.isForwarding = false,
+    this.forwardDone = 0,
+    this.forwardTotal = 0,
   });
 
   ChatDetailState copyWith({
@@ -56,6 +63,9 @@ class ChatDetailState {
     List<String>? atUserIds,
     String? errorText,
     bool clearError = false,
+    bool? isForwarding,
+    int? forwardDone,
+    int? forwardTotal,
   }) {
     return ChatDetailState(
       isLoading: isLoading ?? this.isLoading,
@@ -67,6 +77,9 @@ class ChatDetailState {
       selectedMessages: selectedMessages ?? this.selectedMessages,
       atUserIds: atUserIds ?? this.atUserIds,
       errorText: clearError ? null : (errorText ?? this.errorText),
+      isForwarding: isForwarding ?? this.isForwarding,
+      forwardDone: forwardDone ?? this.forwardDone,
+      forwardTotal: forwardTotal ?? this.forwardTotal,
     );
   }
 
@@ -79,6 +92,11 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   DateTime? _lastTypingSent;
   DateTime? _lastMarkReadTime;
   String? _onlineStatusUserId;
+  bool _forwardCancelled = false;
+  List<MessageInfo>? _lastForwardMessages;
+  List<({String id, bool isGroup})>? _failedForwardTargets;
+  String _lastForwardTitle = '聊天记录';
+  bool _lastForwardMerge = false;
 
   @override
   ChatDetailState build(String conversationId) {
@@ -495,6 +513,37 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     state = state.copyWith(selectedMessages: selected);
   }
 
+  void toggleSelectAll() {
+    final messages = ref
+        .read(messageListProvider(arg))
+        .messages
+        .where((m) => m.messageType != MessageType.system)
+        .toList();
+    if (messages.isEmpty) return;
+    final allSelected = messages.every(
+      (m) => state.selectedClientMsgIds.contains(m.clientMsgId),
+    );
+    state = state.copyWith(selectedMessages: allSelected ? const [] : messages);
+  }
+
+  Future<bool> deleteSelectedMessages() async {
+    final messages = List<MessageInfo>.from(state.selectedMessages);
+    if (messages.isEmpty) return false;
+    try {
+      for (final message in messages) {
+        await _messageService.deleteMessage(
+          conversationId: arg,
+          clientMsgId: message.clientMsgId,
+        );
+      }
+      exitSelectMode();
+      return true;
+    } catch (e) {
+      state = state.copyWith(errorText: '删除选中消息失败: $e');
+      return false;
+    }
+  }
+
   Future<bool> revokeMessage(MessageInfo message) async {
     final conv = conversation;
     if (conv == null) return false;
@@ -559,6 +608,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     required String targetId,
     required bool isGroup,
     required bool merge,
+    String title = '聊天记录',
   }) async {
     if (messages.isEmpty) return false;
     final sessionType = isGroup
@@ -567,7 +617,9 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     try {
       if (merge) {
         await _messageService.sendMergerMessage(
-          title: '聊天记录',
+          clientMsgIds: messages.map((m) => m.clientMsgId).toList(),
+          sourceConversationId: arg,
+          title: title,
           summaryList: messages.map((m) => m.displayText).toList(),
           sourceId: targetId,
           sessionType: sessionType,
@@ -586,6 +638,124 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     } catch (e) {
       state = state.copyWith(errorText: '转发失败: $e');
       return false;
+    }
+  }
+
+  Future<bool> forwardSelectedMessagesToTargets({
+    required List<MessageInfo> messages,
+    required List<({String id, bool isGroup})> targets,
+    required bool merge,
+    String title = '聊天记录',
+  }) async {
+    if (messages.isEmpty || targets.isEmpty) return false;
+
+    state = state.copyWith(
+      isForwarding: true,
+      forwardDone: 0,
+      forwardTotal: targets.length,
+      errorText: null,
+    );
+    _forwardCancelled = false;
+    var success = 0;
+    var failed = 0;
+    final failedTargets = <({String id, bool isGroup})>[];
+    _lastForwardMessages = messages;
+    _lastForwardTitle = title;
+    _lastForwardMerge = merge;
+
+    try {
+      for (final target in targets) {
+        if (_forwardCancelled) {
+          state = state.copyWith(
+            errorText: success == 0
+                ? '已取消转发'
+                : '已取消转发：成功 $success 个，未完成 ${targets.length - success} 个',
+          );
+          _failedForwardTargets = null;
+          return false;
+        }
+        try {
+          await _forwardToTarget(
+            messages: messages,
+            targetId: target.id,
+            isGroup: target.isGroup,
+            merge: merge,
+            title: title,
+          );
+          success++;
+        } catch (_) {
+          failed++;
+          failedTargets.add(target);
+        }
+        state = state.copyWith(forwardDone: success + failed);
+      }
+      if (failed == 0) {
+        _failedForwardTargets = null;
+        exitSelectMode();
+        return true;
+      }
+      _failedForwardTargets = failedTargets;
+      state = state.copyWith(
+        errorText: failed == targets.length
+            ? '转发失败'
+            : '部分转发失败：成功 $success 个，失败 $failed 个',
+      );
+      return false;
+    } finally {
+      state = state.copyWith(
+        isForwarding: false,
+        forwardDone: 0,
+        forwardTotal: 0,
+      );
+    }
+  }
+
+  bool get hasFailedForwardTargets =>
+      _failedForwardTargets != null && _failedForwardTargets!.isNotEmpty;
+
+  Future<bool> retryFailedForwardTargets() async {
+    final messages = _lastForwardMessages;
+    final targets = _failedForwardTargets;
+    if (messages == null || targets == null || targets.isEmpty) return false;
+    return forwardSelectedMessagesToTargets(
+      messages: messages,
+      targets: targets,
+      merge: _lastForwardMerge,
+      title: _lastForwardTitle,
+    );
+  }
+
+  void cancelForward() {
+    _forwardCancelled = true;
+  }
+
+  Future<void> _forwardToTarget({
+    required List<MessageInfo> messages,
+    required String targetId,
+    required bool isGroup,
+    required bool merge,
+    required String title,
+  }) async {
+    final sessionType = isGroup
+        ? SessionType.writeGroupChat
+        : SessionType.singleChat;
+    if (merge) {
+      await _messageService.sendMergerMessage(
+        clientMsgIds: messages.map((m) => m.clientMsgId).toList(),
+        sourceConversationId: arg,
+        title: title,
+        summaryList: messages.map((m) => m.displayText).toList(),
+        sourceId: targetId,
+        sessionType: sessionType,
+      );
+    } else {
+      for (final message in messages) {
+        await _messageService.forwardMessage(
+          clientMsgId: message.clientMsgId,
+          sourceId: targetId,
+          sessionType: sessionType,
+        );
+      }
     }
   }
 

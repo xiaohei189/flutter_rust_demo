@@ -6,86 +6,128 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+/// 群组信息模型
+class GroupInfo {
+  /// 群组 ID
+  final String groupId;
 
-            
+  /// 群组名称
+  final String groupName;
 
-            
+  /// 头像 URL
+  final String faceUrl;
 
-            /// 群组信息模型
-class GroupInfo  {
-                /// 群组 ID
-final String groupId;
-/// 群组名称
-final String groupName;
-/// 头像 URL
-final String faceUrl;
-/// 群简介
-final String introduction;
-/// 群公告
-final String notification;
-/// 群主 ID
-final String ownerUserId;
-/// 创建时间
-final int createTime;
-/// 成员数量
-final int memberCount;
-/// 状态 (0:正常, 1:封禁, 2:解散)
-final int status;
+  /// 群简介
+  final String introduction;
 
-                const GroupInfo({required this.groupId ,required this.groupName ,required this.faceUrl ,required this.introduction ,required this.notification ,required this.ownerUserId ,required this.createTime ,required this.memberCount ,required this.status ,});
+  /// 群公告
+  final String notification;
 
-                
-                
+  /// 群主 ID
+  final String ownerUserId;
 
-                
-        @override
-        int get hashCode => groupId.hashCode^groupName.hashCode^faceUrl.hashCode^introduction.hashCode^notification.hashCode^ownerUserId.hashCode^createTime.hashCode^memberCount.hashCode^status.hashCode;
-        
+  /// 创建时间
+  final int createTime;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is GroupInfo &&
-                runtimeType == other.runtimeType
-                && groupId == other.groupId&& groupName == other.groupName&& faceUrl == other.faceUrl&& introduction == other.introduction&& notification == other.notification&& ownerUserId == other.ownerUserId&& createTime == other.createTime&& memberCount == other.memberCount&& status == other.status;
-        
-            }
+  /// 成员数量
+  final int memberCount;
+
+  /// 状态 (0:正常, 1:封禁, 2:解散)
+  final int status;
+
+  const GroupInfo({
+    required this.groupId,
+    required this.groupName,
+    required this.faceUrl,
+    required this.introduction,
+    required this.notification,
+    required this.ownerUserId,
+    required this.createTime,
+    required this.memberCount,
+    required this.status,
+  });
+
+  @override
+  int get hashCode =>
+      groupId.hashCode ^
+      groupName.hashCode ^
+      faceUrl.hashCode ^
+      introduction.hashCode ^
+      notification.hashCode ^
+      ownerUserId.hashCode ^
+      createTime.hashCode ^
+      memberCount.hashCode ^
+      status.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupInfo &&
+          runtimeType == other.runtimeType &&
+          groupId == other.groupId &&
+          groupName == other.groupName &&
+          faceUrl == other.faceUrl &&
+          introduction == other.introduction &&
+          notification == other.notification &&
+          ownerUserId == other.ownerUserId &&
+          createTime == other.createTime &&
+          memberCount == other.memberCount &&
+          status == other.status;
+}
 
 /// 群成员信息模型
-class GroupMember  {
-                /// 群组 ID
-final String groupId;
-/// 用户 ID
-final String userId;
-/// 昵称
-final String nickname;
-/// 头像 URL
-final String faceUrl;
-/// 角色等级 (1:普通成员, 2:管理员, 3:群主)
-final int roleLevel;
-/// 加入时间
-final int joinTime;
-/// 加入来源
-final String joinSource;
+class GroupMember {
+  /// 群组 ID
+  final String groupId;
 
-                const GroupMember({required this.groupId ,required this.userId ,required this.nickname ,required this.faceUrl ,required this.roleLevel ,required this.joinTime ,required this.joinSource ,});
+  /// 用户 ID
+  final String userId;
 
-                
-                
+  /// 昵称
+  final String nickname;
 
-                
-        @override
-        int get hashCode => groupId.hashCode^userId.hashCode^nickname.hashCode^faceUrl.hashCode^roleLevel.hashCode^joinTime.hashCode^joinSource.hashCode;
-        
+  /// 头像 URL
+  final String faceUrl;
 
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is GroupMember &&
-                runtimeType == other.runtimeType
-                && groupId == other.groupId&& userId == other.userId&& nickname == other.nickname&& faceUrl == other.faceUrl&& roleLevel == other.roleLevel&& joinTime == other.joinTime&& joinSource == other.joinSource;
-        
-            }
-            
+  /// 角色等级 (1:普通成员, 2:管理员, 3:群主)
+  final int roleLevel;
+
+  /// 加入时间
+  final int joinTime;
+
+  /// 加入来源
+  final String joinSource;
+
+  const GroupMember({
+    required this.groupId,
+    required this.userId,
+    required this.nickname,
+    required this.faceUrl,
+    required this.roleLevel,
+    required this.joinTime,
+    required this.joinSource,
+  });
+
+  @override
+  int get hashCode =>
+      groupId.hashCode ^
+      userId.hashCode ^
+      nickname.hashCode ^
+      faceUrl.hashCode ^
+      roleLevel.hashCode ^
+      joinTime.hashCode ^
+      joinSource.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupMember &&
+          runtimeType == other.runtimeType &&
+          groupId == other.groupId &&
+          userId == other.userId &&
+          nickname == other.nickname &&
+          faceUrl == other.faceUrl &&
+          roleLevel == other.roleLevel &&
+          joinTime == other.joinTime &&
+          joinSource == other.joinSource;
+}

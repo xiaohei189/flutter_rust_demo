@@ -6,33 +6,26 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class OnlineStatus {
+  final String userId;
+  final int status;
+  final Int32List platformIds;
 
-            
+  const OnlineStatus({
+    required this.userId,
+    required this.status,
+    required this.platformIds,
+  });
 
-            
+  @override
+  int get hashCode => userId.hashCode ^ status.hashCode ^ platformIds.hashCode;
 
-            class OnlineStatus  {
-                final String userId;
-final int status;
-final Int32List platformIds;
-
-                const OnlineStatus({required this.userId ,required this.status ,required this.platformIds ,});
-
-                
-                
-
-                
-        @override
-        int get hashCode => userId.hashCode^status.hashCode^platformIds.hashCode;
-        
-
-                
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is OnlineStatus &&
-                runtimeType == other.runtimeType
-                && userId == other.userId&& status == other.status&& platformIds == other.platformIds;
-        
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OnlineStatus &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          status == other.status &&
+          platformIds == other.platformIds;
+}

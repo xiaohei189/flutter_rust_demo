@@ -835,9 +835,21 @@ impl MessageSender {
     }
 
     /// 发送合并转发消息（对齐 Go SDK `CreateMergerMessage` + `SendMessage`）
-    pub async fn send_merger_message(&self, title: &str, summary_list: Vec<String>, context_list: Vec<MsgStruct>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+    pub async fn send_merger_message(
+        &self,
+        source_conversation_id: &str,
+        title: &str,
+        summary_list: Vec<String>,
+        context_list: Vec<MsgStruct>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError> {
         let mut msg = MsgStruct::create_merger_message(context_list, title, summary_list);
         msg.session_type = session_type;
+        msg.attached_info = serde_json::json!({
+            "sourceConversationId": source_conversation_id,
+        })
+        .to_string();
         self.send_msg(msg, source_id, None).await
     }
 
