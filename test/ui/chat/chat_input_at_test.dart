@@ -32,7 +32,10 @@ void main() {
       ),
     );
 
-    // 输入 "@张" 触发成员列表
+    // 聚焦输入框后输入 "@张" 触发成员列表
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+
     controller.text = '@张';
     controller.selection = const TextSelection.collapsed(offset: 2);
     controller.notifyListeners();
@@ -88,6 +91,9 @@ void main() {
         ),
       ),
     );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
 
     controller.text = '@不存在的名字';
     controller.selection =
