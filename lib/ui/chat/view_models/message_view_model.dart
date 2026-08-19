@@ -2,8 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../generated/rust/constant/enums.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../data/mappers/message_mapper.dart' show messageFromMsgStruct;
-import '../../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../providers/message_service_provider.dart';
 import 'message_service_notifier.dart';
 
@@ -152,8 +150,8 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     }
   }
 
-  void _addSentMessage(MsgStruct result) {
-    _messageService.upsertSentMessage(arg, messageFromMsgStruct(result));
+  void _addSentMessage(ChatMessage result) {
+    _messageService.upsertSentMessage(arg, result);
     _syncState();
   }
 
