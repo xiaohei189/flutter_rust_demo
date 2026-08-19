@@ -32,6 +32,7 @@ import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
 import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog;
+import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/message_list.dart';
 import '../widgets/menu/message_selection_bar.dart';
@@ -295,55 +296,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return;
     }
 
-    final selected = await showModalBottomSheet<GroupMember>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text(
-                '@ 选择群成员',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Divider(height: 1),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: members.length,
-                itemBuilder: (_, i) {
-                  final member = members[i];
-                  return ListTile(
-                    leading: UserAvatar(
-                      user: User(
-                        id: member.userId,
-                        name: member.nickname,
-                        avatar: member.faceUrl.isNotEmpty
-                            ? member.faceUrl
-                            : null,
-                      ),
-                      radius: 18,
-                    ),
-                    title: Text(
-                      member.nickname.isNotEmpty
-                          ? member.nickname
-                          : member.userId,
-                    ),
-                    onTap: () => Navigator.of(ctx).pop(member),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    final selected = await showGroupMemberPicker(context, members);
 
     if (selected == null || !mounted) return;
     final displayName = selected.nickname.isNotEmpty
@@ -353,14 +306,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _insertAtMention(String displayName, String userId) {
-    final text = _textController.text;
-    final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
-    final inserted = '$text$suffix@$displayName ';
-    _textController.value = TextEditingValue(
-      text: inserted,
-      selection: TextSelection.collapsed(offset: inserted.length),
-    );
-    _viewModel?.addAtUserId(userId);
+    insertAtMention(_textController, displayName, userId);
   }
 
   void _showMessageSearch() {
