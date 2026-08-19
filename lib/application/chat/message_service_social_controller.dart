@@ -12,7 +12,9 @@ import 'message_service_reducer.dart';
 
 /// 好友、群组、用户事件与群已读统计。
 class MessageServiceSocialController {
-  MessageServiceSocialController(this.service);
+  MessageServiceSocialController(this.service, this.onlineStatusService);
+
+  final OnlineStatusService onlineStatusService;
 
   final MessageServiceNotifier service;
 
@@ -60,7 +62,7 @@ class MessageServiceSocialController {
         appLog.i(
           '[MsgSvc] userStatusChanged: userId=$userId status=$status platformIds=$platformIds',
         );
-        OnlineStatusService.instance.applyUserStatusChanged(
+        onlineStatusService.applyUserStatusChanged(
           userId: userId,
           status: status,
           platformIds: platformIds,

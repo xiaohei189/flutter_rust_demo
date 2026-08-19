@@ -12,7 +12,9 @@ import 'message_service_state.dart';
 
 /// 连接初始化、事件订阅与断开。
 class MessageServiceConnectionController {
-  MessageServiceConnectionController(this.service);
+  MessageServiceConnectionController(this.service, this.onlineStatusService);
+
+  final OnlineStatusService onlineStatusService;
 
   final MessageServiceNotifier service;
 
@@ -23,7 +25,7 @@ class MessageServiceConnectionController {
     String? imToken,
   }) async {
     if (ImClient.instance.isInitialized && service.currentState.isConnected) {
-      OnlineStatusService.instance.setClient(ImClient.instance.client);
+      onlineStatusService.setClient(ImClient.instance.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
@@ -48,7 +50,7 @@ class MessageServiceConnectionController {
         } catch (e) {
           appLog.w('[MessageService] 关闭旧客户端失败: $e');
         }
-        OnlineStatusService.instance.setClient(null);
+        onlineStatusService.setClient(null);
       }
 
       final String resolvedUserId;
@@ -74,7 +76,7 @@ class MessageServiceConnectionController {
         wsUrl: wsUrl,
         apiBaseUrl: apiBaseUrl!,
       );
-      OnlineStatusService.instance.setClient(ImClient.instance.client);
+      onlineStatusService.setClient(ImClient.instance.client);
       unawaited(service.loadConversations());
 
       service.subscriptions.add(
@@ -152,7 +154,7 @@ class MessageServiceConnectionController {
     }
     service.subscriptions.clear();
     await ImClient.instance.close();
-    OnlineStatusService.instance.setClient(null);
+    onlineStatusService.setClient(null);
     ConnectionService.instance.updateStatus(ConnectionStatus.disconnected);
     service.updateState(MessageServiceState());
   }

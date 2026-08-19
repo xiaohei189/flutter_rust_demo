@@ -6,7 +6,7 @@ import '../../generated/rust/http/online.dart' show OnlineStatus;
 import '../../core/utils/app_logger.dart';
 
 class OnlineStatusService {
-  static final OnlineStatusService instance = OnlineStatusService._internal();
+  static final OnlineStatusService instance = OnlineStatusService();
 
   final _statusesController =
       StreamController<Map<String, OnlineStatus>>.broadcast();
@@ -14,10 +14,10 @@ class OnlineStatusService {
   final Map<String, int> _refCounts = {};
   OnlineStatusClient? _client;
 
-  OnlineStatusService._internal();
+  OnlineStatusService();
 
   /// 供单元测试创建独立实例，避免污染全局 singleton。
-  OnlineStatusService.forTesting() : this._internal();
+  OnlineStatusService.forTesting() : this();
 
   Stream<Map<String, OnlineStatus>> get statusesStream =>
       _statusesController.stream;

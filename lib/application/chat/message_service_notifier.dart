@@ -21,6 +21,7 @@ import 'package:flutter_rust_demo/generated/rust/event/events/group.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
+import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
@@ -46,13 +47,19 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceState build() => MessageServiceState();
 
   MessageServiceConnectionController get connectionController =>
-      _connectionController ??= MessageServiceConnectionController(this);
+      _connectionController ??= MessageServiceConnectionController(
+        this,
+        ref.read(onlineStatusServiceProvider),
+      );
 
   MessageServiceConversationController get conversationController =>
       _conversationController ??= MessageServiceConversationController(this);
 
   MessageServiceSocialController get socialController =>
-      _socialController ??= MessageServiceSocialController(this);
+      _socialController ??= MessageServiceSocialController(
+        this,
+        ref.read(onlineStatusServiceProvider),
+      );
 
   MessageRepository get repository => ref.read(messageRepositoryProvider);
 
