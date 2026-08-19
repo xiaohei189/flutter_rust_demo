@@ -57,7 +57,7 @@ class ImageMessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final source = message.displayImageSource;
     if (source.isEmpty) {
-      return const Icon(Icons.broken_image, size: 120, color: Colors.grey);
+      return const _ImageMessagePlaceholder(text: '图片地址为空');
     }
     return UploadProgress(
       isFromMe: isFromMe,
@@ -70,7 +70,39 @@ class ImageMessageContent extends StatelessWidget {
           height: 150,
           fit: BoxFit.cover,
           cacheWidth: 300,
+          errorWidget: const _ImageMessagePlaceholder(text: '图片加载失败'),
         ),
+      ),
+    );
+  }
+}
+
+class _ImageMessagePlaceholder extends StatelessWidget {
+  const _ImageMessagePlaceholder({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Container(
+      width: 150,
+      height: 150,
+      decoration: BoxDecoration(
+        color: colors.surfaceMuted,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.image_not_supported_outlined, size: 40, color: colors.textSecondary),
+          const SizedBox(height: 8),
+          Text(
+            text,
+            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+          ),
+        ],
       ),
     );
   }
