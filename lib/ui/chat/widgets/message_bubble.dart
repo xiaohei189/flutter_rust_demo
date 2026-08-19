@@ -7,7 +7,7 @@ import '../../../domain/models/user.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../../domain/models/user_profile.dart' show UserProfile;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../../router/app_router.dart';
@@ -29,8 +29,8 @@ class MessageBubble extends StatelessWidget {
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
-  final UserInfo? cachedSenderProfile;
-  final UserInfo? cachedCurrentUserProfile;
+  final UserProfile? cachedSenderProfile;
+  final UserProfile? cachedCurrentUserProfile;
   final void Function(ChatMessage message)? onLongPress;
   final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;

@@ -14,6 +14,7 @@ import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.d
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/user_profile.dart' show UserProfile;
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart' show messageInfoFromChatMessage;
 import 'package:flutter_rust_demo/generated/rust/model/user.dart';
 
@@ -121,7 +122,7 @@ void main() {
           _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
         },
         userProfiles: {
-          'user_a': const UserInfo(
+          'user_a': const UserProfile(
             userId: 'user_a',
             nickname: '我',
             faceUrl: '',
@@ -212,7 +213,7 @@ void main() {
         conversations: [_makeConversation()],
         messages: {},
         userProfiles: {
-          'user_a': const UserInfo(
+          'user_a': const UserProfile(
             userId: 'user_a',
             nickname: '我',
             faceUrl: '',

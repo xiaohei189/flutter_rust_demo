@@ -4,6 +4,7 @@ import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/chat_message.dart' show ChatMessage, MessageHistoryPage;
 import '../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../domain/models/user_profile.dart' show UserProfile, UserProfileMapping;
 import '../mappers/message_mapper.dart';
 import '../../generated/rust/client.dart';
 import '../../generated/rust/constant/enums.dart' show SessionType;
@@ -19,7 +20,7 @@ import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../../generated/rust/model/user.dart' show UserInfo;
 
 abstract class MessageRepository {
-  Future<List<UserInfo>> getUsersInfo(List<String> userIds);
+  Future<List<UserProfile>> getUsersInfo(List<String> userIds);
 
   Future<void> updateUserProfile({
     String? nickname,
@@ -230,8 +231,9 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<List<UserInfo>> getUsersInfo(List<String> userIds) {
-    return _client.getUsersInfo(userIds: userIds);
+  Future<List<UserProfile>> getUsersInfo(List<String> userIds) async {
+    final raw = await _client.getUsersInfo(userIds: userIds);
+    return raw.map(UserProfileMapping.fromUserInfo).toList(growable: false);
   }
 
   @override

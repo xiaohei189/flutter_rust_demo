@@ -8,7 +8,7 @@ import '../../../domain/models/user.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../../domain/models/user_profile.dart' show UserProfile;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
@@ -47,8 +47,8 @@ class MessageList extends StatefulWidget {
   final String? currentUserAvatar;
   final ScrollController scrollController;
   final bool isLoading;
-  final Map<String, UserInfo>? cachedSenderProfiles;
-  final UserInfo? cachedCurrentUserProfile;
+  final Map<String, UserProfile>? cachedSenderProfiles;
+  final UserProfile? cachedCurrentUserProfile;
   final void Function(ChatMessage message)? onMessageLongPress;
   final void Function(ChatMessage message)? onMessageVisible;
   final void Function(ChatMessage message)? onMessageTap;
@@ -291,8 +291,8 @@ class _VisibleMessageBubble extends StatelessWidget {
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
-  final UserInfo? cachedSenderProfile;
-  final UserInfo? cachedCurrentUserProfile;
+  final UserProfile? cachedSenderProfile;
+  final UserProfile? cachedCurrentUserProfile;
   final void Function(ChatMessage message)? onLongPress;
   final void Function(ChatMessage message)? onVisible;
   final void Function(ChatMessage message)? onTap;

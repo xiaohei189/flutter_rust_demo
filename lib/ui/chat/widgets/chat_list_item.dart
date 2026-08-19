@@ -8,7 +8,7 @@ import '../../../domain/models/user.dart';
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../../router/app_router.dart';
-import '../../../generated/rust/model/user.dart' show UserInfo;
+import '../../../domain/models/user_profile.dart' show UserProfile;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../utils/conversation_display.dart';
@@ -28,7 +28,7 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onFlagToggle;
   final VoidCallback? onDoneToggle;
   final VoidCallback? onHide;
-  final UserInfo? cachedUserProfile;
+  final UserProfile? cachedUserProfile;
 
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
   final String? currentUserLocalAvatarPath;

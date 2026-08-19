@@ -7,7 +7,7 @@ import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
-import 'package:flutter_rust_demo/generated/rust/model/user.dart' show UserInfo;
+import 'package:flutter_rust_demo/domain/models/user_profile.dart' show UserProfile;
 import 'package:flutter_rust_demo/generated/rust/model/local.dart'
     show LocalConversation;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
@@ -131,16 +131,16 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   }
 
   /// 获取指定用户资料（命中缓存时）
-  UserInfo? getUserProfile(String userId) => state.userProfiles[userId];
+  UserProfile? getUserProfile(String userId) => state.userProfiles[userId];
 
   /// 拉取当前登录用户资料（通过批量接口 getUsersInfo，走缓存）并更新内存缓存
-  Future<UserInfo?> refreshLoginUserProfile() async {
+  Future<UserProfile?> refreshLoginUserProfile() async {
     if (!_isClientReady || state.currentUserId.isEmpty) return null;
     try {
       final list = await repository.getUsersInfo([state.currentUserId]);
       final profile = list.isNotEmpty ? list.first : null;
       if (profile != null) {
-        final newUserProfiles = Map<String, UserInfo>.from(state.userProfiles);
+        final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
         newUserProfiles[profile.userId] = profile;
         state = state.copyWith(
           loginUserProfile: profile,
@@ -161,7 +161,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     if (uniq.isEmpty) return;
     try {
       final list = await repository.getUsersInfo(uniq);
-      final newUserProfiles = Map<String, UserInfo>.from(state.userProfiles);
+      final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
       for (final p in list) {
         newUserProfiles[p.userId] = p;
       }
@@ -171,7 +171,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     }
   }
 
-  Future<UserInfo?> updateLoginUserProfile({
+  Future<UserProfile?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
     String? ex,
