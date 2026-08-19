@@ -110,21 +110,53 @@ class MergeMessageDetailScreen extends ConsumerWidget {
   /// 从 content JSON 解析子消息列表
   List<_SubMessage> _parseSubMessages(Map<String, dynamic> json) {
     final multiMessage = json['multiMessage'];
-    if (multiMessage is! List) return [];
+    final abstractList = json['abstractList'];
+    if (multiMessage is! List || multiMessage.isEmpty) {
+      if (abstractList is List) {
+        return abstractList.map((item) {
+          final raw = item is String ? item : item.toString();
+          final separator = raw.indexOf(RegExp('[:：]'));
+          if (separator > 0) {
+            return _SubMessage(
+              senderNickname: raw.substring(0, separator),
+              content: raw.substring(separator + 1).trim(),
+              contentType: 0,
+            );
+          }
+          return _SubMessage(
+            senderNickname: '摘要',
+            content: raw,
+            contentType: 0,
+          );
+        }).toList();
+      }
+      return [];
+    }
 
-    return multiMessage.map<_SubMessage>((item) {
-      final msg = item as Map<String, dynamic>;
-      final senderNickname = msg['senderNickname'] as String? ?? '';
-      final contentType = msg['contentType'] as int? ?? 0;
-      final content = msg['content'] as String? ?? '';
-      final sendTime = msg['sendTime'] as int? ?? 0;
+    return multiMessage.indexed.map<_SubMessage>((entry) {
+      final index = entry.$1;
+      final item = entry.$2 as Map<String, dynamic>;
+      final senderNickname = item['senderNickname'] as String? ?? '';
+      final contentType = item['contentType'] as int? ?? 0;
+      final rawContent = item['content'] as String? ?? '';
+      final sendTime = item['sendTime'] as int? ?? 0;
 
       String displayContent;
-      try {
-        final contentJson = jsonDecode(content) as Map<String, dynamic>;
-        displayContent = _extractContent(contentJson, contentType);
-      } catch (_) {
-        displayContent = content;
+      if (rawContent.isEmpty &&
+          abstractList is List &&
+          index < abstractList.length) {
+        final raw = abstractList[index].toString();
+        final separator = raw.indexOf(RegExp('[:：]'));
+        displayContent = separator > 0
+            ? raw.substring(separator + 1).trim()
+            : raw;
+      } else {
+        try {
+          final contentJson = jsonDecode(rawContent) as Map<String, dynamic>;
+          displayContent = _extractContent(contentJson, contentType);
+        } catch (_) {
+          displayContent = rawContent;
+        }
       }
 
       return _SubMessage(
