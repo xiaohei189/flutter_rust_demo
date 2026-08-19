@@ -92,11 +92,11 @@ MessageInfo fakeImageMessage({bool fromMe = false}) {
   );
 }
 
-/// 视频消息（contentType=103，无快照走占位）
+/// 视频消息（contentType=104，无快照走占位）
 MessageInfo fakeVideoMessage({bool fromMe = false}) {
   return _message(
     id: 'video_${fromMe ? 'me' : 'other'}',
-    contentType: 103,
+    contentType: 104,
     content: _json({'videoPath': '', 'duration': 12, 'size': 2048}),
     sender: fromMe ? kPreviewMyNickname : '李四',
     sendId: fromMe ? kPreviewMyUserId : 'user_2',
@@ -104,11 +104,11 @@ MessageInfo fakeVideoMessage({bool fromMe = false}) {
   );
 }
 
-/// 语音消息（contentType=104）
+/// 语音消息（contentType=103）
 MessageInfo fakeAudioMessage({bool fromMe = false, int duration = 8}) {
   return _message(
     id: 'audio_${fromMe ? 'me' : 'other'}',
-    contentType: 104,
+    contentType: 103,
     content: _json({'soundPath': '', 'duration': duration, 'dataSize': 1000}),
     sender: fromMe ? kPreviewMyNickname : '李四',
     sendId: fromMe ? kPreviewMyUserId : 'user_2',
@@ -188,11 +188,11 @@ MessageInfo fakeCardMessage({bool fromMe = false}) {
   );
 }
 
-/// 位置消息（contentType=106）
+/// 位置消息（contentType=109）
 MessageInfo fakeLocationMessage({bool fromMe = false}) {
   return _message(
     id: 'location_${fromMe ? 'me' : 'other'}',
-    contentType: 106,
+    contentType: 109,
     content: _json({
       'name': '杭州西溪湿地',
       'desc': '浙江省杭州市西湖区天目山路 518 号',
@@ -217,11 +217,11 @@ MessageInfo fakeSystemMessage({String text = '李四 撤回了一条消息'}) {
   );
 }
 
-/// @ 消息（contentType=116）
+/// @ 消息（contentType=106）
 MessageInfo fakeAtMessage({bool fromMe = false}) {
   return _message(
     id: 'at_${fromMe ? 'me' : 'other'}',
-    contentType: 116,
+    contentType: 106,
     content: _json({
       'text': '@张三 晚上一起吃饭吗？',
       'atUsers': [

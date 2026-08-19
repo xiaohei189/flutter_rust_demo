@@ -5,21 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter_rust_demo/generated/rust/frb_generated.dart';
 import 'package:flutter_rust_demo/generated/rust/ffi/ffi_init.dart'
     show setLogDirectory;
+import 'package:flutter_rust_demo/generated/rust/frb_generated.dart';
+import 'package:path_provider/path_provider.dart';
 
-import 'router/app_router.dart';
-import 'ui/core/theme/app_theme.dart';
 import 'data/config/host_config.dart';
-import 'data/services/im_client.dart';
 import 'data/services/app_lifecycle_service.dart';
+import 'data/services/im_client.dart';
 import 'data/services/local_notification_service.dart';
 import 'data/services/locale_service.dart';
 import 'generated/rust/ffi/global.dart' show setAppBackgroundStatus;
-import 'ui/core/widgets/app_lock_gate.dart';
 import 'l10n/app_localizations.dart';
+import 'router/app_router.dart';
+import 'ui/core/theme/app_theme.dart';
+import 'ui/core/widgets/app_lock_gate.dart';
 
 /// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
@@ -29,9 +29,10 @@ String get kApiBaseUrl => 'http://${getHostAddress()}:10002';
 
 Future<void> main() async {
   // Flutter Driver 会创建自己的 Binding，必须在 WidgetsFlutterBinding 初始化前启用。
-  if (const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
-    enableFlutterDriverExtension();
-  }
+  // 必须关闭文本输入模拟（enableTextEntryEmulation: false）：
+  // 默认开启时 TestTextInput 会接管 SystemChannels.textInput，导致真实键盘无法输入。
+  // 需要程序化输入时可先用 driver 命令 set_text_entry_emulation true 再 enter_text。
+  enableFlutterDriverExtension(enableTextEntryEmulation: false);
 
   WidgetsFlutterBinding.ensureInitialized();
 

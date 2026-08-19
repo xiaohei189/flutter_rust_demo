@@ -65,7 +65,7 @@ impl UserService {
                 face_url: updates.face_url.clone(),
                 gender: updates.gender,
                 email: updates.email.clone(),
-                ex: None,
+                ex: updates.ex.clone(),
             },
         };
 
@@ -85,6 +85,9 @@ impl UserService {
                 }
                 if let Some(email) = updates.email {
                     user.email = email;
+                }
+                if let Some(ex) = updates.ex {
+                    user.remark = ex;
                 }
                 Some(user.clone())
             } else {

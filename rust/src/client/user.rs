@@ -43,7 +43,8 @@ impl UserApi for OpenIMClient {
             nickname: nickname.map(|s| s.to_string()),
             face_url: face_url.map(|s| s.to_string()),
             gender: None,
-            email: ex.map(|s| s.to_string()),
+            email: None,
+            ex: ex.map(|s| s.to_string()),
         };
         self.user.update_self_user_info(updates).await
     }

@@ -302,10 +302,7 @@ extension LocalChatLogExt on LocalChatLog {
       _readableSystemMessage(json, content);
 }
 
-String _readableSystemMessage(
-  Map<String, dynamic> json,
-  String fallback,
-) {
+String _readableSystemMessage(Map<String, dynamic> json, String fallback) {
   if (json.containsKey('revokerID') || json.containsKey('revokerNickname')) {
     final nickname = json['revokerNickname'] as String?;
     return '$nickname 撤回了一条消息';
@@ -393,6 +390,97 @@ MessageInfo messageSentToInfo({
   attachedInfo: '',
   ex: '',
 );
+
+/// 将合并转发 `multiMessage` 中的子消息 JSON 还原为 [MessageInfo]。
+///
+/// 兼容两种序列化来源：
+/// - 本 SDK（Rust `MsgStruct` camelCase）：`clientMsgId` / `sendId` / `groupId` ...
+/// - Go SDK（`openim-sdk-core` `MsgStruct`）：`clientMsgID` / `sendID` / `groupID` ...
+MessageInfo mergeSubMessageFromJson(Map<String, dynamic> json) {
+  String pickString(List<String> keys) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v is String && v.isNotEmpty) return v;
+    }
+    return '';
+  }
+
+  int pickInt(List<String> keys) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v is num) return v.toInt();
+    }
+    return 0;
+  }
+
+  bool pickBool(List<String> keys) {
+    for (final k in keys) {
+      final v = json[k];
+      if (v is bool) return v;
+    }
+    return false;
+  }
+
+  // Go SDK 在 msgHandleByContentType 解析后会把 content 清空、只保留 typed elem
+  // （pictureElem/textElem 等）。这里若 content 为空，则把 typed elem 编码回
+  // content JSON，保证 UI 层按 content 解析仍能拿到图片/文本等数据。
+  var content = pickString(['content']);
+  if (content.isEmpty) {
+    content = _mergeSubElemToContent(json);
+  }
+
+  final sessionType = pickInt(['sessionType']);
+  return MessageInfo(
+    clientMsgId: pickString(['clientMsgID', 'clientMsgId']),
+    serverMsgId: pickString(['serverMsgID', 'serverMsgId']),
+    sendId: pickString(['sendID', 'sendId']),
+    recvId: pickString(['recvID', 'recvId']),
+    groupId: pickString(['groupID', 'groupId']),
+    senderPlatformId: pickInt(['senderPlatformID', 'senderPlatformId']),
+    senderNickname: pickString(['senderNickname']),
+    senderFaceUrl: pickString(['senderFaceUrl', 'senderFaceURL']),
+    sessionType: sessionType != 0 ? sessionType : 1,
+    msgFrom: pickInt(['msgFrom']),
+    contentType: pickInt(['contentType']),
+    content: content,
+    seq: pickInt(['seq']),
+    sendTime: pickInt(['sendTime']),
+    createTime: pickInt(['createTime']),
+    status: pickInt(['status']),
+    isRead: pickBool(['isRead']),
+    attachedInfo: pickString(['attachedInfo']),
+    ex: pickString(['ex']),
+  );
+}
+
+/// Go SDK 会把合并消息子消息的 content 置空、仅保留 typed elem，
+/// 这里把第一个非空 typed elem 编码回 content JSON（对齐官方 Web 的
+/// `message.pictureElem.sourcePicture.url` 读取方式）。
+String _mergeSubElemToContent(Map<String, dynamic> json) {
+  const elemKeys = [
+    'textElem',
+    'pictureElem',
+    'soundElem',
+    'videoElem',
+    'fileElem',
+    'atTextElem',
+    'quoteElem',
+    'mergeElem',
+    'cardElem',
+    'locationElem',
+    'faceElem',
+    'customElem',
+    'advancedTextElem',
+    'markdownTextElem',
+  ];
+  for (final key in elemKeys) {
+    final elem = json[key];
+    if (elem is Map<String, dynamic> && elem.isNotEmpty) {
+      return jsonEncode(elem);
+    }
+  }
+  return '';
+}
 
 /// 按发送时间升序排序，时间相同时按 seq 升序。
 ///

@@ -147,6 +147,10 @@ impl ConnectionApi for OpenIMClient {
         let message_syncer = self.message_syncer.clone();
         let repositories = self.context.repositories.clone();
         tokio::spawn(async move {
+            // 先从本地数据库加载好友/群组到内存缓存，避免增量同步无变更时列表为空
+            friend.load_friends_from_db().await;
+            group.load_groups_from_db().await;
+
             let reinstalled = repositories.sync_version_repo.is_reinstalled().await.unwrap_or(false);
             if reinstalled {
                 let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);

@@ -60,14 +60,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     );
     if (result != null && mounted) {
       final success = await onSave(result);
-      if (success && mounted) {
+      if (!mounted) return;
+      if (success) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('保存成功')));
-      } else if (mounted) {
+      } else {
+        final detail = ref.read(userProfileProvider).error;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('保存失败')));
+        ).showSnackBar(
+          SnackBar(content: Text(detail == null ? '保存失败' : '保存失败: $detail')),
+        );
       }
     }
   }

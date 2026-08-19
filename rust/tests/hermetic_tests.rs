@@ -62,6 +62,58 @@ async fn friend_full_sync_works_without_live_server() {
     assert_eq!(stored[0].friend_user_id, "user_2");
 }
 
+/// 复现并验证：重新登录（新客户端实例、内存缓存为空）时，若增量同步返回“无变更”，
+/// 必须先调用 load_friends_from_db 从本地数据库恢复内存缓存，否则 get_friend_list 为空，
+/// 导致好友列表显示“暂无好友”。
+#[tokio::test]
+async fn friend_list_restores_from_db_when_incremental_has_no_changes() {
+    let server = MockServer::start().await;
+
+    // 首次登录：增量接口返回 full=true，触发全量同步并持久化版本号
+    Mock::given(method("POST"))
+        .and(path("/friend/get_incremental_friends"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_incremental_full.json")).unwrap()))
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/friend/get_friend_list"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_list.json")).unwrap()))
+        .mount(&server)
+        .await;
+
+    let pool = create_pool_memory().await.unwrap();
+    let repos = make_repositories(pool);
+
+    let make_api = || {
+        let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
+        Arc::new(HttpFriendApi::new(http)) as Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi>
+    };
+
+    // 首次登录：内存 + DB + 版本号均有数据
+    let first = FriendService::new(make_api(), repos.clone(), UserId::new("me"), EventHub::new());
+    first.sync_friends_incremental().await.unwrap();
+    assert_eq!(first.get_friend_list().await.len(), 1);
+    let version = repos.sync_version_repo.get_version_sync("local_friends", "me").await.unwrap();
+    assert_eq!(version, Some(("v1".to_string(), 11)));
+
+    // 第二次登录：新客户端实例，内存为空；增量接口返回无变更（wiremock 后挂载者优先匹配）
+    Mock::given(method("POST"))
+        .and(path("/friend/get_incremental_friends"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::from_str::<serde_json::Value>(include_str!("fixtures/friend_incremental_no_change.json")).unwrap()))
+        .mount(&server)
+        .await;
+
+    let second = FriendService::new(make_api(), repos.clone(), UserId::new("me"), EventHub::new());
+    // 修复点：登录时先从本地数据库恢复内存缓存
+    second.load_friends_from_db().await;
+    second.sync_friends_incremental().await.unwrap();
+
+    let friends = second.get_friend_list().await;
+    assert_eq!(friends.len(), 1, "重新登录后好友列表不应为空");
+    assert_eq!(friends[0].user_id, "user_2");
+    assert_eq!(friends[0].nickname, "Alice");
+}
+
 /// 验证 wiremock 会话全量同步响应能被正确解析并写入本地。
 #[tokio::test]
 async fn conversation_full_sync_works_without_live_server() {

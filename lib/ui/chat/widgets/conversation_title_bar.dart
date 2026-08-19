@@ -104,6 +104,7 @@ class ConversationTitleBar extends StatelessWidget
           children: [
             // 左侧：头像 + 名字
             GestureDetector(
+              key: const ValueKey('chat_avatar_button'),
               onTap: onAvatarTap,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
