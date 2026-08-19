@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../generated/rust/constant/enums.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../providers/message_service_provider.dart';
-import 'message_service_notifier.dart';
+import '../../../application/chat/message_service_notifier.dart';
 
 /// 消息列表状态
 class MessageListState {

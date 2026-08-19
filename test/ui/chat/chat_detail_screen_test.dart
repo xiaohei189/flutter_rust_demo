@@ -10,7 +10,7 @@ import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/ui/profile/providers/user_profile_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
-import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;

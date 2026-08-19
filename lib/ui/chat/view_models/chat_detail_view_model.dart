@@ -19,7 +19,7 @@ import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
-import 'message_service_notifier.dart';
+import '../../../application/chat/message_service_notifier.dart';
 
 typedef ChatSendTarget = ({
   String recvId,
