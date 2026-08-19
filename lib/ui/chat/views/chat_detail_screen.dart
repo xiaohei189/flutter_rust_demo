@@ -35,6 +35,7 @@ import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/message_list.dart';
 import '../widgets/menu/message_selection_bar.dart';
 import '../widgets/composer/quote_preview_bar.dart';
+import '../widgets/shared/chat_detail_app_bar.dart';
 
 /// 聊天详情页：顶栏、消息区、底部输入区。
 /// 业务状态由 [ChatDetailViewModel] 管理，页面只保留布局、滚动、选择器与导航。
@@ -852,131 +853,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       },
       child: Scaffold(
         backgroundColor: context.appColors.background,
-        appBar: AppBar(
-          centerTitle: false, // 标题靠左（IM 惯例，避免居中怪异感）
-          leading: IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.arrow_back_ios_new, size: 22),
-                if (unread > 0)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.appColors.danger,
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        unread > 99 ? '99+' : '$unread',
-                        style: TextStyle(
-                          color: context.appColors.onPrimary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () {
-              _onUserGoBack();
-              Navigator.of(context).pop();
-            },
-          ),
-          title: InkWell(
-            onTap: () {
-              AppRouter.goToChatSettings(context, conversation);
-            },
-            child: Row(
-              children: [
-                UserAvatar(user: user, radius: 18),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: context.appColors.textPrimary,
-                        ),
-                      ),
-                      if (isTyping)
-                        Text(
-                          '对方正在输入...',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.primary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        )
-                      else if (_isGroup)
-                        Text(
-                          '群聊',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.textSecondary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        )
-                      else
-                        Text(
-                          switch (online) {
-                            true => '在线',
-                            false => '离线',
-                            null => '未知',
-                          },
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.textSecondary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            Semantics(
-              label: '搜索聊天记录',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.search),
-                tooltip: '搜索聊天记录',
-                onPressed: _showMessageSearch,
-              ),
-            ),
-            Semantics(
-              label: '更多设置',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.more_horiz),
-                tooltip: '更多设置',
-                onPressed: () {
-                  AppRouter.goToChatSettings(context, conversation);
-                },
-              ),
-            ),
-          ],
+        appBar: ChatDetailAppBar(
+          user: user,
+          unread: unread,
+          isTyping: isTyping,
+          isGroup: _isGroup,
+          online: online,
+          onBack: () {
+            _onUserGoBack();
+            Navigator.of(context).pop();
+          },
+          onOpenSettings: () {
+            AppRouter.goToChatSettings(context, conversation);
+          },
+          onSearch: _showMessageSearch,
         ),
         body: _bodyReady
             ? Column(

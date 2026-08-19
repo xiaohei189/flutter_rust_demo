@@ -16,6 +16,8 @@ import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
+import 'at_member_suggestions.dart';
+import 'recording_overlay.dart';
 import '../message_content_type.dart';
 
 /// 输入面板展开状态
@@ -482,33 +484,8 @@ class _ChatInputState extends State<ChatInput> {
     }
   }
 
-  /// 录音状态浮层：默认提示"上滑取消"，上滑后变"松手取消"
-  Widget _buildRecordingOverlay() {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      color: colors.surface.withValues(alpha: 0.92),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            _recordingCancel ? Icons.keyboard_arrow_up : Icons.mic,
-            size: 18,
-            color: _recordingCancel ? colors.danger : colors.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            _recordingCancel ? '松手取消' : '上滑取消',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: _recordingCancel ? colors.danger : colors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  /// 录音状态浮层
+  Widget _buildRecordingOverlay() => RecordingOverlay(cancel: _recordingCancel);
 
   // ==================== Emoji 插入 ====================
 
@@ -601,75 +578,11 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   /// 成员选择列表（输入框上方，随关键字过滤）
-  Widget _buildAtMemberList() {
-    final members = _filteredAtMembers;
-    final colors = context.appColors;
-    return Material(
-      color: colors.surface,
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: colors.divider, width: 0.5),
-          ),
-        ),
-        child: members.isEmpty
-            ? Center(
-                child: Text(
-                  '无匹配成员',
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              )
-            : ListView.builder(
-                itemCount: members.length,
-                itemBuilder: (_, i) {
-                  final member = members[i];
-                  return ListTile(
-                    dense: true,
-                    selected: i == _atSelectionIndex,
-                    selectedTileColor: colors.surfaceMuted,
-                    leading: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: colors.surfaceMuted,
-                      child: member.faceUrl.isNotEmpty
-                          ? ClipOval(
-                              child: AppImage(
-                                source: member.faceUrl,
-                                width: 32,
-                                height: 32,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Icon(
-                              Icons.person,
-                              size: 18,
-                              color: colors.textSecondary,
-                            ),
-                    ),
-                    title: Text(
-                      member.nickname.isNotEmpty
-                          ? member.nickname
-                          : member.userId,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      member.userId,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                    onTap: () => _selectAtMember(member),
-                  );
-                },
-              ),
-      ),
-    );
-  }
+  Widget _buildAtMemberList() => AtMemberSuggestions(
+    members: _filteredAtMembers,
+    selectedIndex: _atSelectionIndex,
+    onSelect: _selectAtMember,
+  );
 
   // ==================== 构建 ====================
 
