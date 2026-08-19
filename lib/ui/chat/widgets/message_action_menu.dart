@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../domain/extensions/message_ext.dart';
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../core/theme/app_theme.dart';
 
 const List<String> kMessageQuickReactions = ['👍', '❤️', '😄', '🙏'];
@@ -14,16 +14,16 @@ const List<String> kMessageQuickReplyEmojis = [
 
 /// 消息操作回调
 class MessageActions {
-  final void Function(MessageInfo message) onCopy;
-  final void Function(MessageInfo message) onRevoke;
-  final void Function(MessageInfo message) onDelete;
-  final void Function(MessageInfo message) onForward;
-  final void Function(MessageInfo message) onQuote;
+  final void Function(ChatMessage message) onCopy;
+  final void Function(ChatMessage message) onRevoke;
+  final void Function(ChatMessage message) onDelete;
+  final void Function(ChatMessage message) onForward;
+  final void Function(ChatMessage message) onQuote;
   final VoidCallback? onMultiSelect;
-  final void Function(MessageInfo message)? onResend;
-  final void Function(MessageInfo message)? onPin;
-  final void Function(MessageInfo message, String emoji)? onReaction;
-  final void Function(MessageInfo message, String text)? onQuickReply;
+  final void Function(ChatMessage message)? onResend;
+  final void Function(ChatMessage message)? onPin;
+  final void Function(ChatMessage message, String emoji)? onReaction;
+  final void Function(ChatMessage message, String text)? onQuickReply;
 
   const MessageActions({
     required this.onCopy,
@@ -43,7 +43,7 @@ class MessageActions {
 void showMessageToolPanel({
   required BuildContext context,
   required Rect anchor,
-  required MessageInfo message,
+  required ChatMessage message,
   required String currentUserId,
   required MessageActions actions,
   Set<String> reactions = const {},
@@ -78,7 +78,7 @@ class _MessageToolPanelOverlay extends StatelessWidget {
   });
 
   final Rect anchor;
-  final MessageInfo message;
+  final ChatMessage message;
   final String currentUserId;
   final MessageActions actions;
   final Set<String> reactions;
@@ -161,7 +161,7 @@ class _MessageToolPanel extends StatefulWidget {
     required this.onClose,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final String currentUserId;
   final MessageActions actions;
   final Set<String> reactions;
@@ -421,7 +421,7 @@ class _MessageToolPanelState extends State<_MessageToolPanel> {
         .toList();
   }
 
-  void _runAction(void Function(MessageInfo message) action) {
+  void _runAction(void Function(ChatMessage message) action) {
     widget.onClose();
     action(widget.message);
   }

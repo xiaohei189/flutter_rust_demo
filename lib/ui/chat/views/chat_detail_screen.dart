@@ -10,7 +10,7 @@ import '../../../domain/models/group_member.dart';
 import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
 import '../../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -418,28 +418,28 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Future<void> _sendCardMessage() => _mediaActions.sendCardMessage(context);
 
   Future<void> _revokeMessage(dynamic msg) async {
-    final ok = await _viewModel?.revokeMessage(msg as MessageInfo) ?? false;
+    final ok = await _viewModel?.revokeMessage(msg as ChatMessage) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '撤回失败');
   }
 
   Future<void> _deleteMessage(dynamic msg) async {
-    final ok = await _viewModel?.deleteMessage(msg as MessageInfo) ?? false;
+    final ok = await _viewModel?.deleteMessage(msg as ChatMessage) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '删除失败');
   }
 
-  Future<void> _resendMessage(MessageInfo msg) async {
+  Future<void> _resendMessage(ChatMessage msg) async {
     final ok = await _viewModel?.resendMessage(msg) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '消息重发失败');
   }
 
-  void _copyMessage(MessageInfo msg) {
+  void _copyMessage(ChatMessage msg) {
     Clipboard.setData(ClipboardData(text: msg.content));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
     );
   }
 
-  void _toggleMessageReaction(MessageInfo msg, String emoji) {
+  void _toggleMessageReaction(ChatMessage msg, String emoji) {
     setState(() {
       final groups = List<MessageReactionGroup>.from(
         _messageReactions[msg.clientMsgId] ?? const [],
@@ -474,7 +474,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     });
   }
 
-  void _toggleMessagePin(MessageInfo msg) {
+  void _toggleMessagePin(ChatMessage msg) {
     final isPinned = _pinnedMessageIds.contains(msg.clientMsgId);
     setState(() {
       if (isPinned) {
@@ -491,10 +491,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _sendQuickReply(MessageInfo msg, String text) =>
+  Future<void> _sendQuickReply(ChatMessage msg, String text) =>
       _sendMessage(text, MessageContentType.text);
 
-  MessageActions _buildMessageActions(MessageInfo msg) {
+  MessageActions _buildMessageActions(ChatMessage msg) {
     return MessageActions(
       onCopy: _copyMessage,
       onRevoke: _revokeMessage,
@@ -509,7 +509,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _forwardMessage(MessageInfo msg) async {
+  Future<void> _forwardMessage(ChatMessage msg) async {
     final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
       context,
       title: '转发给',
@@ -531,7 +531,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  void _handleMessageTap(MessageInfo msg) {
+  void _handleMessageTap(ChatMessage msg) {
     final state = _chatState;
     if (state.selectMode) {
       _viewModel?.toggleMessageSelection(msg);
@@ -588,7 +588,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  Future<void> _showFileActions(MessageInfo msg) async {
+  Future<void> _showFileActions(ChatMessage msg) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: context.appColors.surface,
@@ -639,7 +639,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  void _showLocationDetail(MessageInfo msg) {
+  void _showLocationDetail(ChatMessage msg) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(

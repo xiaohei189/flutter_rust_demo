@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/services/navigation_service.dart';
 import '../domain/models/conversation.dart';
-import '../generated/rust/model/message.dart' show MessageInfo;
+import '../domain/models/chat_message.dart' show ChatMessage;
 import '../ui/shared/views/route_error_page.dart';
 import 'app_paths.dart';
 import 'auth_routes.dart';
@@ -196,7 +196,7 @@ class AppRouter {
   /// 导航到合并转发消息详情页
   static Future<T?> goToMergeMessage<T>(
     BuildContext context,
-    MessageInfo message,
+    ChatMessage message,
   ) {
     return context.push<T>(AppPaths.mergeMessage, extra: message);
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/extensions/message_ext.dart';
-import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
 
 class QuoteMessagePreview extends StatelessWidget {
@@ -11,7 +11,7 @@ class QuoteMessagePreview extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -68,7 +68,7 @@ class QuoteMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override

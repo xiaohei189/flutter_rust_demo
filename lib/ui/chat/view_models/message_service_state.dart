@@ -1,7 +1,8 @@
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+
 import '../../../generated/rust/model/user.dart' show UserInfo;
 
 /// MessageService 的状态类
@@ -11,7 +12,7 @@ class MessageServiceState {
   final int syncProgress;
   final String currentUserId;
   final List<Conversation> conversations;
-  final Map<String, List<MessageInfo>> messages;
+  final Map<String, List<ChatMessage>> messages;
   final Map<String, UserInfo> userProfiles;
   final UserInfo? loginUserProfile;
   final bool isInitializing;
@@ -52,7 +53,7 @@ class MessageServiceState {
     int? syncProgress,
     String? currentUserId,
     List<Conversation>? conversations,
-    Map<String, List<MessageInfo>>? messages,
+    Map<String, List<ChatMessage>>? messages,
     Map<String, UserInfo>? userProfiles,
     UserInfo? loginUserProfile,
     bool? isInitializing,

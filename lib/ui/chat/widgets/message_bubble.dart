@@ -6,7 +6,7 @@ import '../../../domain/models/message.dart';
 import '../../../domain/models/user.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
@@ -25,14 +25,14 @@ class MessageBubble extends StatelessWidget {
   static final DateFormat _monthDayFormat = DateFormat('MM月dd日');
   static final DateFormat _fullDateFormat = DateFormat('yyyy年MM月dd日');
 
-  final MessageInfo message;
+  final ChatMessage message;
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
   final UserInfo? cachedSenderProfile;
   final UserInfo? cachedCurrentUserProfile;
-  final void Function(MessageInfo message)? onLongPress;
-  final void Function(MessageInfo message)? onTap;
+  final void Function(ChatMessage message)? onLongPress;
+  final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;
   final List<MessageReactionGroup> reactionGroups;
   final int? uploadProgress;
@@ -377,7 +377,7 @@ class MessageBubble extends StatelessWidget {
 
 // ==================== 预览 ====================
 
-Widget _previewBubble(MessageInfo message) {
+Widget _previewBubble(ChatMessage message) {
   return Padding(
     padding: const EdgeInsets.all(16),
     child: MessageBubble(

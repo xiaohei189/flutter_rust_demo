@@ -2,6 +2,7 @@ import 'dart:typed_data' show Int32List;
 
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
+import '../../domain/models/chat_message.dart' show ChatMessage;
 import '../../generated/rust/client.dart';
 import '../../generated/rust/constant/enums.dart' show SessionType;
 import '../../generated/rust/ffi/client.dart';
@@ -11,7 +12,7 @@ import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
 import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../generated/rust/model/message.dart' show MessageInfo;
+
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../../generated/rust/model/user.dart' show UserInfo;
 
@@ -147,7 +148,7 @@ abstract class MessageRepository {
   });
 
   Future<MsgStruct> resendMessage({
-    required MessageInfo message,
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
   });
@@ -530,7 +531,7 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<MsgStruct> resendMessage({
-    required MessageInfo message,
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
   }) {

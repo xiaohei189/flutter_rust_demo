@@ -4,7 +4,7 @@ import 'package:flutter_rust_demo/data/services/im_client.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../generated/rust/event/events/conversation.dart';
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
@@ -175,7 +175,7 @@ class MessageServiceConversationController {
       service.currentState.conversations,
     );
     newConversations.removeWhere((c) => c.conversationId == conversationId);
-    final newMessages = Map<String, List<MessageInfo>>.from(
+    final newMessages = Map<String, List<ChatMessage>>.from(
       service.currentState.messages,
     );
     newMessages.remove(conversationId);

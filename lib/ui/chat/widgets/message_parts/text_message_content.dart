@@ -3,7 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../../../../domain/extensions/message_ext.dart';
-import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
 
 class TextMessageContent extends StatelessWidget {
@@ -13,7 +13,7 @@ class TextMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -35,7 +35,7 @@ class AtMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -57,7 +57,7 @@ class MarkdownMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -143,7 +143,7 @@ class MarkdownMessageContent extends StatelessWidget {
 class FaceMessageContent extends StatelessWidget {
   const FaceMessageContent({super.key, required this.message});
 
-  final MessageInfo message;
+  final ChatMessage message;
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +157,7 @@ class FaceMessageContent extends StatelessWidget {
 class SystemMessageContent extends StatelessWidget {
   const SystemMessageContent({super.key, required this.message});
 
-  final MessageInfo message;
+  final ChatMessage message;
 
   @override
   Widget build(BuildContext context) {

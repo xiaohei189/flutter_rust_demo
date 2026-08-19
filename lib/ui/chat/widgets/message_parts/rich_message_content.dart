@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/extensions/message_ext.dart';
-import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
 
 class CardMessageContent extends StatelessWidget {
@@ -11,7 +11,7 @@ class CardMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -106,7 +106,7 @@ class MergeMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -191,7 +191,7 @@ class LocationMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override
@@ -262,7 +262,7 @@ class CustomMessageContent extends StatelessWidget {
     required this.isFromMe,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final bool isFromMe;
 
   @override

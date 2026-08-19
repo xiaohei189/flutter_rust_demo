@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt, MessageReceipt;
 import '../../../generated/rust/model/local.dart' show LocalConversation;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+
 import 'message_service_state.dart';
 
 /// 消息与会话状态变更的纯函数集合。
@@ -13,15 +14,15 @@ class MessageServiceReducer {
   static MessageServiceState appendIncomingMessage(
     MessageServiceState state,
     String conversationId,
-    MessageInfo message,
+    ChatMessage message,
   ) {
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     final exists = list.any((m) => m.clientMsgId == message.clientMsgId);
     if (!exists) {
       list.add(message);
     }
-    newMessages[conversationId] = List<MessageInfo>.from(list);
+    newMessages[conversationId] = List<ChatMessage>.from(list);
     return state.copyWith(messages: newMessages);
   }
 
@@ -48,7 +49,7 @@ class MessageServiceReducer {
     required String revokerNickname,
     required String sourceMessageSenderNickname,
   }) {
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     final list = newMessages[conversationId];
     if (list == null || list.isEmpty) return state;
 
@@ -63,8 +64,8 @@ class MessageServiceReducer {
       (m) => m.clientMsgId == clientMsgId || m.seq.toInt() == seq,
     );
     if (idx >= 0) {
-      final updated = List<MessageInfo>.from(list);
-      updated[idx] = updated[idx].copyMessageInfo(
+      final updated = List<ChatMessage>.from(list);
+      updated[idx] = updated[idx].copyWith(
         content: revokedContent,
         contentType: 2101,
         status: 4,
@@ -82,7 +83,7 @@ class MessageServiceReducer {
     final msgIds = receipts.expand((r) => r.msgIds).toSet();
     if (msgIds.isEmpty) return state;
 
-    final newMessages = <String, List<MessageInfo>>{};
+    final newMessages = <String, List<ChatMessage>>{};
     var changed = false;
     for (final entry in state.messages.entries) {
       final list = entry.value;
@@ -93,7 +94,7 @@ class MessageServiceReducer {
       newMessages[entry.key] = list
           .map(
             (m) => msgIds.contains(m.clientMsgId)
-                ? m.copyMessageInfo(isRead: true)
+                ? m.copyWith(isRead: true)
                 : m,
           )
           .toList();
@@ -112,7 +113,7 @@ class MessageServiceReducer {
     if (current == null || ids.isEmpty) return state;
     final updated = current.where((m) => !ids.contains(m.clientMsgId)).toList();
     if (updated.length == current.length) return state;
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     newMessages[conversationId] = updated;
     return state.copyWith(messages: newMessages);
   }
@@ -121,7 +122,7 @@ class MessageServiceReducer {
     MessageServiceState state,
     String clientMsgId,
   ) {
-    final newMessages = <String, List<MessageInfo>>{};
+    final newMessages = <String, List<ChatMessage>>{};
     var changed = false;
     for (final entry in state.messages.entries) {
       final list = entry.value;
@@ -130,8 +131,8 @@ class MessageServiceReducer {
         newMessages[entry.key] = list;
         continue;
       }
-      final updated = List<MessageInfo>.from(list);
-      updated[idx] = updated[idx].copyMessageInfo(status: 3);
+      final updated = List<ChatMessage>.from(list);
+      updated[idx] = updated[idx].copyWith(status: 3);
       newMessages[entry.key] = updated;
       changed = true;
     }
@@ -223,7 +224,7 @@ class MessageServiceReducer {
     if (current == null) return state;
     final updated = current.where((m) => m.clientMsgId != clientMsgId).toList();
     if (updated.length == current.length) return state;
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     newMessages[conversationId] = updated;
     return state.copyWith(messages: newMessages);
   }

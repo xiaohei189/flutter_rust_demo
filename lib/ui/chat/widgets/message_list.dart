@@ -7,7 +7,7 @@ import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/user.dart';
 import '../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../generated/rust/model/user.dart' show UserInfo;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
@@ -41,7 +41,7 @@ class MessageList extends StatefulWidget {
     this.messageReactions = const {},
   });
 
-  final List<MessageInfo> messages;
+  final List<ChatMessage> messages;
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
@@ -49,14 +49,14 @@ class MessageList extends StatefulWidget {
   final bool isLoading;
   final Map<String, UserInfo>? cachedSenderProfiles;
   final UserInfo? cachedCurrentUserProfile;
-  final void Function(MessageInfo message)? onMessageLongPress;
-  final void Function(MessageInfo message)? onMessageVisible;
-  final void Function(MessageInfo message)? onMessageTap;
+  final void Function(ChatMessage message)? onMessageLongPress;
+  final void Function(ChatMessage message)? onMessageVisible;
+  final void Function(ChatMessage message)? onMessageTap;
   final bool selectMode;
   final Set<String> selectedClientMsgIds;
   final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
-  final MessageActions Function(MessageInfo message)? messageActionsBuilder;
+  final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final Map<String, List<MessageReactionGroup>> messageReactions;
 
   @override
@@ -68,7 +68,7 @@ class MessageListState extends State<MessageList> {
   static const int _maxMessageKeys = 300;
 
 
-  void _pruneMessageKeys(List<MessageInfo> messages) {
+  void _pruneMessageKeys(List<ChatMessage> messages) {
     if (_messageKeys.length <= _maxMessageKeys) return;
     final recentIds = messages
         .skip(messages.length - _maxMessageKeys)
@@ -90,7 +90,7 @@ class MessageListState extends State<MessageList> {
     );
   }
 
-  void _openMessageToolPanel(MessageInfo message, GlobalKey messageKey) {
+  void _openMessageToolPanel(ChatMessage message, GlobalKey messageKey) {
     if (widget.selectMode) return;
     final actions = widget.messageActionsBuilder?.call(message);
     if (actions == null) {
@@ -212,7 +212,7 @@ class MessageListState extends State<MessageList> {
   }
 
   /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
-  static List<String?> _buildDateLabels(List<MessageInfo> messages) {
+  static List<String?> _buildDateLabels(List<ChatMessage> messages) {
     final labels = List<String?>.filled(messages.length, null);
     final now = DateTime.now();
     for (var i = 0; i < messages.length; i++) {
@@ -287,15 +287,15 @@ class _VisibleMessageBubble extends StatelessWidget {
     this.groupReadReceipts,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
   final UserInfo? cachedSenderProfile;
   final UserInfo? cachedCurrentUserProfile;
-  final void Function(MessageInfo message)? onLongPress;
-  final void Function(MessageInfo message)? onVisible;
-  final void Function(MessageInfo message)? onTap;
+  final void Function(ChatMessage message)? onLongPress;
+  final void Function(ChatMessage message)? onVisible;
+  final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;
   final List<MessageReactionGroup> reactionGroups;
   final Map<String, int>? uploadProgress;

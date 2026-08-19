@@ -4,7 +4,7 @@ import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.d
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import '../../support/fakes/fake_message_repository.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart';
+import 'package:flutter_rust_demo/generated/rust/model/message.dart' show MessageInfo;
 
 MessageInfo _makeMessage(String clientMsgId, int seq, int sendTime) =>
     MessageInfo(

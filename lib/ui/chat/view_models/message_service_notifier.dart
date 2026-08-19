@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
+import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/generated/rust/model/msg_struct.dart'
@@ -12,7 +14,7 @@ import 'package:flutter_rust_demo/generated/rust/model/local.dart'
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart'
-    show MessageInfoExt, sortMessagesByTime;
+    show ChatMessageExt, sortMessagesByTime;
 import 'package:flutter_rust_demo/generated/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/friend.dart';
@@ -26,7 +28,7 @@ import 'package:flutter_rust_demo/data/services/local_notification_service.dart'
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'message_service_connection_controller.dart';
 import 'message_service_conversation_controller.dart';
-import 'message_service_helpers.dart';
+
 import 'message_service_reducer.dart';
 import 'message_service_social_controller.dart';
 
@@ -85,18 +87,18 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       _applyConversationEvent(incoming);
 
   /// 获取指定会话的消息列表
-  List<MessageInfo> getMessages(String conversationId) {
+  List<ChatMessage> getMessages(String conversationId) {
     return List.unmodifiable(
       sortMessagesByTime(state.messages[conversationId] ?? const []),
     );
   }
 
   /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）
-  void upsertSentMessage(String conversationId, MsgStruct result) {
-    final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+  void upsertSentMessage(String conversationId, ChatMessage result) {
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     final list = newMessages.putIfAbsent(conversationId, () => []);
     final idx = list.indexWhere((m) => m.clientMsgId == result.clientMsgId);
-    final msgInfo = MessageInfo(
+    final msgInfo = ChatMessage(
       clientMsgId: result.clientMsgId,
       serverMsgId: result.serverMsgId,
       sendId: result.sendId,
@@ -125,7 +127,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       seenClientMsgIds.add(result.clientMsgId);
       list.add(msgInfo);
     }
-    newMessages[conversationId] = List<MessageInfo>.from(list);
+    newMessages[conversationId] = List<ChatMessage>.from(list);
     state = state.copyWith(messages: newMessages);
   }
 
@@ -233,24 +235,24 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         return !result.isEnd;
       }
 
-      final newMessages = Map<String, List<MessageInfo>>.from(state.messages);
+      final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
       final currentMessages = newMessages.putIfAbsent(conversationId, () => []);
       final beforeCount = currentMessages.length;
 
-      // result.messages 已经是 List<MessageInfo>，直接使用
-      currentMessages.insertAll(0, result.messages);
+      final incoming = messagesFromMessageInfos(result.messages);
+      currentMessages.insertAll(0, incoming);
 
       final seenIds = <String>{};
       final merged = currentMessages
           .where((msg) => seenIds.add(msg.clientMsgId))
           .toList();
-      final dedupRemoved = beforeCount + result.messages.length - merged.length;
+      final dedupRemoved = beforeCount + incoming.length - merged.length;
       newMessages[conversationId] = merged;
 
       final firstSeq = result.messages.isNotEmpty
           ? result.messages.first.seq
           : 0;
-      final lastSeq = result.messages.isNotEmpty ? result.messages.last.seq : 0;
+      final lastSeq = incoming.isNotEmpty ? incoming.last.seq : 0;
 
       appLog.i(
         '[MSG] Service 加载完成: conv=$conversationId start=$startClientMsgId '
@@ -627,7 +629,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 重发一条发送失败的消息（Rust 侧会生成新 clientMsgId）。
   Future<MsgStruct> resendMessage({
-    required MessageInfo message,
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
   }) async {
@@ -701,20 +703,21 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
   void _appendIncomingMessage(String conversationId, MessageInfo message) {
+    final chatMessage = messageFromMessageInfo(message);
     if (AppLifecycleService.instance.isBackground.value) {
       unawaited(
         LocalNotificationService.instance.showMessageNotification(
-          title: message.senderNickname.isNotEmpty
+          title: chatMessage.senderNickname.isNotEmpty
               ? message.senderNickname
               : '新消息',
-          body: message.displayText,
+          body: chatMessage.displayText,
         ),
       );
     }
     state = MessageServiceReducer.appendIncomingMessage(
       state,
       conversationId,
-      message,
+      chatMessage,
     );
   }
 

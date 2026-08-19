@@ -1,14 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../generated/rust/constant/enums.dart';
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../data/mappers/message_mapper.dart' show messageFromMsgStruct;
 import '../../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../providers/message_service_provider.dart';
 import 'message_service_notifier.dart';
 
 /// 消息列表状态
 class MessageListState {
-  final List<MessageInfo> messages;
+  final List<ChatMessage> messages;
   final bool isLoading;
   final bool hasMore;
   final String? error;
@@ -21,7 +22,7 @@ class MessageListState {
   });
 
   MessageListState copyWith({
-    List<MessageInfo>? messages,
+    List<ChatMessage>? messages,
     bool? isLoading,
     bool? hasMore,
     String? error,
@@ -34,9 +35,9 @@ class MessageListState {
     );
   }
 
-  MessageInfo? get latestMessage => messages.isNotEmpty ? messages.last : null;
+  ChatMessage? get latestMessage => messages.isNotEmpty ? messages.last : null;
 
-  MessageInfo? get earliestMessage =>
+  ChatMessage? get earliestMessage =>
       messages.isNotEmpty ? messages.first : null;
 }
 
@@ -152,7 +153,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   }
 
   void _addSentMessage(MsgStruct result) {
-    _messageService.upsertSentMessage(arg, result);
+    _messageService.upsertSentMessage(arg, messageFromMsgStruct(result));
     _syncState();
   }
 
@@ -291,7 +292,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   }
 
   Future<bool> resendMessage({
-    required MessageInfo message,
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
   }) async {

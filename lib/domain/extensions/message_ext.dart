@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import '../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../generated/rust/model/message.dart' show MessageInfo;
+import '../models/chat_message.dart' show ChatMessage;
 import '../models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
 
 /// 给 Rust 生成的 MessageInfo 添加 UI 便利方法
-extension MessageInfoExt on MessageInfo {
+extension ChatMessageExt on ChatMessage {
   /// 消息类型枚举
   MessageType get messageType => messageTypeFromContentType(contentType);
 
@@ -209,35 +209,7 @@ extension MessageInfoExt on MessageInfo {
   String get customData => parsedContent['data'] as String? ?? '';
   String get customExtension => parsedContent['extension'] as String? ?? '';
 
-  /// 生成 UI 事件更新后的新消息对象（Rust 生成的 MessageInfo 没有 copyWith）。
-  MessageInfo copyMessageInfo({
-    int? status,
-    bool? isRead,
-    String? content,
-    int? contentType,
-  }) {
-    return MessageInfo(
-      clientMsgId: clientMsgId,
-      serverMsgId: serverMsgId,
-      sendId: sendId,
-      recvId: recvId,
-      groupId: groupId,
-      senderPlatformId: senderPlatformId,
-      senderNickname: senderNickname,
-      senderFaceUrl: senderFaceUrl,
-      sessionType: sessionType,
-      msgFrom: msgFrom,
-      contentType: contentType ?? this.contentType,
-      content: content ?? this.content,
-      seq: seq,
-      sendTime: sendTime,
-      createTime: createTime,
-      status: status ?? this.status,
-      isRead: isRead ?? this.isRead,
-      attachedInfo: attachedInfo,
-      ex: ex,
-    );
-  }
+
 
   // ---- 时长格式化 ----
   String _formatDuration(int seconds) {
@@ -355,7 +327,7 @@ String? _firstReadableMessageField(Map<String, dynamic> map) {
 }
 
 /// 从 messageSent 事件构造 MessageInfo
-MessageInfo messageSentToInfo({
+ChatMessage messageSentToChatMessage({
   required String clientMsgId,
   required String serverMsgId,
   required int sendTimeMs,
@@ -369,7 +341,7 @@ MessageInfo messageSentToInfo({
   required String content,
   required String senderNickname,
   required String senderFaceUrl,
-}) => MessageInfo(
+}) => ChatMessage(
   clientMsgId: clientMsgId,
   serverMsgId: serverMsgId,
   sendId: sendId,
@@ -396,7 +368,7 @@ MessageInfo messageSentToInfo({
 /// 兼容两种序列化来源：
 /// - 本 SDK（Rust `MsgStruct` camelCase）：`clientMsgId` / `sendId` / `groupId` ...
 /// - Go SDK（`openim-sdk-core` `MsgStruct`）：`clientMsgID` / `sendID` / `groupID` ...
-MessageInfo mergeSubMessageFromJson(Map<String, dynamic> json) {
+ChatMessage mergeSubMessageFromJson(Map<String, dynamic> json) {
   String pickString(List<String> keys) {
     for (final k in keys) {
       final v = json[k];
@@ -430,7 +402,7 @@ MessageInfo mergeSubMessageFromJson(Map<String, dynamic> json) {
   }
 
   final sessionType = pickInt(['sessionType']);
-  return MessageInfo(
+  return ChatMessage(
     clientMsgId: pickString(['clientMsgID', 'clientMsgId']),
     serverMsgId: pickString(['serverMsgID', 'serverMsgId']),
     sendId: pickString(['sendID', 'sendId']),
@@ -486,8 +458,8 @@ String _mergeSubElemToContent(Map<String, dynamic> json) {
 ///
 /// UI 使用 reverse ListView，列表必须保持“旧消息在前、新消息在后”，
 /// 这样渲染时最新消息才会出现在底部。
-List<MessageInfo> sortMessagesByTime(List<MessageInfo> messages) {
-  final list = List<MessageInfo>.from(messages);
+List<ChatMessage> sortMessagesByTime(List<ChatMessage> messages) {
+  final list = List<ChatMessage>.from(messages);
   list.sort((a, b) {
     final time = a.sendTime.toInt().compareTo(b.sendTime.toInt());
     if (time != 0) return time;

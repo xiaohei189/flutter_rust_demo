@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import '../../../../domain/extensions/message_ext.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../domain/models/user.dart';
-import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../providers/message_service_provider.dart';
@@ -20,7 +20,7 @@ import '../widgets/message_bubble.dart';
 /// 图片/语音/视频等真实内容）；`multiMessage` 缺失时回退到 `abstractList`
 /// 摘要文本行。通过 [AppRouter.goToMergeMessage] 以路由打开。
 class MergeMessageDetailScreen extends ConsumerWidget {
-  final MessageInfo message;
+  final ChatMessage message;
 
   const MergeMessageDetailScreen({super.key, required this.message});
 
@@ -106,7 +106,7 @@ class MergeMessageDetailScreen extends ConsumerWidget {
   Widget _buildMessageBubble(
     BuildContext context,
     WidgetRef ref,
-    MessageInfo sub,
+    ChatMessage sub,
   ) {
     final currentUserId = ref.read(messageServiceProvider).currentUserId;
     final isFromMe = sub.sendId.isNotEmpty && sub.sendId == currentUserId;
@@ -241,7 +241,7 @@ class _SubMessage {
 }
 
 class _MergeItem {
-  final MessageInfo? message;
+  final ChatMessage? message;
   final _SubMessage? fallback;
 
   const _MergeItem.message(this.message) : fallback = null;

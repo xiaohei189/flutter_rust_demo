@@ -13,18 +13,19 @@ import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart';
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/data/mappers/message_mapper.dart' show messageInfoFromChatMessage;
 import 'package:flutter_rust_demo/generated/rust/model/user.dart';
 
 const _convId = 'si_user_a_user_b';
 
-MessageInfo _makeMessage(
+ChatMessage _makeMessage(
   String clientMsgId,
   String content,
   int seq,
   int sendTime,
   String sendId,
-) => MessageInfo(
+) => ChatMessage(
   clientMsgId: clientMsgId,
   serverMsgId: '',
   sendId: sendId,
@@ -162,7 +163,7 @@ void main() {
     service.onMessageEventForTest(
       MessageEvent.newMessage(
         conversationId: _convId,
-        message: _makeMessage('m2', '新消息', 2, 2000, 'user_b'),
+        message: messageInfoFromChatMessage(_makeMessage('m2', '新消息', 2, 2000, 'user_b')),
       ),
     );
     await tester.pump();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../previews/app_theme_preview.dart';
 import '../../previews/fake_data.dart';
 import '../../core/theme/app_theme.dart';
@@ -13,7 +13,7 @@ class QuotePreviewBar extends StatelessWidget {
     required this.onClose,
   });
 
-  final MessageInfo message;
+  final ChatMessage message;
   final VoidCallback onClose;
 
   @override

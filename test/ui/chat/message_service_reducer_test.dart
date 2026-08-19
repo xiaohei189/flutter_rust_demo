@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/generated/rust/model/local.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart';
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_reducer.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/message_service_state.dart';
 
-MessageInfo _message(String id) => MessageInfo(
+ChatMessage _message(String id) => ChatMessage(
   clientMsgId: id,
   serverMsgId: '',
   sendId: 'u1',
