@@ -1,5 +1,7 @@
 import '../../domain/models/chat_message.dart';
+import '../../domain/models/message_search_result.dart';
 import '../../generated/rust/model/message.dart' show MessageInfo;
+import '../../generated/rust/model/local.dart' show LocalChatLog;
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 
 /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
@@ -86,5 +88,30 @@ MessageInfo messageInfoFromChatMessage(ChatMessage message) {
     isRead: message.isRead,
     attachedInfo: message.attachedInfo,
     ex: message.ex,
+  );
+}
+MessageSearchResult messageSearchResultFromLocalChatLog(LocalChatLog raw) {
+  return MessageSearchResult(
+    conversationId: raw.conversationId,
+    clientMsgId: raw.clientMsgId,
+    serverMsgId: raw.serverMsgId,
+    sendId: raw.sendId,
+    recvId: raw.recvId,
+    senderPlatformId: raw.senderPlatformId,
+    senderNickName: raw.senderNickName,
+    senderFaceUrl: raw.senderFaceUrl,
+    sessionType: raw.sessionType,
+    msgFrom: raw.msgFrom,
+    contentType: raw.contentType,
+    content: raw.content,
+    isRead: raw.isRead != 0,
+    status: raw.status,
+    seq: raw.seq,
+    sendTime: normalizeMessageSendTime(raw.sendTime.toInt()),
+    createTime: normalizeMessageSendTime(raw.createTime.toInt()),
+    attachedInfo: raw.attachedInfo,
+    ex: raw.ex,
+    localEx: raw.localEx,
+    groupId: raw.groupId,
   );
 }

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/extensions/message_ext.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../providers/chat_detail_provider.dart';
@@ -19,7 +19,7 @@ class ChatMessageSearchSheet extends ConsumerStatefulWidget {
   });
 
   final String conversationId;
-  final ValueChanged<LocalChatLog>? onMessageTap;
+  final ValueChanged<MessageSearchResult>? onMessageTap;
 
   @override
   ConsumerState<ChatMessageSearchSheet> createState() =>
@@ -30,7 +30,7 @@ class _ChatMessageSearchSheetState
     extends ConsumerState<ChatMessageSearchSheet> {
   final TextEditingController _controller = TextEditingController();
   Timer? _debounce;
-  List<LocalChatLog> _results = const [];
+  List<MessageSearchResult> _results = const [];
   bool _searching = false;
   String? _error;
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../../generated/rust/model/local.dart' show LocalChatLog;
+import '../models/message_search_result.dart' show MessageSearchResult;
 import '../models/chat_message.dart' show ChatMessage;
 import '../models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
@@ -238,7 +238,7 @@ extension ChatMessageExt on ChatMessage {
 }
 
 /// 给 Rust 生成的 LocalChatLog 添加 UI 展示文本
-extension LocalChatLogExt on LocalChatLog {
+extension MessageSearchResultExt on MessageSearchResult {
   MessageType get messageType => messageTypeFromContentType(contentType);
 
   Map<String, dynamic> get parsedContent {

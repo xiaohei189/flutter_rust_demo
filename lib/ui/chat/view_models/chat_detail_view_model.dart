@@ -8,7 +8,7 @@ import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
@@ -596,7 +596,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     return ok;
   }
 
-  Future<List<LocalChatLog>> searchLocalMessages(String keyword) {
+  Future<List<MessageSearchResult>> searchLocalMessages(String keyword) {
     return _messageService.searchLocalMessages(
       conversationId: arg,
       keyword: keyword,

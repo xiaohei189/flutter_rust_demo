@@ -9,7 +9,7 @@ import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/group_member.dart';
 import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
@@ -376,7 +376,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  void _locateMessage(LocalChatLog log) {
+  void _locateMessage(MessageSearchResult log) {
     final messages = ref
         .read(messageListProvider(widget.conversationId))
         .messages;

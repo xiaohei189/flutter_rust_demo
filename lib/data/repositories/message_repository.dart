@@ -3,6 +3,7 @@ import 'dart:typed_data' show Int32List;
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/chat_message.dart' show ChatMessage, MessageHistoryPage;
+import '../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../mappers/message_mapper.dart';
 import '../../generated/rust/client.dart';
 import '../../generated/rust/constant/enums.dart' show SessionType;
@@ -53,7 +54,7 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
-  Future<List<LocalChatLog>> searchLocalMessages({
+  Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
     int offset = 0,
@@ -311,14 +312,14 @@ class MessageRepositoryImpl implements MessageRepository {
     ));
   }
 
-  @override
-  Future<List<LocalChatLog>> searchLocalMessages({
+    @override
+  Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
     int offset = 0,
     int count = 50,
-  }) {
-    return _client.searchLocalMessages(
+  }) async {
+    final raw = await _client.searchLocalMessages(
       req: SearchMessagesReq(
         conversationId: conversationId,
         keyword: keyword.trim(),
@@ -330,6 +331,7 @@ class MessageRepositoryImpl implements MessageRepository {
         count: count,
       ),
     );
+    return raw.map(messageSearchResultFromLocalChatLog).toList(growable: false);
   }
 
   @override

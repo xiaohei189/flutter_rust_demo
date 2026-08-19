@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
-import 'package:flutter_rust_demo/generated/rust/model/local.dart'
-    show LocalChatLog;
+import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 
 void main() {
@@ -295,8 +294,8 @@ void main() {
       expect(sortMessagesByTime([]), isEmpty);
     });
   });
-  group('LocalChatLogExt.displayText', () {
-    LocalChatLog log0(int contentType, String content) => LocalChatLog(
+  group('MessageSearchResultExt.displayText', () {
+    MessageSearchResult log0(int contentType, String content) => MessageSearchResult(
       conversationId: 'c1',
       clientMsgId: 'id1',
       serverMsgId: 'sid1',
@@ -309,7 +308,7 @@ void main() {
       msgFrom: 0,
       contentType: contentType,
       content: content,
-      isRead: 0,
+      isRead: false,
       status: 2,
       seq: 1,
       sendTime: 1700000000000,

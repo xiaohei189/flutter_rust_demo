@@ -6,7 +6,7 @@ import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
@@ -250,7 +250,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  Widget _buildMessageItem(LocalChatLog log) {
+  Widget _buildMessageItem(MessageSearchResult log) {
     return ListTile(
       leading: UserAvatar(
         user: User(
@@ -270,7 +270,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Future<void> _forwardMessage(LocalChatLog log) async {
+  Future<void> _forwardMessage(MessageSearchResult log) async {
     final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
       context,
       title: '转发给',

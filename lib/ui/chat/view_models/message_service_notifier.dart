@@ -3,12 +3,13 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
 import 'package:flutter_rust_demo/generated/rust/model/user.dart' show UserInfo;
 import 'package:flutter_rust_demo/generated/rust/model/local.dart'
-    show LocalChatLog, LocalConversation;
+    show LocalConversation;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart'
@@ -324,7 +325,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   }
 
   /// 搜索当前会话的本地消息
-  Future<List<LocalChatLog>> searchLocalMessages({
+  Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
     int offset = 0,
