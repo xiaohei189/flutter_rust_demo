@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/ui/chat/view_models/chat_list_view_model.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/chat_list_item.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/list/chat_list_item.dart';
 import 'package:flutter_rust_demo/ui/previews/fake_data.dart';
 
 void main() {

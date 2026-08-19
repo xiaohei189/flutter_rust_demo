@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-import '../../../domain/extensions/message_ext.dart';
-import '../../../domain/models/message.dart' show MessageType;
-import '../../../domain/models/user.dart';
-import '../../../generated/rust/event/events/message.dart'
+import '../../../../domain/extensions/message_ext.dart';
+import '../../../../domain/models/message.dart' show MessageType;
+import '../../../../domain/models/user.dart';
+import '../../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
-import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../domain/models/user_profile.dart' show UserProfile;
-import '../../previews/app_theme_preview.dart';
-import '../../previews/fake_data.dart';
-import '../../core/theme/app_theme.dart';
-import 'message_action_menu.dart' show MessageActions, showMessageToolPanel;
-import 'message_bubble.dart';
-import 'message_hover_toolbar.dart' show MessageReactionGroup;
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../domain/models/user_profile.dart' show UserProfile;
+import '../../../previews/app_theme_preview.dart';
+import '../../../previews/fake_data.dart';
+import '../../../core/theme/app_theme.dart';
+import '../menu/message_action_menu.dart' show MessageActions, showMessageToolPanel;
+import '../bubble/message_bubble.dart';
+import '../menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import 'message_skeleton.dart';
 
 /// 消息列表组件

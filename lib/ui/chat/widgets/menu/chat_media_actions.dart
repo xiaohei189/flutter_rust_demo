@@ -8,12 +8,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
-import '../../../domain/models/friend.dart';
-import '../../../domain/models/user.dart';
-import '../../core/theme/app_theme.dart';
-import '../../../core/utils/app_logger.dart';
-import '../../core/widgets/user_avatar.dart';
-import '../view_models/chat_detail_view_model.dart';
+import '../../../../domain/models/friend.dart';
+import '../../../../domain/models/user.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../../core/utils/app_logger.dart';
+import '../../../core/widgets/user_avatar.dart';
+import '../../view_models/chat_detail_view_model.dart';
 
 /// 聊天页媒体与名片操作：图片、相机、位置、文件、视频、语音、名片。
 class ChatMediaActions {

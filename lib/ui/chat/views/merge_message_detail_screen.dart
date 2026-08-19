@@ -12,7 +12,7 @@ import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../providers/message_service_provider.dart';
 import '../widgets/media_viewer.dart';
-import '../widgets/message_bubble.dart';
+import '../widgets/bubble/message_bubble.dart';
 
 /// 合并转发消息详情页
 ///

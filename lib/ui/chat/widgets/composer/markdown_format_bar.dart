@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../previews/app_theme_preview.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../core/theme/app_theme.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 
 /// Markdown 格式栏：格式按钮 + 返回普通输入。

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 会话列表顶部栏（参考飞书风格）
 /// 左侧：用户头像 + 昵称/用户名

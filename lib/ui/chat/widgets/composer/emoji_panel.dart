@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../../previews/app_theme_preview.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../core/theme/app_theme.dart';
 import 'emoji_store.dart';
 
 /// 表情面板 Tab

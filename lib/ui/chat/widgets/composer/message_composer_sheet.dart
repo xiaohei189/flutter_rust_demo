@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_format_bar.dart';
-import 'message_content_type.dart';
+import '../message_content_type.dart';
 
 /// 展开编辑抽屉（飞书式）：全宽大编辑区，用于长文 / Markdown 输入。
 ///

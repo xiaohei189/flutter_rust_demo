@@ -25,16 +25,16 @@ import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../view_models/chat_detail_view_model.dart';
-import '../widgets/chat_input.dart' show ChatInput;
+import '../widgets/composer/chat_input.dart' show ChatInput;
 import '../widgets/message_content_type.dart' show MessageContentType;
-import '../widgets/chat_media_actions.dart';
+import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
-import '../widgets/message_action_menu.dart';
-import '../widgets/message_hover_toolbar.dart' show MessageReactionGroup;
-import '../widgets/message_list.dart';
-import '../widgets/message_selection_bar.dart';
-import '../widgets/quote_preview_bar.dart';
+import '../widgets/menu/message_action_menu.dart';
+import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
+import '../widgets/list/message_list.dart';
+import '../widgets/menu/message_selection_bar.dart';
+import '../widgets/composer/quote_preview_bar.dart';
 
 /// 聊天详情页：顶栏、消息区、底部输入区。
 /// 业务状态由 [ChatDetailViewModel] 管理，页面只保留布局、滚动、选择器与导航。

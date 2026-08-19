@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 
-import '../../../../domain/extensions/message_ext.dart';
-import '../../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../core/theme/app_theme.dart';
+import '../../../../../domain/extensions/message_ext.dart';
+import '../../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../core/theme/app_theme.dart';
 
 class TextMessageContent extends StatelessWidget {
   const TextMessageContent({

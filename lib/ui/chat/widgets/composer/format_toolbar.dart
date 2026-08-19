@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../previews/app_theme_preview.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Markdown 格式操作类型
 enum MarkdownFormat {

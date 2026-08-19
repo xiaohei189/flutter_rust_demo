@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../previews/app_theme_preview.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 同一种消息表情反应的聚合结果。
 class MessageReactionGroup {

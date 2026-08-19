@@ -6,17 +6,17 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-import '../../../domain/models/group_member.dart';
-import '../../core/theme/app_theme.dart';
-import '../../previews/app_theme_preview.dart';
-import '../../core/widgets/app_image.dart';
+import '../../../../domain/models/group_member.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../core/widgets/app_image.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
-import 'message_content_type.dart';
+import '../message_content_type.dart';
 
 /// 输入面板展开状态
 enum _InputPanel { none, emoji, attachment }

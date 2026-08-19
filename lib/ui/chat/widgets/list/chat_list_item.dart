@@ -3,16 +3,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../domain/models/conversation.dart';
-import '../../../domain/models/user.dart';
-import '../../previews/app_theme_preview.dart';
-import '../../previews/fake_data.dart';
-import '../../../router/app_router.dart';
-import '../../../domain/models/user_profile.dart' show UserProfile;
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/user_avatar.dart';
-import '../utils/conversation_display.dart';
-import '../view_models/chat_list_view_model.dart';
+import '../../../../domain/models/conversation.dart';
+import '../../../../domain/models/user.dart';
+import '../../../previews/app_theme_preview.dart';
+import '../../../previews/fake_data.dart';
+import '../../../../router/app_router.dart';
+import '../../../../domain/models/user_profile.dart' show UserProfile;
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/user_avatar.dart';
+import '../../utils/conversation_display.dart';
+import '../../view_models/chat_list_view_model.dart';
 
 /// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {

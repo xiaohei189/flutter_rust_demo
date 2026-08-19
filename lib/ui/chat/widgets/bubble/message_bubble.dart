@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../domain/extensions/message_ext.dart';
-import '../../../domain/models/message.dart';
-import '../../../domain/models/user.dart';
-import '../../../generated/rust/event/events/message.dart'
+import '../../../../domain/extensions/message_ext.dart';
+import '../../../../domain/models/message.dart';
+import '../../../../domain/models/user.dart';
+import '../../../../generated/rust/event/events/message.dart'
     show GroupReadReceipt;
-import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../domain/models/user_profile.dart' show UserProfile;
-import '../../previews/app_theme_preview.dart';
-import '../../previews/fake_data.dart';
-import '../../../router/app_router.dart';
-import '../../core/theme/app_theme.dart';
-import 'message_hover_toolbar.dart';
-import '../../core/widgets/user_avatar.dart';
-import 'message_parts/media_message_content.dart';
-import 'message_parts/quote_message_content.dart';
-import 'message_parts/rich_message_content.dart';
-import 'message_parts/text_message_content.dart';
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../domain/models/user_profile.dart' show UserProfile;
+import '../../../previews/app_theme_preview.dart';
+import '../../../previews/fake_data.dart';
+import '../../../../router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../menu/message_hover_toolbar.dart';
+import '../../../core/widgets/user_avatar.dart';
+import 'parts/media_message_content.dart';
+import 'parts/quote_message_content.dart';
+import 'parts/rich_message_content.dart';
+import 'parts/text_message_content.dart';
 
 /// 消息气泡：负责统一布局，内容按类型委托给独立组件。
 class MessageBubble extends StatelessWidget {

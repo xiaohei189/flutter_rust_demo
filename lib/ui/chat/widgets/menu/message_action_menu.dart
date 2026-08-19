@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../domain/extensions/message_ext.dart';
-import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../core/theme/app_theme.dart';
+import '../../../../domain/extensions/message_ext.dart';
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../core/theme/app_theme.dart';
 
 const List<String> kMessageQuickReactions = ['👍', '❤️', '😄', '🙏'];
 const List<String> kMessageQuickReplyEmojis = [

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../data/services/audio_player_service.dart';
-import '../../../../domain/extensions/message_ext.dart';
-import '../../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_image.dart';
+import '../../../../../data/services/audio_player_service.dart';
+import '../../../../../domain/extensions/message_ext.dart';
+import '../../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_image.dart';
 
 class UploadProgress extends StatelessWidget {
   const UploadProgress({

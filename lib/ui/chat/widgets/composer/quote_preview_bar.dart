@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../previews/app_theme_preview.dart';
-import '../../previews/fake_data.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../previews/app_theme_preview.dart';
+import '../../../previews/fake_data.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// 引用消息预览栏
 class QuotePreviewBar extends StatelessWidget {

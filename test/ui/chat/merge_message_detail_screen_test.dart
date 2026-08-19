@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/views/merge_message_detail_screen.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/message_parts/media_message_content.dart'
+import 'package:flutter_rust_demo/ui/chat/widgets/bubble/parts/media_message_content.dart'
     show ImageMessageContent;
-import 'package:flutter_rust_demo/ui/chat/widgets/message_parts/rich_message_content.dart'
+import 'package:flutter_rust_demo/ui/chat/widgets/bubble/parts/rich_message_content.dart'
     show MergeMessageContent;
 
 void main() {

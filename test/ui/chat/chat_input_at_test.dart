@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/domain/models/group_member.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/chat_input.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input.dart';
 
 void main() {
   GroupMember makeMember(String id, String name) => GroupMember(
