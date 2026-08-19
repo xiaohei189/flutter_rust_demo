@@ -154,6 +154,6 @@ class MessageServiceConnectionController {
     await ImClient.instance.close();
     OnlineStatusService.instance.setClient(null);
     ConnectionService.instance.updateStatus(ConnectionStatus.disconnected);
-    service.updateState(const MessageServiceState());
+    service.updateState(MessageServiceState());
   }
 }

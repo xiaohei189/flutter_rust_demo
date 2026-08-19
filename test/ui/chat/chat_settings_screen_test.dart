@@ -16,7 +16,7 @@ import 'package:flutter_rust_demo/ui/chat/views/chat_settings_screen.dart';
 ///  "Tried to modify a provider while the widget tree was building"）
 class _FakeMessageServiceNotifier extends MessageServiceNotifier {
   @override
-  MessageServiceState build() => const MessageServiceState();
+  MessageServiceState build() => MessageServiceState();
 }
 
 class _FakeConversationListNotifier extends ConversationListNotifier {

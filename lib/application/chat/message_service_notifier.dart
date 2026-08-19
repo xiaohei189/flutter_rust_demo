@@ -43,7 +43,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceSocialController? _socialController;
 
   @override
-  MessageServiceState build() => const MessageServiceState();
+  MessageServiceState build() => MessageServiceState();
 
   MessageServiceConnectionController get connectionController =>
       _connectionController ??= MessageServiceConnectionController(this);

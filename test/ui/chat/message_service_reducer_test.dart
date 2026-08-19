@@ -30,7 +30,7 @@ ChatMessage _message(String id) => ChatMessage(
 void main() {
   group('MessageServiceReducer', () {
     test('appendIncomingMessage 追加新消息并去重', () {
-      final state = const MessageServiceState();
+      final state = MessageServiceState();
 
       final added = MessageServiceReducer.appendIncomingMessage(
         state,
@@ -48,7 +48,7 @@ void main() {
     });
 
     test('removeMessage 只移除指定消息', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1'), _message('m2')],
         },
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('applyDeleted 删除多条消息', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1'), _message('m2'), _message('m3')],
         },
@@ -77,7 +77,7 @@ void main() {
     });
 
     test('applySendFailed 标记失败并移除上传进度', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1')],
         },
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('applyUploadProgress 完成时移除进度', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         uploadProgress: {'m1': 50},
       );
 
@@ -105,7 +105,7 @@ void main() {
     });
 
     test('applyConversationEvent 合并会话列表', () {
-      final state = const MessageServiceState();
+      final state = MessageServiceState();
       const raw = LocalConversation(
         conversationId: 'si_user_a_user_b',
         conversationType: 1,
