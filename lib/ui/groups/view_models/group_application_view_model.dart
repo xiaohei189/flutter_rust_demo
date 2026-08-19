@@ -40,8 +40,8 @@ class GroupApplicationViewModel extends Notifier<GroupApplicationState> {
 
   @override
   GroupApplicationState build() {
-    ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision && _hasLoaded) {
+    ref.listen(messageServiceProvider.select((s) => s.groupRevision), (prev, next) {
+      if (prev != next && _hasLoaded) {
         loadApplications();
       }
     });

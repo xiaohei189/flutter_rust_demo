@@ -43,7 +43,10 @@ class MessageListState {
 class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   @override
   MessageListState build(String conversationId) {
-    ref.listen(messageServiceProvider, (_, __) => _syncState());
+    ref.listen(
+      messageServiceProvider.select((s) => s.messages[conversationId]),
+      (_, next) => state = state.copyWith(messages: next ?? const []),
+    );
     Future.microtask(_syncState);
     return const MessageListState();
   }

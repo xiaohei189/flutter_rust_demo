@@ -45,8 +45,8 @@ class GroupListViewModel extends Notifier<GroupListState> {
 
   @override
   GroupListState build() {
-    ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision && _hasLoaded) {
+    ref.listen(messageServiceProvider.select((s) => s.groupRevision), (prev, next) {
+      if (prev != next && _hasLoaded) {
         loadGroups();
       }
     });

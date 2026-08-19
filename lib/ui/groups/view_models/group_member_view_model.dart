@@ -32,8 +32,8 @@ class GroupMemberState {
 class GroupMemberViewModel extends FamilyNotifier<GroupMemberState, String> {
   @override
   GroupMemberState build(String groupId) {
-    ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.groupRevision != next.groupRevision) {
+    ref.listen(messageServiceProvider.select((s) => s.groupRevision), (prev, next) {
+      if (prev != next) {
         loadMembers();
       }
     });

@@ -58,17 +58,18 @@ class ConversationListState {
 class ConversationListNotifier extends Notifier<ConversationListState> {
   @override
   ConversationListState build() {
-    ref.listen(messageServiceProvider, (_, next) {
-      _syncState(next);
-    });
-    Future.microtask(() => _syncState(ref.read(messageServiceProvider)));
-    return const ConversationListState();
-  }
-
-  void _syncState(MessageServiceState messageServiceState) {
+    final conversations = ref.watch(
+      messageServiceProvider.select((s) => s.conversations),
+    );
+    final isSyncing = ref.watch(
+      messageServiceProvider.select((s) => s.isSyncingConversations),
+    );
+    final syncProgress = ref.watch(
+      messageServiceProvider.select((s) => s.syncProgress),
+    );
     final previews = <String, String>{};
     final timeTexts = <String, String>{};
-    for (final conversation in messageServiceState.conversations) {
+    for (final conversation in conversations) {
       previews[conversation.conversationId] = latestMessagePreview(
         conversation.latestMsg,
       );
@@ -80,10 +81,10 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
         displayTime,
       );
     }
-    state = state.copyWith(
-      conversations: messageServiceState.conversations,
-      isSyncing: messageServiceState.isSyncingConversations,
-      syncProgress: messageServiceState.syncProgress,
+    return ConversationListState(
+      conversations: conversations,
+      isSyncing: isSyncing,
+      syncProgress: syncProgress,
       previews: previews,
       timeTexts: timeTexts,
     );
