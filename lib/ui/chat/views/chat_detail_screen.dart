@@ -31,6 +31,7 @@ import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
+import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/message_list.dart';
 import '../widgets/menu/message_selection_bar.dart';
@@ -641,32 +642,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _showLocationDetail(ChatMessage msg) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(msg.locationName.isNotEmpty ? msg.locationName : '位置'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (msg.locationDesc.isNotEmpty) ...[
-              Text(msg.locationDesc),
-              const SizedBox(height: 8),
-            ],
-            Text(
-              '纬度: ${msg.latitude.toStringAsFixed(6)}\n'
-              '经度: ${msg.longitude.toStringAsFixed(6)}',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
+    showLocationDetailDialog(context, msg);
   }
 
   Future<void> _forwardSelected({required bool merge}) async {
@@ -753,27 +729,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _deleteSelected() async {
     final count = _chatState.selectedMessages.length;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除选中消息'),
-        content: Text('确定删除选中的 $count 条消息吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '删除',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+    final confirmed = await showDeleteMessagesConfirm(context, count);
+    if (!confirmed || !mounted) return;
     final ok = await _viewModel?.deleteSelectedMessages() ?? false;
     if (!ok && mounted) {
       _showError(_chatState.errorText ?? '删除失败');

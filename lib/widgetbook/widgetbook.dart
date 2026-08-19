@@ -3,7 +3,7 @@ import 'package:widgetbook/widgetbook.dart';
 
 import '../ui/chat/widgets/composer/attachment_panel.dart';
 import '../ui/chat/widgets/composer/at_member_suggestions.dart';
-import '../ui/chat/widgets/composer/chat_input.dart';
+import '../ui/chat/widgets/composer/chat_input_preview.dart';
 import '../ui/chat/widgets/composer/recording_overlay.dart';
 import '../ui/chat/widgets/list/chat_list_item.dart';
 import '../ui/chat/widgets/composer/emoji_panel.dart';

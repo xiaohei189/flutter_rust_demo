@@ -14,6 +14,7 @@ import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
 import 'at_member_suggestions.dart';
@@ -664,7 +665,7 @@ class _ChatInputState extends State<ChatInput> {
     return Row(
       children: [
         // 声音切换按钮（长按录音 / 点击聚焦弹键盘）
-        _buildToolbarIcon(
+        InputToolbarIcon(
           icon: Icons.mic_none,
           tooltip: '语音（长按录音，上滑取消）',
           onLongPressStart: _startRecording,
@@ -676,7 +677,7 @@ class _ChatInputState extends State<ChatInput> {
         // 输入框占满剩余宽度
         Expanded(child: _buildInputRow()),
         // 表情（面板互斥展开）
-        _buildToolbarIcon(
+        InputToolbarIcon(
           icon: _activePanel == _InputPanel.emoji
               ? Icons.emoji_emotions
               : Icons.emoji_emotions_outlined,
@@ -684,7 +685,7 @@ class _ChatInputState extends State<ChatInput> {
           onTap: () => _togglePanel(_InputPanel.emoji),
         ),
         // 更多（附件面板互斥展开）
-        _buildToolbarIcon(
+        InputToolbarIcon(
           icon: _activePanel == _InputPanel.attachment
               ? Icons.add_circle
               : Icons.add_circle_outline,
@@ -816,102 +817,6 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  /// 工具栏图标按钮（飞书风格：24px 线性图标，等宽）
-  Widget _buildToolbarIcon({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-    bool enabled = true,
-    bool active = false,
-    void Function(LongPressStartDetails)? onLongPressStart,
-    void Function(LongPressMoveUpdateDetails)? onLongPressMoveUpdate,
-    void Function(LongPressEndDetails)? onLongPressEnd,
-  }) {
-    final hasLongPress = onLongPressStart != null;
-    final btn = Tooltip(
-      message: tooltip,
-      child: Semantics(
-        label: tooltip,
-        button: true,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: IconButton(
-            icon: Icon(
-              icon,
-              size: 24,
-              color: enabled
-                  ? (active
-                        ? context.appColors.primary
-                        : context.appColors.textPrimary.withValues(alpha: 0.7))
-                  : context.appColors.textSecondary.withValues(alpha: 0.3),
-            ),
-            onPressed: hasLongPress ? null : (enabled ? onTap : null),
-            padding: EdgeInsets.zero,
-          ),
-        ),
-      ),
-    );
-    if (hasLongPress) {
-      return GestureDetector(
-        onTap: enabled ? onTap : null,
-        onLongPressStart: onLongPressStart,
-        onLongPressMoveUpdate: onLongPressMoveUpdate,
-        onLongPressEnd: onLongPressEnd,
-        child: btn,
-      );
-    }
-    return btn;
-  }
 
   // ==================== 辅助 ====================
 }
-
-// ==================== 预览 ====================
-
-/// 预览宿主：持有并管理输入框 controller，保证可交互、可输入、可展开面板。
-class _ChatInputPreviewHost extends StatefulWidget {
-  final bool isGroupChat;
-
-  const _ChatInputPreviewHost({this.isGroupChat = false});
-
-  @override
-  State<_ChatInputPreviewHost> createState() => _ChatInputPreviewHostState();
-}
-
-class _ChatInputPreviewHostState extends State<_ChatInputPreviewHost> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ChatInput(
-          controller: _controller,
-          onSend: (_, __) {},
-          isGroupChat: widget.isGroupChat,
-          onImagePick: () {},
-          onImagesPick: () {},
-          onCameraPick: () {},
-          onFilePick: () {},
-          onLocationPick: () {},
-        ),
-      ),
-    );
-  }
-}
-
-@AppThemePreview(name: '单聊 - 默认', group: 'ChatInput')
-Widget chatInputSinglePreview() => const _ChatInputPreviewHost();
-
-@AppThemePreview(name: '群聊 - 带 @ 按钮', group: 'ChatInput')
-Widget chatInputGroupPreview() =>
-    const _ChatInputPreviewHost(isGroupChat: true);
