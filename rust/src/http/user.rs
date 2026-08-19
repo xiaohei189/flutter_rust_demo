@@ -66,6 +66,7 @@ pub struct UpdateUserFields {
     pub face_url: Option<String>,
     pub gender: Option<i32>,
     pub email: Option<String>,
+    pub ex: Option<String>,
 }
 
 /// 获取用户客户端配置请求（对齐 protocol/user GetUserClientConfigReq）
@@ -120,5 +121,23 @@ mod tests {
         assert!(json.contains("userInfo"));
         assert!(json.contains("nickname"));
         assert!(json.contains("NewName"));
+    }
+
+    #[test]
+    fn test_update_user_info_req_serializes_ex_not_email() {
+        let req = UpdateUserInfoReq {
+            user_info: UpdateUserInfoData {
+                user_id: "user_1".to_string(),
+                nickname: None,
+                face_url: None,
+                gender: None,
+                email: None,
+                ex: Some(r#"{"alias":"小名"}"#.to_string()),
+            },
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("\"ex\""));
+        assert!(json.contains("alias"));
+        assert!(!json.contains("\"email\""));
     }
 }

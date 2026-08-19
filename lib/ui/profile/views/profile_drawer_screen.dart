@@ -106,6 +106,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                     ),
                     // 名字 + 二维码 + 箭头（点击进入个人信息）
                     GestureDetector(
+                      key: const ValueKey('profile_drawer_my_profile'),
                       behavior: HitTestBehavior.translucent,
                       onTap: () {
                         if (onOpenMyProfile != null) {
