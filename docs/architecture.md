@@ -36,7 +36,7 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  └──────────┘ └──────────────┘ └────────────────┘   │
 ├─────────────────────────────────────────────────────┤
 │  flutter_rust_bridge (FFI)                           │
-│  lib/generated/rust/ ← 自动生成 → rust/src/api/      │
+│  lib/generated/rust/ ← 自动生成 → rust/src/ffi/      │
 ├─────────────────────────────────────────────────────┤
 │  Rust SDK (rust/src/)                                │
 │  ┌────────────────────────────────────────────────┐ │
@@ -125,7 +125,7 @@ lib/
     └── discover/
 ```
 
-当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/contacts/`、`lib/ui/groups/`、`lib/ui/chat/`、`lib/ui/auth/`、`lib/ui/profile/`、`lib/ui/discover/`，共享组件、主题和扩展在 `lib/ui/core/`，聊天专属组件在 `lib/ui/chat/widgets/`，领域模型在 `lib/domain/models/`。数据层统一走 `lib/data/repositories/` 与 `lib/data/services/`，`MessageServiceNotifier` 位于 `lib/ui/chat/view_models/`，FFI 数据操作收口到 `MessageRepository`，设置与在线状态/文件打开收口到 `SettingsRepository`、`ChatAuxRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
+当前联系人、群组、聊天、认证、个人资料和发现页面已按 feature 组织：`lib/ui/contacts/`、`lib/ui/groups/`、`lib/ui/chat/`、`lib/ui/auth/`、`lib/ui/profile/`、`lib/ui/discover/`，共享组件、主题和扩展在 `lib/ui/core/`，聊天专属组件按职责在 `lib/ui/chat/widgets/{list,bubble,composer,menu,shared}/`，领域模型在 `lib/domain/models/`。数据层统一走 `lib/data/repositories/` 与 `lib/data/services/`，`MessageServiceNotifier` 位于 `lib/application/chat/`，FFI 数据操作收口到 `MessageRepository`，设置与在线状态/文件打开收口到 `SettingsRepository`、`ChatAuxRepository`。`FriendService`、`GroupService`、`UserService` 已抽象为接口，便于 Repository 单测。
 
 ### Rust 侧 (`rust/src/`)
 

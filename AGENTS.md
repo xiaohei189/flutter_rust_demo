@@ -6,7 +6,7 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 
 - `lib/` - Flutter UI and Dart services: screens, widgets, Riverpod providers, and models.
 - `lib/generated/rust/` - flutter_rust_bridge 与 Freezed 自动生成代码，禁止手改，由 codegen/build_runner 重新生成。
-- `rust/` - Rust SDK core, layered as `api/` (FFI) -> `sdk/` -> `core/` -> `domain/` + `infra/`.
+- `rust/` - Rust SDK core（当前为扁平结构：`client/connection/conversation/event/ffi/friend/group/message/user` 等；目标五层 `api/sdk/core/domain/infra` 尚未迁移）。
 - `rust/tests/` - Rust integration suites and JSON fixtures used by offline mock tests.
 - `test/` and `integration_test/` - Flutter unit/widget and integration tests.
 - `docs/` - Documentation entry point (`docs/README.md`), SDK specs in `docs/sdk-spec/`, and conventions in `docs/conventions.md`.
@@ -22,7 +22,7 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 - 每个领域只保留一个状态源；派生状态用 Provider + `select`，禁止用 `ref.listen` 把全局状态复制进本地 Notifier（纯展示格式化除外）。
 - Service 必须提供抽象接口 + Impl，并由 Riverpod Provider 持有实例。业务 Provider 禁止直接返回 `X.instance`；`X.instance` 仅允许存在于低层基础设施。
 - Repository 返回 Domain Model；存量直接把 generated model 暴露给 UI 的代码应逐步迁移，新增代码禁止新增该泄漏。
-- 提交前必须运行边界检查：
+- 提交前必须运行边界检查（或直接执行 `scripts/check-architecture.ps1`）：
   - `rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。
   - `rg -n "from '\.\./ui/|from '\.\./providers/|ui/core/utils/app_logger" lib/data lib/domain` 结果必须为空。
 
