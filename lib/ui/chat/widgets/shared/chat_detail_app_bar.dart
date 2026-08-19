@@ -142,3 +142,15 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+Widget chatDetailAppBarPreview() => Scaffold(
+  appBar: ChatDetailAppBar(
+    user: const User(id: 'u1', name: '张三'),
+    unread: 3,
+    isTyping: false,
+    isGroup: false,
+    online: true,
+    onBack: () {},
+    onOpenSettings: () {},
+    onSearch: () {},
+  ),
+);

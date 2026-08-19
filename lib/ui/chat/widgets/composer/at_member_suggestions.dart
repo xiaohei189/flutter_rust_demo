@@ -73,3 +73,17 @@ class AtMemberSuggestions extends StatelessWidget {
     );
   }
 }
+Widget atMemberSuggestionsPreview() => AtMemberSuggestions(
+  members: const [
+    GroupMember(
+      groupId: 'g1',
+      userId: 'u2',
+      nickname: '李四',
+      faceUrl: '',
+      roleLevel: 1,
+      joinSource: 'invite',
+    ),
+  ],
+  selectedIndex: 0,
+  onSelect: (_) {},
+);

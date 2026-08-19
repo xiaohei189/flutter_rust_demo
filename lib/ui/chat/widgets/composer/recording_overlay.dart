@@ -36,3 +36,4 @@ class RecordingOverlay extends StatelessWidget {
     );
   }
 }
+Widget recordingOverlayPreview() => const RecordingOverlay(cancel: false);
