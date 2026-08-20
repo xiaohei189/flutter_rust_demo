@@ -16,6 +16,11 @@ final connectionServiceProvider = Provider<ConnectionService>((ref) {
   return ConnectionService.instance;
 });
 
+/// 导航服务 Provider（基础设施）
+final navigationServiceProvider = Provider<NavigationService>((ref) {
+  return NavigationService.instance;
+});
+
 /// 媒体上传服务 Provider
 final mediaUploadServiceProvider = Provider<MediaUploadService>((ref) {
   return const MediaUploadServiceImpl();

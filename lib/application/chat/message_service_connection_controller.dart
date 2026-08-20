@@ -12,10 +12,18 @@ import 'message_service_state.dart';
 
 /// 连接初始化、事件订阅与断开。
 class MessageServiceConnectionController {
-  MessageServiceConnectionController(this.service, this.connectionService, this.onlineStatusService);
+  MessageServiceConnectionController(
+    this.service,
+    this.connectionService,
+    this.onlineStatusService,
+    this.imClient,
+    this.navigationService,
+  );
 
   final ConnectionService connectionService;
   final OnlineStatusService onlineStatusService;
+  final ImClient imClient;
+  final NavigationService navigationService;
 
   final MessageServiceNotifier service;
 
@@ -25,8 +33,8 @@ class MessageServiceConnectionController {
     String? userId,
     String? imToken,
   }) async {
-    if (ImClient.instance.isInitialized && service.currentState.isConnected) {
-      onlineStatusService.setClient(ImClient.instance.client);
+    if (imClient.isInitialized && service.currentState.isConnected) {
+      onlineStatusService.setClient(imClient.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
     }
@@ -40,14 +48,14 @@ class MessageServiceConnectionController {
     connectionService.updateStatus(ConnectionStatus.connecting);
     appLog.i('[MessageService] initialize 开始');
     try {
-      if (ImClient.instance.isInitialized) {
+      if (imClient.isInitialized) {
         appLog.i('[MessageService] 关闭已有客户端，重新初始化');
         for (final s in service.subscriptions) {
           await s.cancel();
         }
         service.subscriptions.clear();
         try {
-          await ImClient.instance.close();
+          await imClient.close();
         } catch (e) {
           appLog.w('[MessageService] 关闭旧客户端失败: $e');
         }
@@ -71,34 +79,34 @@ class MessageServiceConnectionController {
         service.currentState.copyWith(currentUserId: resolvedUserId),
       );
 
-      await ImClient.instance.createClient(
+      await imClient.createClient(
         userId: resolvedUserId,
         token: resolvedImToken,
         wsUrl: wsUrl,
         apiBaseUrl: apiBaseUrl!,
       );
-      onlineStatusService.setClient(ImClient.instance.client);
+      onlineStatusService.setClient(imClient.client);
       unawaited(service.loadConversations());
 
       service.subscriptions.add(
-        ImClient.instance.connectionStream.listen(service.onConnectionEvent),
+        imClient.connectionStream.listen(service.onConnectionEvent),
       );
       service.subscriptions.add(
-        ImClient.instance.conversationStream.listen(
+        imClient.conversationStream.listen(
           service.onConversationEvent,
         ),
       );
       service.subscriptions.add(
-        ImClient.instance.friendStream.listen(service.onFriendEvent),
+        imClient.friendStream.listen(service.onFriendEvent),
       );
       service.subscriptions.add(
-        ImClient.instance.groupStream.listen(service.onGroupEvent),
+        imClient.groupStream.listen(service.onGroupEvent),
       );
       service.subscriptions.add(
-        ImClient.instance.messageStream.listen(service.onMessageEvent),
+        imClient.messageStream.listen(service.onMessageEvent),
       );
       service.subscriptions.add(
-        ImClient.instance.userStream.listen(service.onUserEvent),
+        imClient.userStream.listen(service.onUserEvent),
       );
       appLog.i('[MessageService] 6 模块事件流已注册');
 
@@ -143,7 +151,7 @@ class MessageServiceConnectionController {
         connectionService.updateStatus(ConnectionStatus.tokenExpired);
         service.updateState(service.currentState.copyWith(isConnected: false));
         LoginStorage.clearCredentials().catchError((_) {});
-        NavigationService.instance.goToLogin();
+        navigationService.goToLogin();
       },
       orElse: () {},
     );
@@ -154,7 +162,7 @@ class MessageServiceConnectionController {
       await s.cancel();
     }
     service.subscriptions.clear();
-    await ImClient.instance.close();
+    await imClient.close();
     onlineStatusService.setClient(null);
     connectionService.updateStatus(ConnectionStatus.disconnected);
     service.updateState(MessageServiceState());

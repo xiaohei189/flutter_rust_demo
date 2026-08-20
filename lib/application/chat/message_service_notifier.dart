@@ -53,10 +53,15 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         this,
         ref.read(connectionServiceProvider),
         ref.read(onlineStatusServiceProvider),
+        ref.read(imClientProvider),
+        ref.read(navigationServiceProvider),
       );
 
   MessageServiceConversationController get conversationController =>
-      _conversationController ??= MessageServiceConversationController(this);
+      _conversationController ??= MessageServiceConversationController(
+        this,
+        ref.read(imClientProvider),
+      );
 
   MessageServiceSocialController get socialController =>
       _socialController ??= MessageServiceSocialController(
