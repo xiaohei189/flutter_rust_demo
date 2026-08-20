@@ -31,7 +31,7 @@ import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
-import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog, showMergeForwardTitleDialog;
+import '../widgets/menu/chat_dialogs.dart' show showCustomMessageDialog, showDeleteMessagesConfirm, showLocationDetailDialog, showMergeForwardTitleDialog;
 import '../widgets/menu/file_actions_sheet.dart' show showFileActionsSheet;
 import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
@@ -518,19 +518,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       case MessageType.location:
         _showLocationDetail(msg);
       case MessageType.custom:
-        showDialog<void>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('自定义消息'),
-            content: SelectableText(msg.displayText),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('关闭'),
-              ),
-            ],
-          ),
-        );
+        showCustomMessageDialog(context, msg.displayText);
       default:
         break;
     }

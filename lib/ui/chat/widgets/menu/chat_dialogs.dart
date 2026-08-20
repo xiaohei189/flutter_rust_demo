@@ -81,3 +81,20 @@ Future<String?> showMergeForwardTitleDialog(
     ),
   );
 }
+
+
+Future<void> showCustomMessageDialog(BuildContext context, String displayText) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('自定义消息'),
+      content: SelectableText(displayText),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('关闭'),
+        ),
+      ],
+    ),
+  );
+}
