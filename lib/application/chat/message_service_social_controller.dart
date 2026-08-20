@@ -3,8 +3,9 @@ import 'dart:async';
 import '../../../data/services/online_status_service.dart';
 import '../../../generated/rust/event/events/friend.dart';
 import '../../../generated/rust/event/events/group.dart';
-import '../../../generated/rust/event/events/message.dart'
-    show GroupReadReceipt;
+import '../../../generated/rust/event/events/message.dart' as generated_events;
+import '../../../data/mappers/message_mapper.dart' show groupReadReceiptsFromGenerated;
+import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import '../../../generated/rust/event/events/user.dart';
 import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
@@ -30,7 +31,8 @@ class MessageServiceSocialController {
   void handleGroupEvent(GroupEvent event) {
     appLog.i('[MsgSvc] groupEvent: ${event.runtimeType}');
     event.maybeWhen(
-      groupReadReceipt: (receipts) => applyGroupReadReceipts(receipts),
+      groupReadReceipt: (receipts) =>
+          applyGroupReadReceipts(groupReadReceiptsFromGenerated(receipts)),
       orElse: () {
         service.updateState(
           service.currentState.copyWith(

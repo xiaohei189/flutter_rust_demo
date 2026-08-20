@@ -12,8 +12,9 @@ import 'message_service_state.dart';
 
 /// 连接初始化、事件订阅与断开。
 class MessageServiceConnectionController {
-  MessageServiceConnectionController(this.service, this.onlineStatusService);
+  MessageServiceConnectionController(this.service, this.connectionService, this.onlineStatusService);
 
+  final ConnectionService connectionService;
   final OnlineStatusService onlineStatusService;
 
   final MessageServiceNotifier service;
@@ -36,7 +37,7 @@ class MessageServiceConnectionController {
     }
 
     service.updateState(service.currentState.copyWith(isInitializing: true));
-    ConnectionService.instance.updateStatus(ConnectionStatus.connecting);
+    connectionService.updateStatus(ConnectionStatus.connecting);
     appLog.i('[MessageService] initialize 开始');
     try {
       if (ImClient.instance.isInitialized) {
@@ -102,7 +103,7 @@ class MessageServiceConnectionController {
       appLog.i('[MessageService] 6 模块事件流已注册');
 
       service.updateState(service.currentState.copyWith(isConnected: true));
-      ConnectionService.instance.updateStatus(ConnectionStatus.connected);
+      connectionService.updateStatus(ConnectionStatus.connected);
       appLog.i('✅ 客户端连接成功');
 
       unawaited(service.refreshLoginUserProfile());
@@ -110,7 +111,7 @@ class MessageServiceConnectionController {
     } catch (e) {
       appLog.e('❌ 初始化失败: $e');
       service.updateState(service.currentState.copyWith(isConnected: false));
-      ConnectionService.instance.updateStatus(ConnectionStatus.failed);
+      connectionService.updateStatus(ConnectionStatus.failed);
       rethrow;
     } finally {
       service.updateState(service.currentState.copyWith(isInitializing: false));
@@ -121,25 +122,25 @@ class MessageServiceConnectionController {
     appLog.i('[MsgSvc] _onConnectionEvent: ${event.runtimeType}');
     event.maybeWhen(
       connected: () {
-        ConnectionService.instance.updateStatus(ConnectionStatus.connected);
+        connectionService.updateStatus(ConnectionStatus.connected);
         appLog.i('[MsgSvc] connected!');
         service.updateState(service.currentState.copyWith(isConnected: true));
         unawaited(service.loadConversations());
       },
       connecting: () =>
-          ConnectionService.instance.updateStatus(ConnectionStatus.connecting),
+          connectionService.updateStatus(ConnectionStatus.connecting),
       disconnected: (_) =>
-          ConnectionService.instance.updateStatus(ConnectionStatus.disconnected),
+          connectionService.updateStatus(ConnectionStatus.disconnected),
       connectFailed: (_, _) =>
-          ConnectionService.instance.updateStatus(ConnectionStatus.failed),
+          connectionService.updateStatus(ConnectionStatus.failed),
       reconnecting: (_, _) =>
-          ConnectionService.instance.updateStatus(ConnectionStatus.connecting),
+          connectionService.updateStatus(ConnectionStatus.connecting),
       kickedOffline: (_) {
-        ConnectionService.instance.updateStatus(ConnectionStatus.kickedOffline);
+        connectionService.updateStatus(ConnectionStatus.kickedOffline);
         service.updateState(service.currentState.copyWith(isConnected: false));
       },
       tokenExpired: () {
-        ConnectionService.instance.updateStatus(ConnectionStatus.tokenExpired);
+        connectionService.updateStatus(ConnectionStatus.tokenExpired);
         service.updateState(service.currentState.copyWith(isConnected: false));
         LoginStorage.clearCredentials().catchError((_) {});
         NavigationService.instance.goToLogin();
@@ -155,7 +156,7 @@ class MessageServiceConnectionController {
     service.subscriptions.clear();
     await ImClient.instance.close();
     onlineStatusService.setClient(null);
-    ConnectionService.instance.updateStatus(ConnectionStatus.disconnected);
+    connectionService.updateStatus(ConnectionStatus.disconnected);
     service.updateState(MessageServiceState());
   }
 }

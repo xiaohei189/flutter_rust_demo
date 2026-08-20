@@ -4,8 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../domain/extensions/message_ext.dart';
 import '../../../../domain/models/message.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../generated/rust/event/events/message.dart'
-    show GroupReadReceipt;
+import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../previews/app_theme_preview.dart';

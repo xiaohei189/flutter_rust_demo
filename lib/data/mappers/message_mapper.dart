@@ -1,7 +1,9 @@
 import '../../domain/models/chat_message.dart';
 import '../../domain/models/message_search_result.dart';
+import '../../domain/models/group_read_receipt.dart';
 import '../../generated/rust/model/message.dart' show MessageInfo;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../generated/rust/event/events/message.dart' as generated_events;
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 
 /// 将 sendTime 规范化为毫秒（自动检测秒/毫秒）
@@ -114,4 +116,21 @@ MessageSearchResult messageSearchResultFromLocalChatLog(LocalChatLog raw) {
     localEx: raw.localEx,
     groupId: raw.groupId,
   );
+}
+
+List<GroupReadReceipt> groupReadReceiptsFromGenerated(
+  Iterable<generated_events.GroupReadReceipt> raw,
+) {
+  return raw
+      .map(
+        (r) => GroupReadReceipt(
+          groupId: r.groupId,
+          msgId: r.msgId,
+          hasReadUserIdList: List<String>.from(r.hasReadUserIdList),
+          hasReadCount: r.hasReadCount,
+          groupMemberCount: r.groupMemberCount,
+          readTime: r.readTime,
+        ),
+      )
+      .toList(growable: false);
 }

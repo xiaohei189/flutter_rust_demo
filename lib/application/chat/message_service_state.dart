@@ -1,7 +1,7 @@
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/user_profile.dart' show UserProfile;
-import '../../../generated/rust/event/events/message.dart' show GroupReadReceipt;
+import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import 'stores/connection_store.dart';
 import 'stores/conversation_store.dart';
 import 'stores/message_store.dart';

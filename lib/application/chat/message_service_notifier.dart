@@ -22,6 +22,7 @@ import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/user.dart';
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
+import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
@@ -49,6 +50,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceConnectionController get connectionController =>
       _connectionController ??= MessageServiceConnectionController(
         this,
+        ref.read(connectionServiceProvider),
         ref.read(onlineStatusServiceProvider),
       );
 
@@ -85,9 +87,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   void onMessageEvent(MessageEvent event) => _onMessageEvent(event);
 
   void onUserEvent(UserEvent event) => socialController.handleUserEvent(event);
-
-  void applyGroupReadReceipts(List<GroupReadReceipt> receipts) =>
-      socialController.applyGroupReadReceipts(receipts);
 
   void applyConversationEvent(List<LocalConversation> incoming) =>
       _applyConversationEvent(incoming);

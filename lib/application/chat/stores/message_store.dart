@@ -1,5 +1,5 @@
 import '../../../../domain/models/chat_message.dart';
-import '../../../../generated/rust/event/events/message.dart' show GroupReadReceipt;
+import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 
 class MessageStore {
   final Map<String, List<ChatMessage>> messages;
