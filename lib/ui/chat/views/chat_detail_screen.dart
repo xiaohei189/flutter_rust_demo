@@ -35,6 +35,7 @@ import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showL
 import '../widgets/menu/file_actions_sheet.dart' show showFileActionsSheet;
 import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
+import '../widgets/list/chat_message_list_section.dart';
 import '../widgets/list/message_list.dart';
 import '../widgets/menu/message_selection_bar.dart';
 import '../widgets/composer/quote_preview_bar.dart';
@@ -747,60 +748,32 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       },
                     ),
                   Expanded(
-                    child: Listener(
-                      behavior: HitTestBehavior.translucent,
-                      onPointerDown: (_) => FocusScope.of(context).unfocus(),
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final messages = ref.watch(
-                            messagesByConversationProvider(widget.conversationId),
-                          );
-
-                          return MessageList(
-                            key: _messageListKey,
-                            messages: messages,
-                            otherUser: user,
-                            currentUserId: currentUserId.isNotEmpty
-                                ? currentUserId
-                                : null,
-                            currentUserAvatar: ref
-                                .read(userProfileProvider.notifier)
-                                .getDisplayAvatarUrl(),
-                            scrollController: _scrollController,
-                            isLoading: chatDetailState.isLoading,
-                            selectMode: chatDetailState.selectMode,
-                            selectedClientMsgIds:
-                                chatDetailState.selectedClientMsgIds,
-                            uploadProgress: ref.watch(
-                              messageServiceProvider.select(
-                                (s) => s.uploadProgress,
-                              ),
-                            ),
-                            groupReadReceipts: ref.watch(
-                              messageServiceProvider.select(
-                                (s) => s.groupReadReceipts,
-                              ),
-                            ),
-                            cachedCurrentUserProfile: ref.watch(
-                              messageServiceProvider.select(
-                                (s) => s.loginUserProfile,
-                              ),
-                            ),
-                            onMessageVisible: (msg) {
-                              if (!msg.isRead &&
-                                  msg.sendId !=
-                                      (currentUserId.isNotEmpty
-                                          ? currentUserId
-                                          : null)) {
-                                _viewModel?.markConversationMessageAsRead();
-                              }
-                            },
-                            messageActionsBuilder: _buildMessageActions,
-                            messageReactions: _messageReactions,
-                            onMessageTap: _handleMessageTap,
-                          );
-                        },
-                      ),
+                    child: ChatMessageListSection(
+                      conversationId: widget.conversationId,
+                      user: user,
+                      currentUserId: currentUserId.isNotEmpty
+                          ? currentUserId
+                          : null,
+                      currentUserAvatar: ref
+                          .read(userProfileProvider.notifier)
+                          .getDisplayAvatarUrl(),
+                      scrollController: _scrollController,
+                      isLoading: chatDetailState.isLoading,
+                      selectMode: chatDetailState.selectMode,
+                      selectedClientMsgIds:
+                          chatDetailState.selectedClientMsgIds,
+                      messageReactions: _messageReactions,
+                      onMessageVisible: (msg) {
+                        if (!msg.isRead &&
+                            msg.sendId !=
+                                (currentUserId.isNotEmpty
+                                    ? currentUserId
+                                    : null)) {
+                          _viewModel?.markConversationMessageAsRead();
+                        }
+                      },
+                      messageActionsBuilder: _buildMessageActions,
+                      onMessageTap: _handleMessageTap,
                     ),
                   ),
                   if (chatDetailState.isForwarding)

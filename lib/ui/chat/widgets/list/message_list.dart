@@ -65,6 +65,8 @@ class MessageList extends StatefulWidget {
 class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
+  List<String?> _cachedDateLabels = const [];
+  List<String> _cachedDateLabelIds = const [];
 
 
   void _pruneMessageKeys(List<ChatMessage> messages) {
@@ -142,7 +144,8 @@ class MessageListState extends State<MessageList> {
 
     const useReverse = true;
     final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
-    final dateLabels = _buildDateLabels(widget.messages);
+    final dateLabels = _dateLabelsFor(widget.messages);
+    final maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.65;
 
     return ListView.builder(
       controller: widget.scrollController,
@@ -179,6 +182,7 @@ class MessageListState extends State<MessageList> {
           otherUser: widget.otherUser,
           currentUserId: widget.currentUserId,
           currentUserAvatar: widget.currentUserAvatar,
+          maxBubbleWidth: maxBubbleWidth,
           cachedSenderProfile:
               widget.cachedSenderProfiles?[message.sendId],
           cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
@@ -208,6 +212,25 @@ class MessageListState extends State<MessageList> {
         );
       },
     );
+  }
+
+  List<String?> _dateLabelsFor(List<ChatMessage> messages) {
+    final ids = messages.map((m) => m.clientMsgId).toList();
+    if (ids.length == _cachedDateLabelIds.length &&
+        _sameDateLabelIds(ids, _cachedDateLabelIds)) {
+      return _cachedDateLabels;
+    }
+    final labels = _buildDateLabels(messages);
+    _cachedDateLabels = labels;
+    _cachedDateLabelIds = ids;
+    return labels;
+  }
+
+  static bool _sameDateLabelIds(List<String> a, List<String> b) {
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
@@ -275,6 +298,7 @@ class _VisibleMessageBubble extends StatelessWidget {
     required this.otherUser,
     required this.currentUserId,
     required this.currentUserAvatar,
+    required this.maxBubbleWidth,
     required this.cachedSenderProfile,
     required this.cachedCurrentUserProfile,
     required this.onLongPress,
@@ -290,6 +314,7 @@ class _VisibleMessageBubble extends StatelessWidget {
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
+  final double maxBubbleWidth;
   final UserProfile? cachedSenderProfile;
   final UserProfile? cachedCurrentUserProfile;
   final void Function(ChatMessage message)? onLongPress;
@@ -308,6 +333,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         otherUser: otherUser,
         currentUserId: currentUserId,
         currentUserAvatar: currentUserAvatar,
+        maxBubbleWidth: maxBubbleWidth,
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,
@@ -333,6 +359,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         otherUser: otherUser,
         currentUserId: currentUserId,
         currentUserAvatar: currentUserAvatar,
+        maxBubbleWidth: maxBubbleWidth,
         cachedSenderProfile: cachedSenderProfile,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
         onLongPress: onLongPress,

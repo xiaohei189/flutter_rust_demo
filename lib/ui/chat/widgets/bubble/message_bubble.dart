@@ -28,6 +28,7 @@ class MessageBubble extends StatelessWidget {
   final User otherUser;
   final String? currentUserId;
   final String? currentUserAvatar;
+  final double? maxBubbleWidth;
   final UserProfile? cachedSenderProfile;
   final UserProfile? cachedCurrentUserProfile;
   final void Function(ChatMessage message)? onLongPress;
@@ -43,6 +44,7 @@ class MessageBubble extends StatelessWidget {
     required this.otherUser,
     this.currentUserId,
     this.currentUserAvatar,
+    this.maxBubbleWidth,
     this.cachedSenderProfile,
     this.cachedCurrentUserProfile,
     this.onLongPress,
@@ -114,7 +116,7 @@ class MessageBubble extends StatelessWidget {
     final isFromMe = _isFromMe;
     final timeText = _formatMessageTime(message.sendDateTime);
     final senderUser = _buildSenderUser();
-    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenWidth = maxBubbleWidth ?? MediaQuery.sizeOf(context).width;
 
     // 图片与合并转发消息不使用外层气泡背景：图片直接展示，合并转发自带卡片背景，避免两层颜色重叠
     final isPlainContent =

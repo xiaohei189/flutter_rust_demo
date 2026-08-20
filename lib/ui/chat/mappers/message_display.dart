@@ -5,18 +5,24 @@ import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
 
+final Expando<Map<String, dynamic>> _parsedContentCache = Expando<Map<String, dynamic>>();
+
 /// 给 Rust 生成的 MessageInfo 添加 UI 便利方法
 extension ChatMessageExt on ChatMessage {
   /// 消息类型枚举
   MessageType get messageType => messageTypeFromContentType(contentType);
 
-  /// 解析后的 content JSON
+  /// 解析后的 content JSON（带缓存，避免多个展示 getter 重复解析）
   Map<String, dynamic> get parsedContent {
-    if (content.isEmpty || !content.startsWith('{')) return {};
+    final cached = _parsedContentCache[this];
+    if (cached != null) return cached;
+    if (content.isEmpty || !content.startsWith('{')) return const {};
     try {
-      return jsonDecode(content) as Map<String, dynamic>;
+      final decoded = jsonDecode(content) as Map<String, dynamic>;
+      _parsedContentCache[this] = decoded;
+      return decoded;
     } catch (_) {
-      return {};
+      return const {};
     }
   }
 
@@ -242,11 +248,15 @@ extension MessageSearchResultExt on MessageSearchResult {
   MessageType get messageType => messageTypeFromContentType(contentType);
 
   Map<String, dynamic> get parsedContent {
-    if (content.isEmpty || !content.startsWith('{')) return {};
+    final cached = _parsedContentCache[this];
+    if (cached != null) return cached;
+    if (content.isEmpty || !content.startsWith('{')) return const {};
     try {
-      return jsonDecode(content) as Map<String, dynamic>;
+      final decoded = jsonDecode(content) as Map<String, dynamic>;
+      _parsedContentCache[this] = decoded;
+      return decoded;
     } catch (_) {
-      return {};
+      return const {};
     }
   }
 
