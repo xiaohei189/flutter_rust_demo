@@ -5,13 +5,9 @@ import 'package:flutter/material.dart';
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
+import 'quick_reply_panel.dart';
 
 const List<String> kMessageQuickReactions = ['👍', '❤️', '😄', '🙏'];
-const List<String> kMessageQuickReplyEmojis = [
-  '😀', '😄', '😂', '🤣', '👍', '❤️', '🎉', '😮',
-  '😢', '🙏', '😘', '🤝', '💪', '👏', '🥳', '😅',
-];
-
 /// 消息操作回调
 class MessageActions {
   final void Function(ChatMessage message) onCopy;
@@ -174,13 +170,6 @@ class _MessageToolPanel extends StatefulWidget {
 
 class _MessageToolPanelState extends State<_MessageToolPanel> {
   bool _showQuickReplyPanel = false;
-  final PageController _quickReplyPageController = PageController();
-  int _quickReplyPage = 0;
-  static const int _quickReplyPageSize = 8;
-
-  int get _quickReplyPageCount =>
-      (kMessageQuickReplyEmojis.length / _quickReplyPageSize).ceil();
-
   bool get _isFromMe => widget.message.sendId == widget.currentUserId;
 
   bool get _canRevoke =>
@@ -189,7 +178,6 @@ class _MessageToolPanelState extends State<_MessageToolPanel> {
 
   @override
   void dispose() {
-    _quickReplyPageController.dispose();
     super.dispose();
   }
 
@@ -206,7 +194,13 @@ class _MessageToolPanelState extends State<_MessageToolPanel> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 360),
         child: _showQuickReplyPanel
-            ? _buildQuickReplyPanel(context, colors)
+            ? QuickReplyPanel(
+                onBack: () => setState(() => _showQuickReplyPanel = false),
+                onQuickReply: (emoji) {
+                  widget.onClose();
+                  widget.actions.onQuickReply?.call(widget.message, emoji);
+                },
+              )
             : _buildQuickPanel(context, colors),
       ),
     );
@@ -248,92 +242,6 @@ class _MessageToolPanelState extends State<_MessageToolPanel> {
       ],
     );
   }
-
-  Widget _buildQuickReplyPanel(BuildContext context, AppColors colors) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: '返回工具面板',
-              onPressed: () => setState(() => _showQuickReplyPanel = false),
-            ),
-            Expanded(
-              child: Text(
-                '快速回复',
-                style: TextStyle(fontSize: 15, color: colors.textPrimary),
-              ),
-            ),
-          ],
-        ),
-        Divider(height: 1, color: colors.divider),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: SizedBox(
-            height: 100,
-            child: PageView.builder(
-              controller: _quickReplyPageController,
-              itemCount: _quickReplyPageCount,
-              onPageChanged: (page) =>
-                  setState(() => _quickReplyPage = page),
-              itemBuilder: (context, page) {
-                final start = page * _quickReplyPageSize;
-                final end = math.min(
-                  start + _quickReplyPageSize,
-                  kMessageQuickReplyEmojis.length,
-                );
-                return GridView.count(
-                  crossAxisCount: 6,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  childAspectRatio: 1.1,
-                  children: kMessageQuickReplyEmojis
-                      .sublist(start, end)
-                      .map(
-                        (emoji) => _QuickReplyEmoji(
-                          emoji: emoji,
-                          onTap: () {
-                            widget.onClose();
-                            widget.actions.onQuickReply
-                                ?.call(widget.message, emoji);
-                          },
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_quickReplyPageCount, (index) {
-            final selected = index == _quickReplyPage;
-            return GestureDetector(
-              key: ValueKey('quick_reply_dot_$index'),
-              onTap: () => _quickReplyPageController.jumpToPage(index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: selected ? 18 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: selected ? colors.primary : colors.divider,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
 
   List<Widget> _buildActions() {
     final actions = <_MessageToolAction>[
@@ -486,30 +394,6 @@ class _QuickReactionButton extends StatelessWidget {
   }
 }
 
-class _QuickReplyEmoji extends StatelessWidget {
-  const _QuickReplyEmoji({
-    required this.emoji,
-    required this.onTap,
-  });
-
-  final String emoji;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkResponse(
-      onTap: onTap,
-      radius: 18,
-      child: SizedBox(
-        width: 38,
-        height: 38,
-        child: Center(
-          child: Text(emoji, style: const TextStyle(fontSize: 20)),
-        ),
-      ),
-    );
-  }
-}
 
 class _MessageToolAction {
   final IconData icon;
