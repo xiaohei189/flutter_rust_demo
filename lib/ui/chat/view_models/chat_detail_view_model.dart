@@ -183,8 +183,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   Future<void> loadMessages({bool isLoadMore = false}) async {
     if (state.isLoading || (!state.hasMoreHistory && isLoadMore)) return;
 
-    final messageState = ref.read(messageListProvider(arg));
-    final currentMessages = messageState.messages;
+    final currentMessages = ref.read(messagesByConversationProvider(arg));
     String startClientMsgId = '';
     if (isLoadMore && currentMessages.isNotEmpty) {
       startClientMsgId = currentMessages.first.clientMsgId;
@@ -515,8 +514,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
 
   void toggleSelectAll() {
     final messages = ref
-        .read(messageListProvider(arg))
-        .messages
+        .read(messagesByConversationProvider(arg))
         .where((m) => m.messageType != MessageType.system)
         .toList();
     if (messages.isEmpty) return;

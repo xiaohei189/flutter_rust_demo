@@ -134,8 +134,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   void _onMessageListChanged() {
     final messages = ref
-        .read(messageListProvider(widget.conversationId))
-        .messages;
+        .read(messagesByConversationProvider(widget.conversationId));
     if (messages.isEmpty) {
       _lastMessageListTailId = '';
       return;
@@ -326,8 +325,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   void _locateMessage(MessageSearchResult log) {
     final messages = ref
-        .read(messageListProvider(widget.conversationId))
-        .messages;
+        .read(messagesByConversationProvider(widget.conversationId));
     final index = messages.indexWhere(
       (m) =>
           m.clientMsgId == log.clientMsgId ||
@@ -778,8 +776,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     Consumer(
                       builder: (context, ref, _) {
                         final messages = ref
-                            .watch(messageListProvider(widget.conversationId))
-                            .messages
+                            .watch(messagesByConversationProvider(widget.conversationId))
                             .where((m) => m.messageType != MessageType.system)
                             .toList();
                         return MessageSelectionTopBar(
@@ -800,10 +797,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       onPointerDown: (_) => FocusScope.of(context).unfocus(),
                       child: Consumer(
                         builder: (context, ref, child) {
-                          final messageState = ref.watch(
-                            messageListProvider(widget.conversationId),
+                          final messages = ref.watch(
+                            messagesByConversationProvider(widget.conversationId),
                           );
-                          final messages = messageState.messages;
 
                           return MessageList(
                             key: _messageListKey,

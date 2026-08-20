@@ -5,59 +5,38 @@ import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../providers/message_service_provider.dart';
 import '../../../application/chat/message_service_notifier.dart';
 
-/// 消息列表状态
+/// 消息列表状态（消息数据由 messagesByConversationProvider 派生）
 class MessageListState {
-  final List<ChatMessage> messages;
   final bool isLoading;
   final bool hasMore;
   final String? error;
 
   const MessageListState({
-    this.messages = const [],
     this.isLoading = false,
     this.hasMore = true,
     this.error,
   });
 
   MessageListState copyWith({
-    List<ChatMessage>? messages,
     bool? isLoading,
     bool? hasMore,
     String? error,
   }) {
     return MessageListState(
-      messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
       error: error,
     );
   }
-
-  ChatMessage? get latestMessage => messages.isNotEmpty ? messages.last : null;
-
-  ChatMessage? get earliestMessage =>
-      messages.isNotEmpty ? messages.first : null;
 }
 
 /// 消息列表 ViewModel（按会话）
 class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   @override
-  MessageListState build(String conversationId) {
-    ref.listen(
-      messageServiceProvider.select((s) => s.messages[conversationId]),
-      (_, next) => state = state.copyWith(messages: next ?? const []),
-    );
-    Future.microtask(_syncState);
-    return const MessageListState();
-  }
+  MessageListState build(String conversationId) => const MessageListState();
 
   MessageServiceNotifier get _messageService =>
       ref.read(messageServiceProvider.notifier);
-
-  void _syncState() {
-    final messages = _messageService.getMessages(arg);
-    state = state.copyWith(messages: messages);
-  }
 
   void resetLoadState() {
     state = state.copyWith(hasMore: true, isLoading: false, error: null);
@@ -76,7 +55,6 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
         count: count,
         startClientMsgId: startClientMsgId,
       );
-      _syncState();
       state = state.copyWith(isLoading: false, hasMore: hasMore);
       return hasMore;
     } catch (e) {
@@ -155,7 +133,6 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
 
   void _addSentMessage(ChatMessage result) {
     _messageService.upsertSentMessage(arg, result);
-    _syncState();
   }
 
   String _sourceId(String recvId, String? groupId) =>

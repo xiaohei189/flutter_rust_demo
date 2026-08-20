@@ -17,6 +17,16 @@ final messagesProvider = Provider.family<List<ChatMessage>, String>((
   return ref.watch(messageServiceProvider).messages[conversationId] ?? [];
 });
 
+/// 指定会话消息列表（从全局消息状态派生）
+final messagesByConversationProvider = Provider.family<List<ChatMessage>, String>((
+  ref,
+  conversationId,
+) {
+  return ref.watch(messageServiceProvider.select(
+    (s) => s.messages[conversationId] ?? const [],
+  ));
+});
+
 /// 消息列表 Provider（按会话 ID）
 final messageListProvider =
     NotifierProvider.family<MessageListNotifier, MessageListState, String>(
@@ -26,5 +36,5 @@ final messageListProvider =
 /// 指定会话的消息列表 Provider（便捷访问）
 final messagesByConversationIdProvider =
     Provider.family<List<ChatMessage>, String>((ref, conversationId) {
-      return ref.watch(messageListProvider(conversationId)).messages;
+      return ref.watch(messagesByConversationProvider(conversationId));
     });
