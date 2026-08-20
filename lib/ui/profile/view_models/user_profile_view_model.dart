@@ -100,37 +100,47 @@ const _kLocalAvatarPathKey = 'user_local_avatar_path';
 class UserProfileNotifier extends Notifier<UserProfileState> {
   @override
   UserProfileState build() {
-    final profile = ref.watch(
-      messageServiceProvider.select((s) => s.loginUserProfile),
-    );
-    _applyLoginProfile(profile);
-    Future.microtask(_loadLocalAvatarPathSync);
-    return state;
+    _init();
+    return const UserProfileState();
   }
 
-  void _applyLoginProfile(UserProfile? profile) {
-    if (profile == null) return;
-    final current = state.profile;
-    if (current?.userId == profile.userId &&
-        current?.nickname == profile.nickname &&
-        current?.faceUrl == profile.faceUrl) {
-      return;
-    }
+  void _init() {
+    // 先加载本地头像路径（从 SharedPreferences 恢复）
+    Future.microtask(_loadLocalAvatarPathSync);
 
-    final exData = UserProfileState.parseEx(profile.remark);
-    appLog.i(
-      '[UserProfile] 登录资料更新: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}',
-    );
-    // 已有本地头像路径时保留，避免覆盖本地预览
-    state = state.copyWith(
-      profile: profile,
-      nickname: profile.nickname.trim(),
-      alias: exData['alias'] ?? '',
-      signature: exData['signature'] ?? '',
-      localAvatarPath: state.localAvatarPath,
-      isLoading: false,
-      error: null,
-    );
+    // 监听 messageServiceProvider 的状态变化
+    ref.listen(messageServiceProvider.select((s) => s.loginUserProfile), (previous, next) {
+      if (next != null) {
+        // 当 loginUserProfile 变化时直接更新状态
+        if (previous?.userId !=
+                next.userId ||
+            previous?.nickname !=
+                next.nickname ||
+            previous?.faceUrl !=
+                next.faceUrl) {
+          final profile = next;
+          final exData = UserProfileState.parseEx(profile.remark);
+          appLog.i(
+            '[UserProfile] 监听器触发: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}',
+          );
+
+          // 重要：如果已经有本地路径了，保留它！
+          // 只有本地路径为空，并且服务器 URL 有效时才使用服务器 URL
+          final String? localAvatarPath = state.localAvatarPath;
+          appLog.i('[UserProfile] 监听器: 保留 localAvatarPath=$localAvatarPath');
+
+          state = state.copyWith(
+            profile: profile,
+            nickname: profile.nickname.trim(),
+            alias: exData['alias'] ?? '',
+            signature: exData['signature'] ?? '',
+            localAvatarPath: localAvatarPath, // 保持本地路径不变
+            isLoading: false,
+            error: null,
+          );
+        }
+      }
+    });
   }
 
   /// 同步加载本地头像路径（使用 cachedValue 避免重复读取）
