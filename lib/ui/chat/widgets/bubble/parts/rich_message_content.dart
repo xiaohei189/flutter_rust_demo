@@ -120,8 +120,8 @@ class MergeMessageContent extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isFromMe
-            ? context.appColors.onPrimary.withValues(alpha: 0.15)
-            : context.appColors.onPrimary,
+            ? context.appColors.bubbleMine
+            : context.appColors.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(

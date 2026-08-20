@@ -62,4 +62,50 @@ void main() {
     expect(find.text('杭州西溪湿地'), findsOneWidget);
     expect(find.textContaining('天目山路'), findsOneWidget);
   });
+
+
+  testWidgets('空当前用户 ID 时不把空 sendId 消息判为自己发送', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 800,
+            height: 200,
+            child: MessageList(
+              messages: [
+                ChatMessage(
+                  clientMsgId: 'empty-send-id',
+                  serverMsgId: '',
+                  sendId: '',
+                  recvId: 'user_2',
+                  groupId: '',
+                  senderPlatformId: 0,
+                  senderNickname: '李四',
+                  senderFaceUrl: '',
+                  sessionType: 1,
+                  msgFrom: 0,
+                  contentType: 101,
+                  content: '{"content":"你好"}',
+                  seq: 0,
+                  sendTime: 1000,
+                  createTime: 1000,
+                  status: 2,
+                  isRead: false,
+                  attachedInfo: '',
+                  ex: '',
+                ),
+              ],
+              otherUser: const User(id: 'user_2', name: '李四'),
+              currentUserId: '',
+              scrollController: ScrollController(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 自己发送的消息才显示已读状态图标
+    expect(find.byIcon(Icons.done), findsNothing);
+  });
 }

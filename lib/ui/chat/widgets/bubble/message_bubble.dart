@@ -87,11 +87,10 @@ class MessageBubble extends StatelessWidget {
   }
 
   bool get _isFromMe =>
-      message.sendId == currentUserId ||
-      (currentUserId != null &&
-          currentUserId!.isNotEmpty &&
-          message.sendId.isNotEmpty &&
-          message.sendId == currentUserId);
+      currentUserId != null &&
+      currentUserId!.isNotEmpty &&
+      message.sendId.isNotEmpty &&
+      message.sendId == currentUserId;
 
   bool get isGroupChat => message.sessionType == 2 || message.sessionType == 3;
 
@@ -118,16 +117,18 @@ class MessageBubble extends StatelessWidget {
     final senderUser = _buildSenderUser();
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    // 图片消息不使用气泡背景（直接展示图片，去掉蓝色底），其余消息保留气泡底色
-    final isImage = message.messageType == MessageType.image;
+    // 图片与合并转发消息不使用外层气泡背景：图片直接展示，合并转发自带卡片背景，避免两层颜色重叠
+    final isPlainContent =
+        message.messageType == MessageType.image ||
+        message.messageType == MessageType.merge;
 
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
-      padding: isImage
+      padding: isPlainContent
           ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isImage
+        color: isPlainContent
             ? Colors.transparent
             : (isFromMe
                   ? context.appColors.bubbleMine
