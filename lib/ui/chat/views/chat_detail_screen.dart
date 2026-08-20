@@ -31,7 +31,7 @@ import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
-import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog;
+import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog, showMergeForwardTitleDialog;
 import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/message_list.dart';
@@ -607,30 +607,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
     var title = '聊天记录';
     if (merge) {
-      var input = title;
-      final edited = await showDialog<String>(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            title: const Text('合并转发标题'),
-            content: TextField(
-              maxLength: 40,
-              onChanged: (value) => input = value,
-              decoration: const InputDecoration(hintText: '请输入合并转发标题'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(input),
-                child: const Text('确定'),
-              ),
-            ],
-          );
-        },
-      );
+      final edited = await showMergeForwardTitleDialog(context, title);
       if (edited == null || !mounted) return;
       title = edited.trim().isEmpty ? '聊天记录' : edited.trim();
     }

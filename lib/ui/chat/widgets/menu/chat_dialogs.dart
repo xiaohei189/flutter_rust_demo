@@ -52,3 +52,32 @@ Future<bool> showDeleteMessagesConfirm(BuildContext context, int count) {
     ),
   ).then((value) => value ?? false);
 }
+
+
+Future<String?> showMergeForwardTitleDialog(
+  BuildContext context,
+  String initialTitle,
+) {
+  var input = initialTitle;
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('合并转发标题'),
+      content: TextField(
+        maxLength: 40,
+        onChanged: (value) => input = value,
+        decoration: const InputDecoration(hintText: '请输入合并转发标题'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text('取消'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(input),
+          child: const Text('确定'),
+        ),
+      ],
+    ),
+  );
+}
