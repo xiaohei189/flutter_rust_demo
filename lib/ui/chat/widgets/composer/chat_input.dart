@@ -14,6 +14,7 @@ import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'chat_input_field.dart';
 import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
@@ -698,65 +699,12 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 第二层：输入框行（全宽圆角、自适应高度）
   Widget _buildInputRow() {
-    return TextField(
+    return ChatInputField(
       controller: widget.controller,
       focusNode: _focusNode,
-      minLines: 1,
-      // 自动增高：普通 1-8 行、Markdown 1-12 行，超出内部滚动；长文用 ⤢ 抽屉
-      maxLines: _isMarkdownMode ? 12 : 8,
-      // 对齐 OpenIM 服务端消息长度限制
-      maxLength: 4000,
-      buildCounter:
-          (_, {required currentLength, required isFocused, int? maxLength}) =>
-              const SizedBox.shrink(),
-      textInputAction: TextInputAction.send,
-      style: TextStyle(
-        fontSize: 16,
-        color: context.appColors.textPrimary,
-        fontFamily: _isMarkdownMode ? 'monospace' : null,
-      ),
-      decoration: InputDecoration(
-        hintText: '输入消息...',
-        hintStyle: TextStyle(
-          color: context.appColors.textSecondary,
-          fontSize: 16,
-        ),
-        filled: true,
-        // 与抽屉/卡片统一为 surface（浅色纯白、深色深灰）
-        fillColor: context.appColors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
-        // 飞书式展开：点击打开半屏大编辑抽屉（长文 / Markdown）
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.open_in_full, size: 18),
-          tooltip: '展开编辑',
-          onPressed: _openComposerSheet,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        ),
-        suffixIconConstraints: const BoxConstraints(
-          minWidth: 32,
-          minHeight: 32,
-        ),
-      ),
-      // 点击发送/工具栏按钮时保持输入焦点，避免 TapRegion 先收起工具栏吞掉点击。
-      onTapOutside: (_) {},
-      onSubmitted: (_) => _doSend(),
+      isMarkdownMode: _isMarkdownMode,
+      onOpenComposer: _openComposerSheet,
+      onSubmitted: _doSend,
     );
   }
 
