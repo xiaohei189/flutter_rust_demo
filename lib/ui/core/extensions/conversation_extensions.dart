@@ -1,17 +1,17 @@
 import '../../../domain/models/conversation.dart';
-import '../../../generated/rust/constant/enums.dart' show SessionType;
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 
 extension ConversationX on Conversation {
-  SessionType get sessionType {
+  ChatSessionType get sessionType {
     switch (conversationType) {
       case 1:
-        return SessionType.singleChat;
+        return ChatSessionType.singleChat;
       case 2:
-        return SessionType.writeGroupChat;
+        return ChatSessionType.writeGroupChat;
       case 3:
-        return SessionType.readGroupChat;
+        return ChatSessionType.readGroupChat;
       default:
-        return SessionType.notificationChat;
+        return ChatSessionType.notificationChat;
     }
   }
 }

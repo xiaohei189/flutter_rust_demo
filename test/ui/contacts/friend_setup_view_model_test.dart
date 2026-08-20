@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/blacklist_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
+import 'package:flutter_rust_demo/domain/models/chat_session_type.dart' show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/blacklist_user.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/domain/models/friend.dart';
@@ -27,7 +28,7 @@ class FakeMessageRepository implements MessageRepository {
   @override
   Future<String> getConversationIdBySessionType({
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (shouldFail) throw Exception('加载失败');
     return 'si_$sourceId';

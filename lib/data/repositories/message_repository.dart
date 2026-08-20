@@ -3,6 +3,7 @@ import 'dart:typed_data' show Int32List;
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/chat_message.dart' show ChatMessage, MessageHistoryPage;
+import '../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../domain/models/user_profile.dart' show UserProfile, UserProfileMapping;
 import '../mappers/message_mapper.dart';
@@ -173,7 +174,7 @@ abstract class MessageRepository {
 
   Future<String> getConversationIdBySessionType({
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   });
 
   Future<bool> isInBlacklist(String userId);
@@ -614,11 +615,11 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<String> getConversationIdBySessionType({
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) {
     return _client.getConversationIdBySessionType(
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: SessionType.values[sessionType.index],
     );
   }
 

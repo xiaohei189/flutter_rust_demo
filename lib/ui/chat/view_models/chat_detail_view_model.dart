@@ -7,7 +7,7 @@ import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/extensions/message_ext.dart';
-import '../../../generated/rust/constant/enums.dart' show SessionType;
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/chat_aux_provider.dart';
@@ -23,7 +23,7 @@ import '../../../application/chat/message_service_notifier.dart';
 
 typedef ChatSendTarget = ({
   String recvId,
-  SessionType sessionType,
+  ChatSessionType sessionType,
   String groupId,
 });
 
@@ -167,8 +167,8 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
 
     final sessionType = conv.sessionType;
     final groupId =
-        (sessionType == SessionType.writeGroupChat ||
-            sessionType == SessionType.readGroupChat)
+        (sessionType == ChatSessionType.writeGroupChat ||
+            sessionType == ChatSessionType.readGroupChat)
         ? (conv.groupId.isNotEmpty
               ? conv.groupId
               : cid.startsWith('sg_')
@@ -612,8 +612,8 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }) async {
     if (messages.isEmpty) return false;
     final sessionType = isGroup
-        ? SessionType.writeGroupChat
-        : SessionType.singleChat;
+        ? ChatSessionType.writeGroupChat
+        : ChatSessionType.singleChat;
     try {
       if (merge) {
         await _messageService.sendMergerMessage(
@@ -737,8 +737,8 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     required String title,
   }) async {
     final sessionType = isGroup
-        ? SessionType.writeGroupChat
-        : SessionType.singleChat;
+        ? ChatSessionType.writeGroupChat
+        : ChatSessionType.singleChat;
     if (merge) {
       await _messageService.sendMergerMessage(
         clientMsgIds: messages.map((m) => m.clientMsgId).toList(),

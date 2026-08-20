@@ -5,7 +5,7 @@ import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';
-import '../../../generated/rust/constant/enums.dart' show SessionType;
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -284,8 +284,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             clientMsgId: log.clientMsgId,
             sourceId: target.id,
             sessionType: target.isGroup
-                ? SessionType.writeGroupChat
-                : SessionType.singleChat,
+                ? ChatSessionType.writeGroupChat
+                : ChatSessionType.singleChat,
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

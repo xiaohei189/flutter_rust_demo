@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../generated/rust/constant/enums.dart';
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../providers/message_service_provider.dart';
 import '../../../application/chat/message_service_notifier.dart';
@@ -88,7 +88,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendTextMessage({
     required String recvId,
     required String text,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -110,7 +110,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendMarkdownMessage({
     required String recvId,
     required String text,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -133,7 +133,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String recvId,
     required String text,
     required List<String> atUserIds,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -164,7 +164,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendImageMessage({
     required String recvId,
     required String filePath,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -185,7 +185,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendImageMessageFromUrl({
     required String recvId,
     required String sourceUrl,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -206,7 +206,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String recvId,
     required String videoPath,
     required String snapshotPath,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required int duration,
     String? groupId,
   }) async {
@@ -229,7 +229,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendSoundMessage({
     required String recvId,
     required String filePath,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required int duration,
     String? groupId,
   }) async {
@@ -251,7 +251,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> sendFileMessage({
     required String recvId,
     required String filePath,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -273,7 +273,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String description,
     required double latitude,
     required double longitude,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     String? groupId,
   }) async {
     try {
@@ -295,7 +295,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
   Future<bool> resendMessage({
     required ChatMessage message,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     try {
       final result = await _messageService.resendMessage(

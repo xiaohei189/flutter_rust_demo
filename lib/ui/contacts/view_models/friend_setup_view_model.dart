@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../generated/rust/constant/enums.dart' show SessionType;
+import '../../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../chat/providers/conversation_provider.dart';
 import '../../chat/providers/message_service_provider.dart';
 import '../providers/friend_provider.dart';
@@ -58,7 +58,7 @@ class FriendSetupViewModel extends FamilyNotifier<FriendSetupState, String> {
       final repository = ref.read(messageRepositoryProvider);
       final conversationId = await repository.getConversationIdBySessionType(
         sourceId: arg,
-        sessionType: SessionType.singleChat,
+        sessionType: ChatSessionType.singleChat,
       );
       final conversation = ref
           .read(conversationsProvider)

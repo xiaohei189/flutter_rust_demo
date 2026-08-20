@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../generated/rust/constant/enums.dart' show SessionType;
 import '../../../generated/rust/event/events/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
@@ -193,11 +194,11 @@ class MessageServiceConversationController {
       final conv = service.currentState.conversations
           .where((c) => c.conversationId == conversationId)
           .firstOrNull;
-      final sessionType = conv?.sessionType ?? SessionType.singleChat;
+      final sessionType = conv?.sessionType ?? ChatSessionType.singleChat;
       appLog.i('[READ] Service 标记已读: sessionType=$sessionType');
       await service.repository.markConversationMessageAsRead(
         conversationId: conversationId,
-        sessionType: sessionType,
+        sessionType: SessionType.values[sessionType.index],
       );
       final newConversations = List<Conversation>.from(
         service.currentState.conversations,

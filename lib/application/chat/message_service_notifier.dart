@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/chat_session_type.dart' show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,6 +70,8 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceState get currentState => state;
 
   bool get _isClientReady => ImClient.instance.isInitialized;
+
+  SessionType _toSdkSessionType(ChatSessionType type) => SessionType.values[type.index];
 
   void updateState(MessageServiceState next) => state = next;
 
@@ -277,7 +280,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendTextMessage({
     required String recvId,
     required String text,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
   }) async {
@@ -290,7 +293,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     return repository.sendTextMessage(
       text: text,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -298,7 +301,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendMarkdownMessage({
     required String recvId,
     required String text,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
   }) async {
@@ -307,7 +310,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     return repository.sendMarkdownMessage(
       text: text,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -316,7 +319,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String text,
     required List<String> atUserIds,
     required String recvId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
   }) async {
@@ -326,7 +329,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       text: text,
       atUserIds: atUserIds,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -351,13 +354,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<void> forwardMessage({
     required String clientMsgId,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     await repository.forwardMessage(
       clientMsgId: clientMsgId,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -365,13 +368,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendImageMessage({
     required String filePath,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendImageMessage(
       filePath: filePath,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -379,13 +382,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendImageMessageFromUrl(
       sourceUrl: sourceUrl,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -394,7 +397,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required int duration,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
@@ -402,7 +405,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       videoPath: videoPath,
       snapshotPath: snapshotPath,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
       duration: duration,
     );
   }
@@ -411,14 +414,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendSoundMessage({
     required String filePath,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required int duration,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendSoundMessage(
       filePath: filePath,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
       duration: duration,
     );
   }
@@ -427,13 +430,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendFileMessage({
     required String filePath,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendFileMessage(
       filePath: filePath,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -443,7 +446,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required double latitude,
     required double longitude,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendLocationMessage(
@@ -451,7 +454,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       latitude: latitude,
       longitude: longitude,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -460,14 +463,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required int index,
     required String data,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendFaceMessage(
       index: index,
       data: data,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -478,7 +481,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String faceUrl,
     required String ex,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.sendCardMessage(
@@ -487,7 +490,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       faceUrl: faceUrl,
       ex: ex,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -495,7 +498,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> sendQuoteMessage({
     required String text,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required String quoteText,
     required String quoteClientMsgId,
     required String quoteSendId,
@@ -505,7 +508,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     return repository.sendQuoteMessage(
       text: text,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
       quoteText: quoteText,
       quoteClientMsgId: quoteClientMsgId,
       quoteSendId: quoteSendId,
@@ -516,12 +519,12 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   /// 发送正在输入状态
   Future<void> sendTyping({
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
     required bool focus,
   }) {
     return repository.sendTyping(
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
       focus: focus,
     );
   }
@@ -533,7 +536,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String title,
     required List<String> summaryList,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) {
     return repository.sendMergerMessage(
       clientMsgIds: clientMsgIds,
@@ -541,7 +544,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       title: title,
       summaryList: summaryList,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
@@ -636,13 +639,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<ChatMessage> resendMessage({
     required ChatMessage message,
     required String sourceId,
-    required SessionType sessionType,
+    required ChatSessionType sessionType,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
     return repository.resendMessage(
       message: message,
       sourceId: sourceId,
-      sessionType: sessionType,
+      sessionType: _toSdkSessionType(sessionType),
     );
   }
 
