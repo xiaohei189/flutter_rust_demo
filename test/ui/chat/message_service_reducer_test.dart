@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/generated/rust/model/local.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart';
-import 'package:flutter_rust_demo/ui/chat/view_models/message_service_reducer.dart';
-import 'package:flutter_rust_demo/ui/chat/view_models/message_service_state.dart';
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/application/chat/message_service_reducer.dart';
+import 'package:flutter_rust_demo/application/chat/message_service_state.dart';
 
-MessageInfo _message(String id) => MessageInfo(
+ChatMessage _message(String id) => ChatMessage(
   clientMsgId: id,
   serverMsgId: '',
   sendId: 'u1',
@@ -30,7 +30,7 @@ MessageInfo _message(String id) => MessageInfo(
 void main() {
   group('MessageServiceReducer', () {
     test('appendIncomingMessage 追加新消息并去重', () {
-      final state = const MessageServiceState();
+      final state = MessageServiceState();
 
       final added = MessageServiceReducer.appendIncomingMessage(
         state,
@@ -48,7 +48,7 @@ void main() {
     });
 
     test('removeMessage 只移除指定消息', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1'), _message('m2')],
         },
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('applyDeleted 删除多条消息', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1'), _message('m2'), _message('m3')],
         },
@@ -77,7 +77,7 @@ void main() {
     });
 
     test('applySendFailed 标记失败并移除上传进度', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [_message('m1')],
         },
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('applyUploadProgress 完成时移除进度', () {
-      final state = const MessageServiceState().copyWith(
+      final state = MessageServiceState().copyWith(
         uploadProgress: {'m1': 50},
       );
 
@@ -105,7 +105,7 @@ void main() {
     });
 
     test('applyConversationEvent 合并会话列表', () {
-      final state = const MessageServiceState();
+      final state = MessageServiceState();
       const raw = LocalConversation(
         conversationId: 'si_user_a_user_b',
         conversationType: 1,

@@ -11,14 +11,13 @@ import 'package:flutter_rust_demo/domain/models/friend.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
 import 'package:flutter_rust_demo/domain/models/group_member.dart';
 import 'package:flutter_rust_demo/domain/models/user.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart'
-    show MessageInfo;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 
 String _json(Map<String, Object?> map) => jsonEncode(map);
 
-// ==================== 消息（MessageInfo） ====================
+// ==================== 消息（ChatMessage） ====================
 
-MessageInfo _message({
+ChatMessage _message({
   required String id,
   required int contentType,
   required String content,
@@ -31,7 +30,7 @@ MessageInfo _message({
   int sendTime = 0,
   String senderFaceUrl = '',
 }) {
-  return MessageInfo(
+  return ChatMessage(
     clientMsgId: id,
     serverMsgId: 'srv_$id',
     sendId: sendId,
@@ -59,7 +58,7 @@ const String kPreviewMyUserId = 'user_1';
 const String kPreviewMyNickname = '张三';
 
 /// 文本消息（contentType=101）
-MessageInfo fakeTextMessage({
+ChatMessage fakeTextMessage({
   String text = '你好，这是一条文本消息',
   bool fromMe = false,
   String sender = '李四',
@@ -79,7 +78,7 @@ MessageInfo fakeTextMessage({
 }
 
 /// 图片消息（contentType=102，地址为空走占位分支）
-MessageInfo fakeImageMessage({bool fromMe = false}) {
+ChatMessage fakeImageMessage({bool fromMe = false}) {
   return _message(
     id: 'image_${fromMe ? 'me' : 'other'}',
     contentType: 102,
@@ -93,7 +92,7 @@ MessageInfo fakeImageMessage({bool fromMe = false}) {
 }
 
 /// 视频消息（contentType=104，无快照走占位）
-MessageInfo fakeVideoMessage({bool fromMe = false}) {
+ChatMessage fakeVideoMessage({bool fromMe = false}) {
   return _message(
     id: 'video_${fromMe ? 'me' : 'other'}',
     contentType: 104,
@@ -105,7 +104,7 @@ MessageInfo fakeVideoMessage({bool fromMe = false}) {
 }
 
 /// 语音消息（contentType=103）
-MessageInfo fakeAudioMessage({bool fromMe = false, int duration = 8}) {
+ChatMessage fakeAudioMessage({bool fromMe = false, int duration = 8}) {
   return _message(
     id: 'audio_${fromMe ? 'me' : 'other'}',
     contentType: 103,
@@ -117,7 +116,7 @@ MessageInfo fakeAudioMessage({bool fromMe = false, int duration = 8}) {
 }
 
 /// 文件消息（contentType=105）
-MessageInfo fakeFileMessage({bool fromMe = false, String name = '需求文档.pdf'}) {
+ChatMessage fakeFileMessage({bool fromMe = false, String name = '需求文档.pdf'}) {
   return _message(
     id: 'file_${fromMe ? 'me' : 'other'}',
     contentType: 105,
@@ -134,7 +133,7 @@ MessageInfo fakeFileMessage({bool fromMe = false, String name = '需求文档.pd
 }
 
 /// 引用消息（contentType=114）
-MessageInfo fakeQuoteMessage({
+ChatMessage fakeQuoteMessage({
   bool fromMe = false,
   String replyContent = '被引用的原文内容',
   String replySender = '王五',
@@ -156,7 +155,7 @@ MessageInfo fakeQuoteMessage({
 }
 
 /// 合并转发消息（contentType=107）
-MessageInfo fakeMergeMessage({bool fromMe = false}) {
+ChatMessage fakeMergeMessage({bool fromMe = false}) {
   return _message(
     id: 'merge_${fromMe ? 'me' : 'other'}',
     contentType: 107,
@@ -177,7 +176,7 @@ MessageInfo fakeMergeMessage({bool fromMe = false}) {
 }
 
 /// 名片消息（contentType=108）
-MessageInfo fakeCardMessage({bool fromMe = false}) {
+ChatMessage fakeCardMessage({bool fromMe = false}) {
   return _message(
     id: 'card_${fromMe ? 'me' : 'other'}',
     contentType: 108,
@@ -189,7 +188,7 @@ MessageInfo fakeCardMessage({bool fromMe = false}) {
 }
 
 /// 位置消息（contentType=109）
-MessageInfo fakeLocationMessage({bool fromMe = false}) {
+ChatMessage fakeLocationMessage({bool fromMe = false}) {
   return _message(
     id: 'location_${fromMe ? 'me' : 'other'}',
     contentType: 109,
@@ -206,7 +205,7 @@ MessageInfo fakeLocationMessage({bool fromMe = false}) {
 }
 
 /// 系统消息（contentType=2101 撤回通知）
-MessageInfo fakeSystemMessage({String text = '李四 撤回了一条消息'}) {
+ChatMessage fakeSystemMessage({String text = '李四 撤回了一条消息'}) {
   return _message(
     id: 'system_1',
     contentType: 2101,
@@ -218,7 +217,7 @@ MessageInfo fakeSystemMessage({String text = '李四 撤回了一条消息'}) {
 }
 
 /// @ 消息（contentType=106）
-MessageInfo fakeAtMessage({bool fromMe = false}) {
+ChatMessage fakeAtMessage({bool fromMe = false}) {
   return _message(
     id: 'at_${fromMe ? 'me' : 'other'}',
     contentType: 106,
@@ -235,7 +234,7 @@ MessageInfo fakeAtMessage({bool fromMe = false}) {
 }
 
 /// Markdown 消息（contentType=118）
-MessageInfo fakeMarkdownMessage({bool fromMe = false}) {
+ChatMessage fakeMarkdownMessage({bool fromMe = false}) {
   return _message(
     id: 'md_${fromMe ? 'me' : 'other'}',
     contentType: 118,
@@ -250,7 +249,7 @@ MessageInfo fakeMarkdownMessage({bool fromMe = false}) {
 }
 
 /// 自定义消息（contentType=110）
-MessageInfo fakeCustomMessage({bool fromMe = false}) {
+ChatMessage fakeCustomMessage({bool fromMe = false}) {
   return _message(
     id: 'custom_${fromMe ? 'me' : 'other'}',
     contentType: 110,
@@ -262,7 +261,7 @@ MessageInfo fakeCustomMessage({bool fromMe = false}) {
 }
 
 /// 一组混合消息（按时间升序），用于消息列表类预览。
-List<MessageInfo> fakeMessageList() {
+List<ChatMessage> fakeMessageList() {
   final now = DateTime.now().millisecondsSinceEpoch;
   return [
     fakeSystemMessage(text: '你已加入群聊，开始畅聊吧'),

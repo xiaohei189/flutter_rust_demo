@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_rust_demo/ui/chat/widgets/chat_input.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/message_composer_sheet.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/composer/message_composer_sheet.dart';
 
 void main() {
   testWidgets('聚焦态点击发送时保持输入焦点并触发 onSend', (tester) async {

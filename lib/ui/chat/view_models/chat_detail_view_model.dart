@@ -8,8 +8,8 @@ import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/constant/enums.dart' show SessionType;
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
 import '../../../providers/current_user_provider.dart';
@@ -19,7 +19,7 @@ import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
-import 'message_service_notifier.dart';
+import '../../../application/chat/message_service_notifier.dart';
 
 typedef ChatSendTarget = ({
   String recvId,
@@ -31,9 +31,9 @@ typedef ChatSendTarget = ({
 class ChatDetailState {
   final bool isLoading;
   final bool hasMoreHistory;
-  final MessageInfo? quotedMessage;
+  final ChatMessage? quotedMessage;
   final bool selectMode;
-  final List<MessageInfo> selectedMessages;
+  final List<ChatMessage> selectedMessages;
   final List<String> atUserIds;
   final String? errorText;
   final bool isForwarding;
@@ -56,10 +56,10 @@ class ChatDetailState {
   ChatDetailState copyWith({
     bool? isLoading,
     bool? hasMoreHistory,
-    MessageInfo? quotedMessage,
+    ChatMessage? quotedMessage,
     bool clearQuotedMessage = false,
     bool? selectMode,
-    List<MessageInfo>? selectedMessages,
+    List<ChatMessage>? selectedMessages,
     List<String>? atUserIds,
     String? errorText,
     bool clearError = false,
@@ -93,7 +93,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   DateTime? _lastMarkReadTime;
   String? _onlineStatusUserId;
   bool _forwardCancelled = false;
-  List<MessageInfo>? _lastForwardMessages;
+  List<ChatMessage>? _lastForwardMessages;
   List<({String id, bool isGroup})>? _failedForwardTargets;
   String _lastForwardTitle = '聊天记录';
   bool _lastForwardMerge = false;
@@ -478,7 +478,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     return ok;
   }
 
-  void setQuotedMessage(MessageInfo message) {
+  void setQuotedMessage(ChatMessage message) {
     state = state.copyWith(quotedMessage: message);
   }
 
@@ -503,8 +503,8 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     state = state.copyWith(selectMode: false, selectedMessages: const []);
   }
 
-  void toggleMessageSelection(MessageInfo message) {
-    final selected = List<MessageInfo>.from(state.selectedMessages);
+  void toggleMessageSelection(ChatMessage message) {
+    final selected = List<ChatMessage>.from(state.selectedMessages);
     if (selected.any((m) => m.clientMsgId == message.clientMsgId)) {
       selected.removeWhere((m) => m.clientMsgId == message.clientMsgId);
     } else {
@@ -527,7 +527,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }
 
   Future<bool> deleteSelectedMessages() async {
-    final messages = List<MessageInfo>.from(state.selectedMessages);
+    final messages = List<ChatMessage>.from(state.selectedMessages);
     if (messages.isEmpty) return false;
     try {
       for (final message in messages) {
@@ -544,7 +544,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     }
   }
 
-  Future<bool> revokeMessage(MessageInfo message) async {
+  Future<bool> revokeMessage(ChatMessage message) async {
     final conv = conversation;
     if (conv == null) return false;
     try {
@@ -561,7 +561,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     }
   }
 
-  Future<bool> deleteMessage(MessageInfo message) async {
+  Future<bool> deleteMessage(ChatMessage message) async {
     try {
       await _messageService.deleteMessage(
         conversationId: arg,
@@ -574,7 +574,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     }
   }
 
-  Future<bool> resendMessage(MessageInfo message) async {
+  Future<bool> resendMessage(ChatMessage message) async {
     final target = sendTarget;
     if (target == null) {
       state = state.copyWith(errorText: '会话信息异常，无法重发');
@@ -596,7 +596,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     return ok;
   }
 
-  Future<List<LocalChatLog>> searchLocalMessages(String keyword) {
+  Future<List<MessageSearchResult>> searchLocalMessages(String keyword) {
     return _messageService.searchLocalMessages(
       conversationId: arg,
       keyword: keyword,
@@ -604,7 +604,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }
 
   Future<bool> forwardSelectedMessages({
-    required List<MessageInfo> messages,
+    required List<ChatMessage> messages,
     required String targetId,
     required bool isGroup,
     required bool merge,
@@ -642,7 +642,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }
 
   Future<bool> forwardSelectedMessagesToTargets({
-    required List<MessageInfo> messages,
+    required List<ChatMessage> messages,
     required List<({String id, bool isGroup})> targets,
     required bool merge,
     String title = '聊天记录',
@@ -730,7 +730,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
   }
 
   Future<void> _forwardToTarget({
-    required List<MessageInfo> messages,
+    required List<ChatMessage> messages,
     required String targetId,
     required bool isGroup,
     required bool merge,

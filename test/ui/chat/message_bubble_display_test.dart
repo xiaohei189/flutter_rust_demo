@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/user.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart' show MessageInfo;
-import 'package:flutter_rust_demo/ui/chat/widgets/message_list.dart';
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/ui/chat/widgets/list/message_list.dart';
 import 'package:flutter_rust_demo/ui/previews/fake_data.dart';
 
 /// 校验各类消息（含转发/合并转发）在消息列表中的展示组件与内容。
 void main() {
-  Future<void> pumpMessage(WidgetTester tester, MessageInfo message) async {
+  Future<void> pumpMessage(WidgetTester tester, ChatMessage message) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 
-import '../ui/chat/widgets/attachment_panel.dart';
-import '../ui/chat/widgets/chat_input.dart';
-import '../ui/chat/widgets/chat_list_item.dart';
-import '../ui/chat/widgets/emoji_panel.dart';
-import '../ui/chat/widgets/format_toolbar.dart';
-import '../ui/chat/widgets/markdown_format_bar.dart';
-import '../ui/chat/widgets/message_bubble.dart';
-import '../ui/chat/widgets/message_list.dart';
-import '../ui/chat/widgets/message_selection_bar.dart';
-import '../ui/chat/widgets/message_skeleton.dart';
-import '../ui/chat/widgets/message_status_indicator.dart';
-import '../ui/chat/widgets/quote_preview_bar.dart';
+import '../ui/chat/widgets/composer/attachment_panel.dart';
+import '../ui/chat/widgets/composer/at_member_suggestions.dart';
+import '../ui/chat/widgets/composer/chat_input_preview.dart';
+import '../ui/chat/widgets/composer/recording_overlay.dart';
+import '../ui/chat/widgets/list/chat_list_item.dart';
+import '../ui/chat/widgets/composer/emoji_panel.dart';
+import '../ui/chat/widgets/composer/format_toolbar.dart';
+import '../ui/chat/widgets/composer/markdown_format_bar.dart';
+import '../ui/chat/widgets/bubble/message_bubble.dart';
+import '../ui/chat/widgets/list/message_list.dart';
+import '../ui/chat/widgets/menu/message_selection_bar.dart';
+import '../ui/chat/widgets/list/message_skeleton.dart';
+import '../ui/chat/widgets/shared/message_status_indicator.dart';
+import '../ui/chat/widgets/composer/quote_preview_bar.dart';
+import '../ui/chat/widgets/shared/chat_detail_app_bar.dart';
 import '../ui/chat/widgets/settings_components.dart';
-import '../ui/chat/widgets/unread_count_view.dart';
+import '../ui/chat/widgets/list/unread_count_view.dart';
 import '../ui/contacts/widgets/contact_picker_list.dart';
 import '../ui/core/theme/app_theme.dart';
 import '../ui/core/widgets/card_layout.dart';
@@ -79,6 +82,33 @@ void main() {
                 WidgetbookUseCase(
                   name: '系统消息',
                   builder: (_) => messageBubbleSystemPreview(),
+                ),
+              ],
+            ),
+            WidgetbookComponent(
+              name: 'ChatDetailAppBar',
+              useCases: [
+                WidgetbookUseCase(
+                  name: '单聊在线',
+                  builder: (_) => chatDetailAppBarPreview(),
+                ),
+              ],
+            ),
+            WidgetbookComponent(
+              name: 'AtMemberSuggestions',
+              useCases: [
+                WidgetbookUseCase(
+                  name: '成员候选列表',
+                  builder: (_) => atMemberSuggestionsPreview(),
+                ),
+              ],
+            ),
+            WidgetbookComponent(
+              name: 'RecordingOverlay',
+              useCases: [
+                WidgetbookUseCase(
+                  name: '录音提示',
+                  builder: (_) => recordingOverlayPreview(),
                 ),
               ],
             ),

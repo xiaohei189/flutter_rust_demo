@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/friend_search_result.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
-import 'package:flutter_rust_demo/generated/rust/model/local.dart'
-    show LocalChatLog;
+import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
 import 'package:flutter_rust_demo/ui/shared/providers/search_provider.dart';
 import 'package:flutter_rust_demo/ui/shared/view_models/search_view_model.dart';
 
@@ -14,7 +13,7 @@ class FakeSearchGateway implements SearchGateway {
   final bool shouldFail;
 
   @override
-  Future<List<LocalChatLog>> searchMessages(String query) async {
+  Future<List<MessageSearchResult>> searchMessages(String query) async {
     if (shouldFail) throw Exception('搜索失败');
     return const [];
   }

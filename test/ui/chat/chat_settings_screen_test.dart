@@ -8,7 +8,7 @@ import 'package:flutter_rust_demo/providers/current_user_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/conversation_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/conversation_view_model.dart';
-import 'package:flutter_rust_demo/ui/chat/view_models/message_service_notifier.dart';
+import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_settings_screen.dart';
 
 /// ChatSettingsScreen 挂载回归测试：验证 initState 中不再直接修改 provider 状态
@@ -16,7 +16,7 @@ import 'package:flutter_rust_demo/ui/chat/views/chat_settings_screen.dart';
 ///  "Tried to modify a provider while the widget tree was building"）
 class _FakeMessageServiceNotifier extends MessageServiceNotifier {
   @override
-  MessageServiceState build() => const MessageServiceState();
+  MessageServiceState build() => MessageServiceState();
 }
 
 class _FakeConversationListNotifier extends ConversationListNotifier {

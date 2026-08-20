@@ -1,16 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import 'message_service_provider.dart';
 import '../view_models/message_view_model.dart';
 
 /// 所有消息 Provider
-final allMessagesProvider = Provider<Map<String, List<dynamic>>>((ref) {
+final allMessagesProvider = Provider<Map<String, List<ChatMessage>>>((ref) {
   return ref.watch(messageServiceProvider).messages;
 });
 
 /// 指定会话的消息列表 Provider（Family）
-final messagesProvider = Provider.family<List<dynamic>, String>((
+final messagesProvider = Provider.family<List<ChatMessage>, String>((
   ref,
   conversationId,
 ) {
@@ -25,6 +25,6 @@ final messageListProvider =
 
 /// 指定会话的消息列表 Provider（便捷访问）
 final messagesByConversationIdProvider =
-    Provider.family<List<MessageInfo>, String>((ref, conversationId) {
+    Provider.family<List<ChatMessage>, String>((ref, conversationId) {
       return ref.watch(messageListProvider(conversationId)).messages;
     });

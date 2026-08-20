@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/ui/core/widgets/state_views.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/message_selection_bar.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/menu/message_selection_bar.dart';
 
 void main() {
   testWidgets('EmptyState 显示标题', (tester) async {

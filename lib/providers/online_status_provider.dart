@@ -4,7 +4,7 @@ import '../data/services/online_status_service.dart';
 import '../generated/rust/http/online.dart' show OnlineStatus;
 
 final onlineStatusServiceProvider = Provider<OnlineStatusService>(
-  (ref) => OnlineStatusService.instance,
+  (ref) => OnlineStatusService(),
 );
 
 final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(

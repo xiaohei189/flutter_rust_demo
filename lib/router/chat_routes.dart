@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 
-import '../generated/rust/model/message.dart' show MessageInfo;
+import '../domain/models/chat_message.dart' show ChatMessage;
 import '../ui/chat/views/chat_detail_screen.dart';
 import '../ui/chat/views/merge_message_detail_screen.dart';
 import '../ui/chat/views/chat_settings_screen.dart';
@@ -38,7 +38,7 @@ List<RouteBase> buildChatRoutes() {
     GoRoute(
       path: AppPaths.mergeMessage,
       pageBuilder: (context, state) {
-        final message = state.extra as MessageInfo?;
+        final message = state.extra as ChatMessage?;
         if (message == null) {
           return CustomTransitionPage<void>(
             key: state.pageKey,

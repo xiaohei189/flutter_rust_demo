@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../domain/models/user_profile.dart';
-import '../../../generated/rust/model/user.dart' show UserInfo;
+
 import '../../../providers/im_providers.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../chat/providers/message_service_provider.dart';
@@ -109,17 +109,16 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
     Future.microtask(_loadLocalAvatarPathSync);
 
     // 监听 messageServiceProvider 的状态变化
-    ref.listen(messageServiceProvider, (previous, next) {
-      if (next.isConnected && next.loginUserProfile != null) {
+    ref.listen(messageServiceProvider.select((s) => s.loginUserProfile), (previous, next) {
+      if (next != null) {
         // 当 loginUserProfile 变化时直接更新状态
-        if (previous?.loginUserProfile?.userId !=
-                next.loginUserProfile?.userId ||
-            previous?.loginUserProfile?.nickname !=
-                next.loginUserProfile?.nickname ||
-            previous?.loginUserProfile?.faceUrl !=
-                next.loginUserProfile?.faceUrl) {
-          final rawProfile = next.loginUserProfile!;
-          final profile = UserProfileMapping.fromUserInfo(rawProfile);
+        if (previous?.userId !=
+                next.userId ||
+            previous?.nickname !=
+                next.nickname ||
+            previous?.faceUrl !=
+                next.faceUrl) {
+          final profile = next;
           final exData = UserProfileState.parseEx(profile.remark);
           appLog.i(
             '[UserProfile] 监听器触发: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}',
@@ -230,11 +229,11 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
     final raw = ref
         .read(messageServiceProvider.notifier)
         .getUserProfile(userId);
-    return raw == null ? null : UserProfileMapping.fromUserInfo(raw);
+    return raw;
   }
 
-  UserProfile? _toUserProfile(UserInfo? raw) {
-    return raw == null ? null : UserProfileMapping.fromUserInfo(raw);
+  UserProfile? _toUserProfile(UserProfile? raw) {
+    return raw;
   }
 
   /// 加载当前登录用户资料

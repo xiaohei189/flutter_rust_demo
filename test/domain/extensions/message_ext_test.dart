@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
-import 'package:flutter_rust_demo/generated/rust/model/local.dart'
-    show LocalChatLog;
-import 'package:flutter_rust_demo/generated/rust/model/message.dart'
-    show MessageInfo;
+import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 
 void main() {
   group('messageTypeFromContentType', () {
@@ -78,8 +76,8 @@ void main() {
     });
   });
 
-  group('MessageInfoExt.parsedContent', () {
-    MessageInfo msg0(String content) => MessageInfo(
+  group('ChatMessageExt.parsedContent', () {
+    ChatMessage msg0(String content) => ChatMessage(
       clientMsgId: 'id1',
       serverMsgId: 'sid1',
       sendId: 'user1',
@@ -116,8 +114,8 @@ void main() {
     });
   });
 
-  group('MessageInfoExt.displayText', () {
-    MessageInfo msg0(int contentType, String content) => MessageInfo(
+  group('ChatMessageExt.displayText', () {
+    ChatMessage msg0(int contentType, String content) => ChatMessage(
       clientMsgId: 'id1',
       serverMsgId: 'sid1',
       sendId: 'user1',
@@ -175,9 +173,9 @@ void main() {
     });
   });
 
-  group('MessageInfoExt.sendDateTime', () {
+  group('ChatMessageExt.sendDateTime', () {
     test('sendTime 为毫秒时间戳', () {
-      final m = const MessageInfo(
+      final m = const ChatMessage(
         clientMsgId: 'id1',
         serverMsgId: 'sid1',
         sendId: 'user1',
@@ -204,7 +202,7 @@ void main() {
     });
 
     test('sendTime 为 0 时使用 createTime', () {
-      final m = const MessageInfo(
+      final m = const ChatMessage(
         clientMsgId: 'id1',
         serverMsgId: 'sid1',
         sendId: 'user1',
@@ -230,9 +228,9 @@ void main() {
     });
   });
 
-  group('messageSentToInfo', () {
-    test('正确构造 MessageInfo', () {
-      final msg = messageSentToInfo(
+  group('messageSentToChatMessage', () {
+    test('正确构造 ChatMessage', () {
+      final msg = messageSentToChatMessage(
         clientMsgId: 'c1',
         serverMsgId: 's1',
         sendTimeMs: 1700000000000,
@@ -256,7 +254,7 @@ void main() {
   });
 
   group('sortMessagesByTime', () {
-    MessageInfo msg(int seq, int sendTime) => MessageInfo(
+    ChatMessage msg(int seq, int sendTime) => ChatMessage(
       clientMsgId: 'm$seq',
       serverMsgId: '',
       sendId: 'u',
@@ -296,8 +294,8 @@ void main() {
       expect(sortMessagesByTime([]), isEmpty);
     });
   });
-  group('LocalChatLogExt.displayText', () {
-    LocalChatLog log0(int contentType, String content) => LocalChatLog(
+  group('MessageSearchResultExt.displayText', () {
+    MessageSearchResult log0(int contentType, String content) => MessageSearchResult(
       conversationId: 'c1',
       clientMsgId: 'id1',
       serverMsgId: 'sid1',
@@ -310,7 +308,7 @@ void main() {
       msgFrom: 0,
       contentType: contentType,
       content: content,
-      isRead: 0,
+      isRead: false,
       status: 2,
       seq: 1,
       sendTime: 1700000000000,

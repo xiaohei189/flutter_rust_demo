@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../data/services/services.dart';
 import 'message_service_provider.dart';
 import '../view_models/conversation_view_model.dart';
@@ -64,12 +65,12 @@ final conversationsProvider = Provider<List<Conversation>>((ref) {
 });
 
 /// 会话列表单聊用户资料缓存，避免 itemBuilder 内逐项查询 Service。
-final conversationUserProfilesProvider = Provider<Map<String, UserInfo>>((ref) {
+final conversationUserProfilesProvider = Provider<Map<String, UserProfile>>((ref) {
   final conversations = ref.watch(conversationsProvider);
   final profiles = ref.watch(
     messageServiceProvider.select((s) => s.userProfiles),
   );
-  final result = <String, UserInfo>{};
+  final result = <String, UserProfile>{};
   for (final conversation in conversations) {
     if (conversation.conversationType == 1 && conversation.userId.isNotEmpty) {
       final profile = profiles[conversation.userId];

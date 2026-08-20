@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../chat/providers/message_service_provider.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../../groups/providers/group_provider.dart';
@@ -15,7 +15,7 @@ enum SearchCategory { message, contacts, groups }
 
 /// 搜索数据源，便于测试注入。
 abstract class SearchGateway {
-  Future<List<LocalChatLog>> searchMessages(String query);
+  Future<List<MessageSearchResult>> searchMessages(String query);
 
   Future<List<FriendSearchResult>> searchContacts(String query);
 
@@ -29,10 +29,10 @@ class RiverpodSearchGateway implements SearchGateway {
   final Ref _ref;
 
   @override
-  Future<List<LocalChatLog>> searchMessages(String query) async {
+  Future<List<MessageSearchResult>> searchMessages(String query) async {
     final svc = _ref.read(messageServiceProvider.notifier);
     final conversations = _ref.read(messageServiceProvider).conversations;
-    final all = <LocalChatLog>[];
+    final all = <MessageSearchResult>[];
     for (final conversation in conversations.take(50)) {
       try {
         all.addAll(
@@ -66,7 +66,7 @@ class SearchState {
   final SearchCategory category;
   final bool searching;
   final String? error;
-  final List<LocalChatLog> messageResults;
+  final List<MessageSearchResult> messageResults;
   final List<FriendSearchResult> friendResults;
   final List<Group> groupResults;
 
@@ -86,7 +86,7 @@ class SearchState {
     bool? searching,
     String? error,
     bool clearError = false,
-    List<LocalChatLog>? messageResults,
+    List<MessageSearchResult>? messageResults,
     List<FriendSearchResult>? friendResults,
     List<Group>? groupResults,
   }) {

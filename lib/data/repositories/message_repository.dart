@@ -2,6 +2,10 @@ import 'dart:typed_data' show Int32List;
 
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
+import '../../domain/models/chat_message.dart' show ChatMessage, MessageHistoryPage;
+import '../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../domain/models/user_profile.dart' show UserProfile, UserProfileMapping;
+import '../mappers/message_mapper.dart';
 import '../../generated/rust/client.dart';
 import '../../generated/rust/constant/enums.dart' show SessionType;
 import '../../generated/rust/ffi/client.dart';
@@ -11,12 +15,12 @@ import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
 import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
 import '../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../generated/rust/model/message.dart' show MessageInfo;
+
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 import '../../generated/rust/model/user.dart' show UserInfo;
 
 abstract class MessageRepository {
-  Future<List<UserInfo>> getUsersInfo(List<String> userIds);
+  Future<List<UserProfile>> getUsersInfo(List<String> userIds);
 
   Future<void> updateUserProfile({
     String? nickname,
@@ -26,32 +30,32 @@ abstract class MessageRepository {
 
   Future<void> setGlobalMsgRecvOpt({required int globalRecvOpt});
 
-  Future<GetHistoryMessagesResult> getHistoryMessages({
+  Future<MessageHistoryPage> getHistoryMessages({
     required String conversationId,
     required String startClientMsgId,
     required int count,
   });
 
-  Future<MsgStruct> sendTextMessage({
+  Future<ChatMessage> sendTextMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendMarkdownMessage({
+  Future<ChatMessage> sendMarkdownMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendAtTextMessage({
+  Future<ChatMessage> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<List<LocalChatLog>> searchLocalMessages({
+  Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
     int offset = 0,
@@ -64,19 +68,19 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendImageMessage({
+  Future<ChatMessage> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendImageMessageFromUrl({
+  Future<ChatMessage> sendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendVideoMessage({
+  Future<ChatMessage> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
@@ -84,20 +88,20 @@ abstract class MessageRepository {
     required int duration,
   });
 
-  Future<MsgStruct> sendSoundMessage({
+  Future<ChatMessage> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
     required int duration,
   });
 
-  Future<MsgStruct> sendFileMessage({
+  Future<ChatMessage> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendLocationMessage({
+  Future<ChatMessage> sendLocationMessage({
     required String description,
     required double latitude,
     required double longitude,
@@ -105,14 +109,14 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendFaceMessage({
+  Future<ChatMessage> sendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendCardMessage({
+  Future<ChatMessage> sendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
@@ -121,7 +125,7 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> sendQuoteMessage({
+  Future<ChatMessage> sendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -146,8 +150,8 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
-  Future<MsgStruct> resendMessage({
-    required MessageInfo message,
+  Future<ChatMessage> resendMessage({
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
   });
@@ -227,8 +231,9 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<List<UserInfo>> getUsersInfo(List<String> userIds) {
-    return _client.getUsersInfo(userIds: userIds);
+  Future<List<UserProfile>> getUsersInfo(List<String> userIds) async {
+    final raw = await _client.getUsersInfo(userIds: userIds);
+    return raw.map(UserProfileMapping.fromUserInfo).toList(growable: false);
   }
 
   @override
@@ -250,69 +255,73 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<GetHistoryMessagesResult> getHistoryMessages({
+  Future<MessageHistoryPage> getHistoryMessages({
     required String conversationId,
     required String startClientMsgId,
     required int count,
-  }) {
-    return _client.getHistoryMessages(
+  }) async {
+    final raw = await _client.getHistoryMessages(
       req: GetHistoryMessagesReq(
         conversationId: conversationId,
         startClientMsgId: startClientMsgId,
         count: count,
       ),
     );
-  }
-
-  @override
-  Future<MsgStruct> sendTextMessage({
-    required String text,
-    required String sourceId,
-    required SessionType sessionType,
-  }) {
-    return _client.sendTextMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: sessionType,
+    return MessageHistoryPage(
+      messages: messagesFromMessageInfos(raw.messages),
+      isEnd: raw.isEnd,
     );
   }
 
   @override
-  Future<MsgStruct> sendMarkdownMessage({
+  Future<ChatMessage> sendTextMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return _client.sendMarkdownMessage(
+  }) async {
+    return messageFromMsgStruct(await _client.sendTextMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendAtTextMessage({
+  Future<ChatMessage> sendMarkdownMessage({
+    required String text,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
+    return messageFromMsgStruct(await _client.sendMarkdownMessage(
+      text: text,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    ));
+  }
+
+  @override
+  Future<ChatMessage> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return _client.sendAtTextMessage(
+  }) async {
+    return messageFromMsgStruct(await _client.sendAtTextMessage(
       text: text,
       atUserIds: atUserIds,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
-  @override
-  Future<List<LocalChatLog>> searchLocalMessages({
+    @override
+  Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
     int offset = 0,
     int count = 50,
-  }) {
-    return _client.searchLocalMessages(
+  }) async {
+    final raw = await _client.searchLocalMessages(
       req: SearchMessagesReq(
         conversationId: conversationId,
         keyword: keyword.trim(),
@@ -324,6 +333,7 @@ class MessageRepositoryImpl implements MessageRepository {
         count: count,
       ),
     );
+    return raw.map(messageSearchResultFromLocalChatLog).toList(growable: false);
   }
 
   @override
@@ -340,7 +350,7 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<MsgStruct> sendImageMessage({
+  Future<ChatMessage> sendImageMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -348,28 +358,28 @@ class MessageRepositoryImpl implements MessageRepository {
     final msg = await ffi_message_builder.createImageMessageFromFullPath(
       imageFullPath: filePath,
     );
-    return ffi_message_advanced.sendMessage(
+    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
       msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendImageMessageFromUrl({
+  Future<ChatMessage> sendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return ffi_message_media.sendImageMessageFromUrl(
+  }) async {
+    return messageFromMsgStruct(await ffi_message_media.sendImageMessageFromUrl(
       sourceUrl: sourceUrl,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendVideoMessage({
+  Future<ChatMessage> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
@@ -382,15 +392,15 @@ class MessageRepositoryImpl implements MessageRepository {
       duration: duration,
       snapshotFullPath: snapshotPath,
     );
-    return ffi_message_advanced.sendMessage(
+    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
       msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendSoundMessage({
+  Future<ChatMessage> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -400,15 +410,15 @@ class MessageRepositoryImpl implements MessageRepository {
       soundPath: filePath,
       duration: duration,
     );
-    return ffi_message_advanced.sendMessage(
+    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
       msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendFileMessage({
+  Future<ChatMessage> sendFileMessage({
     required String filePath,
     required String sourceId,
     required SessionType sessionType,
@@ -417,66 +427,66 @@ class MessageRepositoryImpl implements MessageRepository {
       fileFullPath: filePath,
       fileName: _fileNameOf(filePath),
     );
-    return ffi_message_advanced.sendMessage(
+    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
       msgStruct: msg,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendLocationMessage({
+  Future<ChatMessage> sendLocationMessage({
     required String description,
     required double latitude,
     required double longitude,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return ffi_message.sendLocationMessage(
+  }) async {
+    return messageFromMsgStruct(await ffi_message.sendLocationMessage(
       description: description,
       latitude: latitude,
       longitude: longitude,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendFaceMessage({
+  Future<ChatMessage> sendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return ffi_message.sendFaceMessage(
+  }) async {
+    return messageFromMsgStruct(await ffi_message.sendFaceMessage(
       index: index,
       data: data,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendCardMessage({
+  Future<ChatMessage> sendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
     required String ex,
     required String sourceId,
     required SessionType sessionType,
-  }) {
-    return ffi_message.sendCardMessage(
+  }) async {
+    return messageFromMsgStruct(await ffi_message.sendCardMessage(
       userId: userId,
       nickname: nickname,
       faceUrl: faceUrl,
       ex: ex,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override
-  Future<MsgStruct> sendQuoteMessage({
+  Future<ChatMessage> sendQuoteMessage({
     required String text,
     required String sourceId,
     required SessionType sessionType,
@@ -484,8 +494,8 @@ class MessageRepositoryImpl implements MessageRepository {
     required String quoteClientMsgId,
     required String quoteSendId,
     required int quoteSendTime,
-  }) {
-    return ffi_message.sendQuoteMessage(
+  }) async {
+    return messageFromMsgStruct(await ffi_message.sendQuoteMessage(
       text: text,
       sourceId: sourceId,
       sessionType: sessionType,
@@ -493,7 +503,7 @@ class MessageRepositoryImpl implements MessageRepository {
       quoteClientMsgId: quoteClientMsgId,
       quoteSendId: quoteSendId,
       quoteSendTime: quoteSendTime,
-    );
+    ));
   }
 
   @override
@@ -529,11 +539,11 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<MsgStruct> resendMessage({
-    required MessageInfo message,
+  Future<ChatMessage> resendMessage({
+    required ChatMessage message,
     required String sourceId,
     required SessionType sessionType,
-  }) {
+  }) async {
     final msgStruct = MsgStruct(
       clientMsgId: message.clientMsgId,
       serverMsgId: message.serverMsgId,
@@ -556,11 +566,11 @@ class MessageRepositoryImpl implements MessageRepository {
       ex: message.ex,
       localEx: '',
     );
-    return ffi_message_advanced.sendMessage(
+    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
       msgStruct: msgStruct,
       sourceId: sourceId,
       sessionType: sessionType,
-    );
+    ));
   }
 
   @override

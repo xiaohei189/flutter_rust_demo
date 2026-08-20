@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/chat_list_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/chat_list_view_model.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/group_filter_panel.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/list/group_filter_panel.dart';
 
 Conversation _conversation({
   required String id,

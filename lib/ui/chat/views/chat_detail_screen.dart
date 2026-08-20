@@ -9,8 +9,8 @@ import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/group_member.dart';
 import '../../../domain/extensions/message_ext.dart';
 import '../../../domain/models/user.dart';
-import '../../../generated/rust/model/local.dart' show LocalChatLog;
-import '../../../generated/rust/model/message.dart' show MessageInfo;
+import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -25,16 +25,19 @@ import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../view_models/chat_detail_view_model.dart';
-import '../widgets/chat_input.dart' show ChatInput;
+import '../widgets/composer/chat_input.dart' show ChatInput;
 import '../widgets/message_content_type.dart' show MessageContentType;
-import '../widgets/chat_media_actions.dart';
+import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
-import '../widgets/message_action_menu.dart';
-import '../widgets/message_hover_toolbar.dart' show MessageReactionGroup;
-import '../widgets/message_list.dart';
-import '../widgets/message_selection_bar.dart';
-import '../widgets/quote_preview_bar.dart';
+import '../widgets/menu/message_action_menu.dart';
+import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog;
+import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
+import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
+import '../widgets/list/message_list.dart';
+import '../widgets/menu/message_selection_bar.dart';
+import '../widgets/composer/quote_preview_bar.dart';
+import '../widgets/shared/chat_detail_app_bar.dart';
 
 /// 聊天详情页：顶栏、消息区、底部输入区。
 /// 业务状态由 [ChatDetailViewModel] 管理，页面只保留布局、滚动、选择器与导航。
@@ -293,55 +296,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return;
     }
 
-    final selected = await showModalBottomSheet<GroupMember>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Text(
-                '@ 选择群成员',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Divider(height: 1),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: members.length,
-                itemBuilder: (_, i) {
-                  final member = members[i];
-                  return ListTile(
-                    leading: UserAvatar(
-                      user: User(
-                        id: member.userId,
-                        name: member.nickname,
-                        avatar: member.faceUrl.isNotEmpty
-                            ? member.faceUrl
-                            : null,
-                      ),
-                      radius: 18,
-                    ),
-                    title: Text(
-                      member.nickname.isNotEmpty
-                          ? member.nickname
-                          : member.userId,
-                    ),
-                    onTap: () => Navigator.of(ctx).pop(member),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    final selected = await showGroupMemberPicker(context, members);
 
     if (selected == null || !mounted) return;
     final displayName = selected.nickname.isNotEmpty
@@ -351,14 +306,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _insertAtMention(String displayName, String userId) {
-    final text = _textController.text;
-    final suffix = text.isEmpty || text.endsWith(' ') ? '' : ' ';
-    final inserted = '$text$suffix@$displayName ';
-    _textController.value = TextEditingValue(
-      text: inserted,
-      selection: TextSelection.collapsed(offset: inserted.length),
-    );
-    _viewModel?.addAtUserId(userId);
+    insertAtMention(_textController, displayName, userId);
   }
 
   void _showMessageSearch() {
@@ -376,7 +324,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  void _locateMessage(LocalChatLog log) {
+  void _locateMessage(MessageSearchResult log) {
     final messages = ref
         .read(messageListProvider(widget.conversationId))
         .messages;
@@ -418,28 +366,28 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Future<void> _sendCardMessage() => _mediaActions.sendCardMessage(context);
 
   Future<void> _revokeMessage(dynamic msg) async {
-    final ok = await _viewModel?.revokeMessage(msg as MessageInfo) ?? false;
+    final ok = await _viewModel?.revokeMessage(msg as ChatMessage) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '撤回失败');
   }
 
   Future<void> _deleteMessage(dynamic msg) async {
-    final ok = await _viewModel?.deleteMessage(msg as MessageInfo) ?? false;
+    final ok = await _viewModel?.deleteMessage(msg as ChatMessage) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '删除失败');
   }
 
-  Future<void> _resendMessage(MessageInfo msg) async {
+  Future<void> _resendMessage(ChatMessage msg) async {
     final ok = await _viewModel?.resendMessage(msg) ?? false;
     if (!ok) _showError(_chatState.errorText ?? '消息重发失败');
   }
 
-  void _copyMessage(MessageInfo msg) {
+  void _copyMessage(ChatMessage msg) {
     Clipboard.setData(ClipboardData(text: msg.content));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
     );
   }
 
-  void _toggleMessageReaction(MessageInfo msg, String emoji) {
+  void _toggleMessageReaction(ChatMessage msg, String emoji) {
     setState(() {
       final groups = List<MessageReactionGroup>.from(
         _messageReactions[msg.clientMsgId] ?? const [],
@@ -474,7 +422,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     });
   }
 
-  void _toggleMessagePin(MessageInfo msg) {
+  void _toggleMessagePin(ChatMessage msg) {
     final isPinned = _pinnedMessageIds.contains(msg.clientMsgId);
     setState(() {
       if (isPinned) {
@@ -491,10 +439,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _sendQuickReply(MessageInfo msg, String text) =>
+  Future<void> _sendQuickReply(ChatMessage msg, String text) =>
       _sendMessage(text, MessageContentType.text);
 
-  MessageActions _buildMessageActions(MessageInfo msg) {
+  MessageActions _buildMessageActions(ChatMessage msg) {
     return MessageActions(
       onCopy: _copyMessage,
       onRevoke: _revokeMessage,
@@ -509,7 +457,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _forwardMessage(MessageInfo msg) async {
+  Future<void> _forwardMessage(ChatMessage msg) async {
     final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
       context,
       title: '转发给',
@@ -531,7 +479,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  void _handleMessageTap(MessageInfo msg) {
+  void _handleMessageTap(ChatMessage msg) {
     final state = _chatState;
     if (state.selectMode) {
       _viewModel?.toggleMessageSelection(msg);
@@ -588,7 +536,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  Future<void> _showFileActions(MessageInfo msg) async {
+  Future<void> _showFileActions(ChatMessage msg) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: context.appColors.surface,
@@ -639,33 +587,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     }
   }
 
-  void _showLocationDetail(MessageInfo msg) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(msg.locationName.isNotEmpty ? msg.locationName : '位置'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (msg.locationDesc.isNotEmpty) ...[
-              Text(msg.locationDesc),
-              const SizedBox(height: 8),
-            ],
-            Text(
-              '纬度: ${msg.latitude.toStringAsFixed(6)}\n'
-              '经度: ${msg.longitude.toStringAsFixed(6)}',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
+  void _showLocationDetail(ChatMessage msg) {
+    showLocationDetailDialog(context, msg);
   }
 
   Future<void> _forwardSelected({required bool merge}) async {
@@ -752,27 +675,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _deleteSelected() async {
     final count = _chatState.selectedMessages.length;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除选中消息'),
-        content: Text('确定删除选中的 $count 条消息吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '删除',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+    final confirmed = await showDeleteMessagesConfirm(context, count);
+    if (!confirmed || !mounted) return;
     final ok = await _viewModel?.deleteSelectedMessages() ?? false;
     if (!ok && mounted) {
       _showError(_chatState.errorText ?? '删除失败');
@@ -852,131 +756,20 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       },
       child: Scaffold(
         backgroundColor: context.appColors.background,
-        appBar: AppBar(
-          centerTitle: false, // 标题靠左（IM 惯例，避免居中怪异感）
-          leading: IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.arrow_back_ios_new, size: 22),
-                if (unread > 0)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.appColors.danger,
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        unread > 99 ? '99+' : '$unread',
-                        style: TextStyle(
-                          color: context.appColors.onPrimary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () {
-              _onUserGoBack();
-              Navigator.of(context).pop();
-            },
-          ),
-          title: InkWell(
-            onTap: () {
-              AppRouter.goToChatSettings(context, conversation);
-            },
-            child: Row(
-              children: [
-                UserAvatar(user: user, radius: 18),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: context.appColors.textPrimary,
-                        ),
-                      ),
-                      if (isTyping)
-                        Text(
-                          '对方正在输入...',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.primary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        )
-                      else if (_isGroup)
-                        Text(
-                          '群聊',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.textSecondary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        )
-                      else
-                        Text(
-                          switch (online) {
-                            true => '在线',
-                            false => '离线',
-                            null => '未知',
-                          },
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.appColors.textSecondary.withValues(
-                              alpha: 0.9,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            Semantics(
-              label: '搜索聊天记录',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.search),
-                tooltip: '搜索聊天记录',
-                onPressed: _showMessageSearch,
-              ),
-            ),
-            Semantics(
-              label: '更多设置',
-              button: true,
-              child: IconButton(
-                icon: const Icon(Icons.more_horiz),
-                tooltip: '更多设置',
-                onPressed: () {
-                  AppRouter.goToChatSettings(context, conversation);
-                },
-              ),
-            ),
-          ],
+        appBar: ChatDetailAppBar(
+          user: user,
+          unread: unread,
+          isTyping: isTyping,
+          isGroup: _isGroup,
+          online: online,
+          onBack: () {
+            _onUserGoBack();
+            Navigator.of(context).pop();
+          },
+          onOpenSettings: () {
+            AppRouter.goToChatSettings(context, conversation);
+          },
+          onSearch: _showMessageSearch,
         ),
         body: _bodyReady
             ? Column(

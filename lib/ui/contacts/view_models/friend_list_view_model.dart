@@ -36,8 +36,8 @@ class FriendListViewModel extends Notifier<FriendListState> {
 
   @override
   FriendListState build() {
-    ref.listen(messageServiceProvider, (prev, next) {
-      if (prev?.friendRevision != next.friendRevision && _hasLoaded) {
+    ref.listen(messageServiceProvider.select((s) => s.friendRevision), (prev, next) {
+      if (prev != next && _hasLoaded) {
         loadFriends();
       }
     });

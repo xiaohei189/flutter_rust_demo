@@ -8,7 +8,7 @@ import '../../../domain/models/conversation.dart';
 import '../../profile/providers/user_profile_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_service_provider.dart';
-import '../widgets/group_filter_panel.dart' show GroupFilter;
+import '../widgets/list/group_filter_panel.dart' show GroupFilter;
 
 /// 会话列表页状态
 class ChatListState {
