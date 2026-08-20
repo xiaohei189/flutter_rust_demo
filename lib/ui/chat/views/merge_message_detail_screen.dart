@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../domain/extensions/message_ext.dart';
+import '../../../../ui/chat/mappers/message_display.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../domain/models/user.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../domain/extensions/message_ext.dart';
+import '../../../../ui/chat/mappers/message_display.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../core/theme/app_theme.dart';

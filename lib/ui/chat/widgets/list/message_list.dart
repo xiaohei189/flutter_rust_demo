@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-import '../../../../domain/extensions/message_ext.dart';
+import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;

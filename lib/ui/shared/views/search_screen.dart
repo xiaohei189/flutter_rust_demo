@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../domain/extensions/message_ext.dart';
+import '../../chat/mappers/message_display.dart';
 import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';

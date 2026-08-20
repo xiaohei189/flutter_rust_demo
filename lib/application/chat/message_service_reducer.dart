@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../domain/extensions/message_ext.dart';
 import '../../../generated/rust/event/events/message.dart' show MessageReceipt;
 import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import '../../../generated/rust/model/local.dart' show LocalConversation;

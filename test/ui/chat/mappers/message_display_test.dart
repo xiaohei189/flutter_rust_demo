@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
-import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
+import 'package:flutter_rust_demo/ui/chat/mappers/message_display.dart';
+import 'package:flutter_rust_demo/domain/message_sorting.dart' show sortMessagesByTime;
 import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
 import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
 

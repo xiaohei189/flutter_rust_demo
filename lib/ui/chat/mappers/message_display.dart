@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import '../models/message_search_result.dart' show MessageSearchResult;
-import '../models/chat_message.dart' show ChatMessage;
-import '../models/message.dart'
+import '../../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../domain/models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
 
 /// 给 Rust 生成的 MessageInfo 添加 UI 便利方法
@@ -454,16 +454,3 @@ String _mergeSubElemToContent(Map<String, dynamic> json) {
   return '';
 }
 
-/// 按发送时间升序排序，时间相同时按 seq 升序。
-///
-/// UI 使用 reverse ListView，列表必须保持“旧消息在前、新消息在后”，
-/// 这样渲染时最新消息才会出现在底部。
-List<ChatMessage> sortMessagesByTime(List<ChatMessage> messages) {
-  final list = List<ChatMessage>.from(messages);
-  list.sort((a, b) {
-    final time = a.sendTime.toInt().compareTo(b.sendTime.toInt());
-    if (time != 0) return time;
-    return a.seq.toInt().compareTo(b.seq.toInt());
-  });
-  return list;
-}

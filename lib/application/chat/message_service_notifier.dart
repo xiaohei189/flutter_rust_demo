@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
@@ -13,8 +14,7 @@ import 'package:flutter_rust_demo/generated/rust/model/local.dart'
     show LocalConversation;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
-import 'package:flutter_rust_demo/domain/extensions/message_ext.dart'
-    show ChatMessageExt, sortMessagesByTime;
+import 'package:flutter_rust_demo/domain/message_sorting.dart' show sortMessagesByTime;
 import 'package:flutter_rust_demo/generated/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/friend.dart';
@@ -718,7 +718,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
           title: chatMessage.senderNickname.isNotEmpty
               ? message.senderNickname
               : '新消息',
-          body: chatMessage.displayText,
+          body: _notificationText(chatMessage),
         ),
       );
     }
@@ -765,4 +765,17 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   Future<void> markAllConversationsAsRead() =>
       conversationController.markAllConversationsAsRead();
+}
+
+
+String _notificationText(ChatMessage message) {
+  if (message.contentType == 101) {
+    try {
+      final decoded = jsonDecode(message.content);
+      if (decoded is Map<String, dynamic> && decoded['content'] is String) {
+        return decoded['content'] as String;
+      }
+    } catch (_) {}
+  }
+  return message.content;
 }

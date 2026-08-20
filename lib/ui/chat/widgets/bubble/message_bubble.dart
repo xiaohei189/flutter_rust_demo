@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../domain/extensions/message_ext.dart';
+import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;

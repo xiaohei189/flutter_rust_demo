@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/models/message.dart' show MessageType;
-import '../../../domain/extensions/message_ext.dart';
+import '../mappers/message_display.dart';
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
