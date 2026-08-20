@@ -193,7 +193,7 @@ class AppRouter {
     );
   }
 
-  /// 导航到合并消息页
+  /// 导航到合并转发消息详情页
   static Future<T?> goToMergeMessage<T>(
     BuildContext context,
     MessageInfo message,

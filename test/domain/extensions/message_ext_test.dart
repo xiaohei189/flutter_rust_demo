@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/message.dart';
 import 'package:flutter_rust_demo/domain/extensions/message_ext.dart';
-import 'package:flutter_rust_demo/generated/rust/model/local.dart' show LocalChatLog;
+import 'package:flutter_rust_demo/generated/rust/model/local.dart'
+    show LocalChatLog;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
 
@@ -15,17 +16,26 @@ void main() {
     test('102 → image', () {
       expect(messageTypeFromContentType(102), MessageType.image);
     });
-    test('103 → video', () {
-      expect(messageTypeFromContentType(103), MessageType.video);
+    test('103 → audio（语音）', () {
+      expect(messageTypeFromContentType(103), MessageType.audio);
     });
-    test('104 → audio', () {
-      expect(messageTypeFromContentType(104), MessageType.audio);
+    test('104 → video（视频）', () {
+      expect(messageTypeFromContentType(104), MessageType.video);
     });
     test('105 → file', () {
       expect(messageTypeFromContentType(105), MessageType.file);
     });
-    test('106 → location', () {
-      expect(messageTypeFromContentType(106), MessageType.location);
+    test('106 → at（@消息）', () {
+      expect(messageTypeFromContentType(106), MessageType.at);
+    });
+    test('109 → location（位置）', () {
+      expect(messageTypeFromContentType(109), MessageType.location);
+    });
+    test('117 → advancedText（富文本）', () {
+      expect(messageTypeFromContentType(117), MessageType.advancedText);
+    });
+    test('118 → markdown', () {
+      expect(messageTypeFromContentType(118), MessageType.markdown);
     });
     test('107 → merge', () {
       expect(messageTypeFromContentType(107), MessageType.merge);
@@ -70,26 +80,26 @@ void main() {
 
   group('MessageInfoExt.parsedContent', () {
     MessageInfo msg0(String content) => MessageInfo(
-          clientMsgId: 'id1',
-          serverMsgId: 'sid1',
-          sendId: 'user1',
-          recvId: 'user2',
-          groupId: '',
-          senderPlatformId: 0,
-          senderNickname: 'test',
-          senderFaceUrl: '',
-          sessionType: 1,
-          msgFrom: 0,
-          contentType: 101,
-          content: content,
-          seq: 0,
-          sendTime: 1000,
-          createTime: 1000,
-          status: 0,
-          isRead: false,
-          attachedInfo: '',
-          ex: '',
-        );
+      clientMsgId: 'id1',
+      serverMsgId: 'sid1',
+      sendId: 'user1',
+      recvId: 'user2',
+      groupId: '',
+      senderPlatformId: 0,
+      senderNickname: 'test',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 0,
+      contentType: 101,
+      content: content,
+      seq: 0,
+      sendTime: 1000,
+      createTime: 1000,
+      status: 0,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
 
     test('空 content 返回空 Map', () {
       expect(msg0('').parsedContent, isEmpty);
@@ -108,26 +118,26 @@ void main() {
 
   group('MessageInfoExt.displayText', () {
     MessageInfo msg0(int contentType, String content) => MessageInfo(
-          clientMsgId: 'id1',
-          serverMsgId: 'sid1',
-          sendId: 'user1',
-          recvId: 'user2',
-          groupId: '',
-          senderPlatformId: 0,
-          senderNickname: 'test',
-          senderFaceUrl: '',
-          sessionType: 1,
-          msgFrom: 0,
-          contentType: contentType,
-          content: content,
-          seq: 0,
-          sendTime: 1000,
-          createTime: 1000,
-          status: 0,
-          isRead: false,
-          attachedInfo: '',
-          ex: '',
-        );
+      clientMsgId: 'id1',
+      serverMsgId: 'sid1',
+      sendId: 'user1',
+      recvId: 'user2',
+      groupId: '',
+      senderPlatformId: 0,
+      senderNickname: 'test',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 0,
+      contentType: contentType,
+      content: content,
+      seq: 0,
+      sendTime: 1000,
+      createTime: 1000,
+      status: 0,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
 
     test('文本消息取 content.content', () {
       final m = msg0(101, jsonEncode({'content': '你好'}));
@@ -150,9 +160,12 @@ void main() {
     });
 
     test('合并转发消息', () {
-      final m = msg0(107, jsonEncode({
-        'multiMessage': List.generate(5, (i) => {'text': 'm$i'}),
-      }));
+      final m = msg0(
+        107,
+        jsonEncode({
+          'multiMessage': List.generate(5, (i) => {'text': 'm$i'}),
+        }),
+      );
       expect(m.displayText, contains('5条消息'));
     });
 
@@ -244,29 +257,33 @@ void main() {
 
   group('sortMessagesByTime', () {
     MessageInfo msg(int seq, int sendTime) => MessageInfo(
-          clientMsgId: 'm$seq',
-          serverMsgId: '',
-          sendId: 'u',
-          recvId: 'v',
-          groupId: '',
-          senderPlatformId: 0,
-          senderNickname: '',
-          senderFaceUrl: '',
-          sessionType: 1,
-          msgFrom: 0,
-          contentType: 101,
-          content: '{"content":"x"}',
-          seq: seq,
-          sendTime: sendTime,
-          createTime: sendTime,
-          status: 2,
-          isRead: false,
-          attachedInfo: '',
-          ex: '',
-        );
+      clientMsgId: 'm$seq',
+      serverMsgId: '',
+      sendId: 'u',
+      recvId: 'v',
+      groupId: '',
+      senderPlatformId: 0,
+      senderNickname: '',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 0,
+      contentType: 101,
+      content: '{"content":"x"}',
+      seq: seq,
+      sendTime: sendTime,
+      createTime: sendTime,
+      status: 2,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
 
     test('按 sendTime 升序', () {
-      final sorted = sortMessagesByTime([msg(3, 3000), msg(1, 1000), msg(2, 2000)]);
+      final sorted = sortMessagesByTime([
+        msg(3, 3000),
+        msg(1, 1000),
+        msg(2, 2000),
+      ]);
       expect(sorted.map((m) => m.seq).toList(), [1, 2, 3]);
     });
 
@@ -281,28 +298,28 @@ void main() {
   });
   group('LocalChatLogExt.displayText', () {
     LocalChatLog log0(int contentType, String content) => LocalChatLog(
-          conversationId: 'c1',
-          clientMsgId: 'id1',
-          serverMsgId: 'sid1',
-          sendId: 'user1',
-          recvId: 'user2',
-          senderPlatformId: 0,
-          senderNickName: 'test',
-          senderFaceUrl: '',
-          sessionType: 1,
-          msgFrom: 0,
-          contentType: contentType,
-          content: content,
-          isRead: 0,
-          status: 2,
-          seq: 1,
-          sendTime: 1700000000000,
-          createTime: 1700000000000,
-          attachedInfo: '',
-          ex: '',
-          localEx: '',
-          groupId: '',
-        );
+      conversationId: 'c1',
+      clientMsgId: 'id1',
+      serverMsgId: 'sid1',
+      sendId: 'user1',
+      recvId: 'user2',
+      senderPlatformId: 0,
+      senderNickName: 'test',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 0,
+      contentType: contentType,
+      content: content,
+      isRead: 0,
+      status: 2,
+      seq: 1,
+      sendTime: 1700000000000,
+      createTime: 1700000000000,
+      attachedInfo: '',
+      ex: '',
+      localEx: '',
+      groupId: '',
+    );
 
     test('文本消息取 content.content', () {
       final log = log0(101, jsonEncode({'content': '搜索到你好'}));
@@ -310,7 +327,12 @@ void main() {
     });
 
     test('图片消息显示占位文本而不是原始 JSON', () {
-      final log = log0(102, jsonEncode({'bigPicture': {'url': 'x.jpg'}}));
+      final log = log0(
+        102,
+        jsonEncode({
+          'bigPicture': {'url': 'x.jpg'},
+        }),
+      );
       expect(log.displayText, '[图片]');
     });
 
@@ -330,6 +352,113 @@ void main() {
       );
       expect(log.messageType, MessageType.system);
       expect(log.displayText, '重复添加');
+    });
+  });
+
+  group('mergeSubMessageFromJson', () {
+    test('Rust camelCase 字段映射', () {
+      final sub = mergeSubMessageFromJson({
+        'clientMsgId': 'rust-id',
+        'serverMsgId': 'srv-id',
+        'sendID': 'user_1',
+        'recvID': 'user_2',
+        'groupId': '',
+        'senderNickname': '张三',
+        'senderFaceUrl': 'http://a/avatar.png',
+        'sessionType': 2,
+        'contentType': 101,
+        'content': jsonEncode({'content': '你好'}),
+        'sendTime': 1700000000000,
+        'createTime': 1700000000000,
+        'status': 2,
+      });
+      expect(sub.clientMsgId, 'rust-id');
+      expect(sub.sendId, 'user_1');
+      expect(sub.recvId, 'user_2');
+      expect(sub.senderNickname, '张三');
+      expect(sub.senderFaceUrl, 'http://a/avatar.png');
+      expect(sub.sessionType, 2);
+      expect(sub.messageType, MessageType.text);
+      expect(sub.sendTime, 1700000000000);
+      expect(sub.status, 2);
+    });
+
+    test('Go SDK 大写 ID 字段映射', () {
+      final sub = mergeSubMessageFromJson({
+        'clientMsgID': 'go-id',
+        'serverMsgID': 'srv-go',
+        'sendID': 'go_sender',
+        'recvID': 'go_receiver',
+        'groupID': 'group_1',
+        'senderPlatformID': 3,
+        'senderNickname': '李四',
+        'sessionType': 2,
+        'contentType': 102,
+        'content': jsonEncode({
+          'sourcePicture': {'url': 'http://img/1.png'},
+        }),
+      });
+      expect(sub.clientMsgId, 'go-id');
+      expect(sub.serverMsgId, 'srv-go');
+      expect(sub.sendId, 'go_sender');
+      expect(sub.recvId, 'go_receiver');
+      expect(sub.groupId, 'group_1');
+      expect(sub.senderPlatformId, 3);
+      expect(sub.messageType, MessageType.image);
+    });
+
+    test('缺失字段使用默认值', () {
+      final sub = mergeSubMessageFromJson({'contentType': 101});
+      expect(sub.clientMsgId, '');
+      expect(sub.sendId, '');
+      expect(sub.sessionType, 1);
+      expect(sub.sendTime, 0);
+      expect(sub.content, '');
+    });
+
+    test('Go SDK 子消息 content 为空时从 pictureElem 还原图片', () {
+      final sub = mergeSubMessageFromJson({
+        'clientMsgID': 'go-img',
+        'sendID': 'u1',
+        'contentType': 102,
+        'content': '',
+        'pictureElem': {
+          'sourcePath': '',
+          'sourcePicture': {
+            'url': 'http://img.example.com/a.png',
+            'width': 640,
+            'height': 640,
+          },
+          'bigPicture': {'url': 'http://img.example.com/b.png'},
+          'snapshotPicture': {'url': 'http://img.example.com/s.png'},
+        },
+      });
+      expect(sub.messageType, MessageType.image);
+      final pic = sub.parsedContent['sourcePicture'] as Map<String, dynamic>;
+      expect(pic['url'], 'http://img.example.com/a.png');
+      expect(sub.displayImageSource, 'http://img.example.com/a.png');
+    });
+
+    test('Go SDK 子消息 content 为空时从 textElem 还原文本', () {
+      final sub = mergeSubMessageFromJson({
+        'clientMsgID': 'go-text',
+        'sendID': 'u1',
+        'contentType': 101,
+        'content': '',
+        'textElem': {'content': '来自 textElem 的文本'},
+      });
+      expect(sub.messageType, MessageType.text);
+      expect(sub.displayText, '来自 textElem 的文本');
+    });
+
+    test('content 非空时优先使用 content', () {
+      final sub = mergeSubMessageFromJson({
+        'clientMsgID': 'mix',
+        'contentType': 101,
+        'content': jsonEncode({'content': 'content 字段'}),
+        'textElem': {'content': 'textElem 字段'},
+      });
+      expect(sub.displayText, 'content 字段');
     });
   });
 }

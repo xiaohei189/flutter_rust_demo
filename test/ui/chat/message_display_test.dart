@@ -67,6 +67,52 @@ void main() {
       expect(latestMessagePreview(json), '[文件]');
     });
 
+    test('合并转发消息 107 → 聊天记录', () {
+      final json = jsonEncode({'contentType': 107, 'content': '{}'});
+      expect(latestMessagePreview(json), '[聊天记录]');
+    });
+
+    test('名片消息 108 → 名片', () {
+      final json = jsonEncode({'contentType': 108, 'content': '{}'});
+      expect(latestMessagePreview(json), '[名片]');
+    });
+
+    test('位置消息 109 → 位置', () {
+      final json = jsonEncode({'contentType': 109, 'content': '{}'});
+      expect(latestMessagePreview(json), '[位置]');
+    });
+
+    test('自定义消息 110 → 自定义', () {
+      final json = jsonEncode({'contentType': 110, 'content': '{}'});
+      expect(latestMessagePreview(json), '[自定义]');
+    });
+
+    test('引用消息 114 → 引用', () {
+      final json = jsonEncode({'contentType': 114, 'content': '{}'});
+      expect(latestMessagePreview(json), '[引用]');
+    });
+
+    test('表情消息 115 → 表情', () {
+      final json = jsonEncode({'contentType': 115, 'content': '{}'});
+      expect(latestMessagePreview(json), '[表情]');
+    });
+
+    test('富文本消息 117 提取文本内容', () {
+      final json = jsonEncode({
+        'contentType': 117,
+        'content': jsonEncode({'content': '富文本正文'}),
+      });
+      expect(latestMessagePreview(json), contains('富文本正文'));
+    });
+
+    test('Markdown 消息 118 提取文本内容', () {
+      final json = jsonEncode({
+        'contentType': 118,
+        'content': jsonEncode({'content': '# 标题'}),
+      });
+      expect(latestMessagePreview(json), contains('# 标题'));
+    });
+
     test('未知 contentType 显示序号', () {
       final json = jsonEncode({'contentType': 999, 'content': '{}'});
       expect(latestMessagePreview(json), '[999]');

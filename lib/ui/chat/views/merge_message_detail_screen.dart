@@ -5,15 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../domain/extensions/message_ext.dart';
-import '../../../../generated/rust/constant/enums.dart' show SessionType;
+import '../../../../domain/models/message.dart' show MessageType;
+import '../../../../domain/models/user.dart';
 import '../../../../generated/rust/model/message.dart' show MessageInfo;
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
-import '../../contacts/widgets/contact_pick_item.dart';
 import '../providers/message_service_provider.dart';
+import '../widgets/media_viewer.dart';
+import '../widgets/message_bubble.dart';
 
 /// 合并转发消息详情页
-/// 展示 MergeElem.multiMessage 中的子消息列表
+///
+/// 展示 `MergeElem.multiMessage` 中的完整子消息（复用 [MessageBubble] 渲染
+/// 图片/语音/视频等真实内容）；`multiMessage` 缺失时回退到 `abstractList`
+/// 摘要文本行。通过 [AppRouter.goToMergeMessage] 以路由打开。
 class MergeMessageDetailScreen extends ConsumerWidget {
   final MessageInfo message;
 
@@ -29,62 +34,22 @@ class MergeMessageDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _forwardMergeMessage(BuildContext context, WidgetRef ref) async {
-    final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
-      context,
-      title: '转发给',
-    );
-    if (result == null || result.isEmpty || !context.mounted) return;
-    final target = result.first;
-    try {
-      await ref
-          .read(messageServiceProvider.notifier)
-          .forwardMessage(
-            clientMsgId: message.clientMsgId,
-            sourceId: target.id,
-            sessionType: target.isGroup
-                ? SessionType.writeGroupChat
-                : SessionType.singleChat,
-          );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('已转发给 ${target.name}'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('转发失败: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
     final json = message.parsedContent;
     final title = json['title'] as String? ?? '聊天记录';
-    final subMessages = _parseSubMessages(json);
+    final items = _parseItems(json);
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: false,
         title: Text(title, style: const TextStyle(fontSize: 16)),
         backgroundColor: colors.background,
         foregroundColor: colors.bubbleOtherText,
         elevation: 0.5,
         actions: [
-          IconButton(
-            tooltip: '转发',
-            icon: const Icon(Icons.forward_rounded),
-            onPressed: () => _forwardMergeMessage(context, ref),
-          ),
           if (_sourceConversationId.isNotEmpty)
             IconButton(
               tooltip: '查看原会话',
@@ -92,99 +57,114 @@ class MergeMessageDetailScreen extends ConsumerWidget {
               onPressed: () =>
                   AppRouter.goToChatDetailById(context, _sourceConversationId),
             ),
+          IconButton(
+            tooltip: '关闭',
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
         ],
       ),
-      body: subMessages.isEmpty
+      body: items.isEmpty
           ? const Center(child: Text('暂无消息内容'))
           : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: subMessages.length,
+              itemCount: items.length,
               itemBuilder: (context, index) {
-                final sub = subMessages[index];
-                return _buildSubMessageItem(context, sub);
+                final item = items[index];
+                final message = item.message;
+                return message != null
+                    ? _buildMessageBubble(context, ref, message)
+                    : _buildFallbackRow(context, item.fallback!);
               },
             ),
     );
   }
 
-  /// 从 content JSON 解析子消息列表
-  List<_SubMessage> _parseSubMessages(Map<String, dynamic> json) {
+  /// 解析展示项：multiMessage 子消息优先渲染真实气泡；内容缺失时
+  /// 回退到 abstractList 摘要文本行。
+  List<_MergeItem> _parseItems(Map<String, dynamic> json) {
     final multiMessage = json['multiMessage'];
-    final abstractList = json['abstractList'];
+    final rows = _parseAbstractRows(json);
     if (multiMessage is! List || multiMessage.isEmpty) {
-      if (abstractList is List) {
-        return abstractList.map((item) {
-          final raw = item is String ? item : item.toString();
-          final separator = raw.indexOf(RegExp('[:：]'));
-          if (separator > 0) {
-            return _SubMessage(
-              senderNickname: raw.substring(0, separator),
-              content: raw.substring(separator + 1).trim(),
-              contentType: 0,
-            );
-          }
-          return _SubMessage(
-            senderNickname: '摘要',
-            content: raw,
-            contentType: 0,
-          );
-        }).toList();
-      }
-      return [];
+      return rows.map(_MergeItem.fallback).toList();
     }
 
-    return multiMessage.indexed.map<_SubMessage>((entry) {
-      final index = entry.$1;
-      final item = entry.$2 as Map<String, dynamic>;
-      final senderNickname = item['senderNickname'] as String? ?? '';
-      final contentType = item['contentType'] as int? ?? 0;
-      final rawContent = item['content'] as String? ?? '';
-      final sendTime = item['sendTime'] as int? ?? 0;
-
-      String displayContent;
-      if (rawContent.isEmpty &&
-          abstractList is List &&
-          index < abstractList.length) {
-        final raw = abstractList[index].toString();
-        final separator = raw.indexOf(RegExp('[:：]'));
-        displayContent = separator > 0
-            ? raw.substring(separator + 1).trim()
-            : raw;
+    final items = <_MergeItem>[];
+    for (final (index, rawItem) in multiMessage.indexed) {
+      if (rawItem is! Map<String, dynamic>) continue;
+      final sub = mergeSubMessageFromJson(rawItem);
+      if (sub.content.isEmpty && index < rows.length) {
+        items.add(_MergeItem.fallback(rows[index]));
       } else {
-        try {
-          final contentJson = jsonDecode(rawContent) as Map<String, dynamic>;
-          displayContent = _extractContent(contentJson, contentType);
-        } catch (_) {
-          displayContent = rawContent;
-        }
+        items.add(_MergeItem.message(sub));
       }
-
-      return _SubMessage(
-        senderNickname: senderNickname,
-        content: displayContent,
-        contentType: contentType,
-        sendTime: sendTime,
-      );
-    }).toList();
+    }
+    return items;
   }
 
-  /// 根据 contentType 提取显示内容
-  String _extractContent(Map<String, dynamic> json, int contentType) {
-    return switch (contentType) {
-      101 => json['content'] as String? ?? '',
-      102 => '[图片]',
-      103 => '[语音]',
-      104 => '[视频]',
-      105 => json['fileName'] as String? ?? '[文件]',
-      106 => json['text'] as String? ?? '[@消息]',
-      107 => '[聊天记录]',
-      108 => json['nickname'] as String? ?? '[名片]',
-      109 => json['description'] as String? ?? '[位置]',
-      110 => json['data'] as String? ?? '[自定义]',
-      114 => json['text'] as String? ?? '[引用]',
-      116 => json['text'] as String? ?? '[@消息]',
-      _ => json['content'] as String? ?? '[消息]',
-    };
+  /// 用 [MessageBubble] 渲染子消息（图片/语音/视频等真实展示）。
+  Widget _buildMessageBubble(
+    BuildContext context,
+    WidgetRef ref,
+    MessageInfo sub,
+  ) {
+    final currentUserId = ref.read(messageServiceProvider).currentUserId;
+    final isFromMe = sub.sendId.isNotEmpty && sub.sendId == currentUserId;
+    final nickname = sub.senderNickname;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!isFromMe && nickname.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 44, top: 8, bottom: 2),
+            child: Text(
+              nickname,
+              style: TextStyle(
+                fontSize: 12,
+                color: context.appColors.textSecondary,
+              ),
+            ),
+          ),
+        MessageBubble(
+          message: sub,
+          otherUser: User(
+            id: sub.sendId,
+            name: nickname.isNotEmpty ? nickname : '用户',
+            avatar: sub.senderFaceUrl.isNotEmpty ? sub.senderFaceUrl : null,
+          ),
+          currentUserId: currentUserId,
+          onTap:
+              sub.messageType == MessageType.image &&
+                  sub.displayImageSource.isNotEmpty
+              ? (msg) => openImagePreview(
+                  context,
+                  source: msg.displayImageSource,
+                  suggestedName: '图片',
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+
+  /// 从 content JSON 解析 abstractList 摘要文本行（multiMessage 缺失时兜底）。
+  List<_SubMessage> _parseAbstractRows(Map<String, dynamic> json) {
+    final abstractList = json['abstractList'];
+    if (abstractList is! List) return [];
+    return abstractList.map((item) {
+      final raw = item is String ? item : item.toString();
+      final separator = raw.indexOf(RegExp('[:：]'));
+      if (separator > 0) {
+        return _SubMessage(
+          senderNickname: raw.substring(0, separator),
+          content: raw.substring(separator + 1).trim(),
+          contentType: 0,
+        );
+      }
+      return _SubMessage(senderNickname: '摘要', content: raw, contentType: 0);
+    }).toList();
   }
 
   IconData _contentIcon(int contentType) {
@@ -202,15 +182,7 @@ class MergeMessageDetailScreen extends ConsumerWidget {
     };
   }
 
-  String _formatSendTime(int timeMs) {
-    if (timeMs <= 0) return '';
-    final time = DateTime.fromMillisecondsSinceEpoch(timeMs);
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  Widget _buildSubMessageItem(BuildContext context, _SubMessage sub) {
+  Widget _buildFallbackRow(BuildContext context, _SubMessage sub) {
     final colors = context.appColors;
     return InkWell(
       onTap: () {
@@ -249,16 +221,6 @@ class MergeMessageDetailScreen extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (sub.sendTime > 0) ...[
-              const SizedBox(width: 8),
-              Text(
-                _formatSendTime(sub.sendTime),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colors.textSecondary.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -270,12 +232,18 @@ class _SubMessage {
   final String senderNickname;
   final String content;
   final int contentType;
-  final int sendTime;
 
   const _SubMessage({
     required this.senderNickname,
     required this.content,
     required this.contentType,
-    this.sendTime = 0,
   });
+}
+
+class _MergeItem {
+  final MessageInfo? message;
+  final _SubMessage? fallback;
+
+  const _MergeItem.message(this.message) : fallback = null;
+  const _MergeItem.fallback(this.fallback) : message = null;
 }

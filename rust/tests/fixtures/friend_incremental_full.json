@@ -1,0 +1,13 @@
+{
+  "errCode": 0,
+  "errMsg": "",
+  "data": {
+    "version": 11,
+    "versionID": "v1",
+    "full": true,
+    "delete": null,
+    "insert": null,
+    "update": null,
+    "sortVersion": 0
+  }
+}

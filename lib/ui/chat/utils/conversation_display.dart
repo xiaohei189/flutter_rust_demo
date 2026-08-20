@@ -80,16 +80,30 @@ String latestMessagePreview(String latestMsgJson) {
         body = '[@消息]';
         break;
       case 107:
-        body = '[引用]';
+        body = '[聊天记录]';
         break;
       case 108:
-        body = '[位置]';
+        body = '[名片]';
         break;
       case 109:
-        body = '[自定义]';
+        body = '[位置]';
         break;
       case 110:
-        body = '[撤回]';
+        body = '[自定义]';
+        break;
+      case 114:
+        body = '[引用]';
+        break;
+      case 115:
+        body = '[表情]';
+        break;
+      case 117:
+        body = _contentToDisplay(content);
+        if (body.isEmpty) body = '[富文本]';
+        break;
+      case 118:
+        body = _contentToDisplay(content);
+        if (body.isEmpty) body = '[Markdown]';
         break;
       default:
         if (contentType > 0) {
