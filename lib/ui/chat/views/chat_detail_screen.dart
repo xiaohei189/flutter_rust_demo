@@ -32,6 +32,7 @@ import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
 import '../widgets/menu/chat_dialogs.dart' show showDeleteMessagesConfirm, showLocationDetailDialog, showMergeForwardTitleDialog;
+import '../widgets/menu/file_actions_sheet.dart' show showFileActionsSheet;
 import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/message_list.dart';
@@ -535,30 +536,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   Future<void> _showFileActions(ChatMessage msg) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.open_in_new),
-              title: const Text('打开文件'),
-              onTap: () => Navigator.of(sheetContext).pop('open'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.save_alt),
-              title: const Text('保存/另存为'),
-              onTap: () => Navigator.of(sheetContext).pop('save'),
-            ),
-          ],
-        ),
-      ),
-    );
+    final action = await showFileActionsSheet(context);
     if (action == null || !mounted) return;
 
     final source = msg.fileSource;
