@@ -4,16 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../contacts/providers/friend_provider.dart';
 import '../../groups/providers/group_provider.dart';
 import '../providers/chat_settings_provider.dart';
 import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
+import '../widgets/settings_dialogs.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
 class ChatSettingsScreen extends ConsumerStatefulWidget {
@@ -412,26 +411,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   Future<void> _handleQuitGroup() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('退出群组'),
-        content: const Text('确定要退出该群组吗？退出后将无法接收群消息。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              '退出',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await confirmQuitGroup(context);
 
     if (confirmed != true) return;
 
@@ -452,26 +432,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   /// 清空聊天记录
   Future<void> _handleClearChatHistory() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清空聊天记录'),
-        content: const Text('确定要清空该会话的所有聊天记录吗？此操作不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              '清空',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await confirmClearChatHistory(context);
 
     if (confirmed != true) return;
 
@@ -491,32 +452,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   /// 修改自己在群里的昵称
   Future<void> _editGroupNickname() async {
-    final controller = TextEditingController();
-    final nickname = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('修改群昵称'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '请输入群昵称',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+    final nickname = await showChatSettingsTextDialog(
+      context,
+      title: '修改群昵称',
+      hint: '请输入群昵称',
     );
-    controller.dispose();
     if (nickname == null || nickname.isEmpty) return;
 
     final ok = await _viewModel.updateGroupNickname(nickname);
@@ -538,34 +478,13 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final current = await _viewModel.currentGroupAnnouncement();
     if (!mounted) return;
 
-    final controller = TextEditingController(text: current);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('编辑群公告'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 6,
-          decoration: const InputDecoration(
-            hintText: '请输入群公告',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+    final value = await showChatSettingsTextDialog(
+      context,
+      title: '编辑群公告',
+      hint: '请输入群公告',
+      initialValue: current,
+      maxLines: 6,
     );
-    controller.dispose();
     if (value == null || !mounted) return;
 
     final ok = await _viewModel.updateGroupAnnouncement(value);
@@ -584,142 +503,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
   /// 显示邀请成员对话框
   void _showInviteMemberDialog() {
-    final selectedIds = <String>[];
-    unawaited(_viewModel.loadInviteFriends());
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return StatefulBuilder(
-              builder: (context, setSheetState) {
-                return Consumer(
-                  builder: (context, ref, _) {
-                    final friendState = ref.watch(friendListProvider);
-
-                    return Column(
-                      children: [
-                        // 标题栏
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                '邀请成员',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: selectedIds.isEmpty
-                                    ? null
-                                    : () async {
-                                        Navigator.of(context).pop();
-                                        await _inviteMembers(selectedIds);
-                                      },
-                                child: Text(
-                                  '确定 (${selectedIds.length})',
-                                  style: TextStyle(
-                                    color: selectedIds.isEmpty
-                                        ? context.appColors.textSecondary
-                                        : context.appColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(height: 1),
-
-                        // 好友列表
-                        Expanded(
-                          child: friendState.isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : friendState.friends.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    '暂无好友',
-                                    style: TextStyle(
-                                      color: context.appColors.textSecondary,
-                                    ),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  controller: scrollController,
-                                  itemCount: friendState.friends.length,
-                                  itemBuilder: (context, index) {
-                                    final friend = friendState.friends[index];
-                                    final isSelected = selectedIds.contains(
-                                      friend.userId,
-                                    );
-
-                                    return ListTile(
-                                      leading: UserAvatar(
-                                        user: User(
-                                          id: friend.userId,
-                                          name: friend.nickname,
-                                          avatar: friend.faceUrl.isNotEmpty
-                                              ? friend.faceUrl
-                                              : null,
-                                        ),
-                                        radius: 20,
-                                      ),
-                                      title: Text(
-                                        friend.remark.isNotEmpty
-                                            ? friend.remark
-                                            : friend.nickname,
-                                        style: const TextStyle(fontSize: 15),
-                                      ),
-                                      trailing: Checkbox(
-                                        value: isSelected,
-                                        activeColor: context.appColors.primary,
-                                        onChanged: (checked) {
-                                          setSheetState(() {
-                                            if (checked == true) {
-                                              selectedIds.add(friend.userId);
-                                            } else {
-                                              selectedIds.remove(friend.userId);
-                                            }
-                                          });
-                                        },
-                                      ),
-                                      onTap: () {
-                                        setSheetState(() {
-                                          if (isSelected) {
-                                            selectedIds.remove(friend.userId);
-                                          } else {
-                                            selectedIds.add(friend.userId);
-                                          }
-                                        });
-                                      },
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            );
-          },
-        );
-      },
-    );
+    showInviteMemberSheet(context, onInvite: (ids) => _inviteMembers(ids));
   }
 
   /// 邀请成员加入群组
