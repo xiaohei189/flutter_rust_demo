@@ -7,12 +7,12 @@ import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/user.dart';
 import '../../../previews/app_theme_preview.dart';
 import '../../../previews/fake_data.dart';
-import '../../../../router/app_router.dart';
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../utils/conversation_display.dart';
 import '../../view_models/chat_list_view_model.dart';
+import 'chat_list_item_menu.dart';
 
 /// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
 class ChatListItem extends StatelessWidget {
@@ -257,7 +257,19 @@ class ChatListItem extends StatelessWidget {
                 : colors.surface),
       child: InkWell(
         onTap: onTap,
-        onLongPress: () => _showLongPressMenu(context),
+        onLongPress: () => showChatListItemMenu(
+          context,
+          conversation: conversation,
+          isMuted: _isMuted,
+          onPinToggle: onPinToggle,
+          onMarkRead: onMarkRead,
+          onMuteToggle: onMuteToggle,
+          onClear: onClear,
+          onFlagToggle: onFlagToggle,
+          onDoneToggle: onDoneToggle,
+          onHide: onHide,
+          onDelete: onDelete,
+        ),
         child: Column(
           children: [
             Container(
@@ -417,131 +429,6 @@ class ChatListItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _showLongPressMenu(BuildContext context) {
-    final colors = context.appColors;
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.push_pin_outlined),
-              title: Text(conversation.isPinned ? '取消置顶' : '置顶'),
-              onTap: () {
-                AppRouter.goBack(ctx);
-                onPinToggle?.call();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.done_all_outlined),
-              title: const Text('标为已读'),
-              onTap: () {
-                AppRouter.goBack(ctx);
-                onMarkRead?.call();
-              },
-            ),
-            if (onMuteToggle != null)
-              ListTile(
-                leading: Icon(
-                  _isMuted
-                      ? Icons.notifications_off_outlined
-                      : Icons.notifications_none,
-                ),
-                title: Text(_isMuted ? '取消免打扰' : '免打扰'),
-                onTap: () {
-                  AppRouter.goBack(ctx);
-                  onMuteToggle!();
-                },
-              ),
-            if (onFlagToggle != null)
-              ListTile(
-                leading: Icon(
-                  ChatListViewModel.isFlagged(conversation)
-                      ? Icons.flag
-                      : Icons.flag_outlined,
-                ),
-                title: Text(
-                  ChatListViewModel.isFlagged(conversation) ? '取消标记' : '标记',
-                ),
-                onTap: () {
-                  AppRouter.goBack(ctx);
-                  onFlagToggle!();
-                },
-              ),
-            if (onDoneToggle != null)
-              ListTile(
-                leading: Icon(
-                  ChatListViewModel.isDone(conversation)
-                      ? Icons.check_circle
-                      : Icons.check_circle_outline,
-                ),
-                title: Text(
-                  ChatListViewModel.isDone(conversation) ? '取消已完成' : '标记已完成',
-                ),
-                onTap: () {
-                  AppRouter.goBack(ctx);
-                  onDoneToggle!();
-                },
-              ),
-            if (onClear != null)
-              ListTile(
-                leading: const Icon(Icons.delete_sweep_outlined),
-                title: const Text('清空聊天记录'),
-                onTap: () {
-                  AppRouter.goBack(ctx);
-                  _confirmClear(context);
-                },
-              ),
-            if (onHide != null)
-              ListTile(
-                leading: const Icon(Icons.visibility_off_outlined),
-                title: const Text('不显示该聊天'),
-                onTap: () {
-                  AppRouter.goBack(ctx);
-                  onHide!();
-                },
-              ),
-            ListTile(
-              leading: Icon(Icons.delete_outline, color: colors.danger),
-              title: Text('删除', style: TextStyle(color: colors.danger)),
-              onTap: () {
-                AppRouter.goBack(ctx);
-                onDelete?.call();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmClear(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('清空聊天记录'),
-        content: const Text('确定清空该会话的所有聊天记录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '清空',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && context.mounted) {
-      onClear?.call();
-    }
   }
 
   @override
