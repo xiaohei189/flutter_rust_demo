@@ -11,10 +11,10 @@ import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../core/utils/app_logger.dart';
-import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../view_models/user_profile_view_model.dart';
+import '../widgets/profile_sections.dart';
 import '../widgets/add_friend_dialog.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
@@ -87,6 +87,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
+  VoidCallback _copyUserId(String id) => () {
+    Clipboard.setData(ClipboardData(text: id));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('已复制 ID'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  };
+
   @override
   Widget build(BuildContext context) {
     // 获取最新的用户信息
@@ -125,120 +136,31 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           : ListView(
               children: [
                 const SizedBox(height: 12),
-                // 头像 + 基本信息卡片
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      UserAvatar(user: displayUser, radius: 44),
-                      const SizedBox(height: 16),
-                      Text(
-                        displayUser.name,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          Clipboard.setData(
-                            ClipboardData(text: displayUser.id),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('已复制 ID'),
-                              behavior: SnackBarBehavior.floating,
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'ID: ${displayUser.id}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: colors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.copy_outlined,
-                              size: 14,
-                              color: colors.textSecondary.withValues(
-                                alpha: 0.7,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (displayUser.status != null &&
-                          displayUser.status!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          displayUser.status!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: displayUser.status == '在线'
-                                ? context.appColors.success
-                                : colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                ProfileHeaderCard(
+                  user: displayUser,
+                  onCopyId: _copyUserId(displayUser.id),
                 ),
                 const SizedBox(height: 12),
-                // 基本信息列表
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildInfoRow(
-                        context,
-                        '用户名称',
-                        displayProfile?.nickname ?? displayUser.name,
-                      ),
-                      _buildDivider(),
-                      _buildInfoRow(context, '用户 ID', displayUser.id),
-                      if (_exData['alias'] != null &&
-                          _exData['alias']!.isNotEmpty) ...[
-                        _buildDivider(),
-                        _buildInfoRow(context, '别名', _exData['alias']!),
-                      ],
-                      if (_exData['signature'] != null &&
-                          _exData['signature']!.isNotEmpty) ...[
-                        _buildDivider(),
-                        _buildInfoRow(context, '个性签名', _exData['signature']!),
-                      ],
-                      if (displayProfile != null &&
-                          displayProfile.remark.isNotEmpty &&
-                          _exData['alias'] == null &&
-                          _exData['signature'] == null) ...[
-                        _buildDivider(),
-                        _buildInfoRow(context, '备注信息', displayProfile.remark),
-                      ],
-                      if (displayUser.avatar != null &&
-                          displayUser.avatar!.isNotEmpty) ...[
-                        _buildDivider(),
-                        _buildInfoRow(context, '头像状态', '已设置'),
-                      ],
-                    ],
-                  ),
+                ProfileInfoCard(
+                  rows: [
+                    ('用户名称', displayProfile?.nickname ?? displayUser.name),
+                    ('用户 ID', displayUser.id),
+                    if (_exData['alias'] != null &&
+                        _exData['alias']!.isNotEmpty)
+                      ('别名', _exData['alias']!),
+                    if (_exData['signature'] != null &&
+                        _exData['signature']!.isNotEmpty)
+                      ('个性签名', _exData['signature']!),
+                    if (displayProfile != null &&
+                        displayProfile.remark.isNotEmpty &&
+                        _exData['alias'] == null &&
+                        _exData['signature'] == null)
+                      ('备注信息', displayProfile.remark),
+                    if (displayUser.avatar != null &&
+                        displayUser.avatar!.isNotEmpty)
+                      ('头像状态', '已设置'),
+                  ],
                 ),
-                const SizedBox(height: 12),
                 // 高级信息列表
                 if (displayProfile != null)
                   Container(
