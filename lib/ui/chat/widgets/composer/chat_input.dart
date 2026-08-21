@@ -8,14 +8,12 @@ import 'package:record/record.dart';
 
 import '../../../../domain/models/group_member.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../previews/app_theme_preview.dart';
-import '../../../core/widgets/app_image.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
+import 'collapsed_input_bar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'chat_input_field.dart';
-import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
 import 'at_member_suggestions.dart';
@@ -626,7 +624,21 @@ class _ChatInputState extends State<ChatInput> {
                     _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
                   ]
                 else
-                  _buildCollapsedRow(),
+                  CollapsedInputBar(
+                    controller: widget.controller,
+                    focusNode: _focusNode,
+                    isMarkdownMode: _isMarkdownMode,
+                    onOpenComposer: _openComposerSheet,
+                    onSubmitted: _doSend,
+                    emojiActive: _activePanel == _InputPanel.emoji,
+                    moreActive: _activePanel == _InputPanel.attachment,
+                    onToggleEmoji: () => _togglePanel(_InputPanel.emoji),
+                    onToggleMore: () => _togglePanel(_InputPanel.attachment),
+                    onVoiceLongPressStart: _startRecording,
+                    onVoiceLongPressMoveUpdate: _onRecordingMove,
+                    onVoiceLongPressEnd: _stopRecording,
+                    onVoiceTap: () => _focusNode.requestFocus(),
+                  ),
               ],
             ),
           ),
@@ -657,43 +669,6 @@ class _ChatInputState extends State<ChatInput> {
           ),
         ],
       ),
-    );
-  }
-
-  /// 未聚焦默认态：一行 [🎤] [输入框] [😊] [➕]。
-  /// 点击输入框聚焦后切换到“输入行 + 底部完整工具栏”。
-  Widget _buildCollapsedRow() {
-    return Row(
-      children: [
-        // 声音切换按钮（长按录音 / 点击聚焦弹键盘）
-        InputToolbarIcon(
-          icon: Icons.mic_none,
-          tooltip: '语音（长按录音，上滑取消）',
-          onLongPressStart: _startRecording,
-          onLongPressMoveUpdate: _onRecordingMove,
-          onLongPressEnd: _stopRecording,
-          onTap: () => _focusNode.requestFocus(),
-        ),
-        const SizedBox(width: 4),
-        // 输入框占满剩余宽度
-        Expanded(child: _buildInputRow()),
-        // 表情（面板互斥展开）
-        InputToolbarIcon(
-          icon: _activePanel == _InputPanel.emoji
-              ? Icons.emoji_emotions
-              : Icons.emoji_emotions_outlined,
-          tooltip: '表情',
-          onTap: () => _togglePanel(_InputPanel.emoji),
-        ),
-        // 更多（附件面板互斥展开）
-        InputToolbarIcon(
-          icon: _activePanel == _InputPanel.attachment
-              ? Icons.add_circle
-              : Icons.add_circle_outline,
-          tooltip: '更多',
-          onTap: () => _togglePanel(_InputPanel.attachment),
-        ),
-      ],
     );
   }
 
