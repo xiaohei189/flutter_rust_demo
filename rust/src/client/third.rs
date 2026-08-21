@@ -4,9 +4,9 @@
 
 use crate::client::OpenIMClient;
 use crate::domain::error::Result;
-use crate::http::third::{FcmUpdateTokenReq, SetAppBadgeReq};
-use crate::http::third_api::HttpThirdApi;
-use crate::http::ThirdServerApi;
+use crate::infra::http::third::{FcmUpdateTokenReq, SetAppBadgeReq};
+use crate::infra::http::third_api::HttpThirdApi;
+use crate::infra::http::ThirdServerApi;
 use async_trait::async_trait;
 
 #[async_trait]

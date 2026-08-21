@@ -6,7 +6,7 @@ use crate::client::OpenIMClient;
 
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::friend::FriendEvent;
-use crate::http::friend::{FriendApplyInfo, SearchFriendItem};
+use crate::infra::http::friend::{FriendApplyInfo, SearchFriendItem};
 use crate::domain::model::friend::FriendInfo;
 use async_trait::async_trait;
 
@@ -19,7 +19,7 @@ pub trait FriendApi: Send + Sync {
     async fn delete_friend(&self, user_id: &str) -> Result<()>;
     async fn get_black_list(&self) -> Vec<String>;
     async fn is_friend(&self, user_id: &str) -> bool;
-    async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::http::friend::CheckFriendResult>, SdkError>;
+    async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::infra::http::friend::CheckFriendResult>, SdkError>;
     async fn add_black(&self, user_id: &str) -> Result<()>;
     async fn remove_black(&self, user_id: &str) -> Result<()>;
     async fn is_in_blacklist(&self, user_id: &str) -> bool;
@@ -70,7 +70,7 @@ impl FriendApi for OpenIMClient {
 
     /// 批量检查好友关系状态
     #[tracing::instrument(skip_all)]
-    async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::http::friend::CheckFriendResult>, SdkError> {
+    async fn check_friend(&self, user_ids: Vec<String>) -> std::result::Result<Vec<crate::infra::http::friend::CheckFriendResult>, SdkError> {
         self.friend.check_friend(user_ids).await
     }
 

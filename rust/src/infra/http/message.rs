@@ -77,7 +77,7 @@ pub struct GetServerTimeResp {
 /// 消息服务端 API 接口
 ///
 /// 定义 MessageService 需要的所有远程操作。
-/// 生产环境由 [`HttpMessageApi`](crate::http::message_api::HttpMessageApi) 实现，测试中可用 mock 替代。
+/// 生产环境由 [`HttpMessageApi`](crate::infra::http::message_api::HttpMessageApi) 实现，测试中可用 mock 替代。
 #[async_trait]
 pub trait MessageServerApi: Send + Sync {
     /// 通知服务端撤回消息

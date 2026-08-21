@@ -7,7 +7,7 @@ use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::http::types::Pagination;
+use crate::infra::http::types::Pagination;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetFriendListReq {
     #[serde(rename = "userID")]
@@ -276,11 +276,11 @@ pub struct GetIncrementalFriendsResp {
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub full: bool,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub delete: Vec<String>,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub insert: Vec<FriendServerInfo>,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub update: Vec<FriendServerInfo>,
     #[serde(rename = "sortVersion", default)]
     pub sort_version: u64,

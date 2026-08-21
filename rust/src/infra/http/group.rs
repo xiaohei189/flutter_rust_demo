@@ -7,7 +7,7 @@ use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::http::types::Pagination;
+use crate::infra::http::types::Pagination;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GetJoinedGroupListReq {
     #[serde(rename = "fromUserID")]
@@ -360,11 +360,11 @@ pub struct GetIncrementalJoinGroupResp {
     #[serde(rename = "versionID")]
     pub version_id: String,
     pub full: bool,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub delete: Vec<String>,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub insert: Vec<ServerGroupInfo>,
-    #[serde(default, deserialize_with = "crate::http::de_vec_or_default")]
+    #[serde(default, deserialize_with = "crate::infra::http::de_vec_or_default")]
     pub update: Vec<ServerGroupInfo>,
     #[serde(rename = "sortVersion", default)]
     pub sort_version: u64,

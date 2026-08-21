@@ -536,7 +536,7 @@ async fn test_message_flow() {
     println!("B 收到待撤回消息 ✓");
 
     // A 撤回
-    use rust_lib_flutter_rust_demo::http::message::RevokeMessageReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::RevokeMessageReq;
     let revoke_result = a_sdk
         .revoke_message(RevokeMessageReq {
             conversation_id: conv_id.clone(),
@@ -589,7 +589,7 @@ async fn test_message_flow() {
     println!("B 收到待删除消息 ✓");
 
     // A 删除
-    use rust_lib_flutter_rust_demo::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
     let delete_result = a_sdk
         .delete_messages(DeleteMessagesReq {
             conversation_id: conv_id.clone(),
@@ -1299,7 +1299,7 @@ async fn test_mark_specific_messages_as_read() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::http::message::MarkMessagesAsReadReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::MarkMessagesAsReadReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1440,7 +1440,7 @@ async fn test_delete_message_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1574,7 +1574,7 @@ async fn test_clear_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1708,7 +1708,7 @@ async fn test_delete_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");

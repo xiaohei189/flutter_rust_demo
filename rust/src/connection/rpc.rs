@@ -6,7 +6,7 @@ use crate::connection::manager::ConnectionManager;
 use crate::connection::ws::{OpenIMReq, OpenIMResp};
 use crate::domain::constant::req_identifier_name;
 use crate::domain::error::{Result, SdkError};
-use crate::logger::{encode_operation_id, extract_span_id, extract_trace_id};
+use crate::infra::logger::{encode_operation_id, extract_span_id, extract_trace_id};
 use futures_util::SinkExt;
 use std::time::{Duration, Instant};
 use tokio::time::timeout;

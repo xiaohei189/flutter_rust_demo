@@ -2,17 +2,17 @@
 
 use rust_lib_flutter_rust_demo::client::context::Repositories;
 use rust_lib_flutter_rust_demo::conversation::syncer::ConversationSyncer;
-use rust_lib_flutter_rust_demo::db::pool::create_pool_memory;
-use rust_lib_flutter_rust_demo::db::*;
+use rust_lib_flutter_rust_demo::infra::db::pool::create_pool_memory;
+use rust_lib_flutter_rust_demo::infra::db::*;
 use rust_lib_flutter_rust_demo::event::hub::EventHub;
 use rust_lib_flutter_rust_demo::friend::service::FriendService;
 use rust_lib_flutter_rust_demo::group::service::GroupService;
-use rust_lib_flutter_rust_demo::http::client::HttpApiClient;
-use rust_lib_flutter_rust_demo::http::friend_api::HttpFriendApi;
-use rust_lib_flutter_rust_demo::http::group::GroupServerApi;
-use rust_lib_flutter_rust_demo::http::group_api::HttpGroupApi;
-use rust_lib_flutter_rust_demo::http::online::{GetUserStatusReq, OnlineStatusServerApi};
-use rust_lib_flutter_rust_demo::http::online_api::HttpOnlineStatusApi;
+use rust_lib_flutter_rust_demo::infra::http::client::HttpApiClient;
+use rust_lib_flutter_rust_demo::infra::http::friend_api::HttpFriendApi;
+use rust_lib_flutter_rust_demo::infra::http::group::GroupServerApi;
+use rust_lib_flutter_rust_demo::infra::http::group_api::HttpGroupApi;
+use rust_lib_flutter_rust_demo::infra::http::online::{GetUserStatusReq, OnlineStatusServerApi};
+use rust_lib_flutter_rust_demo::infra::http::online_api::HttpOnlineStatusApi;
 use rust_lib_flutter_rust_demo::domain::model::UserId;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
@@ -45,7 +45,7 @@ async fn friend_full_sync_works_without_live_server() {
     let pool = create_pool_memory().await.unwrap();
     let repos = make_repositories(pool.clone());
     let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
-    let api: Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
+    let api: Arc<dyn rust_lib_flutter_rust_demo::infra::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
     let user_id = UserId::new("me");
     let hub = EventHub::new();
     let friend_service = FriendService::new(api, repos.clone(), user_id, hub.clone());
@@ -85,7 +85,7 @@ async fn friend_list_restores_from_db_when_incremental_has_no_changes() {
 
     let make_api = |uri: &str| {
         let http = Arc::new(HttpApiClient::new(uri.to_string(), "test_token".to_string(), "test_op".to_string()));
-        Arc::new(HttpFriendApi::new(http)) as Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi>
+        Arc::new(HttpFriendApi::new(http)) as Arc<dyn rust_lib_flutter_rust_demo::infra::http::friend::FriendServerApi>
     };
 
     // 首次登录：内存 + DB + 版本号均有数据
@@ -250,7 +250,7 @@ async fn friend_black_list_sync_works_without_live_server() {
     let pool = create_pool_memory().await.unwrap();
     let repos = make_repositories(pool);
     let http = Arc::new(HttpApiClient::new(server.uri(), "test_token".to_string(), "test_op".to_string()));
-    let api: Arc<dyn rust_lib_flutter_rust_demo::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
+    let api: Arc<dyn rust_lib_flutter_rust_demo::infra::http::friend::FriendServerApi> = Arc::new(HttpFriendApi::new(http));
     let friend_service = FriendService::new(api, repos, UserId::new("me"), EventHub::new());
 
     friend_service.sync_blacks().await.unwrap();

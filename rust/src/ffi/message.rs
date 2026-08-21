@@ -8,7 +8,7 @@ use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
 use crate::domain::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
 use crate::ffi::global::client_holder;
-use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::infra::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
 use crate::domain::model::msg_struct::MsgStruct;
 use anyhow::Result;
 

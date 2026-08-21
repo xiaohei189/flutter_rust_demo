@@ -1,7 +1,7 @@
 //! 好友相关 FFI 桥接
 
 use crate::ffi::client::OpenIMBridgeClient;
-use crate::http::friend::FriendApplyInfo;
+use crate::infra::http::friend::FriendApplyInfo;
 use anyhow::Result;
 
 impl OpenIMBridgeClient {
@@ -48,7 +48,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn check_friend(&self, user_ids: Vec<String>) -> Result<Vec<crate::http::friend::CheckFriendResult>> {
+    pub async fn check_friend(&self, user_ids: Vec<String>) -> Result<Vec<crate::infra::http::friend::CheckFriendResult>> {
         self.inner.check_friend(user_ids).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -92,7 +92,7 @@ impl OpenIMBridgeClient {
     ///
     /// keyword: 搜索关键词，匹配 nickname / user_id / remark
     #[flutter_rust_bridge::frb]
-    pub async fn search_friends(&self, keyword: String) -> Result<Vec<crate::http::friend::SearchFriendItem>> {
+    pub async fn search_friends(&self, keyword: String) -> Result<Vec<crate::infra::http::friend::SearchFriendItem>> {
         self.inner.search_friends(&keyword).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 

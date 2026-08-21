@@ -3,12 +3,12 @@
 //! trait 定义在 `domain::ports::conversation`
 
 use crate::domain::error::Result;
-use crate::http::client::HttpApiClient;
-use crate::http::conversation::{
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::conversation::{
     ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp, GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq, GetFullConversationIDsResp,
     GetIncrementalConversationReq, GetIncrementalConversationResp, ServerConversation, SetConversationReq,
 };
-use crate::http::routes::{GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS, GET_INCREMENTAL_CONVERSATION, SET_CONVERSATION};
+use crate::infra::http::routes::{GET_ALL_CONVERSATION_LIST, GET_CONVERSATIONS, GET_FULL_CONVERSATION_IDS, GET_INCREMENTAL_CONVERSATION, SET_CONVERSATION};
 use async_trait::async_trait;
 use serde::Serialize;
 use std::sync::Arc;

@@ -2,9 +2,9 @@ use crate::connection::manager::ConnectionManager;
 use crate::domain::constant::ws_push_identifier::WS_SUB_USER_ONLINE_STATUS;
 use crate::domain::error::Result;
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
-use crate::http::OnlineStatusServerApi;
+use crate::infra::http::OnlineStatusServerApi;
 
-use crate::http::online::*;
+use crate::infra::http::online::*;
 use crate::domain::model::UserId;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{SubUserOnlineStatus, SubUserOnlineStatusTips};

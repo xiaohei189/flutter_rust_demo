@@ -1,14 +1,14 @@
 use crate::domain::error::Result;
 use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 
-use crate::http::GroupServerApi;
+use crate::infra::http::GroupServerApi;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::local::LocalGroup;
 use crate::domain::model::UserId;
 
 use crate::client::context::Repositories;
-use crate::http::group::*;
-use crate::http::Pagination;
+use crate::infra::http::group::*;
+use crate::infra::http::Pagination;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, warn};

@@ -11,7 +11,7 @@ mod search;
 use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::MessageListener;
-use crate::http::message::MessageServerApi;
+use crate::infra::http::message::MessageServerApi;
 use crate::message::receive::checker::{MessageChecker, SeqPullContext};
 use crate::domain::model::UserId;
 use std::sync::Arc;
@@ -56,9 +56,9 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::domain::model::UserId;
     use std::sync::Arc;

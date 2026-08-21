@@ -3,17 +3,17 @@
 //! trait 定义在 `domain::ports::friend`
 
 use crate::domain::error::Result;
-use crate::http::client::HttpApiClient;
-use crate::http::friend::{
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::friend::{
     AcceptFriendApplicationReq, AddBlackReq, AddFriendReq, CheckFriendResult, DeleteFriendReq, FriendServerApi, GetBlackListResp, GetDesignatedFriendsReq, GetDesignatedFriendsResp,
     GetFriendApplyListReq, GetFriendApplyListResp, GetFriendApplyListServerResp, GetFriendListReq, GetFriendListResp, GetIncrementalFriendsReq, GetIncrementalFriendsResp, RefuseFriendApplicationReq,
     RemoveBlackReq, UpdateFriendsReq,
 };
-use crate::http::routes::{
+use crate::infra::http::routes::{
     ACCEPT_FRIEND_APPLICATION, ADD_BLACK, ADD_FRIEND, CHECK_FRIEND, DELETE_FRIEND, GET_BLACK_LIST, GET_DESIGNATED_FRIENDS, GET_FRIEND_APPLY_LIST, GET_FRIEND_LIST, GET_INCREMENTAL_FRIENDS,
     GET_SELF_FRIEND_APPLY_LIST, GET_SELF_UNHANDLED_APPLY_COUNT, REFUSE_FRIEND_APPLICATION, REMOVE_BLACK, UPDATE_FRIENDS,
 };
-use crate::http::types::Pagination;
+use crate::infra::http::types::Pagination;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

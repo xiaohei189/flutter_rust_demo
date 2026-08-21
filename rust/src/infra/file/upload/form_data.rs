@@ -1,8 +1,8 @@
 use crate::domain::error::SdkError;
-use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
-use crate::file::upload::dto::{CompleteFormDataReq, CompleteFormDataResp, InitiateFormDataReq, InitiateFormDataResp, UploadResult};
-use crate::file::upload::uploader::FileUploader;
-use crate::http::routes::{COMPLETE_FORM_DATA, INITIATE_FORM_DATA};
+use crate::infra::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
+use crate::infra::file::upload::dto::{CompleteFormDataReq, CompleteFormDataResp, InitiateFormDataReq, InitiateFormDataResp, UploadResult};
+use crate::infra::file::upload::uploader::FileUploader;
+use crate::infra::http::routes::{COMPLETE_FORM_DATA, INITIATE_FORM_DATA};
 use std::path::Path;
 use tokio::fs;
 use tracing::info;

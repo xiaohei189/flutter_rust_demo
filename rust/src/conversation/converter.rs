@@ -2,7 +2,7 @@
 
 use crate::domain::model::local::LocalConversation;
 
-use crate::http::conversation::ServerConversation;
+use crate::infra::http::conversation::ServerConversation;
 
 /// 服务端模型 -> 本地持久化模型（对齐 Go SDK `ServerConversationToLocal`）
 ///

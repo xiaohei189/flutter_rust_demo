@@ -138,7 +138,7 @@ impl SyncVersionDao {
 // Repository trait 实现
 // ====================================================================
 
-use crate::db::sync_version::SyncVersionRepository;
+use crate::infra::db::sync_version::SyncVersionRepository;
 
 #[async_trait::async_trait]
 impl SyncVersionRepository for SyncVersionDao {
@@ -174,7 +174,7 @@ impl SyncVersionRepository for SyncVersionDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_is_reinstalled_on_empty_db() {

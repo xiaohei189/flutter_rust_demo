@@ -424,7 +424,7 @@ impl ConversationDao {
 // Repository trait 实现
 // ====================================================================
 
-use crate::db::conversation::ConversationRepository;
+use crate::infra::db::conversation::ConversationRepository;
 
 #[async_trait::async_trait]
 impl ConversationRepository for ConversationDao {
@@ -546,7 +546,7 @@ impl ConversationRepository for ConversationDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     fn make_conv(id: &str) -> LocalConversation {
         LocalConversation {

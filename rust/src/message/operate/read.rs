@@ -5,7 +5,7 @@ use crate::domain::constant::session_type;
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::conversation::ConversationListenerExt;
-use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
+use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};
 use tracing::{error, info, warn};
 
 impl MessageService {

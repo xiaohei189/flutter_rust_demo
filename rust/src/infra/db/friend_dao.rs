@@ -98,7 +98,7 @@ impl FriendDao {
 // Repository trait 实现
 // ====================================================================
 
-use crate::db::friend::FriendRepository;
+use crate::infra::db::friend::FriendRepository;
 
 #[async_trait::async_trait]
 impl FriendRepository for FriendDao {
@@ -128,7 +128,7 @@ impl FriendRepository for FriendDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_crud() {

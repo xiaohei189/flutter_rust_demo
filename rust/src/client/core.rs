@@ -48,7 +48,7 @@ pub struct OpenIMClient {
 
 use crate::domain::constant::sync_flag;
 use crate::domain::constant::ws_push_identifier;
-use crate::logger::span_from_operation_id;
+use crate::infra::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
 use tracing::{debug, info, warn, Instrument};

@@ -133,7 +133,7 @@ impl MessageProcessor {
             _ => return,
         };
 
-        let random_suffix = crate::util::generate_random_id(8);
+        let random_suffix = crate::infra::util::generate_random_id(8);
         let new_client_msg_id = if client_msg_id.is_empty() {
             format!("{}_{}", prefix, random_suffix)
         } else {
@@ -432,8 +432,8 @@ impl MessageProcessor {
 mod tests {
     use super::*;
 
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
     /// 创建测试用 Repositories
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {

@@ -8,12 +8,6 @@ pub mod infra;
 pub mod sdk;
 
 // 模块按依赖方向从底层到上层排列
-pub mod cache;
-pub mod db;
-pub mod file;
-pub mod http;
-pub mod logger;
-pub mod util;
 
 pub mod client;
 pub mod connection;

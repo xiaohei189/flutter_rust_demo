@@ -3,11 +3,11 @@
 //! trait 定义在 `domain::ports::online`
 
 use crate::domain::error::Result;
-use crate::http::client::HttpApiClient;
-use crate::http::online::{
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::online::{
     GetSubscribeUsersStatusReq, GetSubscribeUsersStatusResp, GetUserStatusReq, GetUserStatusResp, OnlineStatusServerApi, SubscribeUsersStatusReq, SubscribeUsersStatusResp, UnsubscribeUsersStatusReq,
 };
-use crate::http::routes::{GET_SUBSCRIBE_USERS_STATUS, GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS};
+use crate::infra::http::routes::{GET_SUBSCRIBE_USERS_STATUS, GET_USER_STATUS, SUBSCRIBE_USERS_STATUS, UNSUBSCRIBE_USERS_STATUS};
 use async_trait::async_trait;
 use std::sync::Arc;
 

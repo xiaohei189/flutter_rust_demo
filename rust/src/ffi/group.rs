@@ -1,7 +1,7 @@
 //! 群组相关 FFI 桥接
 
 use crate::ffi::client::OpenIMBridgeClient;
-use crate::http::group::GroupApplyInfo;
+use crate::infra::http::group::GroupApplyInfo;
 use anyhow::Result;
 
 impl OpenIMBridgeClient {

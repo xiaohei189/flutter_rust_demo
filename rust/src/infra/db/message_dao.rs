@@ -628,7 +628,7 @@ impl MessageDao {
 // 注: 方法体委托给同名 inherent 方法（Rust 中 inherent 优先于 trait，无递归）
 // ====================================================================
 
-use crate::db::message::MessageRepository;
+use crate::infra::db::message::MessageRepository;
 
 #[async_trait::async_trait]
 impl MessageRepository for MessageDao {
@@ -767,7 +767,7 @@ impl MessageRepository for MessageDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_message_dao_batch_insert() {

@@ -56,7 +56,7 @@ impl OpenIMBridgeClient {
     /// 发送图片消息（带上传进度回调）
     #[flutter_rust_bridge::frb]
     pub async fn send_image_message_with_progress(&self, file_path: String, source_id: String, session_type: SessionType, sink: StreamSink<i32>) -> Result<MsgStruct> {
-        let progress: crate::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
+        let progress: crate::infra::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner
@@ -69,7 +69,7 @@ impl OpenIMBridgeClient {
     /// 发送文件消息（带上传进度回调）
     #[flutter_rust_bridge::frb]
     pub async fn send_file_message_with_progress(&self, file_path: String, source_id: String, session_type: SessionType, sink: StreamSink<i32>) -> Result<MsgStruct> {
-        let progress: crate::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
+        let progress: crate::infra::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner
@@ -82,7 +82,7 @@ impl OpenIMBridgeClient {
     /// 发送语音消息（带上传进度回调）
     #[flutter_rust_bridge::frb]
     pub async fn send_sound_message_with_progress(&self, file_path: String, source_id: String, session_type: SessionType, duration: i64, sink: StreamSink<i32>) -> Result<MsgStruct> {
-        let progress: crate::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
+        let progress: crate::infra::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner
@@ -103,7 +103,7 @@ impl OpenIMBridgeClient {
         duration: i64,
         sink: StreamSink<i32>,
     ) -> Result<MsgStruct> {
-        let progress: crate::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
+        let progress: crate::infra::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
             let _ = sink.add(pct as i32);
         });
         self.inner
@@ -128,7 +128,7 @@ pub async fn upload_file(file_path: String, file_name: String) -> Result<String>
 #[flutter_rust_bridge::frb]
 pub async fn upload_file_with_progress(file_path: String, file_name: String, sink: StreamSink<i32>) -> Result<String> {
     let client = client_holder()?;
-    let progress: crate::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
+    let progress: crate::infra::file::upload::ProgressCallback = Arc::new(move |pct: u8| {
         let _ = sink.add(pct as i32);
     });
     let url = client.upload_file_with_progress(&file_path, &file_name, &progress).await?;

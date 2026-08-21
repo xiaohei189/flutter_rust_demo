@@ -10,8 +10,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{error, info, warn};
 
-use crate::http::conversation::ConversationServerApi;
-use crate::http::conversation_api::HttpConversationApi;
+use crate::infra::http::conversation::ConversationServerApi;
+use crate::infra::http::conversation_api::HttpConversationApi;
 
 // ========== 常量 ==========
 
@@ -33,7 +33,7 @@ pub struct ConversationSyncer {
 }
 
 impl ConversationSyncer {
-    pub fn new(http_client: Arc<crate::http::client::HttpApiClient>, repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn ConversationListener>) -> Self {
+    pub fn new(http_client: Arc<crate::infra::http::client::HttpApiClient>, repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn ConversationListener>) -> Self {
         Self {
             api: Arc::new(HttpConversationApi::new(http_client)),
             repositories,
@@ -355,12 +355,12 @@ impl ConversationSyncer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::event::events::conversation::ConversationEvent;
     use crate::event::hub::EventHub;
-    use crate::http::client::HttpApiClient;
-    use crate::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
+    use crate::infra::http::client::HttpApiClient;
+    use crate::infra::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
     use crate::message::MaxSeqRecorder;
     use crate::domain::model::UserId;
 

@@ -3,7 +3,7 @@
 use crate::client::context::Repositories;
 use crate::domain::error::Result;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
-use crate::http::conversation::{ConversationServerApi, SetConversationReq};
+use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
 use crate::domain::model::local::LocalConversation;
 use crate::domain::model::UserId;
 
@@ -288,8 +288,8 @@ impl ConversationService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
         Arc::new(Repositories {
@@ -481,7 +481,7 @@ mod tests {
     #[tokio::test]
     async fn test_set_conversation_syncs_to_server() {
         let pool = create_pool_memory().await.unwrap();
-        let api = Arc::new(crate::http::conversation::MockConversationApi::new());
+        let api = Arc::new(crate::infra::http::conversation::MockConversationApi::new());
         let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
         manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
 
@@ -507,7 +507,7 @@ mod tests {
     #[tokio::test]
     async fn test_set_conversation_server_failure_keeps_local_success() {
         let pool = create_pool_memory().await.unwrap();
-        let api = Arc::new(crate::http::conversation::MockConversationApi::new().with_set_fail(true));
+        let api = Arc::new(crate::infra::http::conversation::MockConversationApi::new().with_set_fail(true));
         let manager = ConversationService::new(make_test_repositories(pool), crate::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
         manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
 

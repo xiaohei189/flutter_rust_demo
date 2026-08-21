@@ -3,13 +3,13 @@
 //! trait 定义在 `domain::ports::group`
 
 use crate::domain::error::Result;
-use crate::http::client::HttpApiClient;
-use crate::http::group::{
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::group::{
     AcceptGroupApplicationReq, CreateGroupReq, CreateGroupResp, DismissGroupReq, GetGroupApplicationListReq, GetGroupApplicationListResp, GetGroupMemberListReq, GetGroupMemberListResp,
     GetGroupMembersInfoReq, GetGroupMembersInfoResp, GetGroupsInfoReq, GetGroupsInfoResp, GetIncrementalJoinGroupReq, GetIncrementalJoinGroupResp, GetJoinedGroupListReq, GetJoinedGroupListResp,
     GetUserReqApplicationListReq, GroupServerApi, InviteUserToGroupReq, JoinGroupReq, KickGroupMemberReq, QuitGroupReq, RefuseGroupApplicationReq, SetGroupInfoReq, SetGroupMemberInfoReq,
 };
-use crate::http::routes::{
+use crate::infra::http::routes::{
     ACCEPT_GROUP_APPLICATION, CANCEL_MUTE_GROUP, CANCEL_MUTE_GROUP_MEMBER, CREATE_GROUP, DISMISS_GROUP, GET_GROUPS_INFO, GET_GROUP_APPLICATION_LIST, GET_GROUP_APPLICATION_UNHANDLED_COUNT,
     GET_GROUP_MEMBERS_INFO, GET_GROUP_MEMBER_LIST, GET_INCREMENTAL_JOIN_GROUP, GET_JOINED_GROUP_LIST, GET_RECV_GROUP_APPLICATION_LIST, GET_SEND_GROUP_APPLICATION_LIST, INVITE_USER_TO_GROUP,
     JOIN_GROUP, KICK_GROUP_MEMBER, MUTE_GROUP, MUTE_GROUP_MEMBER, QUIT_GROUP, REFUSE_GROUP_APPLICATION, SET_GROUP_INFO, SET_GROUP_MEMBER_INFO, TRANSFER_GROUP_OWNER,

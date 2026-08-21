@@ -472,15 +472,15 @@ impl NotificationHandler {
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::*;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::*;
 
     use crate::event::hub::EventHub;
     use crate::event::test_util::*;
-    use crate::http::client::HttpApiClient;
-    use crate::http::conversation::ConversationServerApi;
-    use crate::http::friend::FriendServerApi;
-    use crate::http::group::GroupServerApi;
+    use crate::infra::http::client::HttpApiClient;
+    use crate::infra::http::conversation::ConversationServerApi;
+    use crate::infra::http::friend::FriendServerApi;
+    use crate::infra::http::group::GroupServerApi;
 
     use crate::domain::model::UserId;
     use std::sync::Arc;
@@ -510,15 +510,15 @@ mod tests {
         let hub = EventHub::new();
         let user_id = UserId::new("test_user");
 
-        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::infra::http::friend_api::HttpFriendApi::new(http.clone()));
         let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
 
-        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
@@ -552,15 +552,15 @@ mod tests {
         let hub = EventHub::new();
         let user_id = UserId::new("test_user");
 
-        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::infra::http::friend_api::HttpFriendApi::new(http.clone()));
         let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
 
-        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
@@ -647,15 +647,15 @@ mod tests {
         let http = make_http_client();
         let user_id = UserId::new("test_user");
 
-        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::infra::http::friend_api::HttpFriendApi::new(http.clone()));
         let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::http::group_api::HttpGroupApi::new(http.clone()));
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
 
-        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));

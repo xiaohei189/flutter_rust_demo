@@ -12,7 +12,7 @@
 
 use crate::connection::sync_server::SyncServerApi;
 use crate::domain::constant::{msg_status, pull_msg_num};
-use crate::db::{ConversationRepository, MessageRepository};
+use crate::infra::db::{ConversationRepository, MessageRepository};
 use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalChatLog;
 use openim_protocol::msg::{ConversationSeqs, GetSeqMessageReq, GetSeqMessageResp};
@@ -644,8 +644,8 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_missing_preserves_deleted_status() {
         use crate::connection::sync_server::SyncServerApi;
-        use crate::db::pool::create_pool_memory;
-        use crate::db::{ConversationDao, MessageDao};
+        use crate::infra::db::pool::create_pool_memory;
+        use crate::infra::db::{ConversationDao, MessageDao};
         use async_trait::async_trait;
         use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
         use openim_protocol::sdkws::{MsgData, PullMessageBySeqsReq, PullMessageBySeqsResp, PullMsgs};
@@ -713,8 +713,8 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_missing_skips_locally_deleted_seq() {
         use crate::connection::sync_server::SyncServerApi;
-        use crate::db::pool::create_pool_memory;
-        use crate::db::{ConversationDao, MessageDao};
+        use crate::infra::db::pool::create_pool_memory;
+        use crate::infra::db::{ConversationDao, MessageDao};
         use async_trait::async_trait;
         use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
         use openim_protocol::sdkws::{PullMessageBySeqsReq, PullMessageBySeqsResp};

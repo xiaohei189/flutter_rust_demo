@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
-use crate::logger::{self, LogConfig};
+use crate::infra::logger::{self, LogConfig};
 
 // Android 平台：通过 JNI 写入 logcat
 #[cfg(target_os = "android")]

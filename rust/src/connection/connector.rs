@@ -6,7 +6,7 @@ use crate::connection::manager::ConnectionManager;
 use crate::connection::ws::{GzipCompressor, WebSocketConnectResp};
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::connection::ConnectionEvent;
-use crate::logger::extract_trace_id;
+use crate::infra::logger::extract_trace_id;
 use futures_util::StreamExt;
 use std::time::Duration;
 use tokio::time::timeout;

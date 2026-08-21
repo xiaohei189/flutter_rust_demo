@@ -785,8 +785,8 @@ fn split_seq_ranges(seq_map: &HashMap<String, (i64, i64)>, pull_num: i64) -> Vec
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::domain::model::UserId;
     use prost::Message;
     use std::sync::atomic::{AtomicUsize, Ordering};

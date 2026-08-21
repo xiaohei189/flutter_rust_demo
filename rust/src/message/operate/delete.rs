@@ -3,7 +3,7 @@
 use super::MessageService;
 use crate::domain::error::Result;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::http::message::DeleteMessagesReq;
+use crate::infra::http::message::DeleteMessagesReq;
 
 use tracing::info;
 
@@ -54,12 +54,12 @@ mod tests {
     use super::*;
     use crate::client::context::Repositories;
     use crate::domain::constant::msg_status;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::*;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::*;
     use crate::domain::error::SdkError;
     use crate::event::events::message::MessageEvent;
     use crate::event::hub::EventHub;
-    use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::domain::model::local::LocalChatLog;
     use crate::domain::model::UserId;
     use async_trait::async_trait;

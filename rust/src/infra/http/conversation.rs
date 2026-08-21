@@ -150,7 +150,7 @@ pub struct ServerConversation {
 
 /// 会话服务端 API 接口
 ///
-/// 生产环境由 [`HttpConversationApi`](crate::http::conversation_api::HttpConversationApi) 实现，测试中可用 mock 替代。
+/// 生产环境由 [`HttpConversationApi`](crate::infra::http::conversation_api::HttpConversationApi) 实现，测试中可用 mock 替代。
 #[async_trait]
 pub trait ConversationServerApi: Send + Sync {
     /// 拉取所有会话

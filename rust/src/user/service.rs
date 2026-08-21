@@ -1,9 +1,9 @@
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
-use crate::http::UserServerApi;
+use crate::infra::http::UserServerApi;
 use crate::domain::model::user::UserInfo;
 
-use crate::http::user::*;
+use crate::infra::http::user::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;

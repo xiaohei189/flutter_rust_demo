@@ -7,7 +7,7 @@ use tracing::{debug, warn, Instrument};
 
 use crate::domain::constant::content_type_utils::ContentTypeUtils;
 use crate::domain::error::SdkError;
-use crate::logger::{encode_operation_id, extract_span_id, extract_trace_id, span_from_operation_id};
+use crate::infra::logger::{encode_operation_id, extract_span_id, extract_trace_id, span_from_operation_id};
 use openim_protocol::sdkws::UserSendMsgResp;
 
 /// 单条消息的发送结果

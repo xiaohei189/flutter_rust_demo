@@ -5,7 +5,7 @@
 
 use crate::domain::constant::SessionType;
 use crate::ffi::global::client_holder;
-use crate::http::message::DeleteMessagesReq;
+use crate::infra::http::message::DeleteMessagesReq;
 use crate::domain::model::local::LocalChatLog;
 use crate::domain::model::msg_struct::{MsgStruct, OfflinePushInfo};
 use anyhow::{anyhow, Result};

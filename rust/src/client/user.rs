@@ -5,7 +5,7 @@
 use crate::client::OpenIMClient;
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::UserEvent;
-use crate::http::online::OnlineStatus;
+use crate::infra::http::online::OnlineStatus;
 use crate::domain::model::user::UserInfo;
 use async_trait::async_trait;
 
@@ -39,7 +39,7 @@ impl UserApi for OpenIMClient {
 
     #[tracing::instrument(skip_all)]
     async fn update_user_profile(&self, nickname: Option<&str>, face_url: Option<&str>, ex: Option<&str>) -> Result<()> {
-        let updates = crate::http::user::UpdateUserFields {
+        let updates = crate::infra::http::user::UpdateUserFields {
             nickname: nickname.map(|s| s.to_string()),
             face_url: face_url.map(|s| s.to_string()),
             gender: None,

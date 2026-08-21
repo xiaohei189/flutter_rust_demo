@@ -1,9 +1,9 @@
-use crate::db::misc_dao::UploadDao;
+use crate::infra::db::misc_dao::UploadDao;
 use crate::domain::error::SdkError;
-use crate::file::callbacks::UploadFileCallback;
-use crate::file::upload::dto::{PartLimitResp, ProgressCallback, UploadResult};
-use crate::file::upload::session::HashLock;
-use crate::http::client::HttpApiClient;
+use crate::infra::file::callbacks::UploadFileCallback;
+use crate::infra::file::upload::dto::{PartLimitResp, ProgressCallback, UploadResult};
+use crate::infra::file::upload::session::HashLock;
+use crate::infra::http::client::HttpApiClient;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;

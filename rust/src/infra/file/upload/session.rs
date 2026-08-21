@@ -1,8 +1,8 @@
 use crate::domain::error::{Result, SdkError};
-use crate::file::bitmap::Bitmap;
-use crate::file::upload::dto::{AuthSignPartsResp, AuthSignReq, AuthSignResp};
-use crate::http::client::HttpApiClient;
-use crate::http::routes::AUTH_SIGN;
+use crate::infra::file::bitmap::Bitmap;
+use crate::infra::file::upload::dto::{AuthSignPartsResp, AuthSignReq, AuthSignResp};
+use crate::infra::http::client::HttpApiClient;
+use crate::infra::http::routes::AUTH_SIGN;
 use crate::domain::model::local::LocalUpload;
 use std::sync::Arc;
 
@@ -28,7 +28,7 @@ pub struct UploadSession {
     pub part_num: usize,
     pub bitmap: Bitmap,
     pub db_info: Option<LocalUpload>,
-    pub resp: crate::file::upload::dto::InitiateMultipartUploadResp,
+    pub resp: crate::infra::file::upload::dto::InitiateMultipartUploadResp,
     pub create_time: std::time::Instant,
     pub batch_sign_num: i32,
 }

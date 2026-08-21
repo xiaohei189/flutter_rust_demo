@@ -131,7 +131,7 @@ impl GroupDao {
 // Repository trait 实现
 // ====================================================================
 
-use crate::db::group::GroupRepository;
+use crate::infra::db::group::GroupRepository;
 
 #[async_trait::async_trait]
 impl GroupRepository for GroupDao {
@@ -167,7 +167,7 @@ impl GroupRepository for GroupDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_group_crud() {

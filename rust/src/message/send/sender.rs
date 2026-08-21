@@ -10,7 +10,7 @@ use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::file::upload::{FileUploader, ProgressCallback};
+use crate::infra::file::upload::{FileUploader, ProgressCallback};
 use crate::message::send::queue::MessageSendQueue;
 use crate::message::ContentTypeUtils;
 use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
@@ -171,7 +171,7 @@ fn set_picture_url(value: &mut Value, key: &str, url: &str) {
 }
 
 /// 上传本地文件并清理临时文件；文件不存在返回 Ok(None)，上传失败返回 Err
-async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str) -> std::result::Result<Option<crate::file::upload::UploadResult>, SdkError> {
+async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str) -> std::result::Result<Option<crate::infra::file::upload::UploadResult>, SdkError> {
     let path = Path::new(file_path);
     if !path.exists() {
         info!("本地媒体文件不存在，跳过上传: {}", file_path);
@@ -1011,7 +1011,7 @@ impl MessageSender {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::client::HttpApiClient;
+    use crate::infra::http::client::HttpApiClient;
     use crate::domain::model::msg_struct::MsgStruct;
 
     /// 创建测试用 FileUploader（不会实际触发上传）
@@ -1360,8 +1360,8 @@ mod tests {
     use crate::client::config::ClientConfig;
     use crate::client::context::RuntimeContext;
     use crate::domain::constant::MessageSendStatus;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::domain::model::local::LocalChatLog;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio_util::sync::CancellationToken;

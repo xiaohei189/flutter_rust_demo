@@ -1,14 +1,14 @@
 use crate::domain::error::{Result, SdkError};
-use crate::file::bitmap::Bitmap;
-use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
-use crate::file::md5::parts_hash;
-use crate::file::upload::dto::{
+use crate::infra::file::bitmap::Bitmap;
+use crate::infra::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
+use crate::infra::file::md5::parts_hash;
+use crate::infra::file::upload::dto::{
     AuthSignReq, AuthSignResp, CompleteMultipartUploadReq, CompleteMultipartUploadResp, InitiateMultipartUploadReq, InitiateMultipartUploadResp, PartLimitReq, PartLimitResp, UploadInfoResp,
     UploadResult,
 };
-use crate::file::upload::session::PartInfo;
-use crate::file::upload::uploader::FileUploader;
-use crate::http::routes::{AUTH_SIGN, COMPLETE_MULTIPART_UPLOAD, INITIATE_MULTIPART_UPLOAD, PART_LIMIT};
+use crate::infra::file::upload::session::PartInfo;
+use crate::infra::file::upload::uploader::FileUploader;
+use crate::infra::http::routes::{AUTH_SIGN, COMPLETE_MULTIPART_UPLOAD, INITIATE_MULTIPART_UPLOAD, PART_LIMIT};
 use crate::domain::model::local::LocalUpload;
 use base64::Engine;
 use std::io::Read;
@@ -348,7 +348,7 @@ impl FileUploader {
     // 上传会话管理（含断点续传恢复，对齐 Go SDK getUpload）
     // ========================================================================
 
-    pub(crate) async fn get_upload(&self, part_md5_val: &str, file_size: i64, part_size: i64, max_parts: i32, name: &str, content_type: &str) -> Result<crate::file::upload::session::UploadSession> {
+    pub(crate) async fn get_upload(&self, part_md5_val: &str, file_size: i64, part_size: i64, max_parts: i32, name: &str, content_type: &str) -> Result<crate::infra::file::upload::session::UploadSession> {
         let part_num = ((file_size + part_size - 1) / part_size) as usize;
 
         // 尝试从本地数据库恢复
@@ -372,7 +372,7 @@ impl FileUploader {
 
         if resp.upload.is_none() {
             // 秒传
-            return Ok(crate::file::upload::session::UploadSession {
+            return Ok(crate::infra::file::upload::session::UploadSession {
                 part_num,
                 bitmap: Bitmap::new(0),
                 db_info: None,
@@ -406,7 +406,7 @@ impl FileUploader {
             }
         }
 
-        Ok(crate::file::upload::session::UploadSession {
+        Ok(crate::infra::file::upload::session::UploadSession {
             part_num,
             bitmap,
             db_info,
@@ -416,7 +416,7 @@ impl FileUploader {
         })
     }
 
-    pub(crate) async fn get_local_upload_info(&self, part_md5_val: &str, part_num: usize, part_size: i64, max_parts: i32) -> Option<crate::file::upload::session::UploadSession> {
+    pub(crate) async fn get_local_upload_info(&self, part_md5_val: &str, part_num: usize, part_size: i64, max_parts: i32) -> Option<crate::infra::file::upload::session::UploadSession> {
         if part_num <= 1 {
             return None;
         }
@@ -433,7 +433,7 @@ impl FileUploader {
         let bitmap_bytes = base64::engine::general_purpose::STANDARD.decode(&local.upload_info).ok()?;
         let bitmap = Bitmap::parse(&bitmap_bytes, part_num);
 
-        Some(crate::file::upload::session::UploadSession {
+        Some(crate::infra::file::upload::session::UploadSession {
             part_num,
             bitmap,
             db_info: Some(local.clone()),

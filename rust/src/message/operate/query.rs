@@ -409,11 +409,11 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
-    use crate::db::pool::create_pool_memory;
-    use crate::db::*;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::*;
     use crate::event::test_util::*;
 
-    use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::domain::model::UserId;
     use async_trait::async_trait;

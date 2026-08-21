@@ -8,7 +8,7 @@ use crate::connection::ws::OpenIMResp;
 use crate::domain::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
 use crate::event::events::connection::ConnectionListenerExt;
 use crate::event::events::user::UserEvent;
-use crate::logger::decode_operation_id;
+use crate::infra::logger::decode_operation_id;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
 use openim_protocol::sdkws::{PushMessages, SubUserOnlineStatusTips};

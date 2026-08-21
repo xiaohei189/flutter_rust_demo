@@ -7,9 +7,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// Go: MD5(nanoTime + sendID + random)
 pub fn get_msg_id(send_id: &str) -> String {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-    let random = crate::util::generate_random_id(8);
+    let random = crate::infra::util::generate_random_id(8);
     let input = format!("{}{}{}", now, send_id, random);
-    crate::file::md5::compute_md5_hex(input.as_bytes())
+    crate::infra::file::md5::compute_md5_hex(input.as_bytes())
 }
 
 /// 文本消息元素（对齐 Go SDK TextElem）

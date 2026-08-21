@@ -58,7 +58,7 @@ impl UserDao {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_upsert_and_get() {
@@ -87,7 +87,7 @@ mod tests {
 // Repository trait 实现
 // ====================================================================
 
-use crate::db::user::UserRepository;
+use crate::infra::db::user::UserRepository;
 
 #[async_trait::async_trait]
 impl UserRepository for UserDao {
@@ -168,7 +168,7 @@ impl BlackDao {
 #[cfg(test)]
 mod black_dao_tests {
     use super::*;
-    use crate::db::pool::create_pool_memory;
+    use crate::infra::db::pool::create_pool_memory;
 
     #[tokio::test]
     async fn test_crud() {
