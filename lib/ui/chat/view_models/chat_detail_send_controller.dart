@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../application/chat/message_service_notifier.dart';
+import '../../../application/chat/send_media_use_case.dart';
 import '../../../domain/models/friend.dart';
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
@@ -219,19 +220,12 @@ class ChatDetailSendController {
     }
   }
 
-  Future<bool> _sendMedia(
-    Future<bool> Function(ChatSendTarget target) send,
-  ) async {
-    final target = readSendTarget();
-    if (target == null) {
-      updateState((s) => s.copyWith(errorText: '会话信息异常'));
-      return false;
-    }
-    final ok = await send(target);
-    if (!ok) {
-      final error = ref.read(messageListProvider(conversationId)).error;
-      updateState((s) => s.copyWith(errorText: error ?? '发送失败'));
-    }
-    return ok;
+  Future<bool> _sendMedia(Future<bool> Function(ChatSendTarget target) send) {
+    return const SendMediaUseCase().send(
+      readTarget: readSendTarget,
+      run: send,
+      readError: () => ref.read(messageListProvider(conversationId)).error,
+      onError: (message) => updateState((s) => s.copyWith(errorText: message)),
+    );
   }
 }

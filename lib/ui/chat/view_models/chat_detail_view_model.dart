@@ -17,6 +17,7 @@ import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../../../application/chat/message_service_notifier.dart';
+import '../../../application/chat/search_messages_use_case.dart';
 import 'chat_detail_forward_mixin.dart';
 import 'chat_detail_send_controller.dart';
 import 'chat_detail_selection_mixin.dart';
@@ -376,12 +377,12 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     return ok;
   }
 
-  Future<List<MessageSearchResult>> searchLocalMessages(String keyword) {
-    return _messageService.searchLocalMessages(
-      conversationId: arg,
-      keyword: keyword,
-    );
-  }
+  late final SearchMessagesUseCase _searchUseCase = SearchMessagesUseCase(
+    messageService: _messageService,
+  );
+
+  Future<List<MessageSearchResult>> searchLocalMessages(String keyword) =>
+      _searchUseCase.search(arg, keyword);
 
   void reset() {
     state = const ChatDetailState();
