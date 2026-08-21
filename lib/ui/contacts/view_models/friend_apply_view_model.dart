@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/repositories/friend_application_repository.dart';
 import '../../../../domain/models/friend_application.dart';
 import '../providers/friend_provider.dart';
-import '../../chat/providers/message_service_provider.dart';
+import '../../chat/providers/message_revision_provider.dart';
 
 class FriendApplyState {
   final List<FriendApplication> received;
@@ -40,7 +40,7 @@ class FriendApplyViewModel extends Notifier<FriendApplyState> {
 
   @override
   FriendApplyState build() {
-    ref.listen(messageServiceProvider.select((s) => s.friendRevision), (prev, next) {
+    ref.listen(friendRevisionProvider, (prev, next) {
       if (prev != next && _hasLoaded) {
         loadApplications();
       }

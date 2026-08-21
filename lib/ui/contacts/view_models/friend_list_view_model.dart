@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/repositories/friend_repository.dart';
 import '../../../../domain/models/friend.dart';
 import '../providers/friend_provider.dart';
-import '../../chat/providers/message_service_provider.dart';
+import '../../chat/providers/message_revision_provider.dart';
 
 class FriendListState {
   final List<Friend> friends;
@@ -36,7 +36,7 @@ class FriendListViewModel extends Notifier<FriendListState> {
 
   @override
   FriendListState build() {
-    ref.listen(messageServiceProvider.select((s) => s.friendRevision), (prev, next) {
+    ref.listen(friendRevisionProvider, (prev, next) {
       if (prev != next && _hasLoaded) {
         loadFriends();
       }

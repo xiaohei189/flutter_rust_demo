@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group_member.dart';
 import '../providers/group_provider.dart';
-import '../../chat/providers/message_service_provider.dart';
+import '../../chat/providers/message_revision_provider.dart';
 
 class GroupMemberState {
   final List<GroupMember> members;
@@ -32,7 +32,7 @@ class GroupMemberState {
 class GroupMemberViewModel extends FamilyNotifier<GroupMemberState, String> {
   @override
   GroupMemberState build(String groupId) {
-    ref.listen(messageServiceProvider.select((s) => s.groupRevision), (prev, next) {
+    ref.listen(groupRevisionProvider, (prev, next) {
       if (prev != next) {
         loadMembers();
       }

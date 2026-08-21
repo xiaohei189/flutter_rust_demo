@@ -10,6 +10,7 @@ import '../../../domain/models/user_profile.dart';
 
 import '../../../providers/im_providers.dart';
 import '../../../core/utils/app_logger.dart';
+import '../../chat/providers/message_revision_provider.dart';
 import '../../chat/providers/message_service_provider.dart';
 
 /// 用户资料状态
@@ -109,15 +110,12 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
     Future.microtask(_loadLocalAvatarPathSync);
 
     // 监听 messageServiceProvider 的状态变化
-    ref.listen(messageServiceProvider.select((s) => s.loginUserProfile), (previous, next) {
+    ref.listen(loginUserProfileProvider, (previous, next) {
       if (next != null) {
         // 当 loginUserProfile 变化时直接更新状态
-        if (previous?.userId !=
-                next.userId ||
-            previous?.nickname !=
-                next.nickname ||
-            previous?.faceUrl !=
-                next.faceUrl) {
+        if (previous?.userId != next.userId ||
+            previous?.nickname != next.nickname ||
+            previous?.faceUrl != next.faceUrl) {
           final profile = next;
           final exData = UserProfileState.parseEx(profile.remark);
           appLog.i(

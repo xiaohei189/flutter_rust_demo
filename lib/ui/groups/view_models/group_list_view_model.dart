@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group.dart';
 import '../providers/group_provider.dart';
-import '../../chat/providers/message_service_provider.dart';
+import '../../chat/providers/message_revision_provider.dart';
 
 class GroupListState {
   final List<Group> groups;
@@ -45,7 +45,7 @@ class GroupListViewModel extends Notifier<GroupListState> {
 
   @override
   GroupListState build() {
-    ref.listen(messageServiceProvider.select((s) => s.groupRevision), (prev, next) {
+    ref.listen(groupRevisionProvider, (prev, next) {
       if (prev != next && _hasLoaded) {
         loadGroups();
       }
