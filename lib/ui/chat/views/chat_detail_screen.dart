@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
-import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/group_member.dart';
-import '../mappers/message_display.dart';
 import '../../../domain/models/user.dart';
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
@@ -28,6 +26,7 @@ import '../widgets/composer/chat_input.dart' show ChatInput;
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/menu/chat_message_actions.dart';
+import '../widgets/menu/chat_detail_selection_top_bar.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/menu/message_action_menu.dart';
 import '../widgets/composer/group_member_picker.dart'
@@ -36,7 +35,6 @@ import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/chat_message_list_section.dart';
 import '../widgets/list/forward_progress_banner.dart';
 import '../widgets/list/message_list.dart';
-import '../widgets/menu/message_selection_bar.dart';
 import '../widgets/composer/quote_preview_bar.dart';
 import '../widgets/shared/chat_detail_app_bar.dart';
 
@@ -467,31 +465,18 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             ? Column(
                 children: [
                   if (chatDetailState.selectMode)
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final messages = ref
-                            .watch(
-                              messagesByConversationProvider(
-                                widget.conversationId,
-                              ),
-                            )
-                            .where((m) => m.messageType != MessageType.system)
-                            .toList();
-                        return MessageSelectionTopBar(
-                          count: chatDetailState.selectedMessages.length,
-                          totalCount: messages.length,
-                          onSelectAll: () => _viewModel?.toggleSelectAll(),
-                          onClose: () => _viewModel?.exitSelectMode(),
-                          onDelete: () =>
-                              _messageActions.deleteSelected(context),
-                          onForwardOneByOne: () => _messageActions
-                              .forwardSelected(context, merge: false),
-                          onMergeForward: () => _messageActions.forwardSelected(
-                            context,
-                            merge: true,
-                          ),
-                        );
-                      },
+                    ChatDetailSelectionTopBar(
+                      conversationId: widget.conversationId,
+                      selectedCount: chatDetailState.selectedMessages.length,
+                      onSelectAll: () => _viewModel?.toggleSelectAll(),
+                      onClose: () => _viewModel?.exitSelectMode(),
+                      onDelete: () => _messageActions.deleteSelected(context),
+                      onForwardOneByOne: () => _messageActions.forwardSelected(
+                        context,
+                        merge: false,
+                      ),
+                      onMergeForward: () =>
+                          _messageActions.forwardSelected(context, merge: true),
                     ),
                   Expanded(
                     child: ChatMessageListSection(

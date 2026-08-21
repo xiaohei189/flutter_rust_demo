@@ -84,7 +84,7 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
-  final AtMemberQuery _atMemberQuery = AtMemberQuery();
+  final AtMemberQuery _atMemberQuery = const AtMemberQuery();
   final MarkdownEditor _markdownEditor = const MarkdownEditor();
 
   /// 语音录制状态（权限、临时文件、上滑取消、60s 上限）
