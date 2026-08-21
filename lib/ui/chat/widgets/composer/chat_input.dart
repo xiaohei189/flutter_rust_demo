@@ -3,23 +3,19 @@ import 'package:flutter/services.dart';
 
 import '../../../../domain/models/group_member.dart';
 import '../../../core/theme/app_theme.dart';
-import 'at_member_query.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
+import 'chat_composer_controller.dart';
 import 'collapsed_input_bar.dart';
 import 'voice_recorder_controller.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
-import 'markdown_editor.dart';
 import 'chat_input_field.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
 import 'at_member_suggestions.dart';
 import 'recording_overlay.dart';
 import '../message_content_type.dart';
-
-/// 输入面板展开状态
-enum _InputPanel { none, emoji, attachment }
 
 /// 底部输入区：
 /// - 按钮变形（mic ↔ 发送）
@@ -69,23 +65,10 @@ class ChatInput extends StatefulWidget {
 
 class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
-  bool _isMarkdownMode = false;
-  _InputPanel _activePanel = _InputPanel.none;
-
-  /// 实时 @ 查询关键字（非 null 且输入框含 '@' 时显示成员列表）
-  String? _atKeyword;
-
-  /// @ 成员列表当前高亮项（桌面端 ↑/↓ 键导航）
-  int _atSelectionIndex = 0;
+  late final ChatComposerController _composer;
 
   /// 聚焦或面板展开时保持完整输入布局，避免打开面板后工具栏被折叠行替换。
-  bool get _isInputExpanded =>
-      _focusNode.hasFocus || _activePanel != _InputPanel.none;
-
-  /// 避免每次按键 setState 重建整个组件树
-  final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
-  final AtMemberQuery _atMemberQuery = const AtMemberQuery();
-  final MarkdownEditor _markdownEditor = const MarkdownEditor();
+  bool get _isInputExpanded => _focusNode.hasFocus || _composer.hasActivePanel;
 
   /// 语音录制状态（权限、临时文件、上滑取消、60s 上限）
   late final VoiceRecorderController _voiceRecorder;
@@ -100,7 +83,15 @@ class _ChatInputState extends State<ChatInput> {
     _focusNode.onKeyEvent = _handleKeyEvent;
     _focusNode.addListener(_onFocusChanged);
     widget.controller.addListener(_onTextChanged);
-    _hasTextNotifier.value = widget.controller.text.trim().isNotEmpty;
+    _composer = ChatComposerController(
+      onAtMemberSelected: widget.onAtMemberSelected,
+    )..addListener(_onComposerChanged);
+    _composer.updateText(
+      widget.controller.text,
+      widget.controller.selection,
+      isGroupChat: widget.isGroupChat,
+      atMembers: widget.atMembers,
+    );
     _initAttachmentItems();
     _voiceRecorder = VoiceRecorderController(
       onVoiceRecord: widget.onVoiceRecord,
@@ -110,8 +101,8 @@ class _ChatInputState extends State<ChatInput> {
   void _onFocusChanged() {
     // 微信式互斥：面板展开时点击输入框 → 收面板、弹键盘；
     // 失焦（如点击消息区）只收键盘，面板保持展开。
-    if (_focusNode.hasFocus && _activePanel != _InputPanel.none) {
-      _closeAllPanels();
+    if (_focusNode.hasFocus && _composer.hasActivePanel) {
+      _composer.closePanels();
     }
     // 焦点变化会切换“默认一行（声音+输入框+表情+更多）”与
     // “聚焦态（输入行+底部完整工具栏）”两种布局，刷新 build
@@ -158,38 +149,29 @@ class _ChatInputState extends State<ChatInput> {
     final key = event.logicalKey;
 
     // @ 成员列表激活时：↑/↓ 切换高亮、Enter 确认、Esc 关闭
-    if (_atKeyword != null && _filteredAtMembers.isNotEmpty) {
+    if (_composer.atKeyword != null && _filteredAtMembers.isNotEmpty) {
       if (key == LogicalKeyboardKey.arrowDown) {
-        setState(() {
-          _atSelectionIndex = _atMemberQuery.normalizedIndex(
-            _atSelectionIndex + 1,
-            _filteredAtMembers.length,
-          );
-        });
+        _composer.moveAtSelection(1, _filteredAtMembers.length);
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.arrowUp) {
-        setState(() {
-          _atSelectionIndex = _atMemberQuery.normalizedIndex(
-            _atSelectionIndex - 1,
-            _filteredAtMembers.length,
-          );
-        });
+        _composer.moveAtSelection(-1, _filteredAtMembers.length);
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.escape) {
-        _setAtQuery(null);
+        _composer.setAtKeyword(null);
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.enter ||
           key == LogicalKeyboardKey.numpadEnter) {
         if (!HardwareKeyboard.instance.isShiftPressed) {
           final members = _filteredAtMembers;
-          final index = _atMemberQuery.normalizedIndex(
-            _atSelectionIndex,
+          final index = _composer.atMemberQuery.normalizedIndex(
+            _composer.atSelectionIndex,
             members.length,
           );
-          _selectAtMember(members[index]);
+          _composer.selectAtMember(widget.controller, members[index]);
+          _focusNode.requestFocus();
           return KeyEventResult.handled;
         }
       }
@@ -212,17 +194,22 @@ class _ChatInputState extends State<ChatInput> {
     _focusNode.dispose();
     _voiceRecorder.removeListener(_onRecordingChanged);
     _voiceRecorder.dispose();
-    _hasTextNotifier.dispose();
+    _composer.removeListener(_onComposerChanged);
+    _composer.dispose();
     super.dispose();
   }
 
   void _onTextChanged() {
-    final text = widget.controller.text;
-    final hasText = text.trim().isNotEmpty;
-    if (_hasTextNotifier.value != hasText) {
-      _hasTextNotifier.value = hasText;
-    }
-    _updateAtQuery(text);
+    _composer.updateText(
+      widget.controller.text,
+      widget.controller.selection,
+      isGroupChat: widget.isGroupChat,
+      atMembers: widget.atMembers,
+    );
+  }
+
+  void _onComposerChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onRecordingChanged() {
@@ -230,12 +217,7 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _doSend() {
-    final text = widget.controller.text.trim();
-    if (text.isEmpty) return;
-    widget.onSend(
-      text,
-      _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
-    );
+    _composer.sendText(widget.controller, onSend: widget.onSend);
   }
 
   // ==================== 面板管理 ====================
@@ -243,9 +225,9 @@ class _ChatInputState extends State<ChatInput> {
   /// 面板与键盘互斥切换（微信式）：
   /// - 键盘态点面板按钮 → 收键盘、展开面板
   /// - 面板态再点同一按钮 → 收面板、弹键盘
-  void _togglePanel(_InputPanel panel) {
-    final opening = _activePanel != panel;
-    setState(() => _activePanel = opening ? panel : _InputPanel.none);
+  void _togglePanel(ComposerPanel panel) {
+    final opening = _composer.activePanel != panel;
+    _composer.togglePanel(panel);
     if (opening) {
       FocusScope.of(context).unfocus();
     } else {
@@ -254,7 +236,7 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _closeAllPanels() {
-    setState(() => _activePanel = _InputPanel.none);
+    _composer.closePanels();
   }
 
   /// 打开"展开编辑"抽屉（飞书式半屏大编辑区）。
@@ -274,7 +256,7 @@ class _ChatInputState extends State<ChatInput> {
       ),
       builder: (_) => MessageComposerSheet(
         controller: widget.controller,
-        hasText: _hasTextNotifier,
+        hasText: _composer.hasText,
         onSend: widget.onSend,
         onImagePick: widget.onImagePick,
         onAtMention: widget.onAtMention,
@@ -287,26 +269,17 @@ class _ChatInputState extends State<ChatInput> {
   // ==================== Markdown 格式插入 ====================
 
   void _handleFormat(MarkdownFormat format) {
-    _markdownEditor.handleFormat(widget.controller, format);
-    // 键盘态下插入后保持焦点；面板展开时聚焦会打断面板操作
-    if (_activePanel == _InputPanel.none) {
-      _focusNode.requestFocus();
-    }
+    _composer.handleFormat(
+      widget.controller,
+      format,
+      onRequestFocus: () => _focusNode.requestFocus(),
+    );
   }
 
   // ==================== Emoji 插入 ====================
 
   void _insertEmoji(String emoji) {
-    final controller = widget.controller;
-    final text = controller.text;
-    final selection = controller.selection;
-    final start = selection.start >= 0 ? selection.start : text.length;
-    final end = selection.end >= 0 ? selection.end : text.length;
-    final newText = text.replaceRange(start, end, emoji);
-    controller.text = newText;
-    controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: start + emoji.length),
-    );
+    _composer.insertEmoji(widget.controller, emoji);
     // 面板态插入不弹键盘，保持连续选择；切回键盘用面板内"键盘"按钮
   }
 
@@ -316,57 +289,20 @@ class _ChatInputState extends State<ChatInput> {
 
   // ==================== 实时 @（Telegram 式） ====================
 
-  /// 根据输入内容更新 @ 查询状态：光标前存在 '@' 时激活成员列表
-  void _updateAtQuery(String text) {
-    final keyword = _atMemberQuery.resolve(
-      text,
-      widget.controller.selection,
-      isGroupChat: widget.isGroupChat,
-      atMembers: widget.atMembers,
-    );
-    _setAtQuery(keyword);
-  }
-
-  void _setAtQuery(String? keyword) {
-    if (_atKeyword == keyword) return;
-    setState(() {
-      _atKeyword = keyword;
-      _atSelectionIndex = 0;
-    });
-  }
-
   /// 按关键字过滤群成员（昵称 / ID 模糊匹配）
-  List<GroupMember> get _filteredAtMembers =>
-      _atMemberQuery.filter(_atKeyword, widget.atMembers ?? const []);
-
-  /// 选择成员：替换 "@关键字" 为 "@昵称 "，并回调外部记录 atUserId
-  void _selectAtMember(GroupMember member) {
-    final controller = widget.controller;
-    final text = controller.text;
-    final caret = controller.selection.isValid
-        ? controller.selection.baseOffset
-        : text.length;
-    final searchFrom = caret > 0 ? caret - 1 : 0;
-    final lastAt = text.lastIndexOf('@', searchFrom);
-    if (lastAt < 0) return;
-    final displayName = member.nickname.isNotEmpty
-        ? member.nickname
-        : member.userId;
-    final newText = '${text.substring(0, lastAt)}@$displayName ';
-    controller.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newText.length),
-    );
-    widget.onAtMemberSelected?.call(member.userId);
-    _setAtQuery(null);
-    _focusNode.requestFocus();
-  }
+  List<GroupMember> get _filteredAtMembers => _composer.atMemberQuery.filter(
+    _composer.atKeyword,
+    widget.atMembers ?? const [],
+  );
 
   /// 成员选择列表（输入框上方，随关键字过滤）
   Widget _buildAtMemberList() => AtMemberSuggestions(
     members: _filteredAtMembers,
-    selectedIndex: _atSelectionIndex,
-    onSelect: _selectAtMember,
+    selectedIndex: _composer.atSelectionIndex,
+    onSelect: (member) {
+      _composer.selectAtMember(widget.controller, member);
+      _focusNode.requestFocus();
+    },
   );
 
   // ==================== 构建 ====================
@@ -404,20 +340,23 @@ class _ChatInputState extends State<ChatInput> {
                 // 未聚焦态：默认一行（声音+输入框+表情+更多）
                 if (isExpanded) ...[
                   _buildInputRow(),
-                  if (_atKeyword != null) _buildAtMemberList(),
+                  if (_composer.atKeyword != null) _buildAtMemberList(),
                   const SizedBox(height: 8),
-                  _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
+                  _composer.isMarkdownMode
+                      ? _buildFormatBar()
+                      : _buildToolbarRow(),
                 ] else
                   CollapsedInputBar(
                     controller: widget.controller,
                     focusNode: _focusNode,
-                    isMarkdownMode: _isMarkdownMode,
+                    isMarkdownMode: _composer.isMarkdownMode,
                     onOpenComposer: _openComposerSheet,
                     onSubmitted: _doSend,
-                    emojiActive: _activePanel == _InputPanel.emoji,
-                    moreActive: _activePanel == _InputPanel.attachment,
-                    onToggleEmoji: () => _togglePanel(_InputPanel.emoji),
-                    onToggleMore: () => _togglePanel(_InputPanel.attachment),
+                    emojiActive: _composer.activePanel == ComposerPanel.emoji,
+                    moreActive:
+                        _composer.activePanel == ComposerPanel.attachment,
+                    onToggleEmoji: () => _togglePanel(ComposerPanel.emoji),
+                    onToggleMore: () => _togglePanel(ComposerPanel.attachment),
                     onVoiceLongPressStart: (details) =>
                         _voiceRecorder.start(context, details),
                     onVoiceLongPressMoveUpdate: _voiceRecorder.onMove,
@@ -437,17 +376,17 @@ class _ChatInputState extends State<ChatInput> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Offstage(
-                  offstage: _activePanel != _InputPanel.emoji,
+                  offstage: _composer.activePanel != ComposerPanel.emoji,
                   child: EmojiPanel(
                     onEmojiSelected: _insertEmoji,
                     onGifSelected: widget.onGifSelected,
                   ),
                 ),
                 Offstage(
-                  offstage: _activePanel != _InputPanel.attachment,
+                  offstage: _composer.activePanel != ComposerPanel.attachment,
                   child: AttachmentPanel(
                     items: _attachmentItems,
-                    onItemTap: _closeAllPanels,
+                    onItemTap: () => _composer.closePanels(),
                   ),
                 ),
               ],
@@ -463,7 +402,7 @@ class _ChatInputState extends State<ChatInput> {
     return ChatInputField(
       controller: widget.controller,
       focusNode: _focusNode,
-      isMarkdownMode: _isMarkdownMode,
+      isMarkdownMode: _composer.isMarkdownMode,
       onOpenComposer: _openComposerSheet,
       onSubmitted: _doSend,
     );
@@ -472,13 +411,13 @@ class _ChatInputState extends State<ChatInput> {
   /// 第三层：工具栏行（与展开抽屉共用 [ChatActionToolbar]）。
   Widget _buildToolbarRow() {
     return ChatActionToolbar(
-      emojiActive: _activePanel == _InputPanel.emoji,
-      moreActive: _activePanel == _InputPanel.attachment,
-      markdownActive: _isMarkdownMode,
-      markdownTooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
-      hasText: _hasTextNotifier,
+      emojiActive: _composer.activePanel == ComposerPanel.emoji,
+      moreActive: _composer.activePanel == ComposerPanel.attachment,
+      markdownActive: _composer.isMarkdownMode,
+      markdownTooltip: _composer.isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+      hasText: _composer.hasText,
       // 😊
-      onEmoji: () => _togglePanel(_InputPanel.emoji),
+      onEmoji: () => _togglePanel(ComposerPanel.emoji),
       // @ 提及
       onAt: () => widget.onAtMention?.call(),
       // 🎤 语音（长按录音，上滑取消）
@@ -493,16 +432,16 @@ class _ChatInputState extends State<ChatInput> {
       // Aa 格式
       onFormat: () {
         HapticFeedback.lightImpact();
-        final enteringMarkdown = !_isMarkdownMode;
-        setState(() {
-          _isMarkdownMode = enteringMarkdown;
+        final enteringMarkdown = !_composer.isMarkdownMode;
+        _composer.setMarkdownMode(enteringMarkdown);
+        if (enteringMarkdown) {
           // 进入 Markdown 模式时收起面板，避免面板+格式栏同屏
-          if (enteringMarkdown) _activePanel = _InputPanel.none;
-        });
-        if (enteringMarkdown) _focusNode.requestFocus();
+          _composer.closePanels();
+          _focusNode.requestFocus();
+        }
       },
       // ➕ 更多
-      onMore: () => _togglePanel(_InputPanel.attachment),
+      onMore: () => _togglePanel(ComposerPanel.attachment),
       // ➡️ 发送
       onSend: _doSend,
     );
@@ -515,11 +454,11 @@ class _ChatInputState extends State<ChatInput> {
     return MarkdownFormatBar(
       onFormat: _handleFormat,
       onClose: () {
-        setState(() => _isMarkdownMode = false);
+        _composer.setMarkdownMode(false);
         _focusNode.requestFocus();
       },
       trailing: ValueListenableBuilder<bool>(
-        valueListenable: _hasTextNotifier,
+        valueListenable: _composer.hasText,
         builder: (_, hasText, __) {
           return SendButton(enabled: hasText, onSend: _doSend);
         },
