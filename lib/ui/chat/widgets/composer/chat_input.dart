@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../../../../domain/models/group_member.dart';
 import '../../../core/theme/app_theme.dart';
+import 'at_member_query.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'collapsed_input_bar.dart';
 import 'voice_recorder_controller.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'markdown_editor.dart';
 import 'chat_input_field.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
@@ -82,6 +84,8 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
+  final AtMemberQuery _atMemberQuery = AtMemberQuery();
+  final MarkdownEditor _markdownEditor = const MarkdownEditor();
 
   /// 语音录制状态（权限、临时文件、上滑取消、60s 上限）
   late final VoiceRecorderController _voiceRecorder;
@@ -157,16 +161,19 @@ class _ChatInputState extends State<ChatInput> {
     if (_atKeyword != null && _filteredAtMembers.isNotEmpty) {
       if (key == LogicalKeyboardKey.arrowDown) {
         setState(() {
-          _atSelectionIndex =
-              (_atSelectionIndex + 1) % _filteredAtMembers.length;
+          _atSelectionIndex = _atMemberQuery.normalizedIndex(
+            _atSelectionIndex + 1,
+            _filteredAtMembers.length,
+          );
         });
         return KeyEventResult.handled;
       }
       if (key == LogicalKeyboardKey.arrowUp) {
         setState(() {
-          _atSelectionIndex =
-              (_atSelectionIndex - 1 + _filteredAtMembers.length) %
-              _filteredAtMembers.length;
+          _atSelectionIndex = _atMemberQuery.normalizedIndex(
+            _atSelectionIndex - 1,
+            _filteredAtMembers.length,
+          );
         });
         return KeyEventResult.handled;
       }
@@ -178,7 +185,10 @@ class _ChatInputState extends State<ChatInput> {
           key == LogicalKeyboardKey.numpadEnter) {
         if (!HardwareKeyboard.instance.isShiftPressed) {
           final members = _filteredAtMembers;
-          final index = _atSelectionIndex % members.length;
+          final index = _atMemberQuery.normalizedIndex(
+            _atSelectionIndex,
+            members.length,
+          );
           _selectAtMember(members[index]);
           return KeyEventResult.handled;
         }
@@ -276,85 +286,11 @@ class _ChatInputState extends State<ChatInput> {
 
   // ==================== Markdown 格式插入 ====================
 
-  /// 在光标处插入/包裹 Markdown 标记
-  void _insertMarkdown(String prefix, String suffix) {
-    final controller = widget.controller;
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (selection.isValid && selection.start < selection.end) {
-      // 有选中文字：包裹选中内容
-      final selected = selection.textInside(text);
-      final newText = text.replaceRange(
-        selection.start,
-        selection.end,
-        '$prefix$selected$suffix',
-      );
-      controller.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset:
-              selection.start + prefix.length + selected.length + suffix.length,
-        ),
-      );
-    } else {
-      // 无选中：插入标记，光标放在标记中间
-      final offset = selection.baseOffset >= 0
-          ? selection.baseOffset
-          : text.length;
-      final placeholder = _placeholderFor(prefix);
-      final newText = text.replaceRange(
-        offset,
-        offset,
-        '$prefix$placeholder$suffix',
-      );
-      controller.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection(
-          baseOffset: offset + prefix.length,
-          extentOffset: offset + prefix.length + placeholder.length,
-        ),
-      );
-    }
-
+  void _handleFormat(MarkdownFormat format) {
+    _markdownEditor.handleFormat(widget.controller, format);
     // 键盘态下插入后保持焦点；面板展开时聚焦会打断面板操作
     if (_activePanel == _InputPanel.none) {
       _focusNode.requestFocus();
-    }
-  }
-
-  String _placeholderFor(String prefix) {
-    return switch (prefix) {
-      '**' => '粗体',
-      '*' => '斜体',
-      '~~' => '删除线',
-      '## ' => '标题',
-      '`' => '代码',
-      '> ' => '引用',
-      '- ' => '列表',
-      '[' => '文字',
-      _ => '',
-    };
-  }
-
-  void _handleFormat(MarkdownFormat format) {
-    switch (format) {
-      case MarkdownFormat.bold:
-        _insertMarkdown('**', '**');
-      case MarkdownFormat.italic:
-        _insertMarkdown('*', '*');
-      case MarkdownFormat.strikethrough:
-        _insertMarkdown('~~', '~~');
-      case MarkdownFormat.heading:
-        _insertMarkdown('## ', '');
-      case MarkdownFormat.inlineCode:
-        _insertMarkdown('`', '`');
-      case MarkdownFormat.quote:
-        _insertMarkdown('> ', '');
-      case MarkdownFormat.bulletList:
-        _insertMarkdown('- ', '');
-      case MarkdownFormat.link:
-        _insertMarkdown('[', '](url)');
     }
   }
 
@@ -382,22 +318,12 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 根据输入内容更新 @ 查询状态：光标前存在 '@' 时激活成员列表
   void _updateAtQuery(String text) {
-    if (!widget.isGroupChat ||
-        widget.atMembers == null ||
-        widget.atMembers!.isEmpty) {
-      _setAtQuery(null);
-      return;
-    }
-    final caret = widget.controller.selection.isValid
-        ? widget.controller.selection.baseOffset
-        : text.length;
-    final searchFrom = caret > 0 ? caret - 1 : 0;
-    final lastAt = text.lastIndexOf('@', searchFrom);
-    if (lastAt < 0) {
-      _setAtQuery(null);
-      return;
-    }
-    final keyword = text.substring(lastAt + 1, caret).trim();
+    final keyword = _atMemberQuery.resolve(
+      text,
+      widget.controller.selection,
+      isGroupChat: widget.isGroupChat,
+      atMembers: widget.atMembers,
+    );
     _setAtQuery(keyword);
   }
 
@@ -410,20 +336,8 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   /// 按关键字过滤群成员（昵称 / ID 模糊匹配）
-  List<GroupMember> get _filteredAtMembers {
-    final keyword = _atKeyword;
-    if (keyword == null) return const [];
-    final members = widget.atMembers ?? const [];
-    if (keyword.isEmpty) return members;
-    final lower = keyword.toLowerCase();
-    return members
-        .where(
-          (m) =>
-              m.nickname.toLowerCase().contains(lower) ||
-              m.userId.toLowerCase().contains(lower),
-        )
-        .toList();
-  }
+  List<GroupMember> get _filteredAtMembers =>
+      _atMemberQuery.filter(_atKeyword, widget.atMembers ?? const []);
 
   /// 选择成员：替换 "@关键字" 为 "@昵称 "，并回调外部记录 atUserId
   void _selectAtMember(GroupMember member) {
