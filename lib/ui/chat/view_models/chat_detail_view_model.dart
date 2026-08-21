@@ -5,10 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/friend.dart';
-import '../../../domain/models/message.dart' show MessageType;
-import '../mappers/message_display.dart';
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
-import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../domain/models/message_search_result.dart'
+    show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/connection_provider.dart';
@@ -20,6 +19,8 @@ import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../../../application/chat/message_service_notifier.dart';
+import 'chat_detail_forward_mixin.dart';
+import 'chat_detail_selection_mixin.dart';
 
 typedef ChatSendTarget = ({
   String recvId,
@@ -88,16 +89,11 @@ class ChatDetailState {
 }
 
 /// 聊天详情页 ViewModel：负责消息加载、发送、草稿、已读、引用、多选、转发、搜索等业务。
-class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
+class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
+    with ChatDetailSelectionMixin, ChatDetailForwardMixin {
   DateTime? _lastTypingSent;
   DateTime? _lastMarkReadTime;
   String? _onlineStatusUserId;
-  bool _forwardCancelled = false;
-  List<ChatMessage>? _lastForwardMessages;
-  List<({String id, bool isGroup})>? _failedForwardTargets;
-  String _lastForwardTitle = '聊天记录';
-  bool _lastForwardMerge = false;
-
   @override
   ChatDetailState build(String conversationId) {
     return const ChatDetailState();
@@ -494,54 +490,6 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
     state = state.copyWith(atUserIds: const []);
   }
 
-  void enterSelectMode() {
-    state = state.copyWith(selectMode: true, selectedMessages: const []);
-  }
-
-  void exitSelectMode() {
-    state = state.copyWith(selectMode: false, selectedMessages: const []);
-  }
-
-  void toggleMessageSelection(ChatMessage message) {
-    final selected = List<ChatMessage>.from(state.selectedMessages);
-    if (selected.any((m) => m.clientMsgId == message.clientMsgId)) {
-      selected.removeWhere((m) => m.clientMsgId == message.clientMsgId);
-    } else {
-      selected.add(message);
-    }
-    state = state.copyWith(selectedMessages: selected);
-  }
-
-  void toggleSelectAll() {
-    final messages = ref
-        .read(messagesByConversationProvider(arg))
-        .where((m) => m.messageType != MessageType.system)
-        .toList();
-    if (messages.isEmpty) return;
-    final allSelected = messages.every(
-      (m) => state.selectedClientMsgIds.contains(m.clientMsgId),
-    );
-    state = state.copyWith(selectedMessages: allSelected ? const [] : messages);
-  }
-
-  Future<bool> deleteSelectedMessages() async {
-    final messages = List<ChatMessage>.from(state.selectedMessages);
-    if (messages.isEmpty) return false;
-    try {
-      for (final message in messages) {
-        await _messageService.deleteMessage(
-          conversationId: arg,
-          clientMsgId: message.clientMsgId,
-        );
-      }
-      exitSelectMode();
-      return true;
-    } catch (e) {
-      state = state.copyWith(errorText: '删除选中消息失败: $e');
-      return false;
-    }
-  }
-
   Future<bool> revokeMessage(ChatMessage message) async {
     final conv = conversation;
     if (conv == null) return false;
@@ -599,162 +547,6 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String> {
       conversationId: arg,
       keyword: keyword,
     );
-  }
-
-  Future<bool> forwardSelectedMessages({
-    required List<ChatMessage> messages,
-    required String targetId,
-    required bool isGroup,
-    required bool merge,
-    String title = '聊天记录',
-  }) async {
-    if (messages.isEmpty) return false;
-    final sessionType = isGroup
-        ? ChatSessionType.writeGroupChat
-        : ChatSessionType.singleChat;
-    try {
-      if (merge) {
-        await _messageService.sendMergerMessage(
-          clientMsgIds: messages.map((m) => m.clientMsgId).toList(),
-          sourceConversationId: arg,
-          title: title,
-          summaryList: messages.map((m) => m.displayText).toList(),
-          sourceId: targetId,
-          sessionType: sessionType,
-        );
-      } else {
-        for (final message in messages) {
-          await _messageService.forwardMessage(
-            clientMsgId: message.clientMsgId,
-            sourceId: targetId,
-            sessionType: sessionType,
-          );
-        }
-      }
-      exitSelectMode();
-      return true;
-    } catch (e) {
-      state = state.copyWith(errorText: '转发失败: $e');
-      return false;
-    }
-  }
-
-  Future<bool> forwardSelectedMessagesToTargets({
-    required List<ChatMessage> messages,
-    required List<({String id, bool isGroup})> targets,
-    required bool merge,
-    String title = '聊天记录',
-  }) async {
-    if (messages.isEmpty || targets.isEmpty) return false;
-
-    state = state.copyWith(
-      isForwarding: true,
-      forwardDone: 0,
-      forwardTotal: targets.length,
-      errorText: null,
-    );
-    _forwardCancelled = false;
-    var success = 0;
-    var failed = 0;
-    final failedTargets = <({String id, bool isGroup})>[];
-    _lastForwardMessages = messages;
-    _lastForwardTitle = title;
-    _lastForwardMerge = merge;
-
-    try {
-      for (final target in targets) {
-        if (_forwardCancelled) {
-          state = state.copyWith(
-            errorText: success == 0
-                ? '已取消转发'
-                : '已取消转发：成功 $success 个，未完成 ${targets.length - success} 个',
-          );
-          _failedForwardTargets = null;
-          return false;
-        }
-        try {
-          await _forwardToTarget(
-            messages: messages,
-            targetId: target.id,
-            isGroup: target.isGroup,
-            merge: merge,
-            title: title,
-          );
-          success++;
-        } catch (_) {
-          failed++;
-          failedTargets.add(target);
-        }
-        state = state.copyWith(forwardDone: success + failed);
-      }
-      if (failed == 0) {
-        _failedForwardTargets = null;
-        exitSelectMode();
-        return true;
-      }
-      _failedForwardTargets = failedTargets;
-      state = state.copyWith(
-        errorText: failed == targets.length
-            ? '转发失败'
-            : '部分转发失败：成功 $success 个，失败 $failed 个',
-      );
-      return false;
-    } finally {
-      state = state.copyWith(
-        isForwarding: false,
-        forwardDone: 0,
-        forwardTotal: 0,
-      );
-    }
-  }
-
-  bool get hasFailedForwardTargets =>
-      _failedForwardTargets != null && _failedForwardTargets!.isNotEmpty;
-
-  Future<bool> retryFailedForwardTargets() async {
-    final messages = _lastForwardMessages;
-    final targets = _failedForwardTargets;
-    if (messages == null || targets == null || targets.isEmpty) return false;
-    return forwardSelectedMessagesToTargets(
-      messages: messages,
-      targets: targets,
-      merge: _lastForwardMerge,
-      title: _lastForwardTitle,
-    );
-  }
-
-  void cancelForward() {
-    _forwardCancelled = true;
-  }
-
-  Future<void> _forwardToTarget({
-    required List<ChatMessage> messages,
-    required String targetId,
-    required bool isGroup,
-    required bool merge,
-    required String title,
-  }) async {
-    final sessionType = isGroup
-        ? ChatSessionType.writeGroupChat
-        : ChatSessionType.singleChat;
-    if (merge) {
-      await _messageService.sendMergerMessage(
-        clientMsgIds: messages.map((m) => m.clientMsgId).toList(),
-        sourceConversationId: arg,
-        title: title,
-        summaryList: messages.map((m) => m.displayText).toList(),
-        sourceId: targetId,
-        sessionType: sessionType,
-      );
-    } else {
-      for (final message in messages) {
-        await _messageService.forwardMessage(
-          clientMsgId: message.clientMsgId,
-          sourceId: targetId,
-          sessionType: sessionType,
-        );
-      }
-    }
   }
 
   void reset() {
