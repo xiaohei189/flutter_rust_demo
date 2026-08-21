@@ -189,7 +189,7 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::context::Repositories;
+    use crate::sdk::client::context::Repositories;
     use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};

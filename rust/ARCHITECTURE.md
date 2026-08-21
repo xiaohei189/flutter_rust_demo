@@ -1,6 +1,6 @@
 # Rust SDK 架构指南
 
-> ⚠️ **【迁移中】目标五层架构（api/sdk/core/event/infra/domain）。当前 `domain/`、`infra/`、`core/`（connection/conversation/event/message/user）已迁入**；`client, ffi, friend, group` 仍为扁平模块，后续迁入 `sdk/api`。
+> ✅ **【已迁移】五层目录 `api/ sdk/ core/ event/ infra/ domain/` 已落地**：`domain/`（model/constant/error）、`infra/`（db/http/cache/logger/file/util）、`core/`（connection/conversation/event/message/user）、`sdk/`（client/friend/group）、`api/`（ffi）均已迁入。层间依赖边界抽查见本文档末尾；`test-fast.ps1` 全绿。
 > 现状与规划的对照见 [docs/README.md](../docs/README.md#架构对齐现状-2026-08)。
 
 ## 分层架构（从底层到上层）

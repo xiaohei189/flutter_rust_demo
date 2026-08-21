@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 use std::time::Duration;
 
 /// 按字典序生成单聊会话 ID：`si_{小user_id}_{大user_id}`。
@@ -846,7 +846,7 @@ async fn test_unread_count_after_message() {
 
     // 验证 B 的消息已读状态
     let history = user2_sdk
-        .get_history_messages(rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq {
+        .get_history_messages(rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq {
             conversation_id: conv_id,
             start_client_msg_id: String::new(),
             count: 10,

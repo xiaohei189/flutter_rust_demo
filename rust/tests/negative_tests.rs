@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 use std::time::Duration;
 
 /// 验证重复使用同一手机号注册会被服务端拒绝。
@@ -29,8 +29,8 @@ async fn test_register_with_existing_phone() {
 async fn test_login_invalid_token() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::sdk::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     println!("=== 无效 token 登录测试 ===\n");
 

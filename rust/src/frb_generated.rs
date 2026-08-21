@@ -26,7 +26,7 @@
 
 // Section: imports
 
-use crate::ffi::client::*;
+use crate::api::ffi::client::*;
 use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
 use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -74,7 +74,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_accept_friend_application_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::accept_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::accept_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -115,7 +115,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_accept_group_application_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::accept_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::accept_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -154,7 +154,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_add_black_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::add_black(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::add_black(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -194,7 +194,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_add_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::add_friend(&*api_that_guard, api_user_id, api_req_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::add_friend(&*api_that_guard, api_user_id, api_req_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -233,7 +233,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_check_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::check_friend(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::check_friend(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -272,7 +272,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_check_group_member_full_sync_imp
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::check_group_member_full_sync(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::check_group_member_full_sync(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -310,7 +310,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_check_local_group_full_sync_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::check_local_group_full_sync(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::check_local_group_full_sync(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -349,7 +349,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_clear_conversation_draft_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::clear_conversation_draft(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::clear_conversation_draft(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -388,7 +388,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_connection_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::connection_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::connection_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -427,7 +427,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_conversation_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::conversation_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::conversation_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -468,7 +468,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_create_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -507,7 +507,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_delete_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::delete_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::delete_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -546,7 +546,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_delete_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::delete_friend(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::delete_friend(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -585,7 +585,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_delete_messages_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::delete_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::delete_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -623,7 +623,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_disconnect_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::disconnect(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::disconnect(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -662,7 +662,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_dismiss_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::dismiss_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::dismiss_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -701,7 +701,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_friend_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::friend_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::friend_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -739,7 +739,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_black_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_black_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_black_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -777,7 +777,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_connection_state_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_connection_state(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_connection_state(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -816,7 +816,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -855,7 +855,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_conversation_id_by_session_t
                         }
                     }
                     let api_that_guard = api_that_guard.unwrap();
-                    let output_ok = crate::ffi::client::OpenIMBridgeClient::get_conversation_id_by_session_type(&*api_that_guard, api_source_id, api_session_type)?;
+                    let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_conversation_id_by_session_type(&*api_that_guard, api_source_id, api_session_type)?;
                     Ok(output_ok)
                 })())
             }
@@ -891,7 +891,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_conversation_ids_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_conversation_ids(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_conversation_ids(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -931,7 +931,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_conversation_list_split_impl
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_conversation_list_split(&*api_that_guard, api_offset, api_count).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_conversation_list_split(&*api_that_guard, api_offset, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -969,7 +969,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_conversations(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_conversations(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1007,7 +1007,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_application_unhandled
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_application_unhandled_count(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_application_unhandled_count(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1045,7 +1045,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_apply_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_apply_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_apply_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1083,7 +1083,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_apply_list_as_applica
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_apply_list_as_applicant(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_apply_list_as_applicant(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1121,7 +1121,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_id_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_id_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_id_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1159,7 +1159,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1200,7 +1200,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_friend_list_page_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_friend_list_page(&*api_that_guard, api_offset, api_count, api_filter_black).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_friend_list_page(&*api_that_guard, api_offset, api_count, api_filter_black).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1238,7 +1238,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_application_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_application_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_application_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1276,7 +1276,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_application_list_as_ap
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_application_list_as_applicant(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_application_list_as_applicant(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1314,7 +1314,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_application_list_as_re
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_application_list_as_recipient(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_application_list_as_recipient(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1352,7 +1352,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_application_unhandled_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_application_unhandled_count(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_application_unhandled_count(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1390,7 +1390,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_list_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_list(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_list(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1434,7 +1434,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_member_list_by_join_ti
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_member_list_by_join_time_filter(
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_member_list_by_join_time_filter(
                             &*api_that_guard,
                             api_group_id,
                             api_offset,
@@ -1482,7 +1482,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_member_owner_and_admin
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_member_owner_and_admin(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_member_owner_and_admin(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1521,7 +1521,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_members(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_members(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1561,7 +1561,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_group_members_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_group_members_info(&*api_that_guard, api_group_id, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_group_members_info(&*api_that_guard, api_group_id, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1600,7 +1600,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_groups_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_groups_info(&*api_that_guard, api_group_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_groups_info(&*api_that_guard, api_group_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1625,7 +1625,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_history_messages_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_req = <crate::client::GetHistoryMessagesReq>::sse_decode(&mut deserializer);
+            let api_req = <crate::sdk::client::GetHistoryMessagesReq>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -1639,7 +1639,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_history_messages_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_history_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_history_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1679,7 +1679,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_joined_group_list_page_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_joined_group_list_page(&*api_that_guard, api_offset, api_count).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_joined_group_list_page(&*api_that_guard, api_offset, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1718,7 +1718,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_multiple_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_multiple_conversations(&*api_that_guard, api_conversation_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_multiple_conversations(&*api_that_guard, api_conversation_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1756,7 +1756,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_pinned_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_pinned_conversations(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_pinned_conversations(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1794,7 +1794,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_self_user_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_self_user_info(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_self_user_info(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1834,7 +1834,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_specified_friends_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_specified_friends_info(&*api_that_guard, api_friend_user_ids, api_filter_black).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_specified_friends_info(&*api_that_guard, api_friend_user_ids, api_filter_black).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1872,7 +1872,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_subscribe_users_status_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_subscribe_users_status(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_subscribe_users_status(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1910,7 +1910,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_user_client_config_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_user_client_config(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_user_client_config(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1949,7 +1949,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_user_status_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_user_status(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_user_status(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -1989,7 +1989,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_users_in_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_users_in_group(&*api_that_guard, api_group_id, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_users_in_group(&*api_that_guard, api_group_id, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2028,7 +2028,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_get_users_info_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::get_users_info(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::get_users_info(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2067,7 +2067,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_group_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::group_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::group_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2105,7 +2105,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_hide_all_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::hide_all_conversations(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::hide_all_conversations(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2144,7 +2144,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_hide_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::hide_conversation(&*api_that_guard, api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::hide_conversation(&*api_that_guard, api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2184,7 +2184,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_invite_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::invite_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::invite_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2222,7 +2222,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_is_connected_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::is_connected(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::is_connected(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2261,7 +2261,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_is_friend_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = Result::<_, ()>::Ok(crate::ffi::client::OpenIMBridgeClient::is_friend(&*api_that_guard, api_user_id).await)?;
+                        let output_ok = Result::<_, ()>::Ok(crate::api::ffi::client::OpenIMBridgeClient::is_friend(&*api_that_guard, api_user_id).await)?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2300,7 +2300,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_is_in_blacklist_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::is_in_blacklist(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::is_in_blacklist(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2339,7 +2339,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_is_in_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::is_in_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::is_in_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2379,7 +2379,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_join_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::join_group(&*api_that_guard, api_group_id, api_req_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::join_group(&*api_that_guard, api_group_id, api_req_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2419,7 +2419,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_kick_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::kick_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::kick_group_members(&*api_that_guard, api_group_id, api_member_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2457,7 +2457,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_logout_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::logout(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::logout(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2497,7 +2497,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_mark_conversation_message_as_rea
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::mark_conversation_message_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::mark_conversation_message_as_read(&*api_that_guard, api_conversation_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2536,7 +2536,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_mark_messages_as_read_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::mark_messages_as_read(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::mark_messages_as_read(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2575,7 +2575,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_message_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::message_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::message_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2615,7 +2615,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_mute_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::mute_group(&*api_that_guard, api_group_id, api_is_mute).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::mute_group(&*api_that_guard, api_group_id, api_is_mute).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2656,7 +2656,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_mute_group_member_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::mute_group_member(&*api_that_guard, api_group_id, api_user_id, api_muted_seconds).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::mute_group_member(&*api_that_guard, api_group_id, api_user_id, api_muted_seconds).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2680,12 +2680,12 @@ fn wire__crate__ffi__client__OpenImBridgeClient_new_impl(
         move || {
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_config = <crate::client::config::ClientConfig>::sse_decode(&mut deserializer);
+            let api_config = <crate::sdk::client::config::ClientConfig>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::new(api_config).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::new(api_config).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2724,7 +2724,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_quit_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::quit_group(&*api_that_guard, api_group_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::quit_group(&*api_that_guard, api_group_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2764,7 +2764,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_refuse_friend_application_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::refuse_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::refuse_friend_application(&*api_that_guard, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2805,7 +2805,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_refuse_group_application_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::refuse_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::refuse_group_application(&*api_that_guard, api_group_id, api_user_id, api_handle_msg).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2844,7 +2844,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_remove_black_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::remove_black(&*api_that_guard, api_user_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::remove_black(&*api_that_guard, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2883,7 +2883,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_revoke_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::revoke_message(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::revoke_message(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2922,7 +2922,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_conversations_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::search_conversations(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::search_conversations(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -2961,7 +2961,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::search_friends(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::search_friends(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3001,7 +3001,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_group_members_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::search_group_members(&*api_that_guard, api_group_id, api_keyword).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::search_group_members(&*api_that_guard, api_group_id, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3040,7 +3040,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_groups_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::search_groups(&*api_that_guard, api_keyword).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::search_groups(&*api_that_guard, api_keyword).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3065,7 +3065,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_local_messages_impl(
             let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
             let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_that = <RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<OpenIMBridgeClient>>>::sse_decode(&mut deserializer);
-            let api_req = <crate::client::SearchMessagesReq>::sse_decode(&mut deserializer);
+            let api_req = <crate::sdk::client::SearchMessagesReq>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3079,7 +3079,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_search_local_messages_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::search_local_messages(&*api_that_guard, api_req).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::search_local_messages(&*api_that_guard, api_req).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3121,7 +3121,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_advanced_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_advanced_text_message(&*api_that_guard, api_text, api_entities, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_advanced_text_message(&*api_that_guard, api_text, api_entities, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3163,7 +3163,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_at_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_at_text_message(&*api_that_guard, api_text, api_at_user_ids, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_at_text_message(&*api_that_guard, api_text, api_at_user_ids, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3206,7 +3206,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_custom_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_custom_message(&*api_that_guard, api_data, api_desc, api_extension, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_custom_message(&*api_that_guard, api_data, api_desc, api_extension, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3247,7 +3247,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_file_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_file_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_file_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3289,7 +3289,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_file_message_with_progress_
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_file_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_file_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3330,7 +3330,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_image_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_image_message(&*api_that_guard, api_file_path, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3372,7 +3372,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_image_message_with_progress
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_image_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_image_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3413,7 +3413,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_markdown_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_markdown_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3455,7 +3455,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_sound_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_sound_message(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_sound_message(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3499,7 +3499,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_sound_message_with_progress
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::ffi::client::OpenIMBridgeClient::send_sound_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration, api_sink).await?;
+                            crate::api::ffi::client::OpenIMBridgeClient::send_sound_message_with_progress(&*api_that_guard, api_file_path, api_source_id, api_session_type, api_duration, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3540,7 +3540,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_text_message_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_text_message(&*api_that_guard, api_text, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3584,7 +3584,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_video_message_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::ffi::client::OpenIMBridgeClient::send_video_message(&*api_that_guard, api_video_path, api_snapshot_path, api_source_id, api_session_type, api_duration).await?;
+                            crate::api::ffi::client::OpenIMBridgeClient::send_video_message(&*api_that_guard, api_video_path, api_snapshot_path, api_source_id, api_session_type, api_duration).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3628,7 +3628,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_send_video_message_with_progress
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::send_video_message_with_progress(
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::send_video_message_with_progress(
                             &*api_that_guard,
                             api_video_path,
                             api_snapshot_path,
@@ -3681,7 +3681,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_conversation_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_conversation(
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::set_conversation(
                             &*api_that_guard,
                             api_conversation_id,
                             api_recv_msg_opt,
@@ -3730,7 +3730,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_conversation_draft_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_conversation_draft(&*api_that_guard, api_conversation_id, api_draft_text).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::set_conversation_draft(&*api_that_guard, api_conversation_id, api_draft_text).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3770,7 +3770,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_conversation_pinned_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_conversation_pinned(&*api_that_guard, api_conversation_id, api_is_pinned).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::set_conversation_pinned(&*api_that_guard, api_conversation_id, api_is_pinned).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3810,7 +3810,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_conversation_private_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_conversation_private(&*api_that_guard, api_conversation_id, api_is_private).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::set_conversation_private(&*api_that_guard, api_conversation_id, api_is_private).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3849,7 +3849,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_global_msg_recv_opt_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::set_global_msg_recv_opt(&*api_that_guard, api_global_recv_opt).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::set_global_msg_recv_opt(&*api_that_guard, api_global_recv_opt).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3893,7 +3893,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_group_info_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url, api_introduction, api_notification).await?;
+                            crate::api::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url, api_introduction, api_notification).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3938,7 +3938,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_set_group_member_info_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::ffi::client::OpenIMBridgeClient::set_group_member_info(&*api_that_guard, api_group_id, api_user_id, api_nickname, api_face_url, api_role_level, api_ex).await?;
+                            crate::api::ffi::client::OpenIMBridgeClient::set_group_member_info(&*api_that_guard, api_group_id, api_user_id, api_nickname, api_face_url, api_role_level, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3977,7 +3977,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_subscribe_users_status_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::subscribe_users_status(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::subscribe_users_status(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4015,7 +4015,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_sync_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::sync_friends(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::sync_friends(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4053,7 +4053,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_sync_friends_incremental_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::sync_friends_incremental(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::sync_friends_incremental(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4091,7 +4091,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_sync_groups_incremental_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::sync_groups_incremental(&*api_that_guard).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::sync_groups_incremental(&*api_that_guard).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4131,7 +4131,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_transfer_group_owner_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::transfer_group_owner(&*api_that_guard, api_group_id, api_new_owner_user_id).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::transfer_group_owner(&*api_that_guard, api_group_id, api_new_owner_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4170,7 +4170,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_unsubscribe_users_status_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::unsubscribe_users_status(&*api_that_guard, api_user_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::unsubscribe_users_status(&*api_that_guard, api_user_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4210,7 +4210,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_update_conversation_unread_count
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::update_conversation_unread_count(&*api_that_guard, api_conversation_id, api_unread_count).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::update_conversation_unread_count(&*api_that_guard, api_conversation_id, api_unread_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4252,7 +4252,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_update_friends_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::update_friends(&*api_that_guard, api_friend_user_ids, api_is_pinned, api_remark, api_ex).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::update_friends(&*api_that_guard, api_friend_user_ids, api_is_pinned, api_remark, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4293,7 +4293,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_update_user_profile_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::update_user_profile(&*api_that_guard, api_nickname, api_face_url, api_ex).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::update_user_profile(&*api_that_guard, api_nickname, api_face_url, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4332,7 +4332,7 @@ fn wire__crate__ffi__client__OpenImBridgeClient_user_stream_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::ffi::client::OpenIMBridgeClient::user_stream(&*api_that_guard, api_sink).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::user_stream(&*api_that_guard, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4362,7 +4362,7 @@ fn wire__crate__ffi__message_advanced__change_input_states_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::change_input_states(api_conversation_id, api_focus).await?;
+                        let output_ok = crate::api::ffi::message_advanced::change_input_states(api_conversation_id, api_focus).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4391,7 +4391,7 @@ fn wire__crate__ffi__message_advanced__clear_conversation_and_delete_all_msg_imp
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::clear_conversation_and_delete_all_msg(api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::clear_conversation_and_delete_all_msg(api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -4421,7 +4421,7 @@ fn wire__crate__ffi__message_builder__create_advanced_quote_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_advanced_quote_message(api_text, api_quoted_msg, api_message_entity_list))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_advanced_quote_message(api_text, api_quoted_msg, api_message_entity_list))?;
                     Ok(output_ok)
                 })())
             }
@@ -4448,7 +4448,7 @@ fn wire__crate__ffi__message_builder__create_advanced_text_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_advanced_text_message(api_text, api_message_entity_list))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_advanced_text_message(api_text, api_message_entity_list))?;
                     Ok(output_ok)
                 })())
             }
@@ -4477,7 +4477,7 @@ fn wire__crate__ffi__message_builder__create_at_text_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_at_text_message(api_text, api_at_user_list, api_at_users_info, api_quote_msg))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_at_text_message(api_text, api_at_user_list, api_at_users_info, api_quote_msg))?;
                     Ok(output_ok)
                 })())
             }
@@ -4503,7 +4503,7 @@ fn wire__crate__ffi__message_builder__create_card_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_card_message(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_card_message(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4531,7 +4531,7 @@ fn wire__crate__ffi__message_builder__create_custom_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_custom_message(api_data, api_extension, api_description))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_custom_message(api_data, api_extension, api_description))?;
                     Ok(output_ok)
                 })())
             }
@@ -4558,7 +4558,7 @@ fn wire__crate__ffi__message_builder__create_face_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_face_message(api_index, api_data))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_face_message(api_index, api_data))?;
                     Ok(output_ok)
                 })())
             }
@@ -4584,7 +4584,7 @@ fn wire__crate__ffi__message_builder__create_file_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_file_message(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_file_message(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4610,7 +4610,7 @@ fn wire__crate__ffi__message_builder__create_file_message_by_url_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_file_message_by_url(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_file_message_by_url(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4637,7 +4637,7 @@ fn wire__crate__ffi__message_builder__create_file_message_from_full_path_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
-                    let output_ok = crate::ffi::message_builder::create_file_message_from_full_path(api_file_full_path, api_file_name)?;
+                    let output_ok = crate::api::ffi::message_builder::create_file_message_from_full_path(api_file_full_path, api_file_name)?;
                     Ok(output_ok)
                 })())
             }
@@ -4666,7 +4666,7 @@ fn wire__crate__ffi__message_builder__create_image_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_image_message(
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_image_message(
                         api_source_path,
                         api_source_picture,
                         api_big_picture,
@@ -4700,7 +4700,7 @@ fn wire__crate__ffi__message_builder__create_image_message_by_url_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_image_message_by_url(
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_image_message_by_url(
                         api_source_path,
                         api_source_picture,
                         api_big_picture,
@@ -4731,7 +4731,7 @@ fn wire__crate__ffi__message_builder__create_image_message_from_full_path_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
-                    let output_ok = crate::ffi::message_builder::create_image_message_from_full_path(api_image_full_path)?;
+                    let output_ok = crate::api::ffi::message_builder::create_image_message_from_full_path(api_image_full_path)?;
                     Ok(output_ok)
                 })())
             }
@@ -4759,7 +4759,7 @@ fn wire__crate__ffi__message_builder__create_location_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_location_message(api_description, api_longitude, api_latitude))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_location_message(api_description, api_longitude, api_latitude))?;
                     Ok(output_ok)
                 })())
             }
@@ -4785,7 +4785,7 @@ fn wire__crate__ffi__message_builder__create_markdown_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_markdown_message(api_text))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_markdown_message(api_text))?;
                     Ok(output_ok)
                 })())
             }
@@ -4813,7 +4813,7 @@ fn wire__crate__ffi__message_builder__create_merger_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_merger_message(api_messages, api_title, api_summaries))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_merger_message(api_messages, api_title, api_summaries))?;
                     Ok(output_ok)
                 })())
             }
@@ -4840,7 +4840,7 @@ fn wire__crate__ffi__message_builder__create_quote_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_quote_message(api_text, api_quoted_msg))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_quote_message(api_text, api_quoted_msg))?;
                     Ok(output_ok)
                 })())
             }
@@ -4866,7 +4866,7 @@ fn wire__crate__ffi__message_builder__create_sound_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_sound_message(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_sound_message(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4892,7 +4892,7 @@ fn wire__crate__ffi__message_builder__create_sound_message_by_url_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_sound_message_by_url(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_sound_message_by_url(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4919,7 +4919,7 @@ fn wire__crate__ffi__message_builder__create_sound_message_from_full_path_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
-                    let output_ok = crate::ffi::message_builder::create_sound_message_from_full_path(api_sound_path, api_duration)?;
+                    let output_ok = crate::api::ffi::message_builder::create_sound_message_from_full_path(api_sound_path, api_duration)?;
                     Ok(output_ok)
                 })())
             }
@@ -4945,7 +4945,7 @@ fn wire__crate__ffi__message_builder__create_text_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_text_message(api_text))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_text_message(api_text))?;
                     Ok(output_ok)
                 })())
             }
@@ -4971,7 +4971,7 @@ fn wire__crate__ffi__message_builder__create_video_message_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_video_message(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_video_message(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -4997,7 +4997,7 @@ fn wire__crate__ffi__message_builder__create_video_message_by_url_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::create_video_message_by_url(api_elem))?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::create_video_message_by_url(api_elem))?;
                     Ok(output_ok)
                 })())
             }
@@ -5026,7 +5026,7 @@ fn wire__crate__ffi__message_builder__create_video_message_from_full_path_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>((move || {
-                    let output_ok = crate::ffi::message_builder::create_video_message_from_full_path(api_video_full_path, api_video_type, api_duration, api_snapshot_full_path)?;
+                    let output_ok = crate::api::ffi::message_builder::create_video_message_from_full_path(api_video_full_path, api_video_type, api_duration, api_snapshot_full_path)?;
                     Ok(output_ok)
                 })())
             }
@@ -5052,7 +5052,7 @@ fn wire__crate__ffi__message_advanced__delete_all_msg_from_local_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::delete_all_msg_from_local().await?;
+                        let output_ok = crate::api::ffi::message_advanced::delete_all_msg_from_local().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5080,7 +5080,7 @@ fn wire__crate__ffi__message_advanced__delete_all_msg_from_local_and_svr_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::delete_all_msg_from_local_and_svr().await?;
+                        let output_ok = crate::api::ffi::message_advanced::delete_all_msg_from_local_and_svr().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5109,7 +5109,7 @@ fn wire__crate__ffi__message_advanced__delete_conversation_and_delete_all_msg_im
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::delete_conversation_and_delete_all_msg(api_conversation_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::delete_conversation_and_delete_all_msg(api_conversation_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5139,7 +5139,7 @@ fn wire__crate__ffi__message_advanced__delete_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::delete_message(api_conversation_id, api_client_msg_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::delete_message(api_conversation_id, api_client_msg_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5169,7 +5169,7 @@ fn wire__crate__ffi__message_advanced__delete_message_from_local_storage_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::delete_message_from_local_storage(api_conversation_id, api_client_msg_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::delete_message_from_local_storage(api_conversation_id, api_client_msg_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5201,7 +5201,7 @@ fn wire__crate__ffi__message_advanced__edit_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::edit_message(api_conversation_id, api_client_msg_id, api_content, api_content_type).await?;
+                        let output_ok = crate::api::ffi::message_advanced::edit_message(api_conversation_id, api_client_msg_id, api_content, api_content_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5231,7 +5231,7 @@ fn wire__crate__ffi__message_advanced__find_message_list_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::find_message_list(api_conversation_id, api_client_msg_ids).await?;
+                        let output_ok = crate::api::ffi::message_advanced::find_message_list(api_conversation_id, api_client_msg_ids).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5262,7 +5262,7 @@ fn wire__crate__ffi__message_advanced__forward_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::forward_message(api_msg_struct, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_advanced::forward_message(api_msg_struct, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5293,7 +5293,7 @@ fn wire__crate__ffi__message_advanced__forward_message_by_client_id_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::forward_message_by_client_id(api_client_msg_id, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_advanced::forward_message_by_client_id(api_client_msg_id, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5325,7 +5325,7 @@ fn wire__crate__ffi__message_advanced__get_advanced_history_message_list_by_seq_
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_advanced_history_message_list_by_seq(api_conversation_id, api_start_seq, api_end_seq, api_count).await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_advanced_history_message_list_by_seq(api_conversation_id, api_start_seq, api_end_seq, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5352,7 +5352,7 @@ fn wire__crate__ffi__message_builder__get_at_all_tag_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, ()>((move || {
-                    let output_ok = Result::<_, ()>::Ok(crate::ffi::message_builder::get_at_all_tag())?;
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::get_at_all_tag())?;
                     Ok(output_ok)
                 })())
             }
@@ -5379,7 +5379,7 @@ fn wire__crate__ffi__message_advanced__get_history_message_by_seq_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_history_message_by_seq(api_seq).await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_history_message_by_seq(api_seq).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5410,7 +5410,7 @@ fn wire__crate__ffi__message_advanced__get_history_messages_reverse_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_history_messages_reverse(api_conversation_id, api_start_client_msg_id, api_count).await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_history_messages_reverse(api_conversation_id, api_start_client_msg_id, api_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5440,7 +5440,7 @@ fn wire__crate__ffi__message_advanced__get_input_states_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_input_states(api_conversation_id, api_user_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_input_states(api_conversation_id, api_user_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5468,7 +5468,7 @@ fn wire__crate__ffi__global__get_login_user_id_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::global::get_login_user_id().await?;
+                        let output_ok = crate::api::ffi::global::get_login_user_id().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5496,7 +5496,7 @@ fn wire__crate__ffi__global__get_sdk_version_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::global::get_sdk_version().await?;
+                        let output_ok = crate::api::ffi::global::get_sdk_version().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5524,7 +5524,7 @@ fn wire__crate__ffi__message_advanced__get_server_time_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_server_time().await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_server_time().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5552,7 +5552,7 @@ fn wire__crate__ffi__message_advanced__get_total_unread_msg_count_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::get_total_unread_msg_count().await?;
+                        let output_ok = crate::api::ffi::message_advanced::get_total_unread_msg_count().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5580,7 +5580,7 @@ fn wire__crate__ffi__message_advanced__incr_sync_conversations_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::incr_sync_conversations().await?;
+                        let output_ok = crate::api::ffi::message_advanced::incr_sync_conversations().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5609,7 +5609,7 @@ fn wire__crate__ffi__ffi_init__init_logger_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::ffi_init::init_logger(api_log_level).await?;
+                        let output_ok = crate::api::ffi::ffi_init::init_logger(api_log_level).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5638,7 +5638,7 @@ fn wire__crate__ffi__ffi_init__init_logger_v2_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::ffi_init::init_logger_v2(api_config).await?;
+                        let output_ok = crate::api::ffi::ffi_init::init_logger_v2(api_config).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5670,7 +5670,7 @@ fn wire__crate__ffi__message_advanced__insert_group_message_to_local_storage_imp
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::insert_group_message_to_local_storage(api_group_id, api_content, api_content_type, api_send_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::insert_group_message_to_local_storage(api_group_id, api_content, api_content_type, api_send_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5702,7 +5702,7 @@ fn wire__crate__ffi__message_advanced__insert_single_message_to_local_storage_im
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::insert_single_message_to_local_storage(api_recv_id, api_content, api_content_type, api_send_id).await?;
+                        let output_ok = crate::api::ffi::message_advanced::insert_single_message_to_local_storage(api_recv_id, api_content, api_content_type, api_send_id).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5730,7 +5730,7 @@ fn wire__crate__ffi__message_advanced__mark_all_conversation_message_as_read_imp
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::mark_all_conversation_message_as_read().await?;
+                        let output_ok = crate::api::ffi::message_advanced::mark_all_conversation_message_as_read().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5758,7 +5758,7 @@ fn wire__crate__ffi__global__network_status_changed_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::global::network_status_changed().await?;
+                        let output_ok = crate::api::ffi::global::network_status_changed().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5794,7 +5794,7 @@ fn wire__crate__ffi__message__send_advanced_quote_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_advanced_quote_message(
+                        let output_ok = crate::api::ffi::message::send_advanced_quote_message(
                             api_text,
                             api_source_id,
                             api_session_type,
@@ -5837,7 +5837,7 @@ fn wire__crate__ffi__message__send_at_text_message_with_quote_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_at_text_message_with_quote(api_text, api_at_user_list, api_at_users_info, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message::send_at_text_message_with_quote(api_text, api_at_user_list, api_at_users_info, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5871,7 +5871,7 @@ fn wire__crate__ffi__message__send_card_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_card_message(api_user_id, api_nickname, api_face_url, api_ex, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message::send_card_message(api_user_id, api_nickname, api_face_url, api_ex, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5903,7 +5903,7 @@ fn wire__crate__ffi__message__send_face_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_face_message(api_index, api_data, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message::send_face_message(api_index, api_data, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5936,7 +5936,7 @@ fn wire__crate__ffi__message_media__send_file_message_from_url_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::send_file_message_from_url(api_source_url, api_file_name, api_file_size, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_media::send_file_message_from_url(api_source_url, api_file_name, api_file_size, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -5967,7 +5967,7 @@ fn wire__crate__ffi__message_media__send_image_message_from_url_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::send_image_message_from_url(api_source_url, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_media::send_image_message_from_url(api_source_url, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6000,7 +6000,7 @@ fn wire__crate__ffi__message__send_location_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_location_message(api_description, api_longitude, api_latitude, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message::send_location_message(api_description, api_longitude, api_latitude, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6034,7 +6034,7 @@ fn wire__crate__ffi__message__send_merger_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_merger_message(api_client_msg_ids, api_source_conversation_id, api_title, api_summary_list, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message::send_merger_message(api_client_msg_ids, api_source_conversation_id, api_title, api_summary_list, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6066,7 +6066,7 @@ fn wire__crate__ffi__message_advanced__send_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::send_message(api_msg_struct, api_source_id, api_session_type, api_offline_push_info).await?;
+                        let output_ok = crate::api::ffi::message_advanced::send_message(api_msg_struct, api_source_id, api_session_type, api_offline_push_info).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6098,7 +6098,7 @@ fn wire__crate__ffi__message_advanced__send_message_not_oss_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::send_message_not_oss(api_msg_struct, api_source_id, api_session_type, api_offline_push_info).await?;
+                        let output_ok = crate::api::ffi::message_advanced::send_message_not_oss(api_msg_struct, api_source_id, api_session_type, api_offline_push_info).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6129,7 +6129,7 @@ fn wire__crate__ffi__message_advanced__send_message_online_only_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::send_message_online_only(api_msg_struct, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_advanced::send_message_online_only(api_msg_struct, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6164,7 +6164,7 @@ fn wire__crate__ffi__message__send_quote_message_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message::send_quote_message(
+                        let output_ok = crate::api::ffi::message::send_quote_message(
                             api_text,
                             api_source_id,
                             api_session_type,
@@ -6205,7 +6205,7 @@ fn wire__crate__ffi__message_media__send_sound_message_from_url_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::send_sound_message_from_url(api_source_url, api_duration, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_media::send_sound_message_from_url(api_source_url, api_duration, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6236,7 +6236,7 @@ fn wire__crate__ffi__message_advanced__send_typing_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::send_typing(api_source_id, api_session_type, api_focus).await?;
+                        let output_ok = crate::api::ffi::message_advanced::send_typing(api_source_id, api_session_type, api_focus).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6269,7 +6269,7 @@ fn wire__crate__ffi__message_media__send_video_message_from_url_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::send_video_message_from_url(api_source_url, api_duration, api_snapshot_url, api_source_id, api_session_type).await?;
+                        let output_ok = crate::api::ffi::message_media::send_video_message_from_url(api_source_url, api_duration, api_snapshot_url, api_source_id, api_session_type).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6298,7 +6298,7 @@ fn wire__crate__ffi__global__set_app_background_status_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::global::set_app_background_status(api_is_background).await?;
+                        let output_ok = crate::api::ffi::global::set_app_background_status(api_is_background).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6327,7 +6327,7 @@ fn wire__crate__ffi__third__set_app_badge_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::third::set_app_badge(api_app_unread_count).await?;
+                        let output_ok = crate::api::ffi::third::set_app_badge(api_app_unread_count).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6356,7 +6356,7 @@ fn wire__crate__ffi__ffi_init__set_log_directory_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::ffi::ffi_init::set_log_directory(api_path);
+                        crate::api::ffi::ffi_init::set_log_directory(api_path);
                     })?;
                     Ok(output_ok)
                 })())
@@ -6384,7 +6384,7 @@ fn wire__crate__ffi__ffi_init__set_log_span_events_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Result::<_, ()>::Ok({
-                        crate::ffi::ffi_init::set_log_span_events(api_enabled);
+                        crate::api::ffi::ffi_init::set_log_span_events(api_enabled);
                     })?;
                     Ok(output_ok)
                 })())
@@ -6414,7 +6414,7 @@ fn wire__crate__ffi__message_advanced__set_message_local_ex_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_advanced::set_message_local_ex(api_conversation_id, api_client_msg_id, api_local_ex).await?;
+                        let output_ok = crate::api::ffi::message_advanced::set_message_local_ex(api_conversation_id, api_client_msg_id, api_local_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6442,7 +6442,7 @@ fn wire__crate__ffi__global__un_init_sdk_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::global::un_init_sdk().await?;
+                        let output_ok = crate::api::ffi::global::un_init_sdk().await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6472,7 +6472,7 @@ fn wire__crate__ffi__third__update_fcm_token_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::third::update_fcm_token(api_fcm_token, api_expire_time).await?;
+                        let output_ok = crate::api::ffi::third::update_fcm_token(api_fcm_token, api_expire_time).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6502,7 +6502,7 @@ fn wire__crate__ffi__message_media__upload_file_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::upload_file(api_file_path, api_file_name).await?;
+                        let output_ok = crate::api::ffi::message_media::upload_file(api_file_path, api_file_name).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6533,7 +6533,7 @@ fn wire__crate__ffi__message_media__upload_file_with_progress_impl(
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || async move {
-                        let output_ok = crate::ffi::message_media::upload_file_with_progress(api_file_path, api_file_name, api_sink).await?;
+                        let output_ok = crate::api::ffi::message_media::upload_file_with_progress(api_file_path, api_file_name, api_sink).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6727,7 +6727,7 @@ impl SseDecode for crate::infra::http::friend::CheckFriendResult {
     }
 }
 
-impl SseDecode for crate::client::config::ClientConfig {
+impl SseDecode for crate::sdk::client::config::ClientConfig {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_userId = <String>::sse_decode(deserializer);
@@ -6737,7 +6737,7 @@ impl SseDecode for crate::client::config::ClientConfig {
         let mut var_apiBaseUrl = <String>::sse_decode(deserializer);
         let mut var_uploadUrl = <Option<String>>::sse_decode(deserializer);
         let mut var_dataDir = <String>::sse_decode(deserializer);
-        return crate::client::config::ClientConfig {
+        return crate::sdk::client::config::ClientConfig {
             user_id: var_userId,
             token: var_token,
             platform_id: var_platformId,
@@ -7048,13 +7048,13 @@ impl SseDecode for crate::domain::model::friend::FriendInfo {
     }
 }
 
-impl SseDecode for crate::client::GetHistoryMessagesReq {
+impl SseDecode for crate::sdk::client::GetHistoryMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_conversationId = <String>::sse_decode(deserializer);
         let mut var_startClientMsgId = <String>::sse_decode(deserializer);
         let mut var_count = <i64>::sse_decode(deserializer);
-        return crate::client::GetHistoryMessagesReq {
+        return crate::sdk::client::GetHistoryMessagesReq {
             conversation_id: var_conversationId,
             start_client_msg_id: var_startClientMsgId,
             count: var_count,
@@ -7062,12 +7062,12 @@ impl SseDecode for crate::client::GetHistoryMessagesReq {
     }
 }
 
-impl SseDecode for crate::client::GetHistoryMessagesResult {
+impl SseDecode for crate::sdk::client::GetHistoryMessagesResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_messages = <Vec<crate::domain::model::message::MessageInfo>>::sse_decode(deserializer);
         let mut var_isEnd = <bool>::sse_decode(deserializer);
-        return crate::client::GetHistoryMessagesResult {
+        return crate::sdk::client::GetHistoryMessagesResult {
             messages: var_messages,
             is_end: var_isEnd,
         };
@@ -8295,7 +8295,7 @@ impl SseDecode for crate::infra::http::friend::SearchFriendItem {
     }
 }
 
-impl SseDecode for crate::client::SearchMessagesReq {
+impl SseDecode for crate::sdk::client::SearchMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_conversationId = <String>::sse_decode(deserializer);
@@ -8306,7 +8306,7 @@ impl SseDecode for crate::client::SearchMessagesReq {
         let mut var_endTime = <i64>::sse_decode(deserializer);
         let mut var_offset = <i64>::sse_decode(deserializer);
         let mut var_count = <i64>::sse_decode(deserializer);
-        return crate::client::SearchMessagesReq {
+        return crate::sdk::client::SearchMessagesReq {
             conversation_id: var_conversationId,
             keyword: var_keyword,
             sender_user_ids: var_senderUserIds,
@@ -8319,13 +8319,13 @@ impl SseDecode for crate::client::SearchMessagesReq {
     }
 }
 
-impl SseDecode for crate::ffi::message_advanced::SendTypingResp {
+impl SseDecode for crate::api::ffi::message_advanced::SendTypingResp {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_serverMsgId = <String>::sse_decode(deserializer);
         let mut var_clientMsgId = <String>::sse_decode(deserializer);
         let mut var_sendTime = <i64>::sse_decode(deserializer);
-        return crate::ffi::message_advanced::SendTypingResp {
+        return crate::api::ffi::message_advanced::SendTypingResp {
             server_msg_id: var_serverMsgId,
             client_msg_id: var_clientMsgId,
             send_time: var_sendTime,
@@ -8788,7 +8788,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::friend::CheckFriendRe
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::client::config::ClientConfig {
+impl flutter_rust_bridge::IntoDart for crate::sdk::client::config::ClientConfig {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.user_id.into_into_dart().into_dart(),
@@ -8802,9 +8802,9 @@ impl flutter_rust_bridge::IntoDart for crate::client::config::ClientConfig {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::client::config::ClientConfig {}
-impl flutter_rust_bridge::IntoIntoDart<crate::client::config::ClientConfig> for crate::client::config::ClientConfig {
-    fn into_into_dart(self) -> crate::client::config::ClientConfig {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::config::ClientConfig {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::config::ClientConfig> for crate::sdk::client::config::ClientConfig {
+    fn into_into_dart(self) -> crate::sdk::client::config::ClientConfig {
         self
     }
 }
@@ -9030,7 +9030,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::friend::FriendInfo>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::client::GetHistoryMessagesReq {
+impl flutter_rust_bridge::IntoDart for crate::sdk::client::GetHistoryMessagesReq {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.conversation_id.into_into_dart().into_dart(),
@@ -9040,21 +9040,21 @@ impl flutter_rust_bridge::IntoDart for crate::client::GetHistoryMessagesReq {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::client::GetHistoryMessagesReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::client::GetHistoryMessagesReq> for crate::client::GetHistoryMessagesReq {
-    fn into_into_dart(self) -> crate::client::GetHistoryMessagesReq {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::GetHistoryMessagesReq {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::GetHistoryMessagesReq> for crate::sdk::client::GetHistoryMessagesReq {
+    fn into_into_dart(self) -> crate::sdk::client::GetHistoryMessagesReq {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::client::GetHistoryMessagesResult {
+impl flutter_rust_bridge::IntoDart for crate::sdk::client::GetHistoryMessagesResult {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [self.messages.into_into_dart().into_dart(), self.is_end.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::client::GetHistoryMessagesResult {}
-impl flutter_rust_bridge::IntoIntoDart<crate::client::GetHistoryMessagesResult> for crate::client::GetHistoryMessagesResult {
-    fn into_into_dart(self) -> crate::client::GetHistoryMessagesResult {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::GetHistoryMessagesResult {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::GetHistoryMessagesResult> for crate::sdk::client::GetHistoryMessagesResult {
+    fn into_into_dart(self) -> crate::sdk::client::GetHistoryMessagesResult {
         self
     }
 }
@@ -9658,7 +9658,7 @@ impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::friend::SearchFriendI
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::client::SearchMessagesReq {
+impl flutter_rust_bridge::IntoDart for crate::sdk::client::SearchMessagesReq {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.conversation_id.into_into_dart().into_dart(),
@@ -9673,14 +9673,14 @@ impl flutter_rust_bridge::IntoDart for crate::client::SearchMessagesReq {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::client::SearchMessagesReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::client::SearchMessagesReq> for crate::client::SearchMessagesReq {
-    fn into_into_dart(self) -> crate::client::SearchMessagesReq {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::SearchMessagesReq {}
+impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::SearchMessagesReq> for crate::sdk::client::SearchMessagesReq {
+    fn into_into_dart(self) -> crate::sdk::client::SearchMessagesReq {
         self
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::ffi::message_advanced::SendTypingResp {
+impl flutter_rust_bridge::IntoDart for crate::api::ffi::message_advanced::SendTypingResp {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.server_msg_id.into_into_dart().into_dart(),
@@ -9690,9 +9690,9 @@ impl flutter_rust_bridge::IntoDart for crate::ffi::message_advanced::SendTypingR
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::ffi::message_advanced::SendTypingResp {}
-impl flutter_rust_bridge::IntoIntoDart<crate::ffi::message_advanced::SendTypingResp> for crate::ffi::message_advanced::SendTypingResp {
-    fn into_into_dart(self) -> crate::ffi::message_advanced::SendTypingResp {
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::ffi::message_advanced::SendTypingResp {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::ffi::message_advanced::SendTypingResp> for crate::api::ffi::message_advanced::SendTypingResp {
+    fn into_into_dart(self) -> crate::api::ffi::message_advanced::SendTypingResp {
         self
     }
 }
@@ -9967,7 +9967,7 @@ impl SseEncode for crate::infra::http::friend::CheckFriendResult {
     }
 }
 
-impl SseEncode for crate::client::config::ClientConfig {
+impl SseEncode for crate::sdk::client::config::ClientConfig {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.user_id, serializer);
@@ -10228,7 +10228,7 @@ impl SseEncode for crate::domain::model::friend::FriendInfo {
     }
 }
 
-impl SseEncode for crate::client::GetHistoryMessagesReq {
+impl SseEncode for crate::sdk::client::GetHistoryMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.conversation_id, serializer);
@@ -10237,7 +10237,7 @@ impl SseEncode for crate::client::GetHistoryMessagesReq {
     }
 }
 
-impl SseEncode for crate::client::GetHistoryMessagesResult {
+impl SseEncode for crate::sdk::client::GetHistoryMessagesResult {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<crate::domain::model::message::MessageInfo>>::sse_encode(self.messages, serializer);
@@ -11150,7 +11150,7 @@ impl SseEncode for crate::infra::http::friend::SearchFriendItem {
     }
 }
 
-impl SseEncode for crate::client::SearchMessagesReq {
+impl SseEncode for crate::sdk::client::SearchMessagesReq {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.conversation_id, serializer);
@@ -11164,7 +11164,7 @@ impl SseEncode for crate::client::SearchMessagesReq {
     }
 }
 
-impl SseEncode for crate::ffi::message_advanced::SendTypingResp {
+impl SseEncode for crate::api::ffi::message_advanced::SendTypingResp {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.server_msg_id, serializer);
@@ -11305,7 +11305,7 @@ mod io {
     // Section: imports
 
     use super::*;
-    use crate::ffi::client::*;
+    use crate::api::ffi::client::*;
     use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     use flutter_rust_bridge::for_generated::{transform_result_dco, Lifetimeable, Lockable};
     use flutter_rust_bridge::{Handler, IntoIntoDart};
@@ -11336,7 +11336,7 @@ mod web {
     // Section: imports
 
     use super::*;
-    use crate::ffi::client::*;
+    use crate::api::ffi::client::*;
     use flutter_rust_bridge::for_generated::byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     use flutter_rust_bridge::for_generated::wasm_bindgen;
     use flutter_rust_bridge::for_generated::wasm_bindgen::prelude::*;

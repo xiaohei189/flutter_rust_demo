@@ -8,7 +8,7 @@ mod read;
 mod revoke;
 mod search;
 
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::event::events::message::MessageListener;
 use crate::infra::http::message::MessageServerApi;
@@ -55,7 +55,7 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
+    use crate::sdk::client::{GetHistoryMessagesReq, SearchMessagesReq};
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};

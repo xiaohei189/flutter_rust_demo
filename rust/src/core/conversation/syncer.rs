@@ -1,6 +1,6 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::local::LocalConversation;

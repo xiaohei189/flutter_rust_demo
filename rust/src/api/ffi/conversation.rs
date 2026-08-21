@@ -1,7 +1,7 @@
 //! 会话相关 FFI 桥接
 
 use crate::domain::constant::SessionType;
-use crate::ffi::client::OpenIMBridgeClient;
+use crate::api::ffi::client::OpenIMBridgeClient;
 use anyhow::Result;
 
 impl OpenIMBridgeClient {

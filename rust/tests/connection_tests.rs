@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 use std::time::Duration;
 
 /// 验证 WebSocket 断线后自动重连并恢复连接状态。
@@ -18,8 +18,8 @@ async fn test_websocket_reconnection() {
     let cert = register_user(&phone, "ReconnectUser").await.expect("注册失败");
     println!("用户: {}", cert.user_id);
 
-    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::sdk::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("reconn_{}", cert.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);
@@ -108,8 +108,8 @@ async fn test_connection_state_transitions() {
     let phone = generate_virtual_phone("cst");
     let cert = register_user(&phone, "CSTUser").await.expect("注册失败");
 
-    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::sdk::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("cst_{}", cert.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);

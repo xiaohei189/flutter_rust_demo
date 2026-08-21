@@ -52,7 +52,7 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::context::Repositories;
+    use crate::sdk::client::context::Repositories;
     use crate::domain::constant::msg_status;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;

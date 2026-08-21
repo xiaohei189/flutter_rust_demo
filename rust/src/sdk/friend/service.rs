@@ -5,7 +5,7 @@ use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::local::LocalFriend;
 use crate::domain::model::UserId;
 
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::infra::http::friend::*;
 use crate::infra::http::Pagination;
 use std::collections::HashSet;

@@ -1,6 +1,6 @@
 //! 好友相关 FFI 桥接
 
-use crate::ffi::client::OpenIMBridgeClient;
+use crate::api::ffi::client::OpenIMBridgeClient;
 use crate::infra::http::friend::FriendApplyInfo;
 use anyhow::Result;
 

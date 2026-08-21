@@ -3,7 +3,7 @@
 //! 从 api/client.rs 拆出，职责：不属于特定客户端的全局函数
 //! 包括：App 前后台切换、网络状态通知、SDK 版本查询等
 
-use crate::client::SdkApi;
+use crate::sdk::client::SdkApi;
 use anyhow::Result;
 use std::sync::Arc;
 use std::sync::OnceLock;

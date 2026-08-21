@@ -14,8 +14,8 @@ use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 use crate::core::event::events::user::{UserEvent, UserListener, UserListenerExt};
-use crate::friend::service::FriendService;
-use crate::group::service::GroupService;
+use crate::sdk::friend::service::FriendService;
+use crate::sdk::group::service::GroupService;
 use crate::core::message::MessageProcessor;
 use crate::domain::model::UserId;
 use crate::core::user::service::UserService;
@@ -471,7 +471,7 @@ impl NotificationHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::context::Repositories;
+    use crate::sdk::client::context::Repositories;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;
 

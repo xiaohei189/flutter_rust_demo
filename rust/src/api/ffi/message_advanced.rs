@@ -4,7 +4,7 @@
 //! 所有操作委托给 OpenIMClient
 
 use crate::domain::constant::SessionType;
-use crate::ffi::global::client_holder;
+use crate::api::ffi::global::client_holder;
 use crate::infra::http::message::DeleteMessagesReq;
 use crate::domain::model::local::LocalChatLog;
 use crate::domain::model::msg_struct::{MsgStruct, OfflinePushInfo};
@@ -57,7 +57,7 @@ pub async fn get_advanced_history_message_list_by_seq(conversation_id: String, s
 /// 与 `get_history_messages` 相同参数，但返回 start 之后（更新）的消息，
 /// 按 send_time/seq 升序；start 为空时从最早消息开始。
 #[flutter_rust_bridge::frb]
-pub async fn get_history_messages_reverse(conversation_id: String, start_client_msg_id: String, count: i64) -> Result<crate::client::GetHistoryMessagesResult> {
+pub async fn get_history_messages_reverse(conversation_id: String, start_client_msg_id: String, count: i64) -> Result<crate::sdk::client::GetHistoryMessagesResult> {
     let client = client_holder()?;
 
     Ok(client.get_history_messages_reverse(&conversation_id, &start_client_msg_id, count).await?)

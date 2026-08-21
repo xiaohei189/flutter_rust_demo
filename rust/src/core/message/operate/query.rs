@@ -4,7 +4,7 @@
 //! 发送中消息清理、群消息本地插入等。只读写本地仓库并发布事件，不依赖门面。
 
 use super::MessageService;
-use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
+use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
 use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListenerExt};
@@ -408,7 +408,7 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::context::Repositories;
+    use crate::sdk::client::context::Repositories;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;
     use crate::core::event::test_util::*;

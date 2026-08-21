@@ -3,7 +3,7 @@
 //! 对齐 Go SDK `internal/conversation_msg/msg_sync.go`
 
 use super::processor::MessageProcessor;
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::connection::sync_server::SyncServerApi;
 use crate::domain::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
@@ -784,7 +784,7 @@ fn split_seq_ranges(seq_map: &HashMap<String, (i64, i64)>, pull_num: i64) -> Vec
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::context::Repositories;
+    use crate::sdk::client::context::Repositories;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::domain::model::UserId;

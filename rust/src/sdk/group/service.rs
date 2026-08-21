@@ -6,7 +6,7 @@ use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::local::LocalGroup;
 use crate::domain::model::UserId;
 
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::infra::http::group::*;
 use crate::infra::http::Pagination;
 use std::sync::Arc;

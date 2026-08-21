@@ -1,13 +1,13 @@
 //! OpenIM FFI bridge layer - client lifecycle
 
-pub use crate::ffi::global::{get_login_user_id, get_sdk_version, network_status_changed, set_app_background_status, un_init_sdk};
+pub use crate::api::ffi::global::{get_login_user_id, get_sdk_version, network_status_changed, set_app_background_status, un_init_sdk};
 
-use crate::client::config::ClientConfig;
-use crate::client::core::OpenIMClient;
-use crate::client::{ConnectionApi, MessageApi, SdkApi, UserApi};
+use crate::sdk::client::config::ClientConfig;
+use crate::sdk::client::core::OpenIMClient;
+use crate::sdk::client::{ConnectionApi, MessageApi, SdkApi, UserApi};
 use crate::core::event::events::message::MessageEvent;
 use crate::core::event::events::user::UserEvent;
-use crate::ffi::global::set_client;
+use crate::api::ffi::global::set_client;
 use crate::frb_generated::StreamSink;
 use anyhow::Result;
 use std::sync::Arc;

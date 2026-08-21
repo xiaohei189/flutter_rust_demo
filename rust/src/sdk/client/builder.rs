@@ -1,16 +1,16 @@
 //! OpenIMClient Builder - extract ~150 line constructor into builder
 
-use crate::client::config::ClientConfig;
-use crate::client::context::RuntimeContext;
-use crate::client::core::OpenIMClient;
+use crate::sdk::client::config::ClientConfig;
+use crate::sdk::client::context::RuntimeContext;
+use crate::sdk::client::core::OpenIMClient;
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::service::ConversationService;
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::domain::error::Result;
 use crate::core::event::hub::EventHub;
 use crate::infra::file::upload::FileUploader;
-use crate::friend::service::FriendService;
-use crate::group::service::GroupService;
+use crate::sdk::friend::service::FriendService;
+use crate::sdk::group::service::GroupService;
 use crate::infra::http::conversation_api::HttpConversationApi;
 use crate::infra::http::friend_api::HttpFriendApi;
 use crate::infra::http::group_api::HttpGroupApi;

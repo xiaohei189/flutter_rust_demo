@@ -2,7 +2,7 @@
 //!
 //! 对齐 Go SDK open_im_sdk/third.go：UpdateFcmToken / SetAppBadge
 
-use crate::ffi::global::client_holder;
+use crate::api::ffi::global::client_holder;
 use anyhow::Result;
 
 /// 更新 FCM Token（对齐 Go SDK `UpdateFcmToken`）

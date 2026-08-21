@@ -1,6 +1,6 @@
 //! 运行时上下文 — 聚合基础设施与仓储，管理 SDK 生命周期
 
-use crate::client::config::ClientConfig;
+use crate::sdk::client::config::ClientConfig;
 use crate::infra::db::pool::create_pool;
 use crate::infra::db::*;
 use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};

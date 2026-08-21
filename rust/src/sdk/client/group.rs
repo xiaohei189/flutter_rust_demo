@@ -2,7 +2,7 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::client::OpenIMClient;
+use crate::sdk::client::OpenIMClient;
 
 use crate::domain::constant::GroupType;
 use crate::domain::error::{Result, SdkError};

@@ -1,11 +1,11 @@
-use crate::client::builder::OpenIMClientBuilder;
+use crate::sdk::client::builder::OpenIMClientBuilder;
 
-use crate::client::{ConnectionApi, MessageApi};
+use crate::sdk::client::{ConnectionApi, MessageApi};
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::service::ConversationService;
 use crate::core::conversation::syncer::ConversationSyncer;
-use crate::friend::service::FriendService;
-use crate::group::service::GroupService;
+use crate::sdk::friend::service::FriendService;
+use crate::sdk::group::service::GroupService;
 use crate::core::message::send::MessageSender;
 use crate::core::message::MessageProcessor;
 use async_trait::async_trait;
@@ -19,7 +19,7 @@ use crate::core::message::MessageSyncer;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
 
-use crate::client::context::RuntimeContext;
+use crate::sdk::client::context::RuntimeContext;
 
 use std::sync::Arc;
 
@@ -95,7 +95,7 @@ async fn handle_push_batch(message_processor: Arc<MessageProcessor>, message_syn
 
 impl OpenIMClient {
     /// 创建新的 SDK 实例（委托给 OpenIMClientBuilder）
-    pub async fn new(config: crate::client::config::ClientConfig) -> Result<Self> {
+    pub async fn new(config: crate::sdk::client::config::ClientConfig) -> Result<Self> {
         OpenIMClientBuilder::new(config).build().await
     }
 }

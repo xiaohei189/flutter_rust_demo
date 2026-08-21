@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 
 use rust_lib_flutter_rust_demo::core::event::events::conversation::ConversationEvent;
 use rust_lib_flutter_rust_demo::core::event::events::message::MessageEvent;
@@ -279,7 +279,7 @@ async fn test_message_flow() {
     // 检查历史消息类型完整性
     println!("检查历史消息类型完整性...");
     let history = b_sdk
-        .get_history_messages(rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq {
+        .get_history_messages(rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq {
             conversation_id: conv_id.clone(),
             start_client_msg_id: String::new(),
             count: 100,
@@ -321,7 +321,7 @@ async fn test_message_flow() {
 
     // 分页查询
     println!("检查分页查询...");
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     let page1 = b_sdk
         .get_history_messages(GetHistoryMessagesReq {
             conversation_id: conv_id.clone(),
@@ -354,7 +354,7 @@ async fn test_message_flow() {
 
     // 搜索本地消息
     println!("检查本地搜索...");
-    use rust_lib_flutter_rust_demo::client::SearchMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::SearchMessagesReq;
     let search_result = b_sdk
         .search_local_messages(SearchMessagesReq {
             conversation_id: conv_id.clone(),
@@ -801,7 +801,7 @@ async fn test_login_sync() {
 
     // 查询历史消息，验证包含离线消息
     let history = user2_sdk
-        .get_history_messages(rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq {
+        .get_history_messages(rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq {
             conversation_id: conv_id,
             start_client_msg_id: String::new(),
             count: 20,
@@ -824,7 +824,7 @@ async fn test_login_sync() {
 async fn test_send_all_message_types() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::{MessageEntity, MsgStruct};
 
     // 使用全新随机账号
@@ -993,7 +993,7 @@ async fn test_send_all_message_types() {
 async fn test_history_query_reverse_and_by_seq() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1160,7 +1160,7 @@ async fn test_history_query_reverse_and_by_seq() {
 async fn test_find_messages_by_ids() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1298,7 +1298,7 @@ async fn test_find_messages_by_ids() {
 async fn test_mark_specific_messages_as_read() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::MarkMessagesAsReadReq;
 
     // Phase 0: 创建账号 + 登录
@@ -1439,7 +1439,7 @@ async fn test_mark_specific_messages_as_read() {
 async fn test_delete_message_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
@@ -1573,7 +1573,7 @@ async fn test_delete_message_local_only() {
 async fn test_clear_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
@@ -1707,7 +1707,7 @@ async fn test_clear_conversation_and_delete_all_msg() {
 async fn test_delete_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
 
     // Phase 0: 创建账号 + 登录
@@ -1846,7 +1846,7 @@ async fn test_delete_conversation_and_delete_all_msg() {
 async fn test_quote_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
 
     // Phase 0: 创建账号 + 登录
@@ -2039,7 +2039,7 @@ async fn test_total_unread_count() {
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_message_local_ex() {
-    use rust_lib_flutter_rust_demo::client::SearchMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::SearchMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::local::LocalChatLog;
 
     // Setup
@@ -2142,7 +2142,7 @@ async fn test_message_local_ex() {
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_message_flow() {
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 
     // Setup
@@ -2293,7 +2293,7 @@ async fn test_group_message_flow() {
 async fn test_online_only_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
 
     // Phase 1: 创建账号 + 登录 + 建立好友
@@ -2454,7 +2454,7 @@ async fn test_online_only_message() {
 async fn test_msg_edit_notification() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::{GetHistoryMessagesReq, SearchMessagesReq};
+    use rust_lib_flutter_rust_demo::sdk::client::{GetHistoryMessagesReq, SearchMessagesReq};
 
     // Phase 1: 创建账号 + 登录 + 建立好友
     println!("\n========== Phase 1: 创建账号 + 登录 + 建立好友 ==========");
@@ -2628,7 +2628,7 @@ async fn test_msg_edit_notification() {
 async fn test_concurrent_send_stress() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 1: 创建账号 + 登录 + 建立好友
     println!("\n========== Phase 1: 创建账号 + 登录 + 建立好友 ==========");
@@ -2903,7 +2903,7 @@ async fn test_concurrent_send_stress() {
 async fn test_send_sound_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     println!("\n========== Phase 1: 生成测试音频文件 ==========");
 
@@ -2991,7 +2991,7 @@ async fn test_send_sound_message_flow() {
 async fn test_send_video_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     println!("\n========== Phase 1: 生成测试视频文件 ==========");
 
@@ -3082,7 +3082,7 @@ async fn test_send_video_message_flow() {
 async fn test_edit_message_real() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 1: 创建账号 + 登录 + 发消息
     println!("\n========== Phase 1: 创建账号 + 发送消息 ==========");
@@ -3251,7 +3251,7 @@ async fn test_cleanup_sending_messages() {
 async fn test_delete_all_msg_local_and_svr() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     println!("\n========== Phase 1: A 发送 3 条消息 ==========");
 
@@ -3364,7 +3364,7 @@ async fn test_delete_all_msg_local_and_svr() {
 async fn test_delete_all_msg_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     println!("\n========== Phase 1: A 发送 3 条消息 ==========");
 

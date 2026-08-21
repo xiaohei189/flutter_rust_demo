@@ -4,8 +4,8 @@
 //! 所有操作委托给 OpenIMClient
 
 use crate::domain::constant::SessionType;
-use crate::ffi::client::OpenIMBridgeClient;
-use crate::ffi::global::client_holder;
+use crate::api::ffi::client::OpenIMBridgeClient;
+use crate::api::ffi::global::client_holder;
 use crate::domain::model::msg_struct::MsgStruct;
 
 use crate::frb_generated::StreamSink;

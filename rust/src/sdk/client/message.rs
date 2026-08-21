@@ -2,8 +2,8 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::client::OpenIMClient;
-use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
+use crate::sdk::client::OpenIMClient;
+use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
 use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::message::MessageEvent;
 use crate::infra::file::upload::ProgressCallback;

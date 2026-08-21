@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::client::*;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 use std::time::Duration;
 
 /// 验证用户 A 向用户 B 发送好友申请并建立好友关系。
@@ -231,8 +231,8 @@ async fn test_user_state_friend_management() {
 
     println!("用户1: {}, 用户2: {}", cert1.user_id, cert2.user_id);
 
-    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::sdk::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let data_dir = std::env::temp_dir().join(format!("openim_test_uf_{}", cert1.user_id)).to_string_lossy().to_string();
     let _ = std::fs::create_dir_all(&data_dir);
@@ -265,8 +265,8 @@ async fn test_friend_application_flow() {
 
     println!("=== 好友申请/接受/拒绝完整流程测试 ===\n");
 
-    use rust_lib_flutter_rust_demo::client::config::ClientConfig;
-    use rust_lib_flutter_rust_demo::client::OpenIMClient;
+    use rust_lib_flutter_rust_demo::sdk::client::config::ClientConfig;
+    use rust_lib_flutter_rust_demo::sdk::client::OpenIMClient;
 
     let phone1 = generate_virtual_phone("fapp1");
     let phone2 = generate_virtual_phone("fapp2");

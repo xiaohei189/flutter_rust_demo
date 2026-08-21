@@ -10,7 +10,7 @@ use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
 use crate::domain::error::Result;
 use crate::domain::model::revoke::parse_revoke_tips_from_json;
 
-use crate::client::context::Repositories;
+use crate::sdk::client::context::Repositories;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
 use crate::domain::model::local::{LocalChatLog, LocalConversation};

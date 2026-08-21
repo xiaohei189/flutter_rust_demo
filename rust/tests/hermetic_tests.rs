@@ -1,12 +1,12 @@
 //! 不依赖外部 OpenIM 服务的离线集成测试。
 
-use rust_lib_flutter_rust_demo::client::context::Repositories;
+use rust_lib_flutter_rust_demo::sdk::client::context::Repositories;
 use rust_lib_flutter_rust_demo::core::conversation::syncer::ConversationSyncer;
 use rust_lib_flutter_rust_demo::infra::db::pool::create_pool_memory;
 use rust_lib_flutter_rust_demo::infra::db::*;
 use rust_lib_flutter_rust_demo::core::event::hub::EventHub;
-use rust_lib_flutter_rust_demo::friend::service::FriendService;
-use rust_lib_flutter_rust_demo::group::service::GroupService;
+use rust_lib_flutter_rust_demo::sdk::friend::service::FriendService;
+use rust_lib_flutter_rust_demo::sdk::group::service::GroupService;
 use rust_lib_flutter_rust_demo::infra::http::client::HttpApiClient;
 use rust_lib_flutter_rust_demo::infra::http::friend_api::HttpFriendApi;
 use rust_lib_flutter_rust_demo::infra::http::group::GroupServerApi;
