@@ -50,6 +50,42 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     });
   }
 
+  Widget _buildOwnerManageCard(AppLocalizations? l10n) {
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        CardLayout(
+          children: [
+            ListRow(
+              label: l10n?.muteAll ?? '全员禁言',
+              trailing: Icon(
+                Icons.volume_off_outlined,
+                size: 20,
+                color: context.appColors.textSecondary,
+              ),
+              onTap: () => _showGroupManageSheet(),
+            ),
+            const ListDivider(),
+            ListRow(
+              label: l10n?.transferOwner ?? '转让群主',
+              trailing: Icon(
+                Icons.swap_horiz,
+                size: 20,
+                color: context.appColors.textSecondary,
+              ),
+              onTap: _transferOwner,
+            ),
+            const ListDivider(),
+            DangerActionRow(
+              title: l10n?.dismissGroup ?? '解散群组',
+              onTap: _dismissGroup,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversation = _conversation;
@@ -171,37 +207,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
             onOwnerAdminTap: _showOwnerAdminList,
             onJoinTimeFilterTap: _showJoinTimeFilter,
           ),
-          if (isOwner) ...[
-            const SizedBox(height: 12),
-            CardLayout(
-              children: [
-                ListRow(
-                  label: l10n?.muteAll ?? '全员禁言',
-                  trailing: Icon(
-                    Icons.volume_off_outlined,
-                    size: 20,
-                    color: context.appColors.textSecondary,
-                  ),
-                  onTap: () => _showGroupManageSheet(),
-                ),
-                const ListDivider(),
-                ListRow(
-                  label: l10n?.transferOwner ?? '转让群主',
-                  trailing: Icon(
-                    Icons.swap_horiz,
-                    size: 20,
-                    color: context.appColors.textSecondary,
-                  ),
-                  onTap: _transferOwner,
-                ),
-                const ListDivider(),
-                DangerActionRow(
-                  title: l10n?.dismissGroup ?? '解散群组',
-                  onTap: _dismissGroup,
-                ),
-              ],
-            ),
-          ],
+          if (isOwner) _buildOwnerManageCard(l10n),
           const SizedBox(height: 12),
           // 群二维码（只读）
           CardLayout(
