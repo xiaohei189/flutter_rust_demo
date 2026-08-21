@@ -56,6 +56,23 @@ class UserProfileState {
     );
   }
 
+  /// 由服务端资料构造展示状态；本地头像路径作为覆盖值叠加。
+  factory UserProfileState.fromServerProfile(
+    UserProfile profile, {
+    String? localAvatarPath,
+  }) {
+    final exData = parseEx(profile.remark);
+    return UserProfileState(
+      profile: profile,
+      nickname: profile.nickname.trim(),
+      alias: exData['alias'] ?? '',
+      signature: exData['signature'] ?? '',
+      localAvatarPath: localAvatarPath,
+      isLoading: false,
+      error: null,
+    );
+  }
+
   /// 从 ex 字段解析别名和签名
   static Map<String, String> parseEx(String? rawEx) {
     if (rawEx == null || rawEx.trim().isEmpty) {
@@ -117,7 +134,6 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
             previous?.nickname != next.nickname ||
             previous?.faceUrl != next.faceUrl) {
           final profile = next;
-          final exData = UserProfileState.parseEx(profile.remark);
           appLog.i(
             '[UserProfile] 监听器触发: faceUrl=${profile.faceUrl}, 当前 localAvatarPath=${state.localAvatarPath}',
           );
@@ -127,14 +143,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
           final String? localAvatarPath = state.localAvatarPath;
           appLog.i('[UserProfile] 监听器: 保留 localAvatarPath=$localAvatarPath');
 
-          state = state.copyWith(
-            profile: profile,
-            nickname: profile.nickname.trim(),
-            alias: exData['alias'] ?? '',
-            signature: exData['signature'] ?? '',
+          state = UserProfileState.fromServerProfile(
+            profile,
             localAvatarPath: localAvatarPath, // 保持本地路径不变
-            isLoading: false,
-            error: null,
           );
         }
       }
@@ -248,8 +259,6 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
       final profile = _toUserProfile(messageService.loginUserProfile);
 
       if (profile != null) {
-        final exData = UserProfileState.parseEx(profile.remark);
-
         // 保留本地路径的优先级：
         // 1. state 中已有本地路径（从 _init 的异步加载恢复的）
         // 2. SharedPreferences 中有本地路径（用户之前选择的头像）
@@ -270,13 +279,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
           appLog.i('[UserProfile] loadProfile: 没有本地路径，使用服务器 URL');
         }
 
-        state = state.copyWith(
-          profile: profile,
-          nickname: profile.nickname.trim(),
-          alias: exData['alias'] ?? '',
-          signature: exData['signature'] ?? '',
+        state = UserProfileState.fromServerProfile(
+          profile,
           localAvatarPath: finalLocalPath,
-          isLoading: false,
         );
       } else {
         // 如果 messageService 中没有登录用户资料，尝试从服务端获取
@@ -286,7 +291,6 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
               .refreshLoginUserProfile(),
         );
         if (refreshedProfile != null) {
-          final exData = UserProfileState.parseEx(refreshedProfile.remark);
           // 同样的优先级：保留本地路径
           String? finalLocalPath;
           if (state.localAvatarPath != null &&
@@ -302,13 +306,9 @@ class UserProfileNotifier extends Notifier<UserProfileState> {
             finalLocalPath = null;
             appLog.i('[UserProfile] loadProfile(refresh): 没有本地路径，使用服务器 URL');
           }
-          state = state.copyWith(
-            profile: refreshedProfile,
-            nickname: refreshedProfile.nickname.trim(),
-            alias: exData['alias'] ?? '',
-            signature: exData['signature'] ?? '',
+          state = UserProfileState.fromServerProfile(
+            refreshedProfile,
             localAvatarPath: finalLocalPath,
-            isLoading: false,
           );
         } else {
           state = state.copyWith(isLoading: false, error: '加载用户资料失败');
