@@ -10,9 +10,7 @@ import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/chat_aux_provider.dart';
-import '../../../providers/connection_provider.dart';
 import '../../../providers/current_user_provider.dart';
-import '../../contacts/providers/friend_provider.dart';
 import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
@@ -20,6 +18,7 @@ import '../providers/conversation_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../../../application/chat/message_service_notifier.dart';
 import 'chat_detail_forward_mixin.dart';
+import 'chat_detail_send_controller.dart';
 import 'chat_detail_selection_mixin.dart';
 
 typedef ChatSendTarget = ({
@@ -94,6 +93,16 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
   DateTime? _lastTypingSent;
   DateTime? _lastMarkReadTime;
   String? _onlineStatusUserId;
+  ChatDetailSendController? _sendController;
+  ChatDetailSendController get _send =>
+      _sendController ??= ChatDetailSendController(
+        ref: ref,
+        conversationId: arg,
+        readSendTarget: () => sendTarget,
+        readState: () => state,
+        updateState: (transform) => state = transform(state),
+      );
+
   @override
   ChatDetailState build(String conversationId) {
     return const ChatDetailState();
@@ -269,210 +278,35 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     await ref.read(chatAuxRepositoryProvider).unsubscribeOnlineStatus([userId]);
   }
 
-  Future<bool> sendText(String text, MessageContentType type) async {
-    if (text.trim().isEmpty) return false;
-    if (!ref.read(connectionProvider).isConnected) {
-      state = state.copyWith(errorText: 'WebSocket 未连接，无法发送消息');
-      return false;
-    }
-    final target = sendTarget;
-    if (target == null) {
-      state = state.copyWith(errorText: '无法发送：会话缺少对方 ID，请返回会话列表重试');
-      return false;
-    }
-
-    try {
-      final quotedMsg = state.quotedMessage;
-      final atUserIds = List<String>.from(state.atUserIds);
-      if (atUserIds.isNotEmpty) {
-        state = state.copyWith(atUserIds: const []);
-        await ref
-            .read(messageListProvider(arg).notifier)
-            .sendAtTextMessage(
-              recvId: target.recvId,
-              text: text,
-              atUserIds: atUserIds,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      } else if (quotedMsg != null) {
-        state = state.copyWith(clearQuotedMessage: true);
-        await _messageService.sendQuoteMessage(
-          text: text,
-          sourceId: target.recvId,
-          sessionType: target.sessionType,
-          quoteText: quotedMsg.content,
-          quoteClientMsgId: quotedMsg.clientMsgId,
-          quoteSendId: quotedMsg.sendId,
-          quoteSendTime: quotedMsg.sendTime.toInt(),
-        );
-      } else if (type == MessageContentType.markdown) {
-        await ref
-            .read(messageListProvider(arg).notifier)
-            .sendMarkdownMessage(
-              recvId: target.recvId,
-              text: text,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      } else {
-        await ref
-            .read(messageListProvider(arg).notifier)
-            .sendTextMessage(
-              recvId: target.recvId,
-              text: text,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      }
-      state = state.copyWith(clearError: true);
-      return true;
-    } catch (e) {
-      state = state.copyWith(errorText: '发送消息失败: $e');
-      return false;
-    }
-  }
-
-  Future<bool> sendImage(String filePath) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendImageMessage(
-          recvId: target.recvId,
-          filePath: filePath,
-          sessionType: target.sessionType,
-          groupId: target.groupId,
-        ),
-  );
-
-  /// 发送 GIF（URL 图片，内容已上传）
-  Future<bool> sendGif(String url) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendImageMessageFromUrl(
-          recvId: target.recvId,
-          sourceUrl: url,
-          sessionType: target.sessionType,
-          groupId: target.groupId,
-        ),
-  );
-
+  Future<bool> sendText(String text, MessageContentType type) =>
+      _send.sendText(text, type);
+  Future<bool> sendImage(String filePath) => _send.sendImage(filePath);
+  Future<bool> sendGif(String url) => _send.sendGif(url);
   Future<bool> sendVideo({
     required String videoPath,
     required String snapshotPath,
     required int duration,
-  }) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendVideoMessage(
-          recvId: target.recvId,
-          videoPath: videoPath,
-          snapshotPath: snapshotPath,
-          sessionType: target.sessionType,
-          duration: duration,
-          groupId: target.groupId,
-        ),
+  }) => _send.sendVideo(
+    videoPath: videoPath,
+    snapshotPath: snapshotPath,
+    duration: duration,
   );
-
-  Future<bool> sendVoice(String filePath, int duration) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendSoundMessage(
-          recvId: target.recvId,
-          filePath: filePath,
-          sessionType: target.sessionType,
-          duration: duration,
-          groupId: target.groupId,
-        ),
-  );
-
-  Future<bool> sendFile(String filePath) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendFileMessage(
-          recvId: target.recvId,
-          filePath: filePath,
-          sessionType: target.sessionType,
-          groupId: target.groupId,
-        ),
-  );
-
+  Future<bool> sendVoice(String filePath, int duration) =>
+      _send.sendVoice(filePath, duration);
+  Future<bool> sendFile(String filePath) => _send.sendFile(filePath);
   Future<bool> sendLocation({
     required String description,
     required double latitude,
     required double longitude,
-  }) => _sendMedia(
-    (target) => ref
-        .read(messageListProvider(arg).notifier)
-        .sendLocationMessage(
-          recvId: target.recvId,
-          description: description,
-          latitude: latitude,
-          longitude: longitude,
-          sessionType: target.sessionType,
-          groupId: target.groupId,
-        ),
+  }) => _send.sendLocation(
+    description: description,
+    latitude: latitude,
+    longitude: longitude,
   );
-
-  Future<bool> sendCard(Friend friend) async {
-    final target = sendTarget;
-    if (target == null) {
-      state = state.copyWith(errorText: '会话信息异常');
-      return false;
-    }
-    try {
-      await _messageService.sendCardMessage(
-        userId: friend.userId,
-        nickname: friend.nickname,
-        faceUrl: friend.faceUrl,
-        ex: '',
-        sourceId: target.recvId,
-        sessionType: target.sessionType,
-      );
-      return true;
-    } catch (e) {
-      state = state.copyWith(errorText: '发送名片失败: $e');
-      return false;
-    }
-  }
-
-  Future<List<Friend>> loadFriendsForPicker() async {
-    final state = ref.read(friendListProvider);
-    if (state.friends.isEmpty && !state.isLoading) {
-      await ref.read(friendListProvider.notifier).loadFriends();
-    }
-    return ref.read(friendListProvider).friends;
-  }
-
-  Future<bool> openFile({
-    required String source,
-    required String fileName,
-  }) async {
-    try {
-      return await ref
-          .read(chatAuxRepositoryProvider)
-          .openFile(source: source, fileName: fileName);
-    } catch (e) {
-      state = state.copyWith(errorText: '打开文件失败: $e');
-      return false;
-    }
-  }
-
-  Future<bool> _sendMedia(
-    Future<bool> Function(ChatSendTarget target) send,
-  ) async {
-    final target = sendTarget;
-    if (target == null) {
-      state = state.copyWith(errorText: '会话信息异常');
-      return false;
-    }
-    final ok = await send(target);
-    if (!ok) {
-      final error = ref.read(messageListProvider(arg)).error;
-      state = state.copyWith(errorText: error ?? '发送失败');
-    }
-    return ok;
-  }
-
+  Future<bool> sendCard(Friend friend) => _send.sendCard(friend);
+  Future<List<Friend>> loadFriendsForPicker() => _send.loadFriendsForPicker();
+  Future<bool> openFile({required String source, required String fileName}) =>
+      _send.openFile(source: source, fileName: fileName);
   void setQuotedMessage(ChatMessage message) {
     state = state.copyWith(quotedMessage: message);
   }
