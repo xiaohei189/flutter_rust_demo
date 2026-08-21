@@ -42,7 +42,7 @@ void main() {
   test('再次点击移除“我”的 reaction', () {
     final reactions = <String, List<MessageReactionGroup>>{
       'm1': [
-        MessageReactionGroup(emoji: '👍', count: 1, names: const ['我']),
+        const MessageReactionGroup(emoji: '👍', count: 1, names: ['我']),
       ],
     };
     toggleMessageReaction(reactions, _message('m1'), '👍');
@@ -52,7 +52,7 @@ void main() {
   test('非我点击增加 count 并追加“我”', () {
     final reactions = <String, List<MessageReactionGroup>>{
       'm1': [
-        MessageReactionGroup(emoji: '👍', count: 2, names: const ['李四', '王五']),
+        const MessageReactionGroup(emoji: '👍', count: 2, names: ['李四', '王五']),
       ],
     };
     toggleMessageReaction(reactions, _message('m1'), '👍');
