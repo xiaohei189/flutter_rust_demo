@@ -113,3 +113,10 @@ SDK 初始化参数在 sdk/config.rs 的 ClientConfig 中。
 - `core/` 只依赖 `domain/` 与 `infra/`。
 - `sdk/` 依赖 `core/ domain/ infra/`，作为对外外观。
 - `api/` 只做 FFI 适配，调用 `sdk/` 或 `core/`，不承载业务。
+
+### 已知边界待办
+
+目录迁移已完成，以下 cross-layer seam 作为后续清理项（当前不破坏编译与测试）：
+
+- `core/message/operate/*` 引用 `sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq}`：这三个是 SDK 契约 DTO，后续应下沉到 `domain/` 并让 frb 重新生成后移除 sdk 定义。
+- `core/message/notification.rs` 引用 `sdk::friend::service::FriendService` / `sdk::group::service::GroupService` 具体类型：后续可在 `domain/` 定义端口 trait，由 sdk 实现，core 只依赖 trait。

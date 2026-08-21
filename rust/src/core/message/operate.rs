@@ -8,7 +8,7 @@ mod read;
 mod revoke;
 mod search;
 
-use crate::sdk::client::context::Repositories;
+use crate::core::context::Repositories;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::event::events::message::MessageListener;
 use crate::infra::http::message::MessageServerApi;

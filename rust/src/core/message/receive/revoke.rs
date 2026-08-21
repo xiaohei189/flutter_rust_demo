@@ -330,7 +330,7 @@ mod tests {
     // 撤回通知集成测试（内存 DB）
     // ========================================================================
 
-    use crate::sdk::client::context::Repositories;
+    use crate::core::context::Repositories;
     use crate::domain::constant::notification_type::REVOKE as REVOKE_CT;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};

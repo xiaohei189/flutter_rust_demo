@@ -471,7 +471,7 @@ impl NotificationHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdk::client::context::Repositories;
+    use crate::core::context::Repositories;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;
 

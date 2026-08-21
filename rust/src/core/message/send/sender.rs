@@ -4,7 +4,7 @@
 //! 媒体上传+消息构造、发送中消息清理所需的自由函数。
 //! 门面层只保留 `MessageApi` 的薄委托。
 
-use crate::sdk::client::context::RuntimeContext;
+use crate::core::context::RuntimeContext;
 use crate::core::connection::manager::ConnectionManager;
 use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::{Result, SdkError};
@@ -1357,8 +1357,8 @@ mod tests {
     // 依赖倒置 + MockTransport，验证发送链路与本地持久化
     // ========================================================================
 
-    use crate::sdk::client::config::ClientConfig;
-    use crate::sdk::client::context::RuntimeContext;
+    use crate::core::config::ClientConfig;
+    use crate::core::context::RuntimeContext;
     use crate::domain::constant::MessageSendStatus;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
@@ -1459,7 +1459,7 @@ mod tests {
             cancel_token: CancellationToken::new(),
             user_id: crate::domain::model::UserId::new("test_user"),
             operation_id: "test_op".to_string(),
-            repositories: Arc::new(crate::sdk::client::context::Repositories {
+            repositories: Arc::new(crate::core::context::Repositories {
                 message_repo: Arc::new(MessageDao::new(pool.clone())),
                 conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
                 friend_repo: Arc::new(FriendDao::new(pool.clone())),
@@ -1469,7 +1469,7 @@ mod tests {
                 notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
                 sending_message_repo: Arc::new(SendingMessageDao::new(pool.clone())),
             }),
-            infra: crate::sdk::client::context::Infra { http_client, db_pool: pool.clone() },
+            infra: crate::core::context::Infra { http_client, db_pool: pool.clone() },
         })
     }
 

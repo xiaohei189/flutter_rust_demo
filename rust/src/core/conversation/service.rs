@@ -1,6 +1,6 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
-use crate::sdk::client::context::Repositories;
+use crate::core::context::Repositories;
 use crate::domain::error::Result;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
