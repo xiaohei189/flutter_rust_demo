@@ -4,19 +4,19 @@ import 'package:intl/intl.dart';
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
+import '../../../../domain/models/group_read_receipt.dart'
+    show GroupReadReceipt;
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../previews/app_theme_preview.dart';
 import '../../../previews/fake_data.dart';
 import '../../../../router/app_router.dart';
+import 'message_content_builder.dart';
+import 'message_status_icon.dart';
+import 'parts/quote_message_content.dart' show QuoteMessagePreview;
 import '../../../core/theme/app_theme.dart';
 import '../menu/message_hover_toolbar.dart';
 import '../../../core/widgets/user_avatar.dart';
-import 'parts/media_message_content.dart';
-import 'parts/quote_message_content.dart';
-import 'parts/rich_message_content.dart';
-import 'parts/text_message_content.dart';
 
 /// 消息气泡：负责统一布局，内容按类型委托给独立组件。
 class MessageBubble extends StatelessWidget {
@@ -141,7 +141,11 @@ class MessageBubble extends StatelessWidget {
           bottomRight: Radius.circular(isFromMe ? 4 : 18),
         ),
       ),
-      child: _buildMessageContent(context, isFromMe),
+      child: buildMessageContent(
+        message: message,
+        isFromMe: isFromMe,
+        uploadProgress: uploadProgress,
+      ),
     );
 
     final quotePreview = message.messageType == MessageType.quote
@@ -186,7 +190,10 @@ class MessageBubble extends StatelessWidget {
                       crossAxisAlignment: isFromMe
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
-                      children: [quotePreview, _buildBubbleWithReactions(bubble, isFromMe)],
+                      children: [
+                        quotePreview,
+                        _buildBubbleWithReactions(bubble, isFromMe),
+                      ],
                     ),
                   ),
                 ),
@@ -222,7 +229,10 @@ class MessageBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (isFromMe) ...[const SizedBox(width: 4), _buildStatusIcon()],
+                if (isFromMe) ...[
+                  const SizedBox(width: 4),
+                  MessageStatusIcon(message: message),
+                ],
               ],
             ),
           ),
@@ -250,38 +260,6 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIcon() {
-    final status = MessageSendStatus.fromValue(message.status);
-    if (status == MessageSendStatus.sending) {
-      return SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
-        ),
-      );
-    }
-    if (status == MessageSendStatus.sendFailed) {
-      return const Icon(Icons.error_outline, size: 16, color: Colors.red);
-    }
-    if (message.isRead) {
-      return Container(
-        width: 16,
-        height: 16,
-        decoration: const BoxDecoration(
-          color: Color(0xFF34C759),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.done, size: 11, color: Colors.white),
-      );
-    }
-    if (status == MessageSendStatus.sendSuccess) {
-      return Icon(Icons.done, size: 16, color: Colors.grey.shade400);
-    }
-    return const SizedBox.shrink();
-  }
-
   Widget _buildBubbleWithReactions(Widget bubble, bool isFromMe) {
     if (reactionGroups.isEmpty) return bubble;
     return Column(
@@ -297,58 +275,6 @@ class MessageBubble extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Widget _buildMessageContent(BuildContext context, bool isFromMe) {
-    return switch (message.messageType) {
-      MessageType.image => ImageMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-        uploadProgress: uploadProgress,
-      ),
-      MessageType.video => VideoMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-        uploadProgress: uploadProgress,
-      ),
-      MessageType.audio => AudioMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.file => FileMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-        uploadProgress: uploadProgress,
-      ),
-      MessageType.card => CardMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.merge => MergeMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.quote => QuoteMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.at => AtMessageContent(message: message, isFromMe: isFromMe),
-      MessageType.face => FaceMessageContent(message: message),
-      MessageType.location => LocationMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.custom => CustomMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      MessageType.system => SystemMessageContent(message: message),
-      MessageType.markdown => MarkdownMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-      ),
-      _ => TextMessageContent(message: message, isFromMe: isFromMe),
-    };
   }
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
