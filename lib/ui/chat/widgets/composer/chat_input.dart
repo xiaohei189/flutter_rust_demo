@@ -1,16 +1,12 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 
 import '../../../../domain/models/group_member.dart';
 import '../../../core/theme/app_theme.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'collapsed_input_bar.dart';
+import 'voice_recorder_controller.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'chat_input_field.dart';
@@ -87,16 +83,8 @@ class _ChatInputState extends State<ChatInput> {
   /// 避免每次按键 setState 重建整个组件树
   final ValueNotifier<bool> _hasTextNotifier = ValueNotifier<bool>(false);
 
-  /// 语音录制状态
-  Timer? _recordingTimer;
-  String? _recordingPath;
-  DateTime? _recordingStart;
-  final AudioRecorder _recorder = AudioRecorder();
-
-  /// 录音手势状态（横滑/上滑取消）
-  bool _isRecording = false;
-  bool _recordingCancel = false;
-  double _recordingStartDy = 0;
+  /// 语音录制状态（权限、临时文件、上滑取消、60s 上限）
+  late final VoiceRecorderController _voiceRecorder;
 
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
@@ -110,6 +98,9 @@ class _ChatInputState extends State<ChatInput> {
     widget.controller.addListener(_onTextChanged);
     _hasTextNotifier.value = widget.controller.text.trim().isNotEmpty;
     _initAttachmentItems();
+    _voiceRecorder = VoiceRecorderController(
+      onVoiceRecord: widget.onVoiceRecord,
+    )..addListener(_onRecordingChanged);
   }
 
   void _onFocusChanged() {
@@ -173,8 +164,8 @@ class _ChatInputState extends State<ChatInput> {
       }
       if (key == LogicalKeyboardKey.arrowUp) {
         setState(() {
-          _atSelectionIndex = (_atSelectionIndex - 1 +
-                  _filteredAtMembers.length) %
+          _atSelectionIndex =
+              (_atSelectionIndex - 1 + _filteredAtMembers.length) %
               _filteredAtMembers.length;
         });
         return KeyEventResult.handled;
@@ -209,8 +200,8 @@ class _ChatInputState extends State<ChatInput> {
   void dispose() {
     widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
-    _recordingTimer?.cancel();
-    _recorder.dispose();
+    _voiceRecorder.removeListener(_onRecordingChanged);
+    _voiceRecorder.dispose();
     _hasTextNotifier.dispose();
     super.dispose();
   }
@@ -222,6 +213,10 @@ class _ChatInputState extends State<ChatInput> {
       _hasTextNotifier.value = hasText;
     }
     _updateAtQuery(text);
+  }
+
+  void _onRecordingChanged() {
+    if (mounted) setState(() {});
   }
 
   void _doSend() {
@@ -363,130 +358,6 @@ class _ChatInputState extends State<ChatInput> {
     }
   }
 
-  // ==================== 语音录制 ====================
-
-  void _startRecording([LongPressStartDetails? details]) async {
-    setState(() {
-      _isRecording = true;
-      _recordingCancel = false;
-      _recordingStartDy = details?.globalPosition.dy ?? 0;
-    });
-    final dir = await getTemporaryDirectory();
-    _recordingPath =
-        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.aac';
-    _recordingStart = DateTime.now();
-
-    try {
-      final hasPermission = await _recorder.hasPermission();
-      if (!hasPermission) {
-        _recordingPath = null;
-        _recordingStart = null;
-        setState(() => _isRecording = false);
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('没有录音权限')));
-        }
-        return;
-      }
-      await _recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc),
-        path: _recordingPath!,
-      );
-    } catch (_) {
-      _recordingPath = null;
-      _recordingStart = null;
-      setState(() => _isRecording = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('录音启动失败')));
-      }
-      return;
-    }
-
-    _recordingTimer = Timer(const Duration(seconds: 60), () {
-      _stopRecording();
-    });
-  }
-
-  /// 录音手势移动：上滑超过 60px 进入取消态（业界"上滑取消"）
-  void _onRecordingMove(LongPressMoveUpdateDetails details) {
-    final cancel = details.globalPosition.dy < _recordingStartDy - 60;
-    if (cancel != _recordingCancel) {
-      setState(() => _recordingCancel = cancel);
-    }
-  }
-
-  Future<void> _stopRecording([LongPressEndDetails? details]) async {
-    _recordingTimer?.cancel();
-    _recordingTimer = null;
-    setState(() => _isRecording = false);
-
-    if (_recordingPath == null || _recordingStart == null) return;
-
-    // 横滑/上滑取消：先停止录音（否则麦克风会一直占用），再丢弃文件
-    if (_recordingCancel) {
-      final path = _recordingPath;
-      _recordingPath = null;
-      _recordingStart = null;
-      try {
-        await _recorder.stop();
-      } catch (_) {
-        // 停止失败也要继续清理文件
-      }
-      if (path != null) {
-        try {
-          await File(path).delete();
-        } catch (_) {
-          // 删除临时文件失败可忽略
-        }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('已取消录音'),
-            duration: Duration(milliseconds: 800),
-          ),
-        );
-      }
-      return;
-    }
-
-    final path = await _recorder.stop() ?? _recordingPath;
-    final duration = DateTime.now().difference(_recordingStart!).inSeconds;
-
-    _recordingPath = null;
-    _recordingStart = null;
-
-    if (duration < 1) {
-      // 过短录音不发送，清理临时文件
-      if (path != null) {
-        try {
-          await File(path).delete();
-        } catch (_) {
-          // 删除临时文件失败可忽略
-        }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('录音时间太短'),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
-      return;
-    }
-
-    if (path != null) {
-      widget.onVoiceRecord?.call(duration, path);
-    }
-  }
-
-  /// 录音状态浮层
-  Widget _buildRecordingOverlay() => RecordingOverlay(cancel: _recordingCancel);
-
   // ==================== Emoji 插入 ====================
 
   void _insertEmoji(String emoji) {
@@ -596,7 +467,8 @@ class _ChatInputState extends State<ChatInput> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_isRecording) _buildRecordingOverlay(),
+          if (_voiceRecorder.isRecording)
+            RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
           Container(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
             decoration: BoxDecoration(
@@ -616,14 +488,12 @@ class _ChatInputState extends State<ChatInput> {
               children: [
                 // 聚焦/面板展开态：输入行 + 底部完整工具栏
                 // 未聚焦态：默认一行（声音+输入框+表情+更多）
-                if (isExpanded)
-                  ...[
-                    _buildInputRow(),
-                    if (_atKeyword != null) _buildAtMemberList(),
-                    const SizedBox(height: 8),
-                    _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
-                  ]
-                else
+                if (isExpanded) ...[
+                  _buildInputRow(),
+                  if (_atKeyword != null) _buildAtMemberList(),
+                  const SizedBox(height: 8),
+                  _isMarkdownMode ? _buildFormatBar() : _buildToolbarRow(),
+                ] else
                   CollapsedInputBar(
                     controller: widget.controller,
                     focusNode: _focusNode,
@@ -634,9 +504,11 @@ class _ChatInputState extends State<ChatInput> {
                     moreActive: _activePanel == _InputPanel.attachment,
                     onToggleEmoji: () => _togglePanel(_InputPanel.emoji),
                     onToggleMore: () => _togglePanel(_InputPanel.attachment),
-                    onVoiceLongPressStart: _startRecording,
-                    onVoiceLongPressMoveUpdate: _onRecordingMove,
-                    onVoiceLongPressEnd: _stopRecording,
+                    onVoiceLongPressStart: (details) =>
+                        _voiceRecorder.start(context, details),
+                    onVoiceLongPressMoveUpdate: _voiceRecorder.onMove,
+                    onVoiceLongPressEnd: (details) =>
+                        _voiceRecorder.stop(context, details),
                     onVoiceTap: () => _focusNode.requestFocus(),
                   ),
               ],
@@ -650,13 +522,13 @@ class _ChatInputState extends State<ChatInput> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                  Offstage(
-                    offstage: _activePanel != _InputPanel.emoji,
-                    child: EmojiPanel(
-                      onEmojiSelected: _insertEmoji,
-                      onGifSelected: widget.onGifSelected,
-                    ),
+                Offstage(
+                  offstage: _activePanel != _InputPanel.emoji,
+                  child: EmojiPanel(
+                    onEmojiSelected: _insertEmoji,
+                    onGifSelected: widget.onGifSelected,
                   ),
+                ),
                 Offstage(
                   offstage: _activePanel != _InputPanel.attachment,
                   child: AttachmentPanel(
@@ -696,9 +568,10 @@ class _ChatInputState extends State<ChatInput> {
       // @ 提及
       onAt: () => widget.onAtMention?.call(),
       // 🎤 语音（长按录音，上滑取消）
-      onVoiceLongPressStart: _startRecording,
-      onVoiceLongPressMoveUpdate: _onRecordingMove,
-      onVoiceLongPressEnd: _stopRecording,
+      onVoiceLongPressStart: (details) =>
+          _voiceRecorder.start(context, details),
+      onVoiceLongPressMoveUpdate: _voiceRecorder.onMove,
+      onVoiceLongPressEnd: (details) => _voiceRecorder.stop(context, details),
       onVoiceTap: () => _focusNode.requestFocus(), // 聚焦自动收起面板
       // 🖼️ 相册
       onImage: widget.onImagePick ?? () {},
@@ -739,7 +612,6 @@ class _ChatInputState extends State<ChatInput> {
       ),
     );
   }
-
 
   // ==================== 辅助 ====================
 }
