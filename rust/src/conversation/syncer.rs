@@ -1,10 +1,10 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::client::context::Repositories;
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
-use crate::model::local::LocalConversation;
-use crate::model::UserId;
+use crate::domain::model::local::LocalConversation;
+use crate::domain::model::UserId;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -221,7 +221,7 @@ impl ConversationSyncer {
         };
 
         let user_id = self.user_id.get().await;
-        use crate::constant::ws_req_identifier;
+        use crate::domain::constant::ws_req_identifier;
         use openim_protocol::msg::{GetConversationsHasReadAndMaxSeqReq, GetConversationsHasReadAndMaxSeqResp};
 
         info!("[ConvSync] get_conversations_hash_read_seq 请求: user_id={}", user_id);
@@ -252,7 +252,7 @@ impl ConversationSyncer {
 
         // 获取所有本地会话
         let local_conversations = self.repositories.conversation_repo.get_all().await.unwrap_or_default();
-        let mut local_map: HashMap<String, crate::model::local::LocalConversation> = HashMap::new();
+        let mut local_map: HashMap<String, crate::domain::model::local::LocalConversation> = HashMap::new();
         for conv in local_conversations {
             local_map.insert(conv.conversation_id.clone(), conv);
         }
@@ -362,7 +362,7 @@ mod tests {
     use crate::http::client::HttpApiClient;
     use crate::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
     use crate::message::MaxSeqRecorder;
-    use crate::model::UserId;
+    use crate::domain::model::UserId;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
         Arc::new(Repositories {

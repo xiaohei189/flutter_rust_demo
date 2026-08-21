@@ -1,5 +1,5 @@
-use crate::error::{Result, SdkError};
-use crate::model::local::LocalConversation;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalConversation;
 use sqlx::SqlitePool;
 
 pub struct ConversationDao {

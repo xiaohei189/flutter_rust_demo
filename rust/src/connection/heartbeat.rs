@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::domain::error::Result;
 use std::time::Duration;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use tracing::{debug, warn};

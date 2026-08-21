@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::model::local::LocalNotificationSeq;
+use crate::domain::error::Result;
+use crate::domain::model::local::LocalNotificationSeq;
 use async_trait::async_trait;
 
 /// 通知序列仓库接口

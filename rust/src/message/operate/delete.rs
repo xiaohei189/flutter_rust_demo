@@ -1,7 +1,7 @@
 //! 消息删除逻辑
 
 use super::MessageService;
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::http::message::DeleteMessagesReq;
 
@@ -53,15 +53,15 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
-    use crate::constant::msg_status;
+    use crate::domain::constant::msg_status;
     use crate::db::pool::create_pool_memory;
     use crate::db::*;
-    use crate::error::SdkError;
+    use crate::domain::error::SdkError;
     use crate::event::events::message::MessageEvent;
     use crate::event::hub::EventHub;
     use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
-    use crate::model::local::LocalChatLog;
-    use crate::model::UserId;
+    use crate::domain::model::local::LocalChatLog;
+    use crate::domain::model::UserId;
     use async_trait::async_trait;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;

@@ -11,10 +11,10 @@
 //! 消息翻页加载场景也可直接使用。
 
 use crate::connection::sync_server::SyncServerApi;
-use crate::constant::{msg_status, pull_msg_num};
+use crate::domain::constant::{msg_status, pull_msg_num};
 use crate::db::{ConversationRepository, MessageRepository};
-use crate::error::{Result, SdkError};
-use crate::model::local::LocalChatLog;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalChatLog;
 use openim_protocol::msg::{ConversationSeqs, GetSeqMessageReq, GetSeqMessageResp};
 use openim_protocol::sdkws::PullOrder;
 use std::collections::{HashMap, HashSet};
@@ -435,7 +435,7 @@ fn merge_sorted_arrays(a: &[LocalChatLog], b: &[LocalChatLog], n: usize, is_desc
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::local::LocalChatLog;
+    use crate::domain::model::local::LocalChatLog;
 
     fn make_log(client_msg_id: &str, seq: i64, send_time: i64) -> LocalChatLog {
         LocalChatLog {
@@ -657,16 +657,16 @@ mod tests {
 
         #[async_trait]
         impl SyncServerApi for DeletedMsgMock {
-            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::domain::error::Result<HashMap<String, i64>> {
                 Ok(HashMap::new())
             }
-            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::domain::error::Result<PullMessageBySeqsResp> {
                 Ok(PullMessageBySeqsResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
                 })
             }
-            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::domain::error::Result<GetSeqMessageResp> {
                 Ok(GetSeqMessageResp {
                     msgs: self.msgs.clone(),
                     notification_msgs: HashMap::new(),
@@ -727,16 +727,16 @@ mod tests {
 
         #[async_trait]
         impl SyncServerApi for EmptyMock {
-            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::domain::error::Result<HashMap<String, i64>> {
                 Ok(HashMap::new())
             }
-            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::domain::error::Result<PullMessageBySeqsResp> {
                 Ok(PullMessageBySeqsResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
                 })
             }
-            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::domain::error::Result<GetSeqMessageResp> {
                 self.calls.fetch_add(1, Ordering::SeqCst);
                 Ok(GetSeqMessageResp {
                     msgs: HashMap::new(),

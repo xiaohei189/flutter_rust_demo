@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::conversation`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::conversation::{
     ConversationServerApi, GetAllConversationsReq, GetAllConversationsResp, GetConversationsByIDsReq, GetConversationsByIDsResp, GetFullConversationIDsReq, GetFullConversationIDsResp,

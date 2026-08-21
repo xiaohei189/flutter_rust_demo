@@ -9,7 +9,7 @@
 //! 对齐 Go SDK `UnmarshalNotificationElem`：先解析外层 NotificationElem，
 //! 再解析内层 detail 到目标类型。
 
-use crate::constant::notification_type;
+use crate::domain::constant::notification_type;
 use crate::conversation::syncer::ConversationSyncer;
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
@@ -17,13 +17,13 @@ use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::friend::service::FriendService;
 use crate::group::service::GroupService;
 use crate::message::MessageProcessor;
-use crate::model::UserId;
+use crate::domain::model::UserId;
 use crate::user::service::UserService;
 use openim_protocol::sdkws::MsgData;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
-use crate::model::notification_types::*;
+use crate::domain::model::notification_types::*;
 
 // NotificationHandler
 // ============================================================
@@ -283,7 +283,7 @@ impl NotificationHandler {
         let user_info: UserInfoJson = unmarshal_notification_elem(content)?;
 
         self.user_listener.emit(UserEvent::UserInfoUpdated {
-            user: crate::model::user::UserInfo {
+            user: crate::domain::model::user::UserInfo {
                 user_id: user_info.user_id,
                 nickname: user_info.nickname,
                 face_url: user_info.face_url,
@@ -437,8 +437,8 @@ impl NotificationHandler {
         }
     }
 
-    fn group_member(&self, group_id: String, user: &PublicUserInfoJson) -> crate::model::group::GroupMember {
-        crate::model::group::GroupMember {
+    fn group_member(&self, group_id: String, user: &PublicUserInfoJson) -> crate::domain::model::group::GroupMember {
+        crate::domain::model::group::GroupMember {
             group_id,
             user_id: user.user_id.clone(),
             nickname: user.nickname.clone(),
@@ -482,7 +482,7 @@ mod tests {
     use crate::http::friend::FriendServerApi;
     use crate::http::group::GroupServerApi;
 
-    use crate::model::UserId;
+    use crate::domain::model::UserId;
     use std::sync::Arc;
 
     fn make_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -578,7 +578,7 @@ mod tests {
         let handler = make_handler_with_hub(pool, &hub);
 
         let msg = MsgData {
-            content_type: crate::constant::notification_type::FRIEND_DELETED,
+            content_type: crate::domain::constant::notification_type::FRIEND_DELETED,
             content: br#"{"detail":"{\"userID\":\"user_2\"}"}"#.to_vec(),
             ..Default::default()
         };
@@ -596,7 +596,7 @@ mod tests {
         let handler = make_handler_with_hub(pool, &hub);
 
         let msg = MsgData {
-            content_type: crate::constant::notification_type::MEMBER_INVITED,
+            content_type: crate::domain::constant::notification_type::MEMBER_INVITED,
             content: br#"{"detail":"{\"group\":{\"groupID\":\"group_1\"},\"invitedUserList\":[{\"userID\":\"user_9\"}]}"}"#.to_vec(),
             ..Default::default()
         };
@@ -620,7 +620,7 @@ mod tests {
         let handler = make_handler_with_hub(pool, &hub);
 
         let msg = MsgData {
-            content_type: crate::constant::notification_type::GROUP_MEMBER_INFO_SET,
+            content_type: crate::domain::constant::notification_type::GROUP_MEMBER_INFO_SET,
             content: br#"{"detail":"{\"group\":{\"groupID\":\"group_1\"},\"changedUser\":{\"userID\":\"user_9\",\"nickname\":\"NewName\"}}"}"#.to_vec(),
             ..Default::default()
         };
@@ -779,7 +779,7 @@ mod tests {
 
         // 预置被撤回的消息
         message_repo
-            .batch_insert(&[crate::model::local::LocalChatLog {
+            .batch_insert(&[crate::domain::model::local::LocalChatLog {
                 conversation_id: "conv_revoke".to_string(),
                 client_msg_id: "msg_target".to_string(),
                 server_msg_id: String::new(),

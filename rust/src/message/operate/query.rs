@@ -5,14 +5,14 @@
 
 use super::MessageService;
 use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
-use crate::constant::MessageSendStatus;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::message::receive::checker::SeqPullContext;
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::{get_msg_id, MsgStruct};
+use crate::domain::model::local::{LocalChatLog, LocalConversation};
+use crate::domain::model::message::MessageInfo;
+use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
 use openim_protocol::sdkws::MsgData;
 use tracing::{debug, info, warn};
 
@@ -414,8 +414,8 @@ mod tests {
     use crate::event::test_util::*;
 
     use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
-    use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::model::UserId;
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
+    use crate::domain::model::UserId;
     use async_trait::async_trait;
     use std::sync::Arc;
 
@@ -605,16 +605,16 @@ mod tests {
 
         #[async_trait]
         impl SyncServerApi for GapMock {
-            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::domain::error::Result<HashMap<String, i64>> {
                 Ok(HashMap::new())
             }
-            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::domain::error::Result<PullMessageBySeqsResp> {
                 Ok(PullMessageBySeqsResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
                 })
             }
-            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::domain::error::Result<GetSeqMessageResp> {
                 Ok(GetSeqMessageResp {
                     msgs: self.missing.clone(),
                     notification_msgs: HashMap::new(),
@@ -701,16 +701,16 @@ mod tests {
 
         #[async_trait]
         impl SyncServerApi for NoMissingMock {
-            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::domain::error::Result<HashMap<String, i64>> {
                 Ok(HashMap::new())
             }
-            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::domain::error::Result<PullMessageBySeqsResp> {
                 Ok(PullMessageBySeqsResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
                 })
             }
-            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::domain::error::Result<GetSeqMessageResp> {
                 Ok(GetSeqMessageResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
@@ -806,16 +806,16 @@ mod tests {
 
         #[async_trait]
         impl SyncServerApi for NoMissingMock {
-            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::error::Result<HashMap<String, i64>> {
+            async fn fetch_server_max_seqs(&self, _user_id: &str) -> crate::domain::error::Result<HashMap<String, i64>> {
                 Ok(HashMap::new())
             }
-            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::error::Result<PullMessageBySeqsResp> {
+            async fn pull_messages_by_seqs(&self, _req: &PullMessageBySeqsReq) -> crate::domain::error::Result<PullMessageBySeqsResp> {
                 Ok(PullMessageBySeqsResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
                 })
             }
-            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::error::Result<GetSeqMessageResp> {
+            async fn pull_messages_by_seq_list(&self, _req: &GetSeqMessageReq) -> crate::domain::error::Result<GetSeqMessageResp> {
                 Ok(GetSeqMessageResp {
                     msgs: HashMap::new(),
                     notification_msgs: HashMap::new(),
@@ -1124,7 +1124,7 @@ mod tests {
 
         let sm_dao = SendingMessageDao::new(pool.clone());
         sm_dao
-            .insert(&crate::model::local::LocalSendingMessage {
+            .insert(&crate::domain::model::local::LocalSendingMessage {
                 conversation_id: "conv_1".to_string(),
                 client_msg_id: "m_sending".to_string(),
                 ex: String::new(),
@@ -1132,7 +1132,7 @@ mod tests {
             .await
             .unwrap();
         sm_dao
-            .insert(&crate::model::local::LocalSendingMessage {
+            .insert(&crate::domain::model::local::LocalSendingMessage {
                 conversation_id: "conv_1".to_string(),
                 client_msg_id: "m_sent".to_string(),
                 ex: String::new(),

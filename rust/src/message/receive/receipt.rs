@@ -1,8 +1,8 @@
 //! 已读回执处理（impl MessageProcessor）
 
 use super::processor::MessageProcessor;
-use crate::constant::session_type;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::session_type;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::message::{MessageEvent, MessageListenerExt, MessageReceipt};
 use openim_protocol::sdkws::{MarkAsReadTips, MsgData};
@@ -190,11 +190,11 @@ impl MessageProcessor {
 mod tests {
     use super::*;
     use crate::client::context::Repositories;
-    use crate::constant::notification_type::HAS_READ_RECEIPT;
+    use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::model::UserId;
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
+    use crate::domain::model::UserId;
     use openim_protocol::sdkws::MarkAsReadTips;
     use prost::Message as ProstMessage;
     use std::sync::Arc;

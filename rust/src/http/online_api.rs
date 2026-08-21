@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::online`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::online::{
     GetSubscribeUsersStatusReq, GetSubscribeUsersStatusResp, GetUserStatusReq, GetUserStatusResp, OnlineStatusServerApi, SubscribeUsersStatusReq, SubscribeUsersStatusResp, UnsubscribeUsersStatusReq,

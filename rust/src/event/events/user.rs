@@ -2,7 +2,7 @@
 //!
 //! 说明：`UserEvent` 为用户域事件，经 `UserListener` 分发（预留外部 SDK / 后续 Dart 流）。
 
-use crate::model::user::UserInfo;
+use crate::domain::model::user::UserInfo;
 
 /// 用户域事件（内部事件总线使用）
 #[derive(Clone, Debug)]

@@ -1,6 +1,6 @@
-use crate::constant::sync_flag;
-use crate::error::Result;
-use crate::error::SdkError;
+use crate::domain::constant::sync_flag;
+use crate::domain::error::Result;
+use crate::domain::error::SdkError;
 use sqlx::{Pool, Sqlite};
 use tracing::info;
 
@@ -109,7 +109,7 @@ impl SyncVersionDao {
             "INSERT INTO local_app_sdk_version (version, sync_flag) VALUES (?1, ?2) \
              ON CONFLICT(version) DO UPDATE SET sync_flag = excluded.sync_flag",
         )
-        .bind(crate::constant::SDK_LOCAL_VERSION)
+        .bind(crate::domain::constant::SDK_LOCAL_VERSION)
         .bind(flag as i64)
         .execute(&self.pool)
         .await
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_DONE);
 
         // 与 mark_reinstall_complete 共用锚定行，表内不应出现多行导致读取错乱
-        dao.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await.unwrap();
+        dao.mark_reinstall_complete(crate::domain::constant::SDK_LOCAL_VERSION).await.unwrap();
         assert_eq!(dao.get_sync_flag().await.unwrap(), sync_flag::SYNC_STAGE_DONE);
         assert!(!dao.is_reinstalled().await.unwrap());
     }

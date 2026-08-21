@@ -1,6 +1,6 @@
 //! 会话相关 FFI 桥接
 
-use crate::constant::SessionType;
+use crate::domain::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
 use anyhow::Result;
 
@@ -8,12 +8,12 @@ impl OpenIMBridgeClient {
     // ========== 会话操作 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_conversations(&self) -> Result<Vec<crate::model::local::LocalConversation>> {
+    pub async fn get_conversations(&self) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversations().await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::model::local::LocalConversation>> {
+    pub async fn get_conversation(&self, conversation_id: String) -> Result<Option<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversation(&conversation_id).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -43,7 +43,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_pinned_conversations(&self) -> Result<Vec<crate::model::local::LocalConversation>> {
+    pub async fn get_pinned_conversations(&self) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_pinned_conversations().await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -54,19 +54,19 @@ impl OpenIMBridgeClient {
 
     /// 分页获取会话列表（对齐 Go SDK `GetConversationListSplit`）
     #[flutter_rust_bridge::frb]
-    pub async fn get_conversation_list_split(&self, offset: i64, count: i64) -> Result<Vec<crate::model::local::LocalConversation>> {
+    pub async fn get_conversation_list_split(&self, offset: i64, count: i64) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_conversation_list_split(offset, count).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     /// 按 ID 列表批量获取会话（对齐 Go SDK `GetMultipleConversation`）
     #[flutter_rust_bridge::frb]
-    pub async fn get_multiple_conversations(&self, conversation_ids: Vec<String>) -> Result<Vec<crate::model::local::LocalConversation>> {
+    pub async fn get_multiple_conversations(&self, conversation_ids: Vec<String>) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.get_multiple_conversations(conversation_ids).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     /// 搜索会话（对齐 Go SDK `SearchConversation`）
     #[flutter_rust_bridge::frb]
-    pub async fn search_conversations(&self, keyword: String) -> Result<Vec<crate::model::local::LocalConversation>> {
+    pub async fn search_conversations(&self, keyword: String) -> Result<Vec<crate::domain::model::local::LocalConversation>> {
         self.inner.search_conversations(&keyword).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 

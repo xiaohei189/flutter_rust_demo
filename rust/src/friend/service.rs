@@ -1,9 +1,9 @@
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::http::FriendServerApi;
-use crate::model::friend::FriendInfo;
-use crate::model::local::LocalFriend;
-use crate::model::UserId;
+use crate::domain::model::friend::FriendInfo;
+use crate::domain::model::local::LocalFriend;
+use crate::domain::model::UserId;
 
 use crate::client::context::Repositories;
 use crate::http::friend::*;

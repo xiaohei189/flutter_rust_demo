@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::group`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::group::{
     AcceptGroupApplicationReq, CreateGroupReq, CreateGroupResp, DismissGroupReq, GetGroupApplicationListReq, GetGroupApplicationListResp, GetGroupMemberListReq, GetGroupMemberListResp,

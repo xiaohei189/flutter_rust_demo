@@ -1,5 +1,5 @@
-use crate::error::{Result, SdkError};
-use crate::model::local::LocalUser;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalUser;
 use sqlx::SqlitePool;
 
 pub struct UserDao {
@@ -108,7 +108,7 @@ impl UserRepository for UserDao {
 // ============================================================
 // 黑名单 DAO（与用户同属关系域）
 // ============================================================
-use crate::model::local::LocalBlack;
+use crate::domain::model::local::LocalBlack;
 
 pub struct BlackDao {
     pool: SqlitePool,

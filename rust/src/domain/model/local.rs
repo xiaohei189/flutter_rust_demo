@@ -2,7 +2,7 @@
 //!
 //! 数据库行模型，由 sqlx `FromRow` 映射；被 DAO 与 Repository trait 共同使用。
 //! 原位于 `infra/database/models.rs`，收归 domain 后与领域模型同层。
-use crate::constant::{msg_status, session_type, MessageSendStatus, SessionType};
+use crate::domain::constant::{msg_status, session_type, MessageSendStatus, SessionType};
 use openim_protocol::sdkws::MsgData;
 use sqlx::FromRow;
 

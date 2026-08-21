@@ -1,6 +1,6 @@
-use crate::constant::MessageSendStatus;
-use crate::error::{Result, SdkError};
-use crate::model::local::LocalChatLog;
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalChatLog;
 use sqlx::SqlitePool;
 use tracing::debug;
 

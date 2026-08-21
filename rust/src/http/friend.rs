@@ -3,7 +3,7 @@
 //! 对齐 Go SDK `internal/relation/relation.go` 的 HTTP 契约。
 //! 当前由 `core::friend::service` 消费；如需端口化，可收敛为 `FriendServerApi` trait。
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 

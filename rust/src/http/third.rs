@@ -4,7 +4,7 @@
 //! - FcmUpdateToken → POST /third/fcm_update_token
 //! - SetAppBadge → POST /third/set_app_badge
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use serde::{Deserialize, Serialize};
 
 /// 更新 FCM Token 请求（对齐 protocol/third FcmUpdateTokenReq）

@@ -2,7 +2,7 @@ mod common;
 
 use common::*;
 use rust_lib_flutter_rust_demo::client::*;
-use rust_lib_flutter_rust_demo::constant::enums::GroupType;
+use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 use std::time::Duration;
 
 /// 验证创建群组成功并返回群组信息。
@@ -291,7 +291,7 @@ async fn test_group_dismiss_and_transfer() {
 
     println!("=== 群组解散与转让测试 ===\n");
 
-    use rust_lib_flutter_rust_demo::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 
     let account1 = get_or_create_group_owner().await;
     let account2 = get_or_create_group_member1().await;
@@ -356,7 +356,7 @@ async fn test_group_mute_operations() {
 
     println!("=== 群组禁言测试 ===\n");
 
-    use rust_lib_flutter_rust_demo::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 
     let account1 = get_or_create_group_owner().await;
     let account2 = get_or_create_group_member1().await;

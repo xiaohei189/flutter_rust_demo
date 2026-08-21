@@ -10,10 +10,10 @@ use crate::event::events::friend::{FriendEvent, FriendListener};
 use crate::event::events::group::{GroupEvent, GroupListener};
 use crate::event::events::message::{GroupReadReceipt, MessageEvent, MessageListener, MessageReceipt};
 use crate::event::events::user::{UserEvent, UserListener};
-use crate::model::friend::FriendInfo;
-use crate::model::group::GroupInfo;
-use crate::model::local::LocalConversation;
-use crate::model::user::UserInfo;
+use crate::domain::model::friend::FriendInfo;
+use crate::domain::model::group::GroupInfo;
+use crate::domain::model::local::LocalConversation;
+use crate::domain::model::user::UserInfo;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 use tracing::info;
@@ -239,15 +239,15 @@ impl GroupListener for EventHub {
         info!("[EventHub] group 回调: group_info_changed, group_id={}", group.group_id);
         let _ = self.group_tx.send(GroupEvent::GroupInfoChanged(group.clone()));
     }
-    fn on_member_added(&self, member: &crate::model::group::GroupMember) {
+    fn on_member_added(&self, member: &crate::domain::model::group::GroupMember) {
         info!("[EventHub] group 回调: member_added, group_id={}, user_id={}", member.group_id, member.user_id);
         let _ = self.group_tx.send(GroupEvent::MemberAdded(member.clone()));
     }
-    fn on_member_deleted(&self, member: &crate::model::group::GroupMember) {
+    fn on_member_deleted(&self, member: &crate::domain::model::group::GroupMember) {
         info!("[EventHub] group 回调: member_deleted, group_id={}, user_id={}", member.group_id, member.user_id);
         let _ = self.group_tx.send(GroupEvent::MemberDeleted(member.clone()));
     }
-    fn on_member_info_changed(&self, member: &crate::model::group::GroupMember) {
+    fn on_member_info_changed(&self, member: &crate::domain::model::group::GroupMember) {
         info!("[EventHub] group 回调: member_info_changed, group_id={}, user_id={}", member.group_id, member.user_id);
         let _ = self.group_tx.send(GroupEvent::MemberInfoChanged(member.clone()));
     }
@@ -278,7 +278,7 @@ impl GroupListener for EventHub {
 }
 
 impl MessageListener for EventHub {
-    fn on_new_message(&self, conversation_id: &str, message: &crate::model::message::MessageInfo) {
+    fn on_new_message(&self, conversation_id: &str, message: &crate::domain::model::message::MessageInfo) {
         info!(
             "[EventHub] message 回调: new_message, conv={}, client_msg_id={}, content_type={}, seq={}",
             conversation_id, message.client_msg_id, message.content_type, message.seq
@@ -288,7 +288,7 @@ impl MessageListener for EventHub {
             message: message.clone(),
         });
     }
-    fn on_offline_new_message(&self, conversation_id: &str, message: &crate::model::message::MessageInfo) {
+    fn on_offline_new_message(&self, conversation_id: &str, message: &crate::domain::model::message::MessageInfo) {
         info!(
             "[EventHub] message 回调: offline_new_message, conv={}, client_msg_id={}, content_type={}, seq={}",
             conversation_id, message.client_msg_id, message.content_type, message.seq
@@ -298,7 +298,7 @@ impl MessageListener for EventHub {
             message: message.clone(),
         });
     }
-    fn on_online_only_message(&self, conversation_id: &str, message: &crate::model::message::MessageInfo) {
+    fn on_online_only_message(&self, conversation_id: &str, message: &crate::domain::model::message::MessageInfo) {
         info!(
             "[EventHub] message 回调: online_only_message, conv={}, client_msg_id={}, content_type={}, seq={}",
             conversation_id, message.client_msg_id, message.content_type, message.seq
@@ -363,7 +363,7 @@ mod tests {
     use super::*;
     use crate::event::events::connection::ConnectionEvent;
 
-    use crate::model::group::GroupInfo;
+    use crate::domain::model::group::GroupInfo;
 
     #[tokio::test]
     async fn test_event_hub_creation() {
@@ -431,7 +431,7 @@ mod tests {
             status: 0,
         });
         group.on_application_deleted("application_json");
-        group.on_member_info_changed(&crate::model::group::GroupMember {
+        group.on_member_info_changed(&crate::domain::model::group::GroupMember {
             group_id: "g1".into(),
             user_id: "u1".into(),
             nickname: "Test".into(),
@@ -454,7 +454,7 @@ mod tests {
         user.on_user_status_changed("u1", 1, &[]);
         msg.on_new_message(
             "conv_1",
-            &crate::model::message::MessageInfo {
+            &crate::domain::model::message::MessageInfo {
                 client_msg_id: "m1".into(),
                 server_msg_id: String::new(),
                 send_id: "user_a".into(),

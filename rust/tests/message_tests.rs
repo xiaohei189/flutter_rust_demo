@@ -123,7 +123,7 @@ async fn test_message_flow() {
     a_offline_msg_count += 1;
 
     println!("[4/14] 表情消息...");
-    let mut face_msg = rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct::create_face_message(1, "smile");
+    let mut face_msg = rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::create_face_message(1, "smile");
     face_msg.session_type = st;
     let r = a_sdk.send_msg(face_msg, target, None).await;
     assert!(r.is_ok(), "发送表情失败: {:?}", r.err());
@@ -151,13 +151,13 @@ async fn test_message_flow() {
     a_offline_msg_count += 1;
 
     println!("[7/14] 名片消息...");
-    let card_elem = rust_lib_flutter_rust_demo::model::msg_struct::CardElem {
+    let card_elem = rust_lib_flutter_rust_demo::domain::model::msg_struct::CardElem {
         user_id: user_a.user_id.clone(),
         nickname: user_a.nickname.clone(),
         face_url: "https://example.com/avatar.jpg".to_string(),
         ex: String::new(),
     };
-    let mut card_msg = rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct::create_card_message(card_elem);
+    let mut card_msg = rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct::create_card_message(card_elem);
     card_msg.session_type = st;
     let r = a_sdk.send_msg(card_msg, target, None).await;
     assert!(r.is_ok(), "发送名片失败: {:?}", r.err());
@@ -670,7 +670,7 @@ async fn test_message_flow() {
     let merger_msg_2 = a_sdk.send_text_message("合并内容2", target, st).await.unwrap();
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let context_list: Vec<rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct> = vec![merger_msg_1.clone(), merger_msg_2.clone()];
+    let context_list: Vec<rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct> = vec![merger_msg_1.clone(), merger_msg_2.clone()];
     let source_conv_id = a_sdk.get_conversation_id_by_session_type(target, st);
     let merger_result = a_sdk
         .send_merger_message(&source_conv_id, "合并转发标题", vec!["合并内容1".to_string(), "合并内容2".to_string()], context_list, target, st)
@@ -825,7 +825,7 @@ async fn test_send_all_message_types() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::model::msg_struct::{MessageEntity, MsgStruct};
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::{MessageEntity, MsgStruct};
 
     // 使用全新随机账号
     let receiver = create_random_account("TypeReceiver").await;
@@ -896,7 +896,7 @@ async fn test_send_all_message_types() {
     send_count += 1;
 
     // 7. 名片
-    let card = MsgStruct::create_card_message(rust_lib_flutter_rust_demo::model::msg_struct::CardElem {
+    let card = MsgStruct::create_card_message(rust_lib_flutter_rust_demo::domain::model::msg_struct::CardElem {
         user_id: sender.user_id.clone(),
         nickname: sender.nickname.clone(),
         face_url: "https://example.com/avatar.jpg".into(),
@@ -937,7 +937,7 @@ async fn test_send_all_message_types() {
         .send_advanced_quote_message(
             "高级引用回复",
             quote_msg,
-            vec![rust_lib_flutter_rust_demo::model::msg_struct::MessageEntity {
+            vec![rust_lib_flutter_rust_demo::domain::model::msg_struct::MessageEntity {
                 entity_type: "At".into(),
                 offset: 0,
                 length: 2,
@@ -1847,7 +1847,7 @@ async fn test_quote_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -2040,7 +2040,7 @@ async fn test_total_unread_count() {
 #[ignore = "requires docker OpenIM server"]
 async fn test_message_local_ex() {
     use rust_lib_flutter_rust_demo::client::SearchMessagesReq;
-    use rust_lib_flutter_rust_demo::model::local::LocalChatLog;
+    use rust_lib_flutter_rust_demo::domain::model::local::LocalChatLog;
 
     // Setup
     let account_a = create_random_account("LocalExA").await;
@@ -2143,7 +2143,7 @@ async fn test_message_local_ex() {
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_message_flow() {
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 
     // Setup
     let account_a = create_random_account("GrpA").await;
@@ -2294,7 +2294,7 @@ async fn test_online_only_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
     use rust_lib_flutter_rust_demo::client::GetHistoryMessagesReq;
-    use rust_lib_flutter_rust_demo::model::msg_struct::MsgStruct;
+    use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
 
     // Phase 1: 创建账号 + 登录 + 建立好友
     println!("\n========== Phase 1: 创建账号 + 登录 + 建立好友 ==========");

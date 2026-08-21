@@ -1,7 +1,7 @@
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::http::UserServerApi;
-use crate::model::user::UserInfo;
+use crate::domain::model::user::UserInfo;
 
 use crate::http::user::*;
 use std::sync::Arc;

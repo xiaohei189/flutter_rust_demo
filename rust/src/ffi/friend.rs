@@ -8,7 +8,7 @@ impl OpenIMBridgeClient {
     // ========== 好友操作 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_friend_list(&self) -> Result<Vec<crate::model::friend::FriendInfo>> {
+    pub async fn get_friend_list(&self) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
         Ok(self.inner.get_friend_list().await)
     }
 
@@ -101,7 +101,7 @@ impl OpenIMBridgeClient {
     /// 先查本地 DB，缺失的从服务端拉取并缓存。
     /// filter_black=true 时过滤掉黑名单中的好友。
     #[flutter_rust_bridge::frb]
-    pub async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool) -> Result<Vec<crate::model::friend::FriendInfo>> {
+    pub async fn get_specified_friends_info(&self, friend_user_ids: Vec<String>, filter_black: bool) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
         self.inner.get_specified_friends_info(friend_user_ids, filter_black).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -110,7 +110,7 @@ impl OpenIMBridgeClient {
     /// 从本地 DB 按置顶优先、创建时间倒序分页获取。
     /// filter_black=true 时过滤黑名单好友。
     #[flutter_rust_bridge::frb]
-    pub async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<crate::model::friend::FriendInfo>> {
+    pub async fn get_friend_list_page(&self, offset: i32, count: i32, filter_black: bool) -> Result<Vec<crate::domain::model::friend::FriendInfo>> {
         self.inner.get_friend_list_page(offset, count, filter_black).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 

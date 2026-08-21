@@ -1,4 +1,4 @@
-use crate::model::local::LocalChatLog;
+use crate::domain::model::local::LocalChatLog;
 use openim_protocol::sdkws::MsgData;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};

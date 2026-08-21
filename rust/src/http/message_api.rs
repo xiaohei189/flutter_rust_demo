@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::message`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::message::{GetServerTimeResp, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
 use crate::http::routes::{DELETE_MSGS, GET_SERVER_TIME, MARK_CONVERSATION_AS_READ, MARK_MSGS_AS_READ, REVOKE_MSG};

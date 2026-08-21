@@ -3,7 +3,7 @@
 //! 对齐 Go SDK open_im_sdk/third.go：UpdateFcmToken / SetAppBadge
 
 use crate::client::OpenIMClient;
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::third::{FcmUpdateTokenReq, SetAppBadgeReq};
 use crate::http::third_api::HttpThirdApi;
 use crate::http::ThirdServerApi;

@@ -139,7 +139,7 @@ async fn test_send_message_to_nonexistent_user() {
 async fn test_kick_nonexistent_group_member() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 
     println!("=== 踢不存在群成员测试 ===\n");
 

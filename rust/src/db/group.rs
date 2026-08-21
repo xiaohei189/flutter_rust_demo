@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::model::local::{LocalGroup, LocalGroupMember};
+use crate::domain::error::Result;
+use crate::domain::model::local::{LocalGroup, LocalGroupMember};
 use async_trait::async_trait;
 
 #[async_trait]

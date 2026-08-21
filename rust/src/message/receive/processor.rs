@@ -3,20 +3,20 @@
 //! 对齐 Go SDK `internal/conversation_msg/handler.go`
 
 use super::max_seq_recorder::MaxSeqRecorder;
-use crate::constant::content_type;
-use crate::constant::content_type_utils::ContentTypeUtils;
-use crate::constant::msg_status;
-use crate::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
-use crate::error::Result;
-use crate::model::revoke::parse_revoke_tips_from_json;
+use crate::domain::constant::content_type;
+use crate::domain::constant::content_type_utils::ContentTypeUtils;
+use crate::domain::constant::msg_status;
+use crate::domain::constant::notification_type::{HAS_READ_RECEIPT, REVOKE};
+use crate::domain::error::Result;
+use crate::domain::model::revoke::parse_revoke_tips_from_json;
 
 use crate::client::context::Repositories;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
-use crate::model::local::{LocalChatLog, LocalConversation};
-use crate::model::message::MessageInfo;
-use crate::model::msg_struct::TypingElem;
-use crate::model::UserId;
+use crate::domain::model::local::{LocalChatLog, LocalConversation};
+use crate::domain::model::message::MessageInfo;
+use crate::domain::model::msg_struct::TypingElem;
+use crate::domain::model::UserId;
 use openim_protocol::sdkws::MsgData;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -810,7 +810,7 @@ mod tests {
         conv.max_seq = 5;
         conversation_dao.upsert(&conv).await.unwrap();
 
-        let msgs = vec![msg_with_ct("tip_1", "conv_tip", 6, crate::constant::notification_type::FRIEND_APPLICATION)];
+        let msgs = vec![msg_with_ct("tip_1", "conv_tip", 6, crate::domain::constant::notification_type::FRIEND_APPLICATION)];
         handler.handle_messages("conv_tip", msgs).await.unwrap();
         let chat_logs = message_dao.get_by_conversation("conv_tip", 0, 100).await.unwrap();
         assert_eq!(chat_logs.len(), 0, "tip message should not be stored");

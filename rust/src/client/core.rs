@@ -10,7 +10,7 @@ use crate::message::send::MessageSender;
 use crate::message::MessageProcessor;
 use async_trait::async_trait;
 
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::connection::ConnectionEvent;
 use crate::event::hub::EventHub;
 use crate::message::notification::NotificationHandler;
@@ -46,8 +46,8 @@ pub struct OpenIMClient {
     pub(crate) listeners: Arc<EventHub>,
 }
 
-use crate::constant::sync_flag;
-use crate::constant::ws_push_identifier;
+use crate::domain::constant::sync_flag;
+use crate::domain::constant::ws_push_identifier;
 use crate::logger::span_from_operation_id;
 use openim_protocol::sdkws::PushMessages;
 use openim_protocol::sdkws::{SetAppBackgroundStatusReq, SetAppBackgroundStatusResp};
@@ -216,7 +216,7 @@ impl ConnectionApi for OpenIMClient {
                     self.user.set_self_user_info(user).await;
                     debug!("[SDK] self_user 缓存已初始化");
                 } else {
-                    let minimal = crate::model::user::UserInfo {
+                    let minimal = crate::domain::model::user::UserInfo {
                         user_id: uid.clone(),
                         nickname: uid.clone(),
                         face_url: String::new(),
@@ -232,7 +232,7 @@ impl ConnectionApi for OpenIMClient {
             }
             Err(e) => {
                 warn!("[SDK] 获取 self_user 失败，使用最小信息兜底: {}", e);
-                let minimal = crate::model::user::UserInfo {
+                let minimal = crate::domain::model::user::UserInfo {
                     user_id: uid.clone(),
                     nickname: uid.clone(),
                     face_url: String::new(),

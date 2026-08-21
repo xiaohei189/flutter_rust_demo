@@ -3,7 +3,7 @@
 //! 对齐 Go SDK HTTP 契约。
 //! 当前由 core::online\::service 消费；如需端口化，可收敛为 $(OnlineStatusService.Replace('Service',''))ServerApi trait。
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 

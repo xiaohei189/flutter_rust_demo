@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::model::local::LocalSendingMessage;
+use crate::domain::error::Result;
+use crate::domain::model::local::LocalSendingMessage;
 use async_trait::async_trait;
 
 /// 发送中消息仓库接口

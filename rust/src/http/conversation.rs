@@ -2,7 +2,7 @@
 //!
 //! 对齐 Go SDK `conversation.go` 中的请求体定义。
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::Deserializer;
 use serde::{Deserialize, Serialize};
@@ -254,7 +254,7 @@ impl ConversationServerApi for MockConversationApi {
 
     async fn set_conversation_on_server(&self, req: &SetConversationReq) -> Result<()> {
         if self.set_fail {
-            return Err(crate::error::SdkError::network("mock server failure".to_string()));
+            return Err(crate::domain::error::SdkError::network("mock server failure".to_string()));
         }
         self.set_calls.lock().unwrap().push(req.clone());
         Ok(())

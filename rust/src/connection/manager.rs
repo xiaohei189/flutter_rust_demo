@@ -10,7 +10,7 @@
 use crate::connection::message_batcher::MessageBatcher;
 use crate::connection::ws::GzipCompressor;
 use crate::connection::ws::OpenIMResp;
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
 use crate::event::events::user::UserEvent;
 use futures_util::stream::SplitSink;
@@ -35,7 +35,7 @@ pub const RECONNECT_BASE_DELAY: Duration = Duration::from_secs(1);
 pub const RECONNECT_MAX_DELAY: Duration = Duration::from_secs(60);
 pub const MAX_RECONNECT_ATTEMPTS: u32 = 300;
 
-pub use crate::constant::ConnectionState;
+pub use crate::domain::constant::ConnectionState;
 
 pub(crate) struct PendingRequest {
     pub(crate) tx: oneshot::Sender<OpenIMResp>,

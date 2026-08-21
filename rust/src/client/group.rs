@@ -4,11 +4,11 @@
 
 use crate::client::OpenIMClient;
 
-use crate::constant::GroupType;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::GroupType;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::group::GroupEvent;
 use crate::http::group::GroupApplyInfo;
-use crate::model::group::{GroupInfo, GroupMember};
+use crate::domain::model::group::{GroupInfo, GroupMember};
 use async_trait::async_trait;
 
 #[async_trait]
@@ -101,7 +101,7 @@ impl GroupApi for OpenIMClient {
     #[tracing::instrument(skip_all, fields(group_id = %group_id))]
     async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>) -> Result<()> {
         self.group
-            .set_group_info(crate::model::group::SetGroupInfoFields {
+            .set_group_info(crate::domain::model::group::SetGroupInfoFields {
                 group_id: group_id.to_string(),
                 group_name: group_name.map(|s| s.to_string()),
                 face_url: face_url.map(|s| s.to_string()),

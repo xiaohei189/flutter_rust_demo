@@ -98,13 +98,13 @@ impl OpenIMReq {
         }
     }
 
-    pub fn encode_to_vec(&self) -> Result<Vec<u8>, crate::error::SdkError> {
-        let json = serde_json::to_vec(self).map_err(crate::error::SdkError::from)?;
+    pub fn encode_to_vec(&self) -> Result<Vec<u8>, crate::domain::error::SdkError> {
+        let json = serde_json::to_vec(self).map_err(crate::domain::error::SdkError::from)?;
         Ok(json)
     }
 
-    pub fn decode_from_bytes(bytes: &[u8]) -> Result<Self, crate::error::SdkError> {
-        serde_json::from_slice(bytes).map_err(crate::error::SdkError::from)
+    pub fn decode_from_bytes(bytes: &[u8]) -> Result<Self, crate::domain::error::SdkError> {
+        serde_json::from_slice(bytes).map_err(crate::domain::error::SdkError::from)
     }
 }
 
@@ -113,21 +113,21 @@ impl OpenIMResp {
         self.err_code == 0
     }
 
-    pub fn into_result<T: ProstMessage + Default>(self) -> Result<T, crate::error::SdkError> {
+    pub fn into_result<T: ProstMessage + Default>(self) -> Result<T, crate::domain::error::SdkError> {
         if self.is_success() {
-            T::decode(self.data.as_slice()).map_err(crate::error::SdkError::from)
+            T::decode(self.data.as_slice()).map_err(crate::domain::error::SdkError::from)
         } else {
-            Err(crate::error::SdkError::api(self.err_code, &self.err_msg))
+            Err(crate::domain::error::SdkError::api(self.err_code, &self.err_msg))
         }
     }
 
-    pub fn encode_to_vec(&self) -> Result<Vec<u8>, crate::error::SdkError> {
-        let json = serde_json::to_vec(self).map_err(crate::error::SdkError::from)?;
+    pub fn encode_to_vec(&self) -> Result<Vec<u8>, crate::domain::error::SdkError> {
+        let json = serde_json::to_vec(self).map_err(crate::domain::error::SdkError::from)?;
         Ok(json)
     }
 
-    pub fn decode_from_bytes(bytes: &[u8]) -> Result<Self, crate::error::SdkError> {
-        serde_json::from_slice(bytes).map_err(crate::error::SdkError::from)
+    pub fn decode_from_bytes(bytes: &[u8]) -> Result<Self, crate::domain::error::SdkError> {
+        serde_json::from_slice(bytes).map_err(crate::domain::error::SdkError::from)
     }
 }
 

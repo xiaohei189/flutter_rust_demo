@@ -5,11 +5,11 @@
 //! 所有操作委托给 OpenIMClient
 
 use crate::client::{GetHistoryMessagesReq, SearchMessagesReq};
-use crate::constant::SessionType;
+use crate::domain::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
 use crate::ffi::global::client_holder;
 use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::model::msg_struct::MsgStruct;
+use crate::domain::model::msg_struct::MsgStruct;
 use anyhow::Result;
 
 impl OpenIMBridgeClient {
@@ -34,7 +34,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn send_advanced_text_message(&self, text: String, entities: Vec<crate::model::msg_struct::MessageEntity>, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
+    pub async fn send_advanced_text_message(&self, text: String, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: String, session_type: SessionType) -> Result<MsgStruct> {
         self.inner
             .send_advanced_text_message(&text, entities, &source_id, session_type.into())
             .await
@@ -71,7 +71,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn search_local_messages(&self, req: SearchMessagesReq) -> Result<Vec<crate::model::local::LocalChatLog>> {
+    pub async fn search_local_messages(&self, req: SearchMessagesReq) -> Result<Vec<crate::domain::model::local::LocalChatLog>> {
         self.inner.search_local_messages(req).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
@@ -187,7 +187,7 @@ pub async fn send_advanced_quote_message(
     quote_client_msg_id: String,
     quote_send_id: String,
     quote_send_time: i64,
-    message_entities: Vec<crate::model::msg_struct::MessageEntity>,
+    message_entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
 ) -> Result<MsgStruct> {
     let client = client_holder()?;
     let quote_struct = MsgStruct {
@@ -206,7 +206,7 @@ pub async fn send_advanced_quote_message(
 pub async fn send_at_text_message_with_quote(
     text: String,
     at_user_list: Vec<String>,
-    at_users_info: Vec<crate::model::msg_struct::AtInfo>,
+    at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>,
     source_id: String,
     session_type: SessionType,
 ) -> Result<MsgStruct> {

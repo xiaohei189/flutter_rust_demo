@@ -13,7 +13,7 @@ use rust_lib_flutter_rust_demo::http::group::GroupServerApi;
 use rust_lib_flutter_rust_demo::http::group_api::HttpGroupApi;
 use rust_lib_flutter_rust_demo::http::online::{GetUserStatusReq, OnlineStatusServerApi};
 use rust_lib_flutter_rust_demo::http::online_api::HttpOnlineStatusApi;
-use rust_lib_flutter_rust_demo::model::UserId;
+use rust_lib_flutter_rust_demo::domain::model::UserId;
 use std::sync::Arc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

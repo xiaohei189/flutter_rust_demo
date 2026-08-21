@@ -13,7 +13,7 @@ use crate::event::events::conversation::{ConversationEvent, ConversationListener
 use crate::event::events::message::MessageListener;
 use crate::http::message::MessageServerApi;
 use crate::message::receive::checker::{MessageChecker, SeqPullContext};
-use crate::model::UserId;
+use crate::domain::model::UserId;
 use std::sync::Arc;
 
 /// 消息服务 — 用户主动发起的消息操作（撤回/删除/标记已读/搜索）
@@ -59,8 +59,8 @@ mod tests {
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
-    use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::model::UserId;
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
+    use crate::domain::model::UserId;
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -81,19 +81,19 @@ mod tests {
 
     #[async_trait::async_trait]
     impl MessageServerApi for SuccessMockApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::error::Result<()> {
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::Result<()> {
             Ok(())
         }
-        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::error::Result<()> {
+        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::Result<()> {
             Ok(())
         }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::error::Result<()> {
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::Result<()> {
             Ok(())
         }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> {
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::Result<()> {
             Ok(())
         }
-        async fn get_server_time(&self) -> crate::error::Result<i64> {
+        async fn get_server_time(&self) -> crate::domain::error::Result<i64> {
             Ok(0)
         }
     }
@@ -102,20 +102,20 @@ mod tests {
 
     #[async_trait::async_trait]
     impl MessageServerApi for FailMockApi {
-        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::error::Result<()> {
-            Err(crate::error::SdkError::api(1001, "server error"))
+        async fn revoke_on_server(&self, _req: &RevokeMessageReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::error::Result<()> {
-            Err(crate::error::SdkError::api(1001, "server error"))
+        async fn delete_on_server(&self, _c: &str, _s: &[i64], _u: &str) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::error::Result<()> {
-            Err(crate::error::SdkError::api(1001, "server error"))
+        async fn mark_conversation_as_read_on_server(&self, _req: &MarkConversationAsReadReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::error::Result<()> {
-            Err(crate::error::SdkError::api(1001, "server error"))
+        async fn mark_messages_as_read_on_server(&self, _req: &MarkMessagesAsReadReq) -> crate::domain::error::Result<()> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
-        async fn get_server_time(&self) -> crate::error::Result<i64> {
-            Err(crate::error::SdkError::api(1001, "server error"))
+        async fn get_server_time(&self) -> crate::domain::error::Result<i64> {
+            Err(crate::domain::error::SdkError::api(1001, "server error"))
         }
     }
 
@@ -230,10 +230,10 @@ mod tests {
 
         let mut msg1 = make_local_msg("conv_filter", "msg_1", 1, "user_2");
         msg1.send_time = 1000;
-        msg1.content_type = crate::constant::content_type::TEXT;
+        msg1.content_type = crate::domain::constant::content_type::TEXT;
         let mut msg2 = make_local_msg("conv_filter", "msg_2", 2, "user_3");
         msg2.send_time = 2000;
-        msg2.content_type = crate::constant::content_type::PICTURE;
+        msg2.content_type = crate::domain::constant::content_type::PICTURE;
         message_dao.batch_insert(&[msg1, msg2]).await.unwrap();
 
         let results = service
@@ -241,7 +241,7 @@ mod tests {
                 conversation_id: "conv_filter".to_string(),
                 keyword: "hello".to_string(),
                 sender_user_ids: vec!["user_3".to_string()],
-                message_types: vec![crate::constant::content_type::PICTURE],
+                message_types: vec![crate::domain::constant::content_type::PICTURE],
                 start_time: 1500,
                 end_time: 3000,
                 offset: 0,
@@ -340,7 +340,7 @@ mod tests {
             .await
             .unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_r", "msg_r1").await.unwrap().unwrap();
-        assert_eq!(msg.content_type, crate::constant::notification_type::REVOKE);
+        assert_eq!(msg.content_type, crate::domain::constant::notification_type::REVOKE);
     }
 
     #[tokio::test]
@@ -392,7 +392,7 @@ mod tests {
             .unwrap();
 
         let msg = message_dao.get_by_client_msg_id("conv_z", "msg_z").await.unwrap().unwrap();
-        assert_eq!(msg.content_type, crate::constant::notification_type::REVOKE);
+        assert_eq!(msg.content_type, crate::domain::constant::notification_type::REVOKE);
     }
 
     #[tokio::test]
@@ -437,7 +437,7 @@ mod tests {
             .await
             .unwrap();
         let msg = message_dao.get_by_client_msg_id("conv_d", "msg_d1").await.unwrap().unwrap();
-        assert_eq!(msg.status, crate::constant::msg_status::HAS_DELETED, "本地删除应保留记录并标记为已删除");
+        assert_eq!(msg.status, crate::domain::constant::msg_status::HAS_DELETED, "本地删除应保留记录并标记为已删除");
     }
 
     #[tokio::test]

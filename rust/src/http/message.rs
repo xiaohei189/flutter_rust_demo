@@ -1,6 +1,6 @@
 //! 消息服务端 API 契约与请求体（Port）
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 

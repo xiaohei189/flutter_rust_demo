@@ -45,7 +45,7 @@ pub struct GetHistoryMessagesReq {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetHistoryMessagesResult {
-    pub messages: Vec<crate::model::message::MessageInfo>,
+    pub messages: Vec<crate::domain::model::message::MessageInfo>,
     pub is_end: bool,
 }
 

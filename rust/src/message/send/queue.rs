@@ -5,8 +5,8 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 use tracing::{debug, warn, Instrument};
 
-use crate::constant::content_type_utils::ContentTypeUtils;
-use crate::error::SdkError;
+use crate::domain::constant::content_type_utils::ContentTypeUtils;
+use crate::domain::error::SdkError;
 use crate::logger::{encode_operation_id, extract_span_id, extract_trace_id, span_from_operation_id};
 use openim_protocol::sdkws::UserSendMsgResp;
 

@@ -6,15 +6,15 @@
 
 use crate::client::context::RuntimeContext;
 use crate::connection::manager::ConnectionManager;
-use crate::constant::MessageSendStatus;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::file::upload::{FileUploader, ProgressCallback};
 use crate::message::send::queue::MessageSendQueue;
 use crate::message::ContentTypeUtils;
-use crate::model::local::{LocalChatLog, LocalSendingMessage};
-use crate::model::msg_struct::{get_msg_id, AtInfo, CardElem, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
+use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
+use crate::domain::model::msg_struct::{get_msg_id, AtInfo, CardElem, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
 use crate::user::service::UserService;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
@@ -75,7 +75,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
         Err(_) => return Ok(msg.content.clone()),
     };
 
-    use crate::constant::types::content_type;
+    use crate::domain::constant::types::content_type;
 
     match msg.content_type {
         content_type::PICTURE => {
@@ -374,7 +374,7 @@ impl MessageSender {
             .upload_image(file_path, None)
             .await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
-        let source = crate::model::msg_struct::PictureBaseInfo {
+        let source = crate::domain::model::msg_struct::PictureBaseInfo {
             width: 0,
             height: 0,
             picture_type: String::new(),
@@ -385,8 +385,8 @@ impl MessageSender {
         let mut msg = MsgStruct::create_image_message(
             file_path,
             source,
-            crate::model::msg_struct::PictureBaseInfo::default(),
-            crate::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
         );
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
@@ -399,7 +399,7 @@ impl MessageSender {
             .upload_image(file_path, Some(progress.clone()))
             .await
             .map_err(|e| SdkError::message_send(format!("upload image failed: {}", e)))?;
-        let source = crate::model::msg_struct::PictureBaseInfo {
+        let source = crate::domain::model::msg_struct::PictureBaseInfo {
             width: 0,
             height: 0,
             picture_type: String::new(),
@@ -410,8 +410,8 @@ impl MessageSender {
         let mut msg = MsgStruct::create_image_message(
             file_path,
             source,
-            crate::model::msg_struct::PictureBaseInfo::default(),
-            crate::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
+            crate::domain::model::msg_struct::PictureBaseInfo::default(),
         );
         msg.session_type = session_type;
         self.send_msg(msg, source_id, None).await
@@ -426,7 +426,7 @@ impl MessageSender {
             .upload_file(file_path, &file_name, None)
             .await
             .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
-        let file_elem = crate::model::msg_struct::FileElem {
+        let file_elem = crate::domain::model::msg_struct::FileElem {
             file_path: file_path.to_string(),
             uuid: upload_result.file_id.clone(),
             source_url: upload_result.url,
@@ -448,7 +448,7 @@ impl MessageSender {
             .upload_file_with_progress(file_path, &file_name, None, Some(progress.clone()))
             .await
             .map_err(|e| SdkError::message_send(format!("upload file failed: {}", e)))?;
-        let file_elem = crate::model::msg_struct::FileElem {
+        let file_elem = crate::domain::model::msg_struct::FileElem {
             file_path: file_path.to_string(),
             uuid: upload_result.file_id.clone(),
             source_url: upload_result.url,
@@ -471,7 +471,7 @@ impl MessageSender {
             .upload_file(file_path, &file_name, None)
             .await
             .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
-        let sound_elem = crate::model::msg_struct::SoundElem {
+        let sound_elem = crate::domain::model::msg_struct::SoundElem {
             uuid: upload_result.file_id.clone(),
             sound_path: file_path.to_string(),
             source_url: upload_result.url,
@@ -493,7 +493,7 @@ impl MessageSender {
             .upload_file_with_progress(file_path, &file_name, None, Some(progress.clone()))
             .await
             .map_err(|e| SdkError::message_send(format!("upload sound failed: {}", e)))?;
-        let sound_elem = crate::model::msg_struct::SoundElem {
+        let sound_elem = crate::domain::model::msg_struct::SoundElem {
             uuid: upload_result.file_id.clone(),
             sound_path: file_path.to_string(),
             source_url: upload_result.url,
@@ -527,7 +527,7 @@ impl MessageSender {
             .await
             .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
 
-        let video_elem = crate::model::msg_struct::VideoElem {
+        let video_elem = crate::domain::model::msg_struct::VideoElem {
             video_path: video_path.to_string(),
             video_uuid: v_upload.file_id.clone(),
             video_url: v_upload.url,
@@ -576,7 +576,7 @@ impl MessageSender {
             .await
             .map_err(|e| SdkError::message_send(format!("upload snapshot failed: {}", e)))?;
 
-        let video_elem = crate::model::msg_struct::VideoElem {
+        let video_elem = crate::domain::model::msg_struct::VideoElem {
             video_path: video_path.to_string(),
             video_uuid: v_upload.file_id.clone(),
             video_url: v_upload.url,
@@ -599,7 +599,7 @@ impl MessageSender {
     /// 从 URL 创建图片消息（对齐 Go SDK `CreateImageMessage(sourcePath="")`）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_image_message_from_url(&self, source_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let picture = crate::model::msg_struct::PictureBaseInfo {
+        let picture = crate::domain::model::msg_struct::PictureBaseInfo {
             url: source_url.to_string(),
             ..Default::default()
         };
@@ -611,7 +611,7 @@ impl MessageSender {
     /// 从 URL 创建语音消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_sound_message_from_url(&self, source_url: &str, duration: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::model::msg_struct::SoundElem {
+        let elem = crate::domain::model::msg_struct::SoundElem {
             source_url: source_url.to_string(),
             duration,
             ..Default::default()
@@ -624,7 +624,7 @@ impl MessageSender {
     /// 从 URL 创建视频消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_video_message_from_url(&self, source_url: &str, duration: i64, snapshot_url: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::model::msg_struct::VideoElem {
+        let elem = crate::domain::model::msg_struct::VideoElem {
             video_url: source_url.to_string(),
             duration,
             snapshot_url: snapshot_url.to_string(),
@@ -638,7 +638,7 @@ impl MessageSender {
     /// 从 URL 创建文件消息
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
     pub async fn send_file_message_from_url(&self, source_url: &str, file_name: &str, file_size: i64, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
-        let elem = crate::model::msg_struct::FileElem {
+        let elem = crate::domain::model::msg_struct::FileElem {
             source_url: source_url.to_string(),
             file_name: file_name.to_string(),
             file_size,
@@ -663,7 +663,7 @@ impl MessageSender {
         let mut msg = MsgStruct::create_typing_message(msg_tips);
         msg.send_id = send_id;
         msg.sender_platform_id = platform_id;
-        msg.client_msg_id = crate::model::msg_struct::get_msg_id(&msg.send_id);
+        msg.client_msg_id = crate::domain::model::msg_struct::get_msg_id(&msg.send_id);
         msg.create_time = now;
         msg.send_time = now;
         msg.session_type = session_type;
@@ -694,7 +694,7 @@ impl MessageSender {
 
         // 直接通过 WS RPC 发送，不走 send_msg（不入库、不更新会话）
         info!("[Typing] 请求: source_id={}, session_type={}, focus={}", source_id, session_type, focus);
-        let resp: UserSendMsgResp = self.connection.send_rpc(crate::constant::ws_req_identifier::SEND_MSG, &msg_data).await?;
+        let resp: UserSendMsgResp = self.connection.send_rpc(crate::domain::constant::ws_req_identifier::SEND_MSG, &msg_data).await?;
 
         info!(
             "[Typing] 响应: client_msg_id={}, server_msg_id={}, send_time={}",
@@ -726,22 +726,22 @@ impl MessageSender {
         let mut msg = MsgStruct::new();
         msg.content_type = content_type;
         msg.content = content.to_string();
-        msg.msg_from = crate::model::msg_struct::MSG_FROM_USER;
+        msg.msg_from = crate::domain::model::msg_struct::MSG_FROM_USER;
 
         // 从 content 恢复 typed elem
         match content_type {
             101 => {
-                if let Ok(elem) = serde_json::from_str::<crate::model::msg_struct::TextElem>(content) {
+                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::TextElem>(content) {
                     msg.text_elem = Some(elem);
                 }
             }
             117 => {
-                if let Ok(elem) = serde_json::from_str::<crate::model::msg_struct::AdvancedTextElem>(content) {
+                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::AdvancedTextElem>(content) {
                     msg.advanced_text_elem = Some(elem);
                 }
             }
             118 => {
-                if let Ok(elem) = serde_json::from_str::<crate::model::msg_struct::MarkdownTextElem>(content) {
+                if let Ok(elem) = serde_json::from_str::<crate::domain::model::msg_struct::MarkdownTextElem>(content) {
                     msg.markdown_text_elem = Some(elem);
                 }
             }
@@ -1012,7 +1012,7 @@ impl MessageSender {
 mod tests {
     use super::*;
     use crate::http::client::HttpApiClient;
-    use crate::model::msg_struct::MsgStruct;
+    use crate::domain::model::msg_struct::MsgStruct;
 
     /// 创建测试用 FileUploader（不会实际触发上传）
     fn make_uploader() -> Arc<FileUploader> {
@@ -1359,10 +1359,10 @@ mod tests {
 
     use crate::client::config::ClientConfig;
     use crate::client::context::RuntimeContext;
-    use crate::constant::MessageSendStatus;
+    use crate::domain::constant::MessageSendStatus;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::model::local::LocalChatLog;
+    use crate::domain::model::local::LocalChatLog;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio_util::sync::CancellationToken;
 
@@ -1457,7 +1457,7 @@ mod tests {
             },
             listeners,
             cancel_token: CancellationToken::new(),
-            user_id: crate::model::UserId::new("test_user"),
+            user_id: crate::domain::model::UserId::new("test_user"),
             operation_id: "test_op".to_string(),
             repositories: Arc::new(crate::client::context::Repositories {
                 message_repo: Arc::new(MessageDao::new(pool.clone())),
@@ -1666,7 +1666,7 @@ mod tests {
         let send_time = 1700000000000i64;
 
         // 先创建会话（update_after_sent_message 需要已存在的会话）
-        let conv = crate::model::local::LocalConversation {
+        let conv = crate::domain::model::local::LocalConversation {
             conversation_id: "si_user_a_user_b".to_string(),
             conversation_type: 1,
             user_id: "user_a".to_string(),

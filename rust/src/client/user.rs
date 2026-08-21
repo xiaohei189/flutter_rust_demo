@@ -3,10 +3,10 @@
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
 use crate::client::OpenIMClient;
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::user::UserEvent;
 use crate::http::online::OnlineStatus;
-use crate::model::user::UserInfo;
+use crate::domain::model::user::UserInfo;
 use async_trait::async_trait;
 
 #[async_trait]

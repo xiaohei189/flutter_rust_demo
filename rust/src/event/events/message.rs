@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::message::MessageInfo;
+use crate::domain::model::message::MessageInfo;
 
 /// C2C 已读回执（对齐 Go SDK sdkws.MessageReceipt）
 #[derive(Clone, Debug, PartialEq)]

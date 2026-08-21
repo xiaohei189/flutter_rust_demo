@@ -13,7 +13,7 @@ pub mod operate;
 pub mod notification;
 // Facade re-exports: 外部引用路径兼容
 pub use crate::connection::sync_server::SyncServerApi;
-pub use crate::constant::content_type_utils::ContentTypeUtils;
+pub use crate::domain::constant::content_type_utils::ContentTypeUtils;
 pub use crate::http::message::MessageServerApi;
 pub use operate::MessageService;
 pub use receive::{MaxSeqRecorder, MessageProcessor, MessageSyncer};

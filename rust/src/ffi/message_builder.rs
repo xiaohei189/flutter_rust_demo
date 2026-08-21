@@ -9,7 +9,7 @@
 //! - 语音/文件：SDK 读文件大小（os.Stat），duration 由调用方传入
 //! - 视频：duration/videoType 由调用方传入
 
-use crate::model::msg_struct::{AtInfo, CardElem, FileElem, MessageEntity, MsgStruct, PictureBaseInfo, SoundElem, VideoElem};
+use crate::domain::model::msg_struct::{AtInfo, CardElem, FileElem, MessageEntity, MsgStruct, PictureBaseInfo, SoundElem, VideoElem};
 use anyhow::{anyhow, Result};
 use std::fs;
 use std::path::Path;
@@ -281,5 +281,5 @@ pub fn create_face_message(index: i32, data: String) -> MsgStruct {
 /// 获取 @所有人 标签（对齐 Go SDK `GetAtAllTag`，返回常量 "@All"）
 #[flutter_rust_bridge::frb]
 pub fn get_at_all_tag() -> String {
-    crate::constant::AT_ALL_TAG.to_string()
+    crate::domain::constant::AT_ALL_TAG.to_string()
 }

@@ -179,7 +179,7 @@ appLog.d('[ModuleName] 调试信息')
 
 ### 模块组织
 
-目标分层架构（每层有 `mod.rs`）；当前 `rust/src` 仍为扁平结构，迁移未完成：
+目标分层架构（每层有 `mod.rs`）；当前 `domain/` 已迁入，`infra/core/sdk/api` 待迁移：
 
 ```rust
 // rust/src/lib.rs

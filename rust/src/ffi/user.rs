@@ -7,12 +7,12 @@ impl OpenIMBridgeClient {
     // ========== 用户操作 ==========
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<crate::model::user::UserInfo>> {
+    pub async fn get_users_info(&self, user_ids: Vec<String>) -> Result<Vec<crate::domain::model::user::UserInfo>> {
         self.inner.get_users_info(&user_ids).await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_self_user_info(&self) -> Result<crate::model::user::UserInfo> {
+    pub async fn get_self_user_info(&self) -> Result<crate::domain::model::user::UserInfo> {
         self.inner.get_self_user_info().await.map_err(|e| anyhow::anyhow!("{}", e))
     }
 

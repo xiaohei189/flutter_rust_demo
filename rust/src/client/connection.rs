@@ -2,7 +2,7 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::connection::ConnectionEvent;
 use async_trait::async_trait;
 

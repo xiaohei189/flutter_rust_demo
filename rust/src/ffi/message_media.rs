@@ -3,10 +3,10 @@
 //! 图片/文件/语音/视频消息发送（含上传进度回调、URL 直发）及文件上传
 //! 所有操作委托给 OpenIMClient
 
-use crate::constant::SessionType;
+use crate::domain::constant::SessionType;
 use crate::ffi::client::OpenIMBridgeClient;
 use crate::ffi::global::client_holder;
-use crate::model::msg_struct::MsgStruct;
+use crate::domain::model::msg_struct::MsgStruct;
 
 use crate::frb_generated::StreamSink;
 use anyhow::Result;

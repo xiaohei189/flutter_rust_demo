@@ -3,11 +3,11 @@
 //! 转发、seq 查询、Typing、编辑、删除系列、本地存储管理等
 //! 所有操作委托给 OpenIMClient
 
-use crate::constant::SessionType;
+use crate::domain::constant::SessionType;
 use crate::ffi::global::client_holder;
 use crate::http::message::DeleteMessagesReq;
-use crate::model::local::LocalChatLog;
-use crate::model::msg_struct::{MsgStruct, OfflinePushInfo};
+use crate::domain::model::local::LocalChatLog;
+use crate::domain::model::msg_struct::{MsgStruct, OfflinePushInfo};
 use anyhow::{anyhow, Result};
 
 // ============================================================================
@@ -281,7 +281,7 @@ pub async fn insert_single_message_to_local_storage(recv_id: String, content: St
 
 /// 发送仅在线消息（对齐 Go SDK `SendMessage` isOnlineOnly=true）
 #[flutter_rust_bridge::frb]
-pub async fn send_message_online_only(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType) -> Result<MsgStruct> {
+pub async fn send_message_online_only(msg_struct: MsgStruct, source_id: String, session_type: crate::domain::constant::SessionType) -> Result<MsgStruct> {
     let client = client_holder()?;
     let mut msg = msg_struct;
     msg.session_type = session_type.into();
@@ -291,7 +291,7 @@ pub async fn send_message_online_only(msg_struct: MsgStruct, source_id: String, 
 
 /// 通用消息发送（对齐 Go SDK `SendMessage`，支持离线推送参数）
 #[flutter_rust_bridge::frb]
-pub async fn send_message(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
+pub async fn send_message(msg_struct: MsgStruct, source_id: String, session_type: crate::domain::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
     let client = client_holder()?;
     let mut msg = msg_struct;
     msg.session_type = session_type.into();
@@ -313,7 +313,7 @@ pub async fn send_message(msg_struct: MsgStruct, source_id: String, session_type
 /// 发送时跳过 OSS 上传流程（process_media_content_impl 对无 sourcePath
 /// 的消息天然跳过上传，与 Go sendMessageNotOss 语义一致）。
 #[flutter_rust_bridge::frb]
-pub async fn send_message_not_oss(msg_struct: MsgStruct, source_id: String, session_type: crate::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
+pub async fn send_message_not_oss(msg_struct: MsgStruct, source_id: String, session_type: crate::domain::constant::SessionType, offline_push_info: Option<OfflinePushInfo>) -> Result<MsgStruct> {
     let client = client_holder()?;
     let mut msg = msg_struct;
     msg.session_type = session_type.into();

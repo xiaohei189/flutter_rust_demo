@@ -1,4 +1,4 @@
-use crate::error::SdkError;
+use crate::domain::error::SdkError;
 use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
 use crate::file::upload::dto::{CompleteFormDataReq, CompleteFormDataResp, InitiateFormDataReq, InitiateFormDataResp, UploadResult};
 use crate::file::upload::uploader::FileUploader;
@@ -12,7 +12,7 @@ use tracing::info;
 // ============================================================================
 
 impl FileUploader {
-    pub(crate) async fn upload_file_form_data(&self, file_path: &str, name: &str, content_type: &str, file_size: i64, cb: Option<&dyn UploadFileCallback>) -> crate::error::Result<UploadResult> {
+    pub(crate) async fn upload_file_form_data(&self, file_path: &str, name: &str, content_type: &str, file_size: i64, cb: Option<&dyn UploadFileCallback>) -> crate::domain::error::Result<UploadResult> {
         let cb_ref = cb.unwrap_or(&EmptyUploadCallback);
         cb_ref.open(file_size);
 

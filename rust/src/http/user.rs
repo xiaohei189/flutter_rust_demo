@@ -2,7 +2,7 @@
 //!
 //! 对齐 Go SDK HTTP 契约。
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 

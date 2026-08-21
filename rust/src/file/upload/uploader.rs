@@ -1,5 +1,5 @@
 use crate::db::misc_dao::UploadDao;
-use crate::error::SdkError;
+use crate::domain::error::SdkError;
 use crate::file::callbacks::UploadFileCallback;
 use crate::file::upload::dto::{PartLimitResp, ProgressCallback, UploadResult};
 use crate::file::upload::session::HashLock;
@@ -47,7 +47,7 @@ impl FileUploader {
     // 公开 API — 无进度回调
     // ========================================================================
 
-    pub async fn upload_file(&self, file_path: &str, name: &str, content_type: Option<String>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_file(&self, file_path: &str, name: &str, content_type: Option<String>) -> crate::domain::error::Result<UploadResult> {
         self.upload_file_with_progress(file_path, name, content_type, None).await
     }
 
@@ -55,7 +55,7 @@ impl FileUploader {
     // 公开 API — 带简单进度回调（兼容旧接口）
     // ========================================================================
 
-    pub async fn upload_file_with_progress(&self, file_path: &str, name: &str, content_type: Option<String>, progress: Option<ProgressCallback>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_file_with_progress(&self, file_path: &str, name: &str, content_type: Option<String>, progress: Option<ProgressCallback>) -> crate::domain::error::Result<UploadResult> {
         let cb = progress.map(|p| SimpleProgressCallback { progress: p });
         self.upload_file_with_callback(file_path, name, content_type, cb.as_ref().map(|c| c as &dyn UploadFileCallback)).await
     }
@@ -64,7 +64,7 @@ impl FileUploader {
     // 公开 API — 带细粒度回调（对齐 Go SDK UploadFileCallback）
     // ========================================================================
 
-    pub async fn upload_file_with_callback(&self, file_path: &str, name: &str, content_type: Option<String>, cb: Option<&dyn UploadFileCallback>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_file_with_callback(&self, file_path: &str, name: &str, content_type: Option<String>, cb: Option<&dyn UploadFileCallback>) -> crate::domain::error::Result<UploadResult> {
         let path = Path::new(file_path);
         if !path.exists() {
             return Err(SdkError::file_upload(format!("文件不存在: {}", file_path)));
@@ -99,20 +99,20 @@ impl FileUploader {
         }
     }
 
-    pub async fn upload_image(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_image(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::domain::error::Result<UploadResult> {
         let path = Path::new(file_path);
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("image.jpg").to_string();
         let content_type = self.detect_content_type(&name);
         self.upload_file_with_progress(file_path, &name, Some(content_type), progress).await
     }
 
-    pub async fn upload_video(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_video(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::domain::error::Result<UploadResult> {
         let path = Path::new(file_path);
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("video.mp4").to_string();
         self.upload_file_with_progress(file_path, &name, Some("video/mp4".to_string()), progress).await
     }
 
-    pub async fn upload_audio(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::error::Result<UploadResult> {
+    pub async fn upload_audio(&self, file_path: &str, progress: Option<ProgressCallback>) -> crate::domain::error::Result<UploadResult> {
         let path = Path::new(file_path);
         let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("audio.mp3").to_string();
         self.upload_file_with_progress(file_path, &name, Some("audio/mpeg".to_string()), progress).await

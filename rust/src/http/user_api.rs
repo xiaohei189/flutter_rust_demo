@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::user`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::routes::{GET_USERS_INFO, GET_USER_CLIENT_CONFIG, SET_GLOBAL_MSG_RECV_OPT, UPDATE_USER_INFO};
 use crate::http::user::{GetUserClientConfigReq, GetUserClientConfigResp, GetUsersInfoReq, GetUsersInfoResp, UpdateUserInfoReq, UpdateUserInfoResp, UserServerApi};

@@ -2,7 +2,7 @@
 //!
 //! trait 定义在 `domain::ports::friend`
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::friend::{
     AcceptFriendApplicationReq, AddBlackReq, AddFriendReq, CheckFriendResult, DeleteFriendReq, FriendServerApi, GetBlackListResp, GetDesignatedFriendsReq, GetDesignatedFriendsResp,
@@ -100,13 +100,13 @@ impl FriendServerApi for HttpFriendApi {
 
     async fn get_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
         let raw: serde_json::Value = self.http_client.post(GET_FRIEND_APPLY_LIST, req).await?;
-        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::domain::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
         Ok(server.into())
     }
 
     async fn get_self_friend_apply_list(&self, req: &GetFriendApplyListReq) -> Result<GetFriendApplyListResp> {
         let raw: serde_json::Value = self.http_client.post(GET_SELF_FRIEND_APPLY_LIST, req).await?;
-        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
+        let server: GetFriendApplyListServerResp = serde_json::from_value(raw).map_err(|e| crate::domain::error::SdkError::unknown(format!("解析好友申请列表失败: {}", e)))?;
         Ok(server.into())
     }
 

@@ -4,12 +4,12 @@
 
 use crate::client::OpenIMClient;
 use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::message::MessageEvent;
 use crate::file::upload::ProgressCallback;
 use crate::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
-use crate::model::local::LocalChatLog;
-use crate::model::msg_struct::MsgStruct;
+use crate::domain::model::local::LocalChatLog;
+use crate::domain::model::msg_struct::MsgStruct;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
 use std::sync::Arc;
@@ -21,7 +21,7 @@ pub trait MessageApi: Send + Sync {
     async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
-    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
+    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &Arc<dyn Fn(u8) + Send + Sync>) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
@@ -47,7 +47,7 @@ pub trait MessageApi: Send + Sync {
     ) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_at_text_message(&self, text: &str, at_user_ids: Vec<String>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_custom_message(&self, data: &str, desc: &str, extension: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
-    async fn send_quote_message(&self, text: &str, quote: crate::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
+    async fn send_quote_message(&self, text: &str, quote: crate::domain::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_merger_message(
         &self,
         source_conversation_id: &str,
@@ -69,7 +69,7 @@ pub trait MessageApi: Send + Sync {
         &self,
         text: &str,
         at_user_list: Vec<String>,
-        at_users_info: Vec<crate::model::msg_struct::AtInfo>,
+        at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>,
         quote_msg: Option<Box<MsgStruct>>,
         source_id: &str,
         session_type: i32,
@@ -98,8 +98,8 @@ pub trait MessageApi: Send + Sync {
     async fn send_advanced_quote_message(
         &self,
         text: &str,
-        quote: crate::model::msg_struct::MsgStruct,
-        message_entities: Vec<crate::model::msg_struct::MessageEntity>,
+        quote: crate::domain::model::msg_struct::MsgStruct,
+        message_entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
         source_id: &str,
         session_type: i32,
     ) -> std::result::Result<MsgStruct, SdkError>;
@@ -148,7 +148,7 @@ impl MessageApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         self.sender.send_advanced_text_message(text, entities, source_id, session_type).await
     }
 
@@ -219,7 +219,7 @@ impl MessageApi for OpenIMClient {
 
     /// 发送引用消息（对齐 Go SDK `CreateQuoteMessage` + `SendMessage`）
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_quote_message(&self, text: &str, quote: crate::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+    async fn send_quote_message(&self, text: &str, quote: crate::domain::model::msg_struct::MsgStruct, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
         self.sender.send_quote_message(text, quote, source_id, session_type).await
     }
 
@@ -293,7 +293,7 @@ impl MessageApi for OpenIMClient {
         &self,
         text: &str,
         at_user_list: Vec<String>,
-        at_users_info: Vec<crate::model::msg_struct::AtInfo>,
+        at_users_info: Vec<crate::domain::model::msg_struct::AtInfo>,
         quote_msg: Option<Box<MsgStruct>>,
         source_id: &str,
         session_type: i32,
@@ -425,8 +425,8 @@ impl MessageApi for OpenIMClient {
     async fn send_advanced_quote_message(
         &self,
         text: &str,
-        quote: crate::model::msg_struct::MsgStruct,
-        message_entities: Vec<crate::model::msg_struct::MessageEntity>,
+        quote: crate::domain::model::msg_struct::MsgStruct,
+        message_entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
         source_id: &str,
         session_type: i32,
     ) -> std::result::Result<MsgStruct, SdkError> {

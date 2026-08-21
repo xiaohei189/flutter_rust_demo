@@ -1,6 +1,6 @@
 //! HTTP 适配器 — impl ThirdServerApi for HttpThirdApi
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::http::client::HttpApiClient;
 use crate::http::routes::{FCM_UPDATE_TOKEN, SET_APP_BADGE};
 use crate::http::third::{FcmUpdateTokenReq, SetAppBadgeReq, ThirdServerApi};

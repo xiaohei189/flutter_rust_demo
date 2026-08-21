@@ -1,5 +1,5 @@
-use crate::error::{Result, SdkError};
-use crate::model::local::LocalFriend;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalFriend;
 use sqlx::SqlitePool;
 
 pub struct FriendDao {

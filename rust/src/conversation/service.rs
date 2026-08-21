@@ -1,11 +1,11 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
 use crate::client::context::Repositories;
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::http::conversation::{ConversationServerApi, SetConversationReq};
-use crate::model::local::LocalConversation;
-use crate::model::UserId;
+use crate::domain::model::local::LocalConversation;
+use crate::domain::model::UserId;
 
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -670,7 +670,7 @@ mod tests {
         // 会话 latest_msg 为空，但消息库有最新消息
         manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
         let message_repo = repositories.message_repo.clone();
-        let msg = crate::model::local::LocalChatLog {
+        let msg = crate::domain::model::local::LocalChatLog {
             conversation_id: "conv_1".to_string(),
             client_msg_id: "m1".to_string(),
             server_msg_id: String::new(),

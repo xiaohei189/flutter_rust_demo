@@ -2,8 +2,8 @@
 
 use super::MessageService;
 use crate::client::SearchMessagesReq;
-use crate::error::Result;
-use crate::model::local::LocalChatLog;
+use crate::domain::error::Result;
+use crate::domain::model::local::LocalChatLog;
 use tracing::info;
 
 impl MessageService {

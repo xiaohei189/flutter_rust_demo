@@ -1,8 +1,8 @@
 //! 撤回通知处理（impl MessageProcessor）
 
 use super::processor::MessageProcessor;
-use crate::constant::notification_type::REVOKE;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::notification_type::REVOKE;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::message::{MessageEvent, MessageListenerExt};
 use openim_protocol::sdkws::RevokeMsgTips;
@@ -31,13 +31,13 @@ impl MessageProcessor {
         let mut revoker_role = 0i32;
         let fallback = tips.revoker_user_id.clone();
 
-        if tips.is_admin_revoke || tips.sesstion_type == crate::constant::session_type::SINGLE_CHAT {
+        if tips.is_admin_revoke || tips.sesstion_type == crate::domain::constant::session_type::SINGLE_CHAT {
             if let Ok(Some(user)) = self.repositories.user_repo.get_by_id(&tips.revoker_user_id).await {
                 if !user.name.is_empty() {
                     return (user.name, 0);
                 }
             }
-        } else if tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
+        } else if tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.repositories.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -81,7 +81,7 @@ impl MessageProcessor {
             revoker_nickname = revoked_msg.sender_nick_name.clone();
         }
         info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
-        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::constant::session_type::READ_GROUP_CHAT {
+        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT {
             if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.repositories.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -197,7 +197,7 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::revoke::parse_revoke_tips_from_json;
+    use crate::domain::model::revoke::parse_revoke_tips_from_json;
     use openim_protocol::sdkws::MsgData;
 
     // ========================================================================
@@ -331,11 +331,11 @@ mod tests {
     // ========================================================================
 
     use crate::client::context::Repositories;
-    use crate::constant::notification_type::REVOKE as REVOKE_CT;
+    use crate::domain::constant::notification_type::REVOKE as REVOKE_CT;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::model::local::{LocalChatLog, LocalConversation};
-    use crate::model::UserId;
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
+    use crate::domain::model::UserId;
     use std::sync::Arc;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {

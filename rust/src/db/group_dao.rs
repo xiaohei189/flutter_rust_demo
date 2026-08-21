@@ -1,5 +1,5 @@
-use crate::error::{Result, SdkError};
-use crate::model::local::{LocalGroup, LocalGroupMember};
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::{LocalGroup, LocalGroupMember};
 use sqlx::SqlitePool;
 
 pub struct GroupDao {

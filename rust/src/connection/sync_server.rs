@@ -1,6 +1,6 @@
 //! 接收管道 — 同步器远程数据源（Port）
 
-use crate::error::Result;
+use crate::domain::error::Result;
 use async_trait::async_trait;
 use openim_protocol::msg::{GetSeqMessageReq, GetSeqMessageResp};
 use openim_protocol::sdkws::MsgData;

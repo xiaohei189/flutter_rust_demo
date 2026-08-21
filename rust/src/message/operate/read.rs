@@ -1,8 +1,8 @@
 //! 标记已读逻辑（单会话/批量/按 seq）
 
 use super::MessageService;
-use crate::constant::session_type;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::session_type;
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::ConversationEvent;
 use crate::event::events::conversation::ConversationListenerExt;
 use crate::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq};

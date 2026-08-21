@@ -6,7 +6,7 @@ use crate::client::core::OpenIMClient;
 use crate::connection::manager::ConnectionManager;
 use crate::conversation::service::ConversationService;
 use crate::conversation::syncer::ConversationSyncer;
-use crate::error::Result;
+use crate::domain::error::Result;
 use crate::event::hub::EventHub;
 use crate::file::upload::FileUploader;
 use crate::friend::service::FriendService;

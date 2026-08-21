@@ -1,5 +1,5 @@
 use crate::event::events::message::GroupReadReceipt;
-use crate::model::group::{GroupInfo, GroupMember};
+use crate::domain::model::group::{GroupInfo, GroupMember};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

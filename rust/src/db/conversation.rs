@@ -1,5 +1,5 @@
-use crate::error::Result;
-use crate::model::local::LocalConversation;
+use crate::domain::error::Result;
+use crate::domain::model::local::LocalConversation;
 use async_trait::async_trait;
 
 /// 会话仓库接口

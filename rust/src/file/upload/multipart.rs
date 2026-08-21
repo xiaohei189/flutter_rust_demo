@@ -1,4 +1,4 @@
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use crate::file::bitmap::Bitmap;
 use crate::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
 use crate::file::md5::parts_hash;
@@ -9,7 +9,7 @@ use crate::file::upload::dto::{
 use crate::file::upload::session::PartInfo;
 use crate::file::upload::uploader::FileUploader;
 use crate::http::routes::{AUTH_SIGN, COMPLETE_MULTIPART_UPLOAD, INITIATE_MULTIPART_UPLOAD, PART_LIMIT};
-use crate::model::local::LocalUpload;
+use crate::domain::model::local::LocalUpload;
 use base64::Engine;
 use std::io::Read;
 use tokio::fs;

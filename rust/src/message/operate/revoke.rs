@@ -1,8 +1,8 @@
 //! 消息撤回逻辑
 
 use super::MessageService;
-use crate::constant::notification_type;
-use crate::error::{Result, SdkError};
+use crate::domain::constant::notification_type;
+use crate::domain::error::{Result, SdkError};
 use crate::http::message::RevokeMessageReq;
 
 use tracing::{info, warn};

@@ -2,8 +2,8 @@
 // 包含: 通知序列(notification_seq)、发送中消息(sending_message)、上传记录(upload)
 
 use crate::db::{NotificationSeqRepository, SendingMessageRepository};
-use crate::error::{Result, SdkError};
-use crate::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::{LocalNotificationSeq, LocalSendingMessage, LocalUpload};
 use async_trait::async_trait;
 use sqlx::SqlitePool;
 

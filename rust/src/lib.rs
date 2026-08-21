@@ -9,13 +9,10 @@ pub mod sdk;
 
 // 模块按依赖方向从底层到上层排列
 pub mod cache;
-pub mod constant;
 pub mod db;
-pub mod error;
 pub mod file;
 pub mod http;
 pub mod logger;
-pub mod model;
 pub mod util;
 
 pub mod client;

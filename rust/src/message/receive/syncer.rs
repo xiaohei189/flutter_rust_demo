@@ -6,13 +6,13 @@ use super::processor::MessageProcessor;
 use crate::client::context::Repositories;
 use crate::connection::manager::ConnectionManager;
 use crate::connection::sync_server::SyncServerApi;
-use crate::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
-use crate::error::{Result, SdkError};
+use crate::domain::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
+use crate::domain::error::{Result, SdkError};
 use crate::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::message::notification::NotificationHandler;
 use crate::message::receive::checker::MessageChecker;
-use crate::model::local::LocalNotificationSeq;
-use crate::model::UserId;
+use crate::domain::model::local::LocalNotificationSeq;
+use crate::domain::model::UserId;
 use async_trait::async_trait;
 use openim_protocol::msg::{GetLastMessageReq, GetLastMessageResp, GetSeqMessageReq, GetSeqMessageResp};
 use std::collections::{HashMap, HashSet};
@@ -447,7 +447,7 @@ impl MessageSyncer {
 
         if reinstalled {
             self.sync_all_messages_reinstall(&server_max_seqs, pull_msg_num::CONNECT_PULL_NUMS).await?;
-            self.repositories.sync_version_repo.mark_reinstall_complete(crate::constant::SDK_LOCAL_VERSION).await?;
+            self.repositories.sync_version_repo.mark_reinstall_complete(crate::domain::constant::SDK_LOCAL_VERSION).await?;
             if let Err(e) = self.repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_END).await {
                 warn!(target: "im::sync", "[Sync] 设置 SYNC_END 标志失败: {}", e);
             }
@@ -621,7 +621,7 @@ impl MessageSyncer {
             let mut logs: Vec<_> = pull_msgs
                 .msgs
                 .iter()
-                .map(|m| crate::model::local::LocalChatLog {
+                .map(|m| crate::domain::model::local::LocalChatLog {
                     conversation_id: _conv_id.clone(),
                     client_msg_id: m.client_msg_id.clone(),
                     server_msg_id: m.server_msg_id.clone(),
@@ -787,7 +787,7 @@ mod tests {
     use crate::client::context::Repositories;
     use crate::db::pool::create_pool_memory;
     use crate::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::model::UserId;
+    use crate::domain::model::UserId;
     use prost::Message;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -927,8 +927,8 @@ mod tests {
         (repositories, handler)
     }
 
-    fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64) -> crate::model::local::LocalChatLog {
-        crate::model::local::LocalChatLog {
+    fn make_local_msg(conv_id: &str, client_msg_id: &str, seq: i64) -> crate::domain::model::local::LocalChatLog {
+        crate::domain::model::local::LocalChatLog {
             conversation_id: conv_id.to_string(),
             client_msg_id: client_msg_id.to_string(),
             server_msg_id: format!("srv_{}", client_msg_id),
@@ -955,7 +955,7 @@ mod tests {
 
     /// 构造已读回执消息（content_type=2200，content 为 protobuf MarkAsReadTips）
     fn make_receipt_msg_data(conv_id: &str, seq: i64) -> MsgData {
-        use crate::constant::notification_type::HAS_READ_RECEIPT;
+        use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
         use openim_protocol::sdkws::MarkAsReadTips;
         let tips = MarkAsReadTips {
             mark_as_read_user_id: "other_user".to_string(),

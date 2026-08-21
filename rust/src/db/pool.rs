@@ -1,4 +1,4 @@
-use crate::error::{Result, SdkError};
+use crate::domain::error::{Result, SdkError};
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteSynchronous};
 use sqlx::ConnectOptions;
 use std::str::FromStr;
