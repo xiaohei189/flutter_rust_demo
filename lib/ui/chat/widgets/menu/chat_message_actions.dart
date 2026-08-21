@@ -82,36 +82,7 @@ class ChatMessageActions {
   }
 
   void toggleReaction(ChatMessage message, String emoji) {
-    final groups = List<MessageReactionGroup>.from(
-      messageReactions[message.clientMsgId] ?? const [],
-    );
-    final index = groups.indexWhere((group) => group.emoji == emoji);
-    if (index == -1) {
-      groups.add(
-        MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
-      );
-    } else {
-      final group = groups[index];
-      if (group.names.contains('我')) {
-        final names = group.names.where((name) => name != '我').toList();
-        if (names.isEmpty) {
-          groups.removeAt(index);
-        } else {
-          groups[index] = MessageReactionGroup(
-            emoji: emoji,
-            count: names.length,
-            names: names,
-          );
-        }
-      } else {
-        groups[index] = MessageReactionGroup(
-          emoji: emoji,
-          count: group.count + 1,
-          names: [...group.names, '我'],
-        );
-      }
-    }
-    messageReactions[message.clientMsgId] = groups;
+    toggleMessageReaction(messageReactions, message, emoji);
     onStateChanged();
   }
 
@@ -315,4 +286,42 @@ class ChatMessageActions {
   void showLocationDetail(ChatMessage message, BuildContext context) {
     showLocationDetailDialog(context, message);
   }
+}
+
+/// 切换当前用户对消息的表情：加/减/移除。
+void toggleMessageReaction(
+  Map<String, List<MessageReactionGroup>> messageReactions,
+  ChatMessage message,
+  String emoji,
+) {
+  final groups = List<MessageReactionGroup>.from(
+    messageReactions[message.clientMsgId] ?? const [],
+  );
+  final index = groups.indexWhere((group) => group.emoji == emoji);
+  if (index == -1) {
+    groups.add(
+      MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
+    );
+  } else {
+    final group = groups[index];
+    if (group.names.contains('我')) {
+      final names = group.names.where((name) => name != '我').toList();
+      if (names.isEmpty) {
+        groups.removeAt(index);
+      } else {
+        groups[index] = MessageReactionGroup(
+          emoji: emoji,
+          count: names.length,
+          names: names,
+        );
+      }
+    } else {
+      groups[index] = MessageReactionGroup(
+        emoji: emoji,
+        count: group.count + 1,
+        names: [...group.names, '我'],
+      );
+    }
+  }
+  messageReactions[message.clientMsgId] = groups;
 }
