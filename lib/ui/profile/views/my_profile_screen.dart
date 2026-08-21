@@ -66,10 +66,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           context,
         ).showSnackBar(const SnackBar(content: Text('保存成功')));
       } else {
-        final detail = ref.read(userProfileProvider).error;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        final detail = ref.read(userProfileViewProvider).error;
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(detail == null ? '保存失败' : '保存失败: $detail')),
         );
       }
@@ -146,7 +144,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final state = ref.watch(userProfileProvider);
+    final state = ref.watch(userProfileViewProvider);
     final currentUser = _buildCurrentUser(state);
 
     return Scaffold(

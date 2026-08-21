@@ -144,7 +144,7 @@ class FakeUserProfileNotifier extends UserProfileNotifier {
   final UserProfile profile;
 
   @override
-  UserProfileState build() => UserProfileState(profile: profile);
+  UserProfileLocalState build() => const UserProfileLocalState();
 }
 
 class FakeCurrentUserNotifier extends CurrentUserNotifier {

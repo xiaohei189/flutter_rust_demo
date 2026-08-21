@@ -1,18 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_rust_demo/domain/models/user_profile.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_avatar_store.dart';
-
-UserProfile _profile({String faceUrl = ''}) => UserProfile(
-  userId: 'u1',
-  nickname: '张三',
-  faceUrl: faceUrl,
-  gender: 0,
-  telephone: '',
-  email: '',
-  remark: '',
-  globalRecvMsgOpt: 0,
-);
 
 void main() {
   final store = UserAvatarStore();
@@ -40,7 +28,7 @@ void main() {
     expect(
       store.resolveDisplayUrl(
         localAvatarPath: 'Z:/not_exist/avatar.jpg',
-        profile: _profile(faceUrl: 'https://a.com/a.png'),
+        faceUrl: 'https://a.com/a.png',
       ),
       'https://a.com/a.png',
     );

@@ -392,7 +392,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final chatDetailState = ref.watch(
       chatDetailViewModelProvider(widget.conversationId),
     );
-    final userProfileState = ref.watch(userProfileProvider);
+    final userProfileState = ref.watch(userProfileViewProvider);
     final unread = ref.watch(
       conversationListProvider.select(
         (state) =>

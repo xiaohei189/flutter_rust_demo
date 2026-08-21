@@ -17,7 +17,7 @@ class MineScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
-    final profileState = ref.watch(userProfileProvider);
+    final profileState = ref.watch(userProfileViewProvider);
     final notifier = ref.read(userProfileProvider.notifier);
 
     final avatarUrl = notifier.getDisplayAvatarUrl();

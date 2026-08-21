@@ -76,7 +76,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
     final panelWidth = MediaQuery.of(context).size.width * 0.82;
-    final state = ref.watch(userProfileProvider);
+    final state = ref.watch(userProfileViewProvider);
     final notifier = ref.read(userProfileProvider.notifier);
     final currentUser = _buildCurrentUser(state, notifier);
     final signature = _getSignature(state);

@@ -12,7 +12,7 @@ class DiscoverScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider).profile;
+    final profile = ref.watch(userProfileViewProvider).profile;
     final userId = profile?.userId ?? '';
 
     return Scaffold(

@@ -35,7 +35,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final settings = ref.watch(accountSettingsViewModelProvider);
-    final profile = ref.watch(userProfileProvider).profile;
+    final profile = ref.watch(userProfileViewProvider).profile;
     final globalMute = profile?.globalRecvMsgOpt == 1;
 
     return Scaffold(

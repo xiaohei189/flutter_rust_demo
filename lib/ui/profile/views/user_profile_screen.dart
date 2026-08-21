@@ -50,7 +50,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       setState(() => _isLoading = true);
     }
     try {
-      final userProfileState = ref.read(userProfileProvider);
+      final userProfileState = ref.read(userProfileViewProvider);
       if (userProfileState.profile != null &&
           userProfileState.profile!.userId == widget.user.id) {
         _userProfile = userProfileState.profile;
@@ -90,7 +90,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     // 获取最新的用户信息
-    final userProfileState = ref.watch(userProfileProvider);
+    final userProfileState = ref.watch(userProfileViewProvider);
     final notifier = ref.read(userProfileProvider.notifier);
 
     // 总是使用最新的用户信息

@@ -74,7 +74,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final colors = context.appColors;
     final conversationState = ref.watch(conversationListProvider);
     final connectionState = ref.watch(connectionProvider);
-    final userProfileState = ref.watch(userProfileProvider);
+    final userProfileState = ref.watch(userProfileViewProvider);
     final cachedUserProfiles = ref.watch(conversationUserProfilesProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final listState = ref.watch(chatListViewModelProvider);

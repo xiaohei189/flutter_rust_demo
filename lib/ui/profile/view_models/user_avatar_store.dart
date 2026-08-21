@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/app_logger.dart';
-import '../../../domain/models/user_profile.dart';
 
 /// 用户头像：本地路径持久化、持久目录复制与展示 URL 解析。
 class UserAvatarStore {
@@ -51,18 +50,18 @@ class UserAvatarStore {
     return false;
   }
 
-  /// 获取用于显示的头像 URL：本地路径 > 服务器 URL（如果有效）
+  /// 获取用于显示的头像 URL：本地路径 > 服务器/本地覆盖 URL（如果有效）
   String? resolveDisplayUrl({
     required String? localAvatarPath,
-    required UserProfile? profile,
+    required String? faceUrl,
   }) {
     if (localAvatarPath != null &&
         localAvatarPath.isNotEmpty &&
         File(localAvatarPath).existsSync()) {
       return localAvatarPath;
     }
-    if (isValidAvatarUrl(profile?.faceUrl)) {
-      return profile?.faceUrl;
+    if (isValidAvatarUrl(faceUrl)) {
+      return faceUrl;
     }
     return null;
   }
