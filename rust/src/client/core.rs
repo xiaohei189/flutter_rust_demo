@@ -1,23 +1,23 @@
 use crate::client::builder::OpenIMClientBuilder;
 
 use crate::client::{ConnectionApi, MessageApi};
-use crate::connection::manager::ConnectionManager;
-use crate::conversation::service::ConversationService;
-use crate::conversation::syncer::ConversationSyncer;
+use crate::core::connection::manager::ConnectionManager;
+use crate::core::conversation::service::ConversationService;
+use crate::core::conversation::syncer::ConversationSyncer;
 use crate::friend::service::FriendService;
 use crate::group::service::GroupService;
-use crate::message::send::MessageSender;
-use crate::message::MessageProcessor;
+use crate::core::message::send::MessageSender;
+use crate::core::message::MessageProcessor;
 use async_trait::async_trait;
 
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::connection::ConnectionEvent;
-use crate::event::hub::EventHub;
-use crate::message::notification::NotificationHandler;
-use crate::message::MessageService;
-use crate::message::MessageSyncer;
-use crate::user::online::service::OnlineStatusService;
-use crate::user::service::UserService;
+use crate::core::event::events::connection::ConnectionEvent;
+use crate::core::event::hub::EventHub;
+use crate::core::message::notification::NotificationHandler;
+use crate::core::message::MessageService;
+use crate::core::message::MessageSyncer;
+use crate::core::user::online::service::OnlineStatusService;
+use crate::core::user::service::UserService;
 
 use crate::client::context::RuntimeContext;
 
@@ -267,7 +267,7 @@ impl ConnectionApi for OpenIMClient {
         self.context.get_user_id()
     }
 
-    async fn get_connection_state(&self) -> crate::connection::manager::ConnectionState {
+    async fn get_connection_state(&self) -> crate::core::connection::manager::ConnectionState {
         self.connection.get_state().await
     }
 

@@ -5,8 +5,8 @@ pub use crate::ffi::global::{get_login_user_id, get_sdk_version, network_status_
 use crate::client::config::ClientConfig;
 use crate::client::core::OpenIMClient;
 use crate::client::{ConnectionApi, MessageApi, SdkApi, UserApi};
-use crate::event::events::message::MessageEvent;
-use crate::event::events::user::UserEvent;
+use crate::core::event::events::message::MessageEvent;
+use crate::core::event::events::user::UserEvent;
 use crate::ffi::global::set_client;
 use crate::frb_generated::StreamSink;
 use anyhow::Result;
@@ -65,7 +65,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn connection_stream(&self, sink: StreamSink<crate::event::events::connection::ConnectionEvent>) -> Result<()> {
+    pub async fn connection_stream(&self, sink: StreamSink<crate::core::event::events::connection::ConnectionEvent>) -> Result<()> {
         let mut rx = self.inner.take_conn_rx()?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -77,7 +77,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn conversation_stream(&self, sink: StreamSink<crate::event::events::conversation::ConversationEvent>) -> Result<()> {
+    pub async fn conversation_stream(&self, sink: StreamSink<crate::core::event::events::conversation::ConversationEvent>) -> Result<()> {
         let mut rx = self.inner.take_conv_rx()?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -88,7 +88,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn friend_stream(&self, sink: StreamSink<crate::event::events::friend::FriendEvent>) -> Result<()> {
+    pub async fn friend_stream(&self, sink: StreamSink<crate::core::event::events::friend::FriendEvent>) -> Result<()> {
         let mut rx = self.inner.take_friend_rx()?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {
@@ -99,7 +99,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn group_stream(&self, sink: StreamSink<crate::event::events::group::GroupEvent>) -> Result<()> {
+    pub async fn group_stream(&self, sink: StreamSink<crate::core::event::events::group::GroupEvent>) -> Result<()> {
         let mut rx = self.inner.take_group_rx()?;
         tokio::spawn(async move {
             while let Some(e) = rx.recv().await {

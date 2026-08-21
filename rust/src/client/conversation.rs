@@ -6,7 +6,7 @@ use crate::client::OpenIMClient;
 use crate::domain::constant::SessionType;
 
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::conversation::ConversationEvent;
+use crate::core::event::events::conversation::ConversationEvent;
 use crate::domain::model::local::LocalConversation;
 use async_trait::async_trait;
 

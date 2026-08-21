@@ -5,7 +5,7 @@ use crate::infra::db::pool::create_pool;
 use crate::infra::db::*;
 use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
 use crate::domain::error::{Result, SdkError};
-use crate::event::hub::EventHub;
+use crate::core::event::hub::EventHub;
 use crate::infra::http::client::HttpApiClient;
 use crate::domain::model::UserId;
 use sqlx::SqlitePool;

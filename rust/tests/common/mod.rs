@@ -583,12 +583,12 @@ pub mod mock {
 // 重构后事件经 Listener → EventHub 分发到各领域通道。此处把各通道合并为一个
 // `TestEvents` 流，保持集成测试的等待语义不变。
 
-use rust_lib_flutter_rust_demo::event::events::connection::ConnectionEvent;
-use rust_lib_flutter_rust_demo::event::events::conversation::ConversationEvent;
-use rust_lib_flutter_rust_demo::event::events::friend::FriendEvent;
-use rust_lib_flutter_rust_demo::event::events::group::GroupEvent;
-use rust_lib_flutter_rust_demo::event::events::message::MessageEvent;
-use rust_lib_flutter_rust_demo::event::events::user::UserEvent;
+use rust_lib_flutter_rust_demo::core::event::events::connection::ConnectionEvent;
+use rust_lib_flutter_rust_demo::core::event::events::conversation::ConversationEvent;
+use rust_lib_flutter_rust_demo::core::event::events::friend::FriendEvent;
+use rust_lib_flutter_rust_demo::core::event::events::group::GroupEvent;
+use rust_lib_flutter_rust_demo::core::event::events::message::MessageEvent;
+use rust_lib_flutter_rust_demo::core::event::events::user::UserEvent;
 use tokio::sync::mpsc::UnboundedReceiver;
 
 /// 合并后的测试事件（等价于旧 `SdkEvent`）

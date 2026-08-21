@@ -1,5 +1,5 @@
 use crate::domain::error::Result;
-use crate::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
+use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::infra::http::FriendServerApi;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::local::LocalFriend;

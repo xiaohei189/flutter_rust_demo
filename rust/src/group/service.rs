@@ -1,5 +1,5 @@
 use crate::domain::error::Result;
-use crate::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
+use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 
 use crate::infra::http::GroupServerApi;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};

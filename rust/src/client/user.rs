@@ -4,7 +4,7 @@
 
 use crate::client::OpenIMClient;
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::user::UserEvent;
+use crate::core::event::events::user::UserEvent;
 use crate::infra::http::online::OnlineStatus;
 use crate::domain::model::user::UserInfo;
 use async_trait::async_trait;

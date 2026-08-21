@@ -5,7 +5,7 @@
 use crate::client::OpenIMClient;
 use crate::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::message::MessageEvent;
+use crate::core::event::events::message::MessageEvent;
 use crate::infra::file::upload::ProgressCallback;
 use crate::infra::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
 use crate::domain::model::local::LocalChatLog;

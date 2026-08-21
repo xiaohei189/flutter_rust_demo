@@ -56,7 +56,7 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn get_connection_state(&self) -> Result<crate::connection::manager::ConnectionState> {
+    pub async fn get_connection_state(&self) -> Result<crate::core::connection::manager::ConnectionState> {
         Ok(self.inner.get_connection_state().await)
     }
 

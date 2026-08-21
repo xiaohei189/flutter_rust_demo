@@ -5,7 +5,7 @@
 use crate::client::OpenIMClient;
 
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::friend::FriendEvent;
+use crate::core::event::events::friend::FriendEvent;
 use crate::infra::http::friend::{FriendApplyInfo, SearchFriendItem};
 use crate::domain::model::friend::FriendInfo;
 use async_trait::async_trait;

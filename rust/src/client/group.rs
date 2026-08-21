@@ -6,7 +6,7 @@ use crate::client::OpenIMClient;
 
 use crate::domain::constant::GroupType;
 use crate::domain::error::{Result, SdkError};
-use crate::event::events::group::GroupEvent;
+use crate::core::event::events::group::GroupEvent;
 use crate::infra::http::group::GroupApplyInfo;
 use crate::domain::model::group::{GroupInfo, GroupMember};
 use async_trait::async_trait;
