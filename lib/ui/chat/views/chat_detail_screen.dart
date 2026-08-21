@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
@@ -9,12 +8,12 @@ import '../../../domain/models/message.dart' show MessageType;
 import '../../../domain/models/group_member.dart';
 import '../mappers/message_display.dart';
 import '../../../domain/models/user.dart';
-import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../domain/models/message_search_result.dart'
+    show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
-import '../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/views/contact_picker_screen.dart';
 import '../../contacts/widgets/contact_pick_item.dart';
 import '../../groups/providers/group_provider.dart';
@@ -28,12 +27,11 @@ import '../view_models/chat_detail_view_model.dart';
 import '../widgets/composer/chat_input.dart' show ChatInput;
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../widgets/menu/chat_media_actions.dart';
+import '../widgets/menu/chat_message_actions.dart';
 import '../widgets/chat_message_search_sheet.dart';
-import '../widgets/media_viewer.dart';
 import '../widgets/menu/message_action_menu.dart';
-import '../widgets/menu/chat_dialogs.dart' show showCustomMessageDialog, showDeleteMessagesConfirm, showLocationDetailDialog, showMergeForwardTitleDialog;
-import '../widgets/menu/file_actions_sheet.dart' show showFileActionsSheet;
-import '../widgets/composer/group_member_picker.dart' show insertAtMention, showGroupMemberPicker;
+import '../widgets/composer/group_member_picker.dart'
+    show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/chat_message_list_section.dart';
 import '../widgets/list/message_list.dart';
@@ -69,6 +67,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final Set<String> _pinnedMessageIds = {};
   ChatDetailViewModel? _viewModel;
   late final ChatMediaActions _mediaActions;
+  late final ChatMessageActions _messageActions;
 
   @override
   void initState() {
@@ -82,6 +81,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onError: _showError,
       onScrollToBottom: _scrollToBottom,
       preLoaded: widget.preLoaded,
+    );
+    _messageActions = ChatMessageActions(
+      viewModel: _viewModel!,
+      preLoaded: widget.preLoaded,
+      readState: () => _chatState,
+      messageReactions: _messageReactions,
+      pinnedMessageIds: _pinnedMessageIds,
+      onError: _showError,
+      onClearComposer: () => _textController.clear(),
+      onScrollToBottom: _scrollToBottom,
+      onStateChanged: () => setState(() {}),
     );
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
@@ -135,8 +145,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _onMessageListChanged() {
-    final messages = ref
-        .read(messagesByConversationProvider(widget.conversationId));
+    final messages = ref.read(
+      messagesByConversationProvider(widget.conversationId),
+    );
     if (messages.isEmpty) {
       _lastMessageListTailId = '';
       return;
@@ -255,15 +266,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Future<void> _sendMessage(String text, MessageContentType type) async {
-    final ok = await _viewModel?.sendText(text, type) ?? false;
-    if (ok) {
-      _textController.clear();
-      if (!widget.preLoaded) _scrollToBottom();
-    } else {
-      _showError(_chatState.errorText ?? '发送消息失败');
-    }
-  }
+  Future<void> _sendMessage(String text, MessageContentType type) =>
+      _messageActions.sendText(text, type);
 
   Future<void> _showAtMentionPicker() async {
     final target = _viewModel?.sendTarget;
@@ -326,8 +330,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _locateMessage(MessageSearchResult log) {
-    final messages = ref
-        .read(messagesByConversationProvider(widget.conversationId));
+    final messages = ref.read(
+      messagesByConversationProvider(widget.conversationId),
+    );
     final index = messages.indexWhere(
       (m) =>
           m.clientMsgId == log.clientMsgId ||
@@ -365,279 +370,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   Future<void> _sendCardMessage() => _mediaActions.sendCardMessage(context);
 
-  Future<void> _revokeMessage(dynamic msg) async {
-    final ok = await _viewModel?.revokeMessage(msg as ChatMessage) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '撤回失败');
-  }
-
-  Future<void> _deleteMessage(dynamic msg) async {
-    final ok = await _viewModel?.deleteMessage(msg as ChatMessage) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '删除失败');
-  }
-
-  Future<void> _resendMessage(ChatMessage msg) async {
-    final ok = await _viewModel?.resendMessage(msg) ?? false;
-    if (!ok) _showError(_chatState.errorText ?? '消息重发失败');
-  }
-
-  void _copyMessage(ChatMessage msg) {
-    Clipboard.setData(ClipboardData(text: msg.content));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
-    );
-  }
-
-  void _toggleMessageReaction(ChatMessage msg, String emoji) {
-    setState(() {
-      final groups = List<MessageReactionGroup>.from(
-        _messageReactions[msg.clientMsgId] ?? const [],
-      );
-      final index = groups.indexWhere((group) => group.emoji == emoji);
-      if (index == -1) {
-        groups.add(
-          MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
-        );
-      } else {
-        final group = groups[index];
-        if (group.names.contains('我')) {
-          final names = group.names.where((name) => name != '我').toList();
-          if (names.isEmpty) {
-            groups.removeAt(index);
-          } else {
-            groups[index] = MessageReactionGroup(
-              emoji: emoji,
-              count: names.length,
-              names: names,
-            );
-          }
-        } else {
-          groups[index] = MessageReactionGroup(
-            emoji: emoji,
-            count: group.count + 1,
-            names: [...group.names, '我'],
-          );
-        }
-      }
-      _messageReactions[msg.clientMsgId] = groups;
-    });
-  }
-
-  void _toggleMessagePin(ChatMessage msg) {
-    final isPinned = _pinnedMessageIds.contains(msg.clientMsgId);
-    setState(() {
-      if (isPinned) {
-        _pinnedMessageIds.remove(msg.clientMsgId);
-      } else {
-        _pinnedMessageIds.add(msg.clientMsgId);
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isPinned ? '已取消置顶' : '已置顶'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  Future<void> _sendQuickReply(ChatMessage msg, String text) =>
-      _sendMessage(text, MessageContentType.text);
-
   MessageActions _buildMessageActions(ChatMessage msg) {
     return MessageActions(
-      onCopy: _copyMessage,
-      onRevoke: _revokeMessage,
-      onDelete: _deleteMessage,
-      onForward: (message) => _forwardMessage(message),
+      onCopy: (message) => _messageActions.copy(message, context),
+      onRevoke: _messageActions.revoke,
+      onDelete: _messageActions.delete,
+      onForward: (message) => _messageActions.forward(message, context),
       onQuote: (message) => _viewModel?.setQuotedMessage(message),
       onMultiSelect: () => _viewModel?.enterSelectMode(),
-      onResend: _resendMessage,
-      onPin: _toggleMessagePin,
-      onReaction: _toggleMessageReaction,
-      onQuickReply: _sendQuickReply,
+      onResend: _messageActions.resend,
+      onPin: (message) => _messageActions.togglePin(message, context),
+      onReaction: _messageActions.toggleReaction,
+      onQuickReply: _messageActions.sendQuickReply,
     );
   }
 
-  Future<void> _forwardMessage(ChatMessage msg) async {
-    final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
-      context,
-      title: '转发给',
-    );
-    if (result == null || result.isEmpty || !mounted) return;
-    final target = result.first;
-    final ok =
-        await _viewModel?.forwardSelectedMessages(
-              messages: [msg],
-              targetId: target.id,
-              isGroup: target.isGroup,
-              merge: false,
-            ) ??
-        false;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已转发给 ${target.name}')),
-      );
-    }
-  }
-
-  void _handleMessageTap(ChatMessage msg) {
-    final state = _chatState;
-    if (state.selectMode) {
-      _viewModel?.toggleMessageSelection(msg);
-      return;
-    }
-    switch (msg.messageType) {
-      case MessageType.merge:
-        AppRouter.goToMergeMessage(context, msg);
-      case MessageType.image:
-        final source = msg.displayImageSource;
-        if (source.isNotEmpty) {
-          openImagePreview(
-            context,
-            source: source,
-            suggestedName: 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          );
-        }
-      case MessageType.video:
-        openVideoPreview(context, source: msg.videoSource);
-      case MessageType.file:
-        _showFileActions(msg);
-      case MessageType.card:
-        if (msg.cardUserId.isNotEmpty) {
-          AppRouter.goToUserProfile(
-            context,
-            userId: msg.cardUserId,
-            user: User(
-              id: msg.cardUserId,
-              name: msg.cardNickname.isNotEmpty
-                  ? msg.cardNickname
-                  : msg.cardUserId,
-              avatar: msg.cardFaceUrl.isNotEmpty ? msg.cardFaceUrl : null,
-            ),
-          );
-        }
-      case MessageType.location:
-        _showLocationDetail(msg);
-      case MessageType.custom:
-        showCustomMessageDialog(context, msg.displayText);
-      default:
-        break;
-    }
-  }
-
-  Future<void> _showFileActions(ChatMessage msg) async {
-    final action = await showFileActionsSheet(context);
-    if (action == null || !mounted) return;
-
-    final source = msg.fileSource;
-    final name = msg.fileName.isNotEmpty
-        ? msg.fileName
-        : 'file_${DateTime.now().millisecondsSinceEpoch}';
-    if (action == 'save') {
-      await saveMessageMedia(context, source: source, suggestedName: name);
-      return;
-    }
-
-    if (source.isEmpty) {
-      _showError('文件地址为空，无法打开');
-      return;
-    }
-    try {
-      final ok =
-          await _viewModel?.openFile(source: source, fileName: name) ?? false;
-      if (!ok && mounted) {
-        _showError('没有可打开该文件的应用，可尝试保存后打开');
-      }
-    } catch (e) {
-      _showError('打开文件失败: $e');
-    }
-  }
-
-  void _showLocationDetail(ChatMessage msg) {
-    showLocationDetailDialog(context, msg);
-  }
-
-  Future<void> _forwardSelected({required bool merge}) async {
-    final selected = ref
-        .read(chatDetailViewModelProvider(widget.conversationId))
-        .selectedMessages;
-    if (selected.isEmpty) return;
-    final forwardable = selected
-        .where((m) => m.status != 3 && m.status != 4)
-        .toList();
-    if (forwardable.isEmpty) {
-      _showError('暂无可转发的消息');
-      return;
-    }
-    if (forwardable.length > 100) {
-      _showError('最多可一次转发 100 条消息');
-      return;
-    }
-    var title = '聊天记录';
-    if (merge) {
-      final edited = await showMergeForwardTitleDialog(context, title);
-      if (edited == null || !mounted) return;
-      title = edited.trim().isEmpty ? '聊天记录' : edited.trim();
-    }
-    final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
-      context,
-      title: '选择转发目标',
-      multiSelect: true,
-    );
-    if (result == null || result.isEmpty || !mounted) return;
-    final ok =
-        await _viewModel?.forwardSelectedMessagesToTargets(
-          messages: forwardable,
-          targets: result.map((t) => (id: t.id, isGroup: t.isGroup)).toList(),
-          merge: merge,
-          title: title,
-        ) ??
-        false;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('已转发 ${forwardable.length} 条消息给 ${result.length} 个会话'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else if (mounted) {
-      final error = _chatState.errorText ?? '转发失败';
-      if (_viewModel?.hasFailedForwardTargets == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error),
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(label: '重试', onPressed: _retryForward),
-          ),
-        );
-      } else {
-        _showError(error);
-      }
-    }
-  }
-
-  Future<void> _deleteSelected() async {
-    final count = _chatState.selectedMessages.length;
-    final confirmed = await showDeleteMessagesConfirm(context, count);
-    if (!confirmed || !mounted) return;
-    final ok = await _viewModel?.deleteSelectedMessages() ?? false;
-    if (!ok && mounted) {
-      _showError(_chatState.errorText ?? '删除失败');
-    }
-  }
-
-  Future<void> _retryForward() async {
-    final ok = await _viewModel?.retryFailedForwardTargets() ?? false;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('重试转发成功'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else if (mounted) {
-      _showError(_chatState.errorText ?? '重试转发失败');
-    }
-  }
+  void _handleMessageTap(ChatMessage msg) =>
+      _messageActions.handleTap(msg, context);
 
   @override
   Widget build(BuildContext context) {
@@ -720,7 +469,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     Consumer(
                       builder: (context, ref, _) {
                         final messages = ref
-                            .watch(messagesByConversationProvider(widget.conversationId))
+                            .watch(
+                              messagesByConversationProvider(
+                                widget.conversationId,
+                              ),
+                            )
                             .where((m) => m.messageType != MessageType.system)
                             .toList();
                         return MessageSelectionTopBar(
@@ -728,10 +481,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                           totalCount: messages.length,
                           onSelectAll: () => _viewModel?.toggleSelectAll(),
                           onClose: () => _viewModel?.exitSelectMode(),
-                          onDelete: _deleteSelected,
-                          onForwardOneByOne: () =>
-                              _forwardSelected(merge: false),
-                          onMergeForward: () => _forwardSelected(merge: true),
+                          onDelete: () =>
+                              _messageActions.deleteSelected(context),
+                          onForwardOneByOne: () => _messageActions
+                              .forwardSelected(context, merge: false),
+                          onMergeForward: () => _messageActions.forwardSelected(
+                            context,
+                            merge: true,
+                          ),
                         );
                       },
                     ),
