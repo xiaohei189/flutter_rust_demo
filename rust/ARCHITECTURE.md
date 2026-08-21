@@ -79,3 +79,37 @@ pub async fn build(self) -> Result<OpenIMClient> {
 
 连接参数（心跳间隔、重连延迟等）集中定义在 core/connection/manager.rs 中作为 pub const。
 SDK 初始化参数在 sdk/config.rs 的 ClientConfig 中。
+
+## 五层迁移计划（api/sdk/core/domain/infra）
+
+> 目标：把当前扁平结构逐步收拢到 `api/ sdk/ core/ domain/ infra/` 五个目录，每层有 `mod.rs`，依赖只允许上层引用下层。
+
+### 现状模块归属映射
+
+| 当前模块 | 目标层 | 说明 |
+|----------|--------|------|
+| `ffi/`、`frb_generated.rs`、`lib.rs` 的对外函数 | `api/` | FFI 桥接与 frb 绑定入口 |
+| `client/`、`builder`、连接/会话/消息/好友/群组/用户的对外入口 | `sdk/` | SDK 外观与 `OpenIMClient` 组装 |
+| `connection/`、`conversation/`、`message/send`、`message/receive`、`message/operate`、`file/upload`、`user/online` | `core/` | 连接、收发、同步、上传等核心业务 |
+| `event/` | `core/event/` 或独立 `event/` | 事件总线（广播 + 点对点） |
+| `model/`、`constant/`、`error/` | `domain/` | 数据模型、枚举、错误类型 |
+| `db/`、`http/`、`cache/`、`logger/`、`file/`、`util.rs` | `infra/` | 存储、网络、缓存、日志等基础设施 |
+
+### 迁移步骤（每步保持 `cargo test --lib` 与 `cargo clippy` 通过）
+
+1. 建立五个目录与 `mod.rs`，先只做 re-export，不改业务代码。
+2. 移动 `domain/`（`model/ constant/ error/`）并更新引用。
+3. 移动 `infra/`（`db/ http/ cache/ logger/ file/ util.rs`）并更新引用。
+4. 移动 `core/`（`connection/ conversation/ message/ file/upload user/online event/`）并更新引用。
+5. 移动 `sdk/`（`client/` 与入口组装）。
+6. 收口 `api/`（`ffi/` 与 `lib.rs` 导出），确认 frb 生成不受影响。
+7. 删除空目录，整理依赖方向，补齐 `docs/sdk-spec/` 与 `rust/ARCHITECTURE.md` 现状标注。
+8. 验收：`rust/scripts/test-fast.ps1`（单元 + 离线 + clippy）全绿；需要时跑 smoke 集成。
+
+### 边界规则
+
+- `domain/` 不依赖 `infra/ core/ sdk/ api/`。
+- `infra/` 不依赖 `core/ sdk/ api/`（可依赖 `domain/` 的类型）。
+- `core/` 只依赖 `domain/` 与 `infra/`。
+- `sdk/` 依赖 `core/ domain/ infra/`，作为对外外观。
+- `api/` 只做 FFI 适配，调用 `sdk/` 或 `core/`，不承载业务。
