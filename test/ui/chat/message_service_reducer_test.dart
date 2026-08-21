@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/generated/rust/model/local.dart';
-import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
-import 'package:flutter_rust_demo/domain/models/group_read_receipt.dart' show GroupReadReceipt;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart'
+    show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/group_read_receipt.dart'
+    show GroupReadReceipt;
 import 'package:flutter_rust_demo/application/chat/message_service_reducer.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_state.dart';
 
@@ -92,9 +94,7 @@ void main() {
     });
 
     test('applyUploadProgress 完成时移除进度', () {
-      final state = MessageServiceState().copyWith(
-        uploadProgress: {'m1': 50},
-      );
+      final state = MessageServiceState().copyWith(uploadProgress: {'m1': 50});
 
       final result = MessageServiceReducer.applyUploadProgress(
         state,
@@ -141,11 +141,10 @@ void main() {
     });
   });
 
-
   group('applyGroupReadReceipts', () {
     test('写入群回执并递增 groupRevision', () {
       final state = MessageServiceState();
-      final receipt = GroupReadReceipt(
+      final receipt = const GroupReadReceipt(
         groupId: 'g1',
         msgId: 'm1',
         hasReadUserIdList: ['u1', 'u2'],
@@ -154,10 +153,9 @@ void main() {
         readTime: 1700000000000,
       );
 
-      final result = MessageServiceReducer.applyGroupReadReceipts(
-        state,
-        [receipt],
-      );
+      final result = MessageServiceReducer.applyGroupReadReceipts(state, [
+        receipt,
+      ]);
 
       expect(result.groupReadReceipts['m1']?.groupId, 'g1');
       expect(result.groupReadReceipts['m1']?.hasReadCount, 2);

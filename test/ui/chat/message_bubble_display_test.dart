@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/user.dart';
-import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart'
+    show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/widgets/list/message_list.dart';
 import 'package:flutter_rust_demo/ui/previews/fake_data.dart';
 
@@ -63,7 +64,6 @@ void main() {
     expect(find.textContaining('天目山路'), findsOneWidget);
   });
 
-
   testWidgets('空当前用户 ID 时不把空 sendId 消息判为自己发送', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -72,7 +72,7 @@ void main() {
             width: 800,
             height: 200,
             child: MessageList(
-              messages: [
+              messages: const [
                 ChatMessage(
                   clientMsgId: 'empty-send-id',
                   serverMsgId: '',

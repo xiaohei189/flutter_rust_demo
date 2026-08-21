@@ -5,8 +5,6 @@ import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/user.dart';
 import '../../../chat/providers/message_provider.dart';
 import '../../../chat/providers/message_service_provider.dart';
-import '../../../chat/view_models/chat_detail_view_model.dart' show ChatDetailViewModel;
-import '../../../../application/chat/message_service_notifier.dart' show MessageServiceNotifier;
 import '../menu/message_action_menu.dart' show MessageActions;
 import '../menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import 'message_list.dart';

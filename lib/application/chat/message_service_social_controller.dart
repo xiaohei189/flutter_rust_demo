@@ -3,8 +3,8 @@ import 'dart:async';
 import '../../../data/services/online_status_service.dart';
 import '../../../generated/rust/event/events/friend.dart';
 import '../../../generated/rust/event/events/group.dart';
-import '../../../generated/rust/event/events/message.dart' as generated_events;
-import '../../../data/mappers/message_mapper.dart' show groupReadReceiptsFromGenerated;
+import '../../../data/mappers/message_mapper.dart'
+    show groupReadReceiptsFromGenerated;
 import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import '../../../generated/rust/event/events/user.dart';
 import '../../../core/utils/app_logger.dart';

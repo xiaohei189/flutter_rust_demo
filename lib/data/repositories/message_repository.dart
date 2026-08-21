@@ -2,10 +2,13 @@ import 'dart:typed_data' show Int32List;
 
 import '../services/im_client.dart';
 import '../../domain/models/conversation.dart';
-import '../../domain/models/chat_message.dart' show ChatMessage, MessageHistoryPage;
+import '../../domain/models/chat_message.dart'
+    show ChatMessage, MessageHistoryPage;
 import '../../domain/models/chat_session_type.dart' show ChatSessionType;
-import '../../domain/models/message_search_result.dart' show MessageSearchResult;
-import '../../domain/models/user_profile.dart' show UserProfile, UserProfileMapping;
+import '../../domain/models/message_search_result.dart'
+    show MessageSearchResult;
+import '../../domain/models/user_profile.dart'
+    show UserProfile, UserProfileMapping;
 import '../mappers/message_mapper.dart';
 import '../../generated/rust/client.dart';
 import '../../generated/rust/constant/enums.dart' show SessionType;
@@ -15,10 +18,8 @@ import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
 import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
 import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
 import '../../generated/rust/http/message.dart' show RevokeMessageReq;
-import '../../generated/rust/model/local.dart' show LocalChatLog;
 
 import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
-import '../../generated/rust/model/user.dart' show UserInfo;
 
 abstract class MessageRepository {
   Future<List<UserProfile>> getUsersInfo(List<String> userIds);
@@ -280,11 +281,13 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await _client.sendTextMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await _client.sendTextMessage(
+        text: text,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -293,11 +296,13 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await _client.sendMarkdownMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await _client.sendMarkdownMessage(
+        text: text,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -307,15 +312,17 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await _client.sendAtTextMessage(
-      text: text,
-      atUserIds: atUserIds,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await _client.sendAtTextMessage(
+        text: text,
+        atUserIds: atUserIds,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
-    @override
+  @override
   Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,
     required String keyword,
@@ -359,11 +366,13 @@ class MessageRepositoryImpl implements MessageRepository {
     final msg = await ffi_message_builder.createImageMessageFromFullPath(
       imageFullPath: filePath,
     );
-    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
-      msgStruct: msg,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_advanced.sendMessage(
+        msgStruct: msg,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -372,11 +381,13 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await ffi_message_media.sendImageMessageFromUrl(
-      sourceUrl: sourceUrl,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_media.sendImageMessageFromUrl(
+        sourceUrl: sourceUrl,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -393,11 +404,13 @@ class MessageRepositoryImpl implements MessageRepository {
       duration: duration,
       snapshotFullPath: snapshotPath,
     );
-    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
-      msgStruct: msg,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_advanced.sendMessage(
+        msgStruct: msg,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -411,11 +424,13 @@ class MessageRepositoryImpl implements MessageRepository {
       soundPath: filePath,
       duration: duration,
     );
-    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
-      msgStruct: msg,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_advanced.sendMessage(
+        msgStruct: msg,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -428,11 +443,13 @@ class MessageRepositoryImpl implements MessageRepository {
       fileFullPath: filePath,
       fileName: _fileNameOf(filePath),
     );
-    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
-      msgStruct: msg,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_advanced.sendMessage(
+        msgStruct: msg,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -443,13 +460,15 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await ffi_message.sendLocationMessage(
-      description: description,
-      latitude: latitude,
-      longitude: longitude,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message.sendLocationMessage(
+        description: description,
+        latitude: latitude,
+        longitude: longitude,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -459,12 +478,14 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await ffi_message.sendFaceMessage(
-      index: index,
-      data: data,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message.sendFaceMessage(
+        index: index,
+        data: data,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -476,14 +497,16 @@ class MessageRepositoryImpl implements MessageRepository {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(await ffi_message.sendCardMessage(
-      userId: userId,
-      nickname: nickname,
-      faceUrl: faceUrl,
-      ex: ex,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message.sendCardMessage(
+        userId: userId,
+        nickname: nickname,
+        faceUrl: faceUrl,
+        ex: ex,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override
@@ -496,15 +519,17 @@ class MessageRepositoryImpl implements MessageRepository {
     required String quoteSendId,
     required int quoteSendTime,
   }) async {
-    return messageFromMsgStruct(await ffi_message.sendQuoteMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: sessionType,
-      quoteText: quoteText,
-      quoteClientMsgId: quoteClientMsgId,
-      quoteSendId: quoteSendId,
-      quoteSendTime: quoteSendTime,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message.sendQuoteMessage(
+        text: text,
+        sourceId: sourceId,
+        sessionType: sessionType,
+        quoteText: quoteText,
+        quoteClientMsgId: quoteClientMsgId,
+        quoteSendId: quoteSendId,
+        quoteSendTime: quoteSendTime,
+      ),
+    );
   }
 
   @override
@@ -567,11 +592,13 @@ class MessageRepositoryImpl implements MessageRepository {
       ex: message.ex,
       localEx: '',
     );
-    return messageFromMsgStruct(await ffi_message_advanced.sendMessage(
-      msgStruct: msgStruct,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    ));
+    return messageFromMsgStruct(
+      await ffi_message_advanced.sendMessage(
+        msgStruct: msgStruct,
+        sourceId: sourceId,
+        sessionType: sessionType,
+      ),
+    );
   }
 
   @override

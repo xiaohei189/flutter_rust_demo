@@ -6,7 +6,6 @@ export 'message_converters.dart';
 export 'message_media.dart';
 export 'message_search_display.dart';
 
-import '../../../../domain/models/message_search_result.dart' show MessageSearchResult;
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/message.dart'
     show MessageType, MessageSendStatus, messageTypeFromContentType;
@@ -48,9 +47,6 @@ extension ChatMessageExt on ChatMessage {
   /// 消息发送状态（仅自己发的消息有效）
   MessageSendStatus? get messageSendStatus =>
       MessageSendStatus.fromValue(status);
-
-
 }
 
 /// 给 Rust 生成的 LocalChatLog 添加 UI 展示文本
-

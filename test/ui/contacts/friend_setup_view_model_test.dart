@@ -4,12 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/blacklist_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
-import 'package:flutter_rust_demo/domain/models/chat_session_type.dart' show ChatSessionType;
+import 'package:flutter_rust_demo/domain/models/chat_session_type.dart'
+    show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/blacklist_user.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/domain/models/friend.dart';
-import 'package:flutter_rust_demo/generated/rust/constant/enums.dart'
-    show SessionType;
 import 'package:flutter_rust_demo/ui/chat/providers/conversation_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/conversation_view_model.dart';
