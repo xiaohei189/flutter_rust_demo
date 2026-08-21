@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
@@ -14,8 +13,6 @@ import 'package:flutter_rust_demo/domain/models/user_profile.dart'
     show UserProfile;
 import 'package:flutter_rust_demo/generated/rust/model/local.dart'
     show LocalConversation;
-import 'package:flutter_rust_demo/generated/rust/model/message.dart'
-    show MessageInfo;
 import 'package:flutter_rust_demo/domain/message_sorting.dart'
     show sortMessagesByTime;
 import 'package:flutter_rust_demo/generated/rust/event/events/connection.dart';
@@ -28,6 +25,7 @@ import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
+import 'message_event_applier.dart';
 import 'message_service_connection_controller.dart';
 import 'message_user_profile_controller.dart';
 import 'message_service_conversation_controller.dart';
@@ -105,7 +103,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   void onUserEvent(UserEvent event) => socialController.handleUserEvent(event);
 
   void applyConversationEvent(List<LocalConversation> incoming) =>
-      _applyConversationEvent(incoming);
+      eventApplier.applyConversationEvent(incoming);
 
   /// 获取指定会话的消息列表
   List<ChatMessage> getMessages(String conversationId) {
@@ -154,6 +152,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 获取指定用户资料（命中缓存时）
   UserProfile? getUserProfile(String userId) => state.userProfiles[userId];
+
+  MessageEventApplier? _eventApplier;
+
+  MessageEventApplier get eventApplier => _eventApplier ??= MessageEventApplier(
+    this,
+    ref.read(appLifecycleServiceProvider),
+    ref.read(localNotificationServiceProvider),
+  );
 
   MessageUserProfileController? _userProfileController;
 
@@ -502,13 +508,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
     event.when(
       newMessage: (conversationId, message) {
-        _appendIncomingMessage(conversationId, message);
+        eventApplier.appendIncomingMessage(conversationId, message);
       },
       offlineNewMessage: (conversationId, message) {
-        _appendIncomingMessage(conversationId, message);
+        eventApplier.appendIncomingMessage(conversationId, message);
       },
       onlineOnlyMessage: (conversationId, message) {
-        _appendIncomingMessage(conversationId, message);
+        eventApplier.appendIncomingMessage(conversationId, message);
       },
       revoked:
           (
@@ -525,7 +531,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
             sessionType,
             isAdminRevoke,
           ) {
-            _applyRevoked(
+            eventApplier.applyRevoked(
               conversationId: conversationId,
               seq: seq.toInt(),
               clientMsgId: clientMsgId,
@@ -533,12 +539,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
               sourceMessageSenderNickname: sourceMessageSenderNickname,
             );
           },
-      c2CReadReceipt: (receipts) => _applyReadReceipts(receipts),
+      c2CReadReceipt: (receipts) => eventApplier.applyReadReceipts(receipts),
       deleted: (conversationId, clientMsgIds) =>
-          _applyDeleted(conversationId, clientMsgIds),
-      sendFailed: (clientMsgId, error) => _applySendFailed(clientMsgId, error),
+          eventApplier.applyDeleted(conversationId, clientMsgIds),
+      sendFailed: (clientMsgId, error) =>
+          eventApplier.applySendFailed(clientMsgId, error),
       uploadProgress: (clientMsgId, progress, totalSize, uploadedSize) =>
-          _applyUploadProgress(clientMsgId, progress),
+          eventApplier.applyUploadProgress(clientMsgId, progress),
     );
   }
 
@@ -562,78 +569,9 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     );
   }
 
-  void _applyRevoked({
-    required String conversationId,
-    required int seq,
-    required String clientMsgId,
-    required String revokerNickname,
-    required String sourceMessageSenderNickname,
-  }) {
-    state = MessageServiceReducer.applyRevoked(
-      state,
-      conversationId: conversationId,
-      seq: seq,
-      clientMsgId: clientMsgId,
-      revokerNickname: revokerNickname,
-      sourceMessageSenderNickname: sourceMessageSenderNickname,
-    );
-  }
-
-  void _applyReadReceipts(List<MessageReceipt> receipts) {
-    state = MessageServiceReducer.applyReadReceipts(state, receipts);
-  }
-
-  void _applyDeleted(String conversationId, List<String> clientMsgIds) {
-    state = MessageServiceReducer.applyDeleted(
-      state,
-      conversationId,
-      clientMsgIds,
-    );
-  }
-
-  void _applySendFailed(String clientMsgId, String error) {
-    appLog.w('[MsgSvc] sendFailed: clientMsgId=$clientMsgId error=$error');
-    state = MessageServiceReducer.applySendFailed(state, clientMsgId);
-  }
-
-  void _applyUploadProgress(String clientMsgId, int progress) {
-    state = MessageServiceReducer.applyUploadProgress(
-      state,
-      clientMsgId,
-      progress,
-    );
-  }
-
-  /// 事件驱动更新会话列表（对齐官方 Demo：直接用 ConversationChanged 携带的数据更新，不重载 DB）
-  void _applyConversationEvent(List<LocalConversation> incoming) {
-    state = MessageServiceReducer.applyConversationEvent(state, incoming);
-  }
-
   /// 测试入口：等价于 SDK 消息事件流回调
   @visibleForTesting
   void onMessageEventForTest(MessageEvent event) => _onMessageEvent(event);
-
-  /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
-  void _appendIncomingMessage(String conversationId, MessageInfo message) {
-    final chatMessage = messageFromMessageInfo(message);
-    if (ref.read(appLifecycleServiceProvider).isBackground.value) {
-      unawaited(
-        ref
-            .read(localNotificationServiceProvider)
-            .showMessageNotification(
-              title: chatMessage.senderNickname.isNotEmpty
-                  ? message.senderNickname
-                  : '新消息',
-              body: _notificationText(chatMessage),
-            ),
-      );
-    }
-    state = MessageServiceReducer.appendIncomingMessage(
-      state,
-      conversationId,
-      chatMessage,
-    );
-  }
 
   Future<void> loadConversations() =>
       conversationController.loadConversations();
@@ -671,16 +609,4 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   Future<void> markAllConversationsAsRead() =>
       conversationController.markAllConversationsAsRead();
-}
-
-String _notificationText(ChatMessage message) {
-  if (message.contentType == 101) {
-    try {
-      final decoded = jsonDecode(message.content);
-      if (decoded is Map<String, dynamic> && decoded['content'] is String) {
-        return decoded['content'] as String;
-      }
-    } catch (_) {}
-  }
-  return message.content;
 }
