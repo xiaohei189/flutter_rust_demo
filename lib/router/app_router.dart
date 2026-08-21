@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../data/services/navigation_service.dart';
 import '../domain/models/conversation.dart';
 import '../domain/models/chat_message.dart' show ChatMessage;
 import '../ui/shared/views/route_error_page.dart';
@@ -21,9 +20,9 @@ import 'shell_routes.dart';
 /// group_routes / profile_routes / shared_routes / shell_routes，
 /// 路径常量统一引用 [AppPaths]，本类只负责聚合与全局配置。
 class AppRouter {
-  /// 使用 NavigationService 的 navigatorKey 确保全局导航一致性
-  static GlobalKey<NavigatorState> get _rootNavigatorKey =>
-      NavigationService.instance.navigatorKey;
+  /// 全局根导航 key，由 AppRouter 唯一持有，确保无 context 导航一致。
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>();
 
   /// 构建路由配置
   static GoRouter createRouter({
@@ -31,7 +30,7 @@ class AppRouter {
     required String apiBaseUrl,
   }) {
     return GoRouter(
-      navigatorKey: _rootNavigatorKey,
+      navigatorKey: rootNavigatorKey,
       initialLocation: AppPaths.splash,
       debugLogDiagnostics: kDebugMode,
       // 统一 404 错误页

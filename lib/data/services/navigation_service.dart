@@ -16,9 +16,6 @@ class NavigationService {
   /// 全局单例实例
   static NavigationService get instance => _instance;
 
-  /// 全局导航键，用于无 BuildContext 导航
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
   NavigationService._internal();
 
   /// 从 BuildContext 获取 NavigationService
@@ -27,7 +24,7 @@ class NavigationService {
   }
 
   /// 获取当前上下文
-  BuildContext? get _context => navigatorKey.currentContext;
+  BuildContext? get _context => AppRouter.rootNavigatorKey.currentContext;
 
   // ==================== 导航方法（委托 AppRouter） ====================
 
