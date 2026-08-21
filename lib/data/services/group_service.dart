@@ -1,7 +1,10 @@
 import '../../generated/rust/ffi/client.dart' as fb;
 import '../../generated/rust/model/group.dart' show GroupInfo, GroupMember;
 import '../../generated/rust/http/group.dart' show GroupApplyInfo;
-import 'group_service_parts.dart';
+import 'group_service_list_mixin.dart';
+import 'group_service_info_mixin.dart';
+import 'group_service_member_mixin.dart';
+import 'group_service_application_mixin.dart';
 
 abstract class GroupService {
   static GroupService get instance => GroupServiceImpl.instance;
