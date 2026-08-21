@@ -451,6 +451,47 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  Widget _buildBody(
+    ChatDetailState chatDetailState,
+    User user,
+    String currentUserId,
+  ) {
+    return _bodyReady
+        ? Column(
+            children: [
+              if (chatDetailState.selectMode)
+                ChatDetailSelectionTopBar(
+                  conversationId: widget.conversationId,
+                  selectedCount: chatDetailState.selectedMessages.length,
+                  onSelectAll: () => _viewModel?.toggleSelectAll(),
+                  onClose: () => _viewModel?.exitSelectMode(),
+                  onDelete: () => _messageActions.deleteSelected(context),
+                  onForwardOneByOne: () =>
+                      _messageActions.forwardSelected(context, merge: false),
+                  onMergeForward: () =>
+                      _messageActions.forwardSelected(context, merge: true),
+                ),
+              _buildMessageListSection(chatDetailState, user, currentUserId),
+              if (chatDetailState.isForwarding)
+                ForwardProgressBanner(
+                  done: chatDetailState.forwardDone,
+                  total: chatDetailState.forwardTotal,
+                  onCancel: () => _viewModel?.cancelForward(),
+                ),
+              if (chatDetailState.quotedMessage != null)
+                QuotePreviewBar(
+                  message: chatDetailState.quotedMessage!,
+                  onClose: () => _viewModel?.clearQuotedMessage(),
+                ),
+              _buildChatInput(),
+            ],
+          )
+        : ColoredBox(
+            color: context.appColors.background,
+            child: const SizedBox.expand(),
+          );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(
@@ -515,46 +556,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           },
           onSearch: _showMessageSearch,
         ),
-        body: _bodyReady
-            ? Column(
-                children: [
-                  if (chatDetailState.selectMode)
-                    ChatDetailSelectionTopBar(
-                      conversationId: widget.conversationId,
-                      selectedCount: chatDetailState.selectedMessages.length,
-                      onSelectAll: () => _viewModel?.toggleSelectAll(),
-                      onClose: () => _viewModel?.exitSelectMode(),
-                      onDelete: () => _messageActions.deleteSelected(context),
-                      onForwardOneByOne: () => _messageActions.forwardSelected(
-                        context,
-                        merge: false,
-                      ),
-                      onMergeForward: () =>
-                          _messageActions.forwardSelected(context, merge: true),
-                    ),
-                  _buildMessageListSection(
-                    chatDetailState,
-                    user,
-                    currentUserId,
-                  ),
-                  if (chatDetailState.isForwarding)
-                    ForwardProgressBanner(
-                      done: chatDetailState.forwardDone,
-                      total: chatDetailState.forwardTotal,
-                      onCancel: () => _viewModel?.cancelForward(),
-                    ),
-                  if (chatDetailState.quotedMessage != null)
-                    QuotePreviewBar(
-                      message: chatDetailState.quotedMessage!,
-                      onClose: () => _viewModel?.clearQuotedMessage(),
-                    ),
-                  _buildChatInput(),
-                ],
-              )
-            : ColoredBox(
-                color: context.appColors.background,
-                child: const SizedBox.expand(),
-              ),
+        body: _buildBody(chatDetailState, user, currentUserId),
       ),
     );
   }
