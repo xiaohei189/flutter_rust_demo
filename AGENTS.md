@@ -20,7 +20,8 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 - FFI 调用只能出现在 `lib/data/` 与 `lib/main.dart`。`lib/ui/` 与 `lib/providers/` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；所有 Rust 调用必须经 Service/Repository。
 - View 与 ViewModel 只能依赖 Repository/Provider，禁止直接调用 FFI、生成客户端或 Service 单例。
 - 每个领域只保留一个状态源；派生状态用 Provider + `select`，禁止用 `ref.listen` 把全局状态复制进本地 Notifier（纯展示格式化除外）。
-- Service 必须提供抽象接口 + Impl，并由 Riverpod Provider 持有实例。业务 Provider 禁止直接返回 `X.instance`；`X.instance` 仅允许存在于低层基础设施。
+- Flutter 侧遵循 Flutter 官方/业界分层（UI / Application / Domain / Data）：Service 由 Riverpod Provider 持有实例并注入使用；仅在需要依赖反转或单测替换的边界（Repository、Rust 客户端桥）提供抽象接口，不为所有 Service 强制接口样板。
+- 业务 Provider 禁止直接返回 `X.instance`；基础设施单例仅在 `lib/providers/im_providers.dart` 的 Provider 桥中暴露。
 - Repository 返回 Domain Model；存量直接把 generated model 暴露给 UI 的代码应逐步迁移，新增代码禁止新增该泄漏。
 - 提交前必须运行边界检查（或直接执行 `scripts/check-architecture.ps1`）：
   - `rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。

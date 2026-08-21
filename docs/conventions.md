@@ -106,7 +106,7 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 - ViewModel 位于 `lib/ui/<feature>/view_models/`，通过构造函数注入 Repository，只暴露不可变状态和命令方法。
 - View 只负责渲染和路由/交互反馈，不直接访问 FFI client 或 Service。
 - Provider 只做依赖注册和状态桥接，不在 Provider 中实现数据获取。
-- Service 使用抽象接口 + 单例实现（如 `FriendService` / `FriendServiceImpl`），Repository 依赖接口以便单测注入 fake。
+- 分层遵循 Flutter 官方推荐（UI / Application / Domain / Data）：Service 由 Riverpod Provider 注入；接口只在 Repository 与 Rust 客户端桥等需要依赖反转或单测替换的边界提供，普通服务不强制接口样板。
 
 ### 架构边界（强制）
 
@@ -116,7 +116,7 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 - `lib/ui` 与 `lib/providers` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；FFI 调用统一收口到 Service/Repository。
 - View/ViewModel 只能依赖 Repository/Provider；禁止在 View 内直接调用 `uploadFile`、`sendMergerMessage`、`sendTyping` 等 FFI 函数。
 - 同一领域只保留一个状态源（如 `ConnectionService`、`ConversationListProvider`），其他 Provider 通过 `select` 派生；禁止创建并行的双轨 Provider。
-- 业务 Service 必须提供抽象接口 + 实现，并由 Riverpod Provider 持有实例；业务代码禁止直接访问 `X.instance`。
+- Service 由 Riverpod Provider 持有实例；业务代码禁止直接访问 `X.instance`，基础设施单例只在 Provider 桥中暴露。抽象接口仅用于需要依赖反转或单测替换的边界，不为所有 Service 强制接口。
 - Repository 对外返回 Domain Model，禁止把 generated raw model 直接暴露给 View；存量代码逐步迁移，新增代码不得新增泄漏。
 
 提交前用以下命令做边界回归：
