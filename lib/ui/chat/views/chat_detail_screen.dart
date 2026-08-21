@@ -34,6 +34,7 @@ import '../widgets/composer/group_member_picker.dart'
     show insertAtMention, showGroupMemberPicker;
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/chat_message_list_section.dart';
+import '../widgets/list/forward_progress_banner.dart';
 import '../widgets/list/message_list.dart';
 import '../widgets/menu/message_selection_bar.dart';
 import '../widgets/composer/quote_preview_bar.dart';
@@ -522,36 +523,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     ),
                   ),
                   if (chatDetailState.isForwarding)
-                    Container(
-                      color: context.appColors.surface,
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                      child: Row(
-                        children: [
-                          Text(
-                            '转发中 ${chatDetailState.forwardDone}/${chatDetailState.forwardTotal}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.appColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: chatDetailState.forwardTotal == 0
-                                  ? 0
-                                  : chatDetailState.forwardDone /
-                                        chatDetailState.forwardTotal,
-                              minHeight: 3,
-                              backgroundColor: context.appColors.surfaceMuted,
-                              color: context.appColors.primary,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => _viewModel?.cancelForward(),
-                            child: const Text('取消'),
-                          ),
-                        ],
-                      ),
+                    ForwardProgressBanner(
+                      done: chatDetailState.forwardDone,
+                      total: chatDetailState.forwardTotal,
+                      onCancel: () => _viewModel?.cancelForward(),
                     ),
                   if (chatDetailState.quotedMessage != null)
                     QuotePreviewBar(
