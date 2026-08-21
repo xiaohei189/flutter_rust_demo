@@ -387,6 +387,70 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _handleMessageTap(ChatMessage msg) =>
       _messageActions.handleTap(msg, context);
 
+  Widget _buildMissingConversation() {
+    return Scaffold(
+      backgroundColor: context.appColors.background,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 22),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text('会话不存在'),
+      ),
+      body: const Center(child: Text('会话信息不存在或已被删除')),
+    );
+  }
+
+  Widget _buildMessageListSection(
+    ChatDetailState chatDetailState,
+    User user,
+    String currentUserId,
+  ) {
+    return Expanded(
+      child: ChatMessageListSection(
+        conversationId: widget.conversationId,
+        user: user,
+        currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
+        currentUserAvatar: ref
+            .read(userProfileProvider.notifier)
+            .getDisplayAvatarUrl(),
+        scrollController: _scrollController,
+        isLoading: chatDetailState.isLoading,
+        selectMode: chatDetailState.selectMode,
+        selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
+        messageReactions: _messageReactions,
+        onMessageVisible: (msg) {
+          if (!msg.isRead &&
+              msg.sendId != (currentUserId.isNotEmpty ? currentUserId : null)) {
+            _viewModel?.markConversationMessageAsRead();
+          }
+        },
+        messageActionsBuilder: _buildMessageActions,
+        onMessageTap: _handleMessageTap,
+      ),
+    );
+  }
+
+  Widget _buildChatInput() {
+    return ChatInput(
+      controller: _textController,
+      onSend: _sendMessage,
+      onImagePick: _pickImage,
+      onImagesPick: _pickImages,
+      onCameraPick: _pickFromCamera,
+      onLocationPick: _pickLocation,
+      onFilePick: _pickFile,
+      onVideoPick: _pickVideo,
+      onCardSend: _sendCardMessage,
+      onVoiceRecord: _sendVoiceMessage,
+      onAtMention: _showAtMentionPicker,
+      onGifSelected: _sendGif,
+      atMembers: _atMembers,
+      onAtMemberSelected: _onAtMemberSelected,
+      isGroupChat: _isGroup,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatDetailState = ref.watch(
@@ -424,17 +488,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         typingUserId != currentUserId;
 
     if (conversation == null) {
-      return Scaffold(
-        backgroundColor: context.appColors.background,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 22),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: const Text('会话不存在'),
-        ),
-        body: const Center(child: Text('会话信息不存在或已被删除')),
-      );
+      return _buildMissingConversation();
     }
 
     return PopScope(
@@ -478,34 +532,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       onMergeForward: () =>
                           _messageActions.forwardSelected(context, merge: true),
                     ),
-                  Expanded(
-                    child: ChatMessageListSection(
-                      conversationId: widget.conversationId,
-                      user: user,
-                      currentUserId: currentUserId.isNotEmpty
-                          ? currentUserId
-                          : null,
-                      currentUserAvatar: ref
-                          .read(userProfileProvider.notifier)
-                          .getDisplayAvatarUrl(),
-                      scrollController: _scrollController,
-                      isLoading: chatDetailState.isLoading,
-                      selectMode: chatDetailState.selectMode,
-                      selectedClientMsgIds:
-                          chatDetailState.selectedClientMsgIds,
-                      messageReactions: _messageReactions,
-                      onMessageVisible: (msg) {
-                        if (!msg.isRead &&
-                            msg.sendId !=
-                                (currentUserId.isNotEmpty
-                                    ? currentUserId
-                                    : null)) {
-                          _viewModel?.markConversationMessageAsRead();
-                        }
-                      },
-                      messageActionsBuilder: _buildMessageActions,
-                      onMessageTap: _handleMessageTap,
-                    ),
+                  _buildMessageListSection(
+                    chatDetailState,
+                    user,
+                    currentUserId,
                   ),
                   if (chatDetailState.isForwarding)
                     ForwardProgressBanner(
@@ -518,23 +548,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       message: chatDetailState.quotedMessage!,
                       onClose: () => _viewModel?.clearQuotedMessage(),
                     ),
-                  ChatInput(
-                    controller: _textController,
-                    onSend: _sendMessage,
-                    onImagePick: _pickImage,
-                    onImagesPick: _pickImages,
-                    onCameraPick: _pickFromCamera,
-                    onLocationPick: _pickLocation,
-                    onFilePick: _pickFile,
-                    onVideoPick: _pickVideo,
-                    onCardSend: _sendCardMessage,
-                    onVoiceRecord: _sendVoiceMessage,
-                    onAtMention: _showAtMentionPicker,
-                    onGifSelected: _sendGif,
-                    atMembers: _atMembers,
-                    onAtMemberSelected: _onAtMemberSelected,
-                    isGroupChat: _isGroup,
-                  ),
+                  _buildChatInput(),
                 ],
               )
             : ColoredBox(
