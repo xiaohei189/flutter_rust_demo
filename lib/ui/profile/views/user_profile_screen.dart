@@ -15,6 +15,7 @@ import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../view_models/user_profile_view_model.dart';
+import '../widgets/add_friend_dialog.dart';
 
 /// 用户个人信息页面：从聊天气泡头像点击进入
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -401,48 +402,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   void _showAddFriendDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('添加好友'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: '输入验证消息（可选）',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final reqMsg = controller.text.trim();
-                Navigator.of(context).pop();
-                try {
-                  await ref
-                      .read(userProfileRepositoryProvider)
-                      .sendFriendRequest(widget.user.id, reqMsg);
-                  if (mounted) {
-                    setState(() => _isFriend = true);
-                  }
-                  ref.read(navigationServiceProvider).showSnackBar('好友申请已发送');
-                } catch (e) {
-                  appLog.e('[UserProfileScreen] 添加好友失败: $e');
-                  ref
-                      .read(navigationServiceProvider)
-                      .showSnackBar('添加好友失败: $e');
-                }
-              },
-              child: const Text('发送'),
-            ),
-          ],
-        );
+    showAddFriendDialog(
+      context,
+      onSend: (reqMsg) async {
+        try {
+          await ref
+              .read(userProfileRepositoryProvider)
+              .sendFriendRequest(widget.user.id, reqMsg);
+          if (mounted) {
+            setState(() => _isFriend = true);
+          }
+          ref.read(navigationServiceProvider).showSnackBar('好友申请已发送');
+        } catch (e) {
+          appLog.e('[UserProfileScreen] 添加好友失败: $e');
+          ref.read(navigationServiceProvider).showSnackBar('添加好友失败: $e');
+        }
       },
     );
   }
