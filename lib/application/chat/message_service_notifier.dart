@@ -10,7 +10,6 @@ import 'package:flutter_rust_demo/domain/models/message_search_result.dart'
     show MessageSearchResult;
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
 import 'package:flutter_rust_demo/domain/models/user_profile.dart'
     show UserProfile;
 import 'package:flutter_rust_demo/generated/rust/model/local.dart'
@@ -34,6 +33,7 @@ import 'message_service_connection_controller.dart';
 import 'message_service_conversation_controller.dart';
 
 import 'message_service_reducer.dart';
+import 'message_send_controller.dart';
 import 'message_service_social_controller.dart';
 
 /// MessageService 的 Notifier
@@ -46,6 +46,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceConnectionController? _connectionController;
   MessageServiceConversationController? _conversationController;
   MessageServiceSocialController? _socialController;
+  MessageSendController? _sendController;
 
   @override
   MessageServiceState build() => MessageServiceState();
@@ -71,15 +72,19 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         ref.read(onlineStatusServiceProvider),
       );
 
+  MessageSendController get sendController =>
+      _sendController ??= MessageSendController(
+        this,
+        ref.read(messageRepositoryProvider),
+        ref.read(imClientProvider),
+      );
+
   MessageRepository get repository => ref.read(messageRepositoryProvider);
 
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
   MessageServiceState get currentState => state;
 
   bool get _isClientReady => ref.read(imClientProvider).isInitialized;
-
-  SessionType _toSdkSessionType(ChatSessionType type) =>
-      SessionType.values[type.index];
 
   void updateState(MessageServiceState next) => state = next;
 
@@ -293,19 +298,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    if (recvId.trim().isEmpty && groupId.trim().isEmpty) {
-      throw ArgumentError('recvId 与 groupId 至少填一个');
-    }
-
-    final sourceId = groupId.isNotEmpty ? groupId : recvId;
-    return repository.sendTextMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendTextMessage(
+    recvId: recvId,
+    text: text,
+    sessionType: sessionType,
+    conversationId: conversationId,
+    groupId: groupId,
+  );
 
   /// 发送 Markdown 消息
   Future<ChatMessage> sendMarkdownMessage({
@@ -314,15 +313,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    final sourceId = groupId.isNotEmpty ? groupId : recvId;
-    return repository.sendMarkdownMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendMarkdownMessage(
+    recvId: recvId,
+    text: text,
+    sessionType: sessionType,
+    conversationId: conversationId,
+    groupId: groupId,
+  );
 
   /// 发送 @ 提及消息
   Future<ChatMessage> sendAtTextMessage({
@@ -332,16 +329,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    final sourceId = groupId.isNotEmpty ? groupId : recvId;
-    return repository.sendAtTextMessage(
-      text: text,
-      atUserIds: atUserIds,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendAtTextMessage(
+    text: text,
+    atUserIds: atUserIds,
+    recvId: recvId,
+    sessionType: sessionType,
+    conversationId: conversationId,
+    groupId: groupId,
+  );
 
   /// 搜索当前会话的本地消息
   Future<List<MessageSearchResult>> searchLocalMessages({
@@ -349,58 +344,45 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String keyword,
     int offset = 0,
     int count = 50,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    if (keyword.trim().isEmpty) return const [];
-    return repository.searchLocalMessages(
-      conversationId: conversationId,
-      keyword: keyword,
-      offset: offset,
-      count: count,
-    );
-  }
+  }) => sendController.searchLocalMessages(
+    conversationId: conversationId,
+    keyword: keyword,
+    offset: offset,
+    count: count,
+  );
 
   /// 转发消息（按 clientMsgId 原样转发，对齐 Go SDK ForwardMessage）
   Future<void> forwardMessage({
     required String clientMsgId,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    await repository.forwardMessage(
-      clientMsgId: clientMsgId,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.forwardMessage(
+    clientMsgId: clientMsgId,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送图片消息
   Future<ChatMessage> sendImageMessage({
     required String filePath,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendImageMessage(
-      filePath: filePath,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendImageMessage(
+    filePath: filePath,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送 URL 图片（如 GIF，内容已上传，不走 OSS）
   Future<ChatMessage> sendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendImageMessageFromUrl(
-      sourceUrl: sourceUrl,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendImageMessageFromUrl(
+    sourceUrl: sourceUrl,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送视频消息
   Future<ChatMessage> sendVideoMessage({
@@ -409,16 +391,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required int duration,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendVideoMessage(
-      videoPath: videoPath,
-      snapshotPath: snapshotPath,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-      duration: duration,
-    );
-  }
+  }) => sendController.sendVideoMessage(
+    videoPath: videoPath,
+    snapshotPath: snapshotPath,
+    sourceId: sourceId,
+    sessionType: sessionType,
+    duration: duration,
+  );
 
   /// 发送语音消息
   Future<ChatMessage> sendSoundMessage({
@@ -426,29 +405,23 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required int duration,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendSoundMessage(
-      filePath: filePath,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-      duration: duration,
-    );
-  }
+  }) => sendController.sendSoundMessage(
+    filePath: filePath,
+    sourceId: sourceId,
+    sessionType: sessionType,
+    duration: duration,
+  );
 
   /// 发送文件消息
   Future<ChatMessage> sendFileMessage({
     required String filePath,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendFileMessage(
-      filePath: filePath,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendFileMessage(
+    filePath: filePath,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送位置消息
   Future<ChatMessage> sendLocationMessage({
@@ -457,16 +430,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required double longitude,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendLocationMessage(
-      description: description,
-      latitude: latitude,
-      longitude: longitude,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendLocationMessage(
+    description: description,
+    latitude: latitude,
+    longitude: longitude,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送表情消息
   Future<ChatMessage> sendFaceMessage({
@@ -474,15 +444,12 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String data,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendFaceMessage(
-      index: index,
-      data: data,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendFaceMessage(
+    index: index,
+    data: data,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送名片消息
   Future<ChatMessage> sendCardMessage({
@@ -492,17 +459,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String ex,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendCardMessage(
-      userId: userId,
-      nickname: nickname,
-      faceUrl: faceUrl,
-      ex: ex,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendCardMessage(
+    userId: userId,
+    nickname: nickname,
+    faceUrl: faceUrl,
+    ex: ex,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 发送引用消息
   Future<ChatMessage> sendQuoteMessage({
@@ -513,31 +477,26 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String quoteClientMsgId,
     required String quoteSendId,
     required int quoteSendTime,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.sendQuoteMessage(
-      text: text,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-      quoteText: quoteText,
-      quoteClientMsgId: quoteClientMsgId,
-      quoteSendId: quoteSendId,
-      quoteSendTime: quoteSendTime,
-    );
-  }
+  }) => sendController.sendQuoteMessage(
+    text: text,
+    sourceId: sourceId,
+    sessionType: sessionType,
+    quoteText: quoteText,
+    quoteClientMsgId: quoteClientMsgId,
+    quoteSendId: quoteSendId,
+    quoteSendTime: quoteSendTime,
+  );
 
   /// 发送正在输入状态
   Future<void> sendTyping({
     required String sourceId,
     required ChatSessionType sessionType,
     required bool focus,
-  }) {
-    return repository.sendTyping(
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-      focus: focus,
-    );
-  }
+  }) => sendController.sendTyping(
+    sourceId: sourceId,
+    sessionType: sessionType,
+    focus: focus,
+  );
 
   /// 合并转发
   Future<void> sendMergerMessage({
@@ -547,16 +506,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required List<String> summaryList,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) {
-    return repository.sendMergerMessage(
-      clientMsgIds: clientMsgIds,
-      sourceConversationId: sourceConversationId,
-      title: title,
-      summaryList: summaryList,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.sendMergerMessage(
+    clientMsgIds: clientMsgIds,
+    sourceConversationId: sourceConversationId,
+    title: title,
+    summaryList: summaryList,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 撤回消息
   Future<void> revokeMessage({
@@ -564,29 +521,21 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required int seq,
     required String clientMsgId,
     required int sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    await repository.revokeMessage(
-      conversationId: conversationId,
-      userId: state.currentUserId,
-      seq: seq,
-      clientMsgId: clientMsgId,
-      sessionType: sessionType,
-    );
-  }
+  }) => sendController.revokeMessage(
+    conversationId: conversationId,
+    seq: seq,
+    clientMsgId: clientMsgId,
+    sessionType: sessionType,
+  );
 
   /// 删除消息（本地+服务端）
   Future<void> deleteMessage({
     required String conversationId,
     required String clientMsgId,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    await repository.deleteMessage(
-      conversationId: conversationId,
-      clientMsgId: clientMsgId,
-    );
-  }
-
+  }) => sendController.deleteMessage(
+    conversationId: conversationId,
+    clientMsgId: clientMsgId,
+  );
   Future<void> initialize({
     String? wsUrl,
     String? apiBaseUrl,
@@ -650,14 +599,11 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatMessage message,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) async {
-    if (!_isClientReady) throw StateError('客户端未初始化');
-    return repository.resendMessage(
-      message: message,
-      sourceId: sourceId,
-      sessionType: _toSdkSessionType(sessionType),
-    );
-  }
+  }) => sendController.resendMessage(
+    message: message,
+    sourceId: sourceId,
+    sessionType: sessionType,
+  );
 
   /// 移除指定消息（用于重发成功后替换旧的失败消息）。
   void removeMessage(String conversationId, String clientMsgId) {
