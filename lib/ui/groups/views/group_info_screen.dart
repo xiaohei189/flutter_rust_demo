@@ -7,7 +7,6 @@ import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
-import '../../../../providers/im_providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
@@ -17,6 +16,7 @@ import '../providers/group_info_provider.dart';
 import '../providers/group_provider.dart';
 import '../view_models/group_info_view_model.dart';
 import '../widgets/group_member_section.dart';
+import '../widgets/group_dialogs.dart';
 
 enum _JoinTimeFilter { all, today, week, month }
 
@@ -268,56 +268,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       return;
     }
 
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                member.nickname.isNotEmpty ? member.nickname : member.userId,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.person_remove_outlined),
-              title: const Text('踢出群聊'),
-              onTap: () => Navigator.of(ctx).pop('kick'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.volume_off_outlined),
-              title: const Text('禁言'),
-              onTap: () => Navigator.of(ctx).pop('mute'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.volume_up_outlined),
-              title: const Text('取消禁言'),
-              onTap: () => Navigator.of(ctx).pop('unmute'),
-            ),
-            if (isOwner && member.roleLevel != 3)
-              ListTile(
-                leading: const Icon(Icons.admin_panel_settings_outlined),
-                title: Text(member.roleLevel == 2 ? '取消管理员' : '设为管理员'),
-                onTap: () => Navigator.of(
-                  ctx,
-                ).pop(member.roleLevel == 2 ? 'unsetAdmin' : 'setAdmin'),
-              ),
-            if (isOwner)
-              ListTile(
-                leading: const Icon(Icons.swap_horiz),
-                title: const Text('转让群主'),
-                onTap: () => Navigator.of(ctx).pop('transfer'),
-              ),
-          ],
-        ),
-      ),
+    final action = await showGroupMemberActionsSheet(
+      context,
+      member,
+      isOwner: isOwner,
     );
 
     switch (action) {
@@ -364,43 +318,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       );
       return;
     }
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                '群主和管理员',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Divider(height: 1),
-            ...members.map(
-              (m) => ListTile(
-                leading: UserAvatar(
-                  user: User(
-                    id: m.userId,
-                    name: m.nickname,
-                    avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
-                  ),
-                  radius: 18,
-                ),
-                title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
-                subtitle: Text(_roleName(m.roleLevel)),
-                onTap: () => Navigator.of(sheetContext).pop(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    showGroupOwnerAdminSheet(context, members, roleName: _roleName);
   }
 
   String get _joinTimeFilterLabel => switch (_joinTimeFilter) {
@@ -457,28 +375,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _kickMember(GroupMember member) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('踢出群聊'),
-        content: Text(
-          '确定将 ${member.nickname.isNotEmpty ? member.nickname : member.userId} 移出群聊吗？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '踢出',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await confirmKickMember(context, member);
     if (confirmed != true) return;
     final ok = await _viewModel.kickMember(member.userId);
     if (!mounted) return;
@@ -495,39 +392,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _muteMemberDialog(GroupMember member) async {
-    const durations = <String, int>{
-      '1 分钟': 60,
-      '10 分钟': 600,
-      '1 小时': 3600,
-      '24 小时': 86400,
-    };
-    final duration = await showModalBottomSheet<int>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                '选择禁言时长',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            ...durations.entries.map(
-              (e) => ListTile(
-                title: Text(e.key),
-                onTap: () => Navigator.of(ctx).pop(e.value),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    final duration = await showGroupMuteDurationSheet(context);
     if (duration == null) return;
     final ok = await _viewModel.muteMember(member.userId, duration);
     if (!mounted) return;
@@ -559,51 +424,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _showGroupManageSheet() async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('群管理', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.volume_off_outlined),
-              title: const Text('全员禁言'),
-              onTap: () => Navigator.of(ctx).pop('muteAll'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.volume_up_outlined),
-              title: const Text('解除全员禁言'),
-              onTap: () => Navigator.of(ctx).pop('unmuteAll'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.swap_horiz),
-              title: const Text('转让群主'),
-              onTap: () => Navigator.of(ctx).pop('transfer'),
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: context.appColors.danger,
-              ),
-              title: Text(
-                '解散群组',
-                style: TextStyle(color: context.appColors.danger),
-              ),
-              onTap: () => Navigator.of(ctx).pop('dismiss'),
-            ),
-          ],
-        ),
-      ),
-    );
+    final action = await showGroupManageSheet(context);
 
     switch (action) {
       case 'muteAll':
@@ -647,34 +468,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     }
 
     GroupMember? selected = target;
-    selected ??= await showModalBottomSheet<GroupMember>(
-      context: context,
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                '选择新群主',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            const Divider(height: 1),
-            ...candidates.map(
-              (m) => ListTile(
-                title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
-                onTap: () => Navigator.of(ctx).pop(m),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    selected ??= await showGroupOwnerPickerSheet(context, candidates);
     if (selected == null) return;
 
     final ok = await _viewModel.transferOwner(selected.userId);
@@ -692,26 +486,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   }
 
   Future<void> _dismissGroup() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('解散群组'),
-        content: const Text('解散后所有成员都将退出，且无法恢复，确定继续吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '解散',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await confirmDismissGroup(context);
     if (confirmed != true) return;
     final ok = await _viewModel.dismissGroup();
     if (!mounted) return;
@@ -730,32 +505,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
 
   /// 更换群头像（输入图片 URL）
   Future<void> _changeGroupAvatar() async {
-    final controller = TextEditingController(
-      text: _conversation?.faceUrl ?? '',
-    );
-    final url = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('更换群头像'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '请输入图片 URL',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+    final url = await showChangeGroupAvatarDialog(
+      context,
+      initialUrl: _conversation?.faceUrl ?? '',
     );
     if (url == null || url.isEmpty) return;
     final ok = await _viewModel.updateGroupAvatar(url);
@@ -778,44 +530,12 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     required Future<void> Function(String) onSave,
     int maxLines = 1,
   }) {
-    final controller = TextEditingController(text: initialValue);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          maxLines: maxLines,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: '请输入$title',
-            filled: true,
-            fillColor: context.appColors.background,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => ref.read(navigationServiceProvider).goBack(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                await onSave(text);
-              }
-              if (context.mounted) {
-                ref.read(navigationServiceProvider).goBack();
-              }
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+    showEditGroupFieldDialog(
+      context,
+      title: title,
+      initialValue: initialValue,
+      onSave: onSave,
+      maxLines: maxLines,
     );
   }
 
