@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/services/app_lifecycle_service.dart';
+import '../../../providers/im_providers.dart';
 import '../providers/app_lock_provider.dart';
 import '../theme/app_theme.dart';
 import '../view_models/app_lock_view_model.dart';
@@ -25,21 +25,25 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   void initState() {
     super.initState();
     _viewModel = ref.read(appLockViewModelProvider.notifier);
-    AppLifecycleService.instance.isBackground.addListener(_onLifecycleChanged);
+    ref
+        .read(appLifecycleServiceProvider)
+        .isBackground
+        .addListener(_onLifecycleChanged);
     unawaited(_viewModel.load());
   }
 
   @override
   void dispose() {
-    AppLifecycleService.instance.isBackground.removeListener(
-      _onLifecycleChanged,
-    );
+    ref
+        .read(appLifecycleServiceProvider)
+        .isBackground
+        .removeListener(_onLifecycleChanged);
     _pinController.dispose();
     super.dispose();
   }
 
   void _onLifecycleChanged() {
-    if (AppLifecycleService.instance.isBackground.value) {
+    if (ref.read(appLifecycleServiceProvider).isBackground.value) {
       _viewModel.lock();
     } else if (_viewModel.currentState.enabled == true) {
       _viewModel.lock();

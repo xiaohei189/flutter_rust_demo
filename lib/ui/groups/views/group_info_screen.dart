@@ -7,7 +7,7 @@ import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
-import '../../../../data/services/services.dart';
+import '../../../../providers/im_providers.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
@@ -799,7 +799,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => NavigationService.instance.goBack(),
+            onPressed: () => ref.read(navigationServiceProvider).goBack(),
             child: const Text('取消'),
           ),
           TextButton(
@@ -809,7 +809,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 await onSave(text);
               }
               if (context.mounted) {
-                NavigationService.instance.goBack();
+                ref.read(navigationServiceProvider).goBack();
               }
             },
             child: const Text('保存'),

@@ -1,20 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
-import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
-import 'package:flutter_rust_demo/domain/models/chat_session_type.dart' show ChatSessionType;
-import 'package:flutter_rust_demo/domain/models/message_search_result.dart' show MessageSearchResult;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart'
+    show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/chat_session_type.dart'
+    show ChatSessionType;
+import 'package:flutter_rust_demo/domain/models/message_search_result.dart'
+    show MessageSearchResult;
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/generated/rust/constant/enums.dart';
-import 'package:flutter_rust_demo/domain/models/user_profile.dart' show UserProfile;
+import 'package:flutter_rust_demo/domain/models/user_profile.dart'
+    show UserProfile;
 import 'package:flutter_rust_demo/generated/rust/model/local.dart'
     show LocalConversation;
 import 'package:flutter_rust_demo/generated/rust/model/message.dart'
     show MessageInfo;
-import 'package:flutter_rust_demo/domain/message_sorting.dart' show sortMessagesByTime;
+import 'package:flutter_rust_demo/domain/message_sorting.dart'
+    show sortMessagesByTime;
 import 'package:flutter_rust_demo/generated/rust/event/events/connection.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/conversation.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/friend.dart';
@@ -25,8 +29,6 @@ import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
-import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
-import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'message_service_connection_controller.dart';
 import 'message_service_conversation_controller.dart';
@@ -74,9 +76,10 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
   MessageServiceState get currentState => state;
 
-  bool get _isClientReady => ImClient.instance.isInitialized;
+  bool get _isClientReady => ref.read(imClientProvider).isInitialized;
 
-  SessionType _toSdkSessionType(ChatSessionType type) => SessionType.values[type.index];
+  SessionType _toSdkSessionType(ChatSessionType type) =>
+      SessionType.values[type.index];
 
   void updateState(MessageServiceState next) => state = next;
 
@@ -154,7 +157,9 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       final list = await repository.getUsersInfo([state.currentUserId]);
       final profile = list.isNotEmpty ? list.first : null;
       if (profile != null) {
-        final newUserProfiles = Map<String, UserProfile>.from(state.userProfiles);
+        final newUserProfiles = Map<String, UserProfile>.from(
+          state.userProfiles,
+        );
         newUserProfiles[profile.userId] = profile;
         state = state.copyWith(
           loginUserProfile: profile,
@@ -717,14 +722,16 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
   void _appendIncomingMessage(String conversationId, MessageInfo message) {
     final chatMessage = messageFromMessageInfo(message);
-    if (AppLifecycleService.instance.isBackground.value) {
+    if (ref.read(appLifecycleServiceProvider).isBackground.value) {
       unawaited(
-        LocalNotificationService.instance.showMessageNotification(
-          title: chatMessage.senderNickname.isNotEmpty
-              ? message.senderNickname
-              : '新消息',
-          body: _notificationText(chatMessage),
-        ),
+        ref
+            .read(localNotificationServiceProvider)
+            .showMessageNotification(
+              title: chatMessage.senderNickname.isNotEmpty
+                  ? message.senderNickname
+                  : '新消息',
+              body: _notificationText(chatMessage),
+            ),
       );
     }
     state = MessageServiceReducer.appendIncomingMessage(
@@ -745,7 +752,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   Future<void> disconnect() => connectionController.disconnect();
 
-  Future<void> logout() => ImClient.instance.logout();
+  Future<void> logout() => ref.read(imClientProvider).logout();
 
   Future<void> markConversationMessageAsRead(String conversationId) =>
       conversationController.markConversationMessageAsRead(conversationId);
@@ -771,7 +778,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<void> markAllConversationsAsRead() =>
       conversationController.markAllConversationsAsRead();
 }
-
 
 String _notificationText(ChatMessage message) {
   if (message.contentType == 101) {

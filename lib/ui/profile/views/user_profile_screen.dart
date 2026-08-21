@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../data/services/services.dart';
+import '../../../../providers/im_providers.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -271,7 +271,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           context,
                           Icons.edit_outlined,
                           '编辑资料',
-                          () => NavigationService.instance.goBack(),
+                          () => ref.read(navigationServiceProvider).goBack(),
                         ),
                       ],
                     ),
@@ -289,7 +289,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           context,
                           Icons.chat_bubble_outline,
                           '发消息',
-                          () => NavigationService.instance.goBack(),
+                          () => ref.read(navigationServiceProvider).goBack(),
                         ),
                         _buildDivider(),
                         _buildActionRow(
@@ -431,10 +431,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   if (mounted) {
                     setState(() => _isFriend = true);
                   }
-                  NavigationService.instance.showSnackBar('好友申请已发送');
+                  ref.read(navigationServiceProvider).showSnackBar('好友申请已发送');
                 } catch (e) {
                   appLog.e('[UserProfileScreen] 添加好友失败: $e');
-                  NavigationService.instance.showSnackBar('添加好友失败: $e');
+                  ref
+                      .read(navigationServiceProvider)
+                      .showSnackBar('添加好友失败: $e');
                 }
               },
               child: const Text('发送'),
