@@ -34,6 +34,7 @@ import '../widgets/composer/group_member_picker.dart'
 import '../widgets/menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import '../widgets/list/chat_message_list_section.dart';
 import '../widgets/list/forward_progress_banner.dart';
+import '../mappers/message_media.dart';
 import '../widgets/list/message_list.dart';
 import '../widgets/composer/quote_preview_bar.dart';
 import '../widgets/shared/chat_detail_app_bar.dart';
@@ -44,10 +45,14 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
   final String conversationId;
   final bool preLoaded;
 
+  /// 从会话列表「@我」筛选进入时，加载后定位到第一条提及我的消息。
+  final bool focusAtMe;
+
   const ChatDetailScreen({
     super.key,
     required this.conversationId,
     this.preLoaded = false,
+    this.focusAtMe = false,
   });
 
   @override
@@ -143,6 +148,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _viewModel?.onTextChanged();
   }
 
+  bool _focusAtMeHandled = false;
+
   void _onMessageListChanged() {
     final messages = ref.read(
       messagesByConversationProvider(widget.conversationId),
@@ -161,6 +168,36 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         if (mounted) _scrollToBottom();
       });
     }
+    _maybeJumpToAtMe();
+  }
+
+  /// 从「@我」筛选进入时，定位到第一条提及当前用户的消息。
+  void _maybeJumpToAtMe() {
+    if (!widget.focusAtMe || _focusAtMeHandled) return;
+    final messages = ref.read(
+      messagesByConversationProvider(widget.conversationId),
+    );
+    if (messages.isEmpty) return;
+    _focusAtMeHandled = true;
+    final currentUserId = _viewModel?.currentUserId;
+    if (currentUserId == null || currentUserId.isEmpty) return;
+    ChatMessage? target;
+    for (final message in messages) {
+      if (message.atUserIds.contains(currentUserId)) {
+        target = message;
+        break;
+      }
+    }
+    if (target == null) {
+      _showError('未找到提及你的消息');
+      return;
+    }
+    final targetId = target.clientMsgId;
+    // 等底部自动滚动结束后再定位，避免被覆盖。
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      _messageListKey.currentState?.scrollToMessage(targetId);
+    });
   }
 
   void _onScroll() {

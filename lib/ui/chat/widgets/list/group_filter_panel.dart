@@ -4,7 +4,16 @@ import '../../../../router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// 分组筛选类型
-enum GroupFilter { all, unread, flagged, atMe, singleChat, groupChat, done }
+enum GroupFilter {
+  all,
+  unread,
+  flagged,
+  atMe,
+  singleChat,
+  groupChat,
+  done,
+  archived,
+}
 
 /// 分组筛选面板（从左侧滑入，占满屏幕高度，宽度约 80%）
 class GroupFilterPanel extends StatelessWidget {
@@ -17,7 +26,13 @@ class GroupFilterPanel extends StatelessWidget {
     required this.atMeCount,
     required this.flaggedCount,
     required this.doneCount,
+    required this.archivedCount,
     required this.onSelect,
+    this.folders = const {},
+    this.activeFolder,
+    this.onSelectFolder,
+    this.onCreateFolder,
+    this.onDeleteFolder,
   });
 
   final GroupFilter activeFilter;
@@ -27,7 +42,13 @@ class GroupFilterPanel extends StatelessWidget {
   final int atMeCount;
   final int flaggedCount;
   final int doneCount;
+  final int archivedCount;
   final ValueChanged<GroupFilter> onSelect;
+  final Map<String, List<String>> folders;
+  final String? activeFolder;
+  final ValueChanged<String>? onSelectFolder;
+  final VoidCallback? onCreateFolder;
+  final ValueChanged<String>? onDeleteFolder;
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +151,39 @@ class GroupFilterPanel extends StatelessWidget {
                             count: groupCount,
                             filter: GroupFilter.groupChat,
                           ),
+                          _buildItem(
+                            context,
+                            icon: Icons.inventory_2_outlined,
+                            label: '归档',
+                            count: archivedCount,
+                            filter: GroupFilter.archived,
+                          ),
+                          if (folders.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                              child: Text(
+                                '自定义分组',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            for (final entry in folders.entries)
+                              _buildFolderItem(
+                                context,
+                                entry.key,
+                                entry.value.length,
+                              ),
+                          ],
+                          if (onCreateFolder != null)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.create_new_folder_outlined,
+                              ),
+                              title: const Text('新建分组'),
+                              onTap: onCreateFolder,
+                            ),
                         ],
                       ),
                     ),
@@ -137,6 +191,49 @@ class GroupFilterPanel extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFolderItem(BuildContext context, String name, int count) {
+    final colors = context.appColors;
+    final isActive = activeFolder == name;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onSelectFolder?.call(name),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.folder_outlined,
+                size: 24,
+                color: isActive ? colors.primary : colors.textSecondary,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: isActive ? colors.primary : colors.textPrimary,
+                  ),
+                ),
+              ),
+              if (count > 0)
+                Text(
+                  '$count',
+                  style: TextStyle(fontSize: 14, color: colors.textSecondary),
+                ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                onPressed: () => onDeleteFolder?.call(name),
+              ),
+            ],
           ),
         ),
       ),

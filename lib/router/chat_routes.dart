@@ -16,12 +16,14 @@ List<RouteBase> buildChatRoutes() {
       builder: (context, state) {
         final conversationId = state.pathParameters['id'];
         final preLoaded = state.uri.queryParameters['preLoaded'] == 'true';
+        final focusAtMe = state.uri.queryParameters['focusAtMe'] == 'true';
         if (conversationId == null || conversationId.isEmpty) {
           return const RouteErrorPage(message: '会话ID不存在');
         }
         return ChatDetailScreen(
           conversationId: conversationId,
           preLoaded: preLoaded,
+          focusAtMe: focusAtMe,
         );
       },
     ),

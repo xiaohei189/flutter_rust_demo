@@ -7,8 +7,10 @@ import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../core/theme/app_theme.dart';
 import 'chat_list_item_menu.dart';
 import 'chat_list_item_content.dart';
+import 'swipe_action_item.dart';
+import '../../view_models/chat_list_view_model.dart';
 
-/// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；长按菜单、左滑删除
+/// 会话列表项：头像、标题、预览、时间、未读红点、静音图标；草稿红色/橙色；左滑操作、长按菜单。
 class ChatListItem extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
@@ -17,11 +19,14 @@ class ChatListItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onPinToggle;
   final VoidCallback? onMarkRead;
+  final VoidCallback? onMarkUnread;
   final VoidCallback? onMuteToggle;
   final VoidCallback? onClear;
   final VoidCallback? onFlagToggle;
   final VoidCallback? onDoneToggle;
-  final VoidCallback? onHide;
+  final VoidCallback? onArchive;
+  final VoidCallback? onUnarchive;
+  final VoidCallback? onMoveToFolder;
   final UserProfile? cachedUserProfile;
 
   /// 当前用户的本地头像路径（优先于 cachedUserProfile.faceUrl）
@@ -31,8 +36,18 @@ class ChatListItem extends StatelessWidget {
   final String? previewText;
   final String? timeText;
 
-  /// 列表索引，用于 Dismissible 的 key，避免删除时重建冲突
-  final int? itemIndex;
+  /// 多选管理模式：显示复选框，点击切换选中。
+  final bool isSelectionMode;
+
+  /// 单聊对方是否在线（null 表示未知）。
+  final bool? isOnline;
+
+  /// 正在输入预览文案。
+  final String? typingText;
+
+  /// 最近一条消息发送失败。
+  final bool hasSendFailure;
+  final VoidCallback? onRetrySend;
 
   const ChatListItem({
     super.key,
@@ -43,16 +58,23 @@ class ChatListItem extends StatelessWidget {
     this.onDelete,
     this.onPinToggle,
     this.onMarkRead,
+    this.onMarkUnread,
     this.onMuteToggle,
     this.onClear,
     this.onFlagToggle,
     this.onDoneToggle,
-    this.onHide,
+    this.onArchive,
+    this.onUnarchive,
+    this.onMoveToFolder,
     this.cachedUserProfile,
     this.currentUserLocalAvatarPath,
     this.previewText,
     this.timeText,
-    this.itemIndex,
+    this.isSelectionMode = false,
+    this.isOnline,
+    this.typingText,
+    this.hasSendFailure = false,
+    this.onRetrySend,
   });
 
   Widget _buildContent(BuildContext context) {
@@ -63,47 +85,78 @@ class ChatListItem extends StatelessWidget {
       cachedUserProfile: cachedUserProfile,
       previewText: previewText,
       timeText: timeText,
+      isSelectionMode: isSelectionMode,
+      isOnline: isOnline,
+      typingText: typingText,
+      hasSendFailure: hasSendFailure,
+      onRetrySend: onRetrySend,
       onTap: onTap,
-      onLongPress: () => showChatListItemMenu(
-        context,
-        conversation: conversation,
-        isMuted: conversation.recvMsgOpt == 1,
-        onPinToggle: onPinToggle,
-        onMarkRead: onMarkRead,
-        onMuteToggle: onMuteToggle,
-        onClear: onClear,
-        onFlagToggle: onFlagToggle,
-        onDoneToggle: onDoneToggle,
-        onHide: onHide,
-        onDelete: onDelete,
-      ),
+      onLongPress: () {
+        if (isSelectionMode) return;
+        showChatListItemMenu(
+          context,
+          conversation: conversation,
+          isMuted: conversation.recvMsgOpt == 1,
+          onPinToggle: onPinToggle,
+          onMarkRead: onMarkRead,
+          onMarkUnread: onMarkUnread,
+          onMuteToggle: onMuteToggle,
+          onClear: onClear,
+          onFlagToggle: onFlagToggle,
+          onDoneToggle: onDoneToggle,
+          onArchive: onArchive,
+          onUnarchive: onUnarchive,
+          onDelete: onDelete,
+        );
+      },
     );
+  }
+
+  List<SwipeAction> _swipeActions(BuildContext context) {
+    final colors = context.appColors;
+    final hasUnread = ChatListViewModel.effectiveUnreadCount(conversation) > 0;
+    return [
+      if (hasUnread && onMarkRead != null)
+        SwipeAction(
+          label: '标为已读',
+          color: colors.primary,
+          icon: Icons.done_all,
+          onPressed: onMarkRead!,
+        ),
+      if (!hasUnread && onMarkUnread != null)
+        SwipeAction(
+          label: '标为未读',
+          color: colors.primary,
+          icon: Icons.mark_email_unread,
+          onPressed: onMarkUnread!,
+        ),
+      if (onPinToggle != null)
+        SwipeAction(
+          label: conversation.isPinned ? '取消置顶' : '置顶',
+          color: colors.warning,
+          icon: Icons.push_pin_outlined,
+          onPressed: onPinToggle!,
+        ),
+      if (onDelete != null)
+        SwipeAction(
+          label: '删除',
+          color: colors.danger,
+          icon: Icons.delete_outline,
+          onPressed: onDelete!,
+        ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    if (onDelete != null) {
-      return Dismissible(
-        key: ValueKey<String>(
-          '${conversation.conversationId}_${itemIndex ?? 0}',
-        ),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          color: colors.danger,
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 24),
-          child: Icon(Icons.delete_outline, color: colors.surface, size: 28),
-        ),
-        onDismissed: (_) => onDelete!(),
-        child: _buildContent(context),
-      );
-    }
-    return _buildContent(context);
+    final content = _buildContent(context);
+    if (isSelectionMode) return content;
+    final actions = _swipeActions(context);
+    if (actions.isEmpty) return content;
+    return SwipeActionItem(actions: actions, child: content);
   }
 }
 
-/// 名称后的小标签（群聊/外部/机器人等）
 // ==================== 预览 ====================
 
 Widget _previewChatListItem(Conversation conversation, {String? previewText}) {
@@ -115,7 +168,6 @@ Widget _previewChatListItem(Conversation conversation, {String? previewText}) {
       currentUserId: kPreviewMyUserId,
       previewText: previewText,
       timeText: '10:30',
-      itemIndex: 0,
     ),
   );
 }
@@ -160,6 +212,34 @@ Widget chatListItemGroupPreview() {
       unreadCount: 99,
       recvMsgOpt: 1,
     ),
-    previewText: '李四: 新版原型已经上传',
+    previewText: '张三: 这个方案可以',
+  );
+}
+
+@AppThemePreview(name: '单聊 - @我 标记', group: 'ChatListItem')
+Widget chatListItemAtMePreview() {
+  return _previewChatListItem(
+    fakeConversation(
+      conversationId: 'sg_group_1002',
+      conversationType: 2,
+      groupId: 'group_1002',
+      showName: '需求评审群',
+      groupAtType: 1,
+    ),
+    previewText: '李四: @你 看下需求',
+  );
+}
+
+@AppThemePreview(name: '群聊 - 不在群内', group: 'ChatListItem')
+Widget chatListItemNotInGroupPreview() {
+  return _previewChatListItem(
+    fakeConversation(
+      conversationId: 'sg_group_1003',
+      conversationType: 2,
+      groupId: 'group_1003',
+      showName: '已退出群聊',
+      isNotInGroup: true,
+    ),
+    previewText: '你已不在该群',
   );
 }

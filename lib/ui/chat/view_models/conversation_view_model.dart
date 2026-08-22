@@ -14,6 +14,12 @@ class ConversationListState {
   final Map<String, String> previews;
   final Map<String, String> timeTexts;
 
+  /// 正在输入的会话：conversationId -> 输入方 userId（空字符串表示未知）。
+  final Map<String, String> typingByConversation;
+
+  /// 最近一条消息发送失败的会话 ID 集合。
+  final Set<String> failedConversationIds;
+
   const ConversationListState({
     this.conversations = const [],
     this.isSyncing = false,
@@ -22,6 +28,8 @@ class ConversationListState {
     this.error,
     this.previews = const {},
     this.timeTexts = const {},
+    this.typingByConversation = const {},
+    this.failedConversationIds = const {},
   });
 
   ConversationListState copyWith({
@@ -32,6 +40,8 @@ class ConversationListState {
     String? error,
     Map<String, String>? previews,
     Map<String, String>? timeTexts,
+    Map<String, String>? typingByConversation,
+    Set<String>? failedConversationIds,
   }) {
     return ConversationListState(
       conversations: conversations ?? this.conversations,
@@ -41,6 +51,9 @@ class ConversationListState {
       error: error,
       previews: previews ?? this.previews,
       timeTexts: timeTexts ?? this.timeTexts,
+      typingByConversation: typingByConversation ?? this.typingByConversation,
+      failedConversationIds:
+          failedConversationIds ?? this.failedConversationIds,
     );
   }
 
@@ -67,8 +80,15 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
     final syncProgress = ref.watch(
       messageServiceProvider.select((s) => s.syncProgress),
     );
+    final typingUsers = ref.watch(
+      messageServiceProvider.select((s) => s.typingUsers),
+    );
+    final messages = ref.watch(
+      messageServiceProvider.select((s) => s.messages),
+    );
     final previews = <String, String>{};
     final timeTexts = <String, String>{};
+    final failedConversationIds = <String>{};
     for (final conversation in conversations) {
       previews[conversation.conversationId] = latestMessagePreview(
         conversation.latestMsg,
@@ -81,12 +101,21 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
         displayTime,
       );
     }
+    for (final entry in messages.entries) {
+      final list = entry.value;
+      // 最近一条消息发送失败（status == 3）时在列表中提示重试。
+      if (list.isNotEmpty && list.last.status == 3) {
+        failedConversationIds.add(entry.key);
+      }
+    }
     return ConversationListState(
       conversations: conversations,
       isSyncing: isSyncing,
       syncProgress: syncProgress,
       previews: previews,
       timeTexts: timeTexts,
+      typingByConversation: Map.unmodifiable(typingUsers),
+      failedConversationIds: failedConversationIds,
     );
   }
 

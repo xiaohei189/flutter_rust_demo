@@ -24,6 +24,9 @@ class ConversationTitleBar extends StatelessWidget
     this.onCreateGroup,
     this.onScan,
     this.onHideAll,
+    this.onManage,
+    this.globalMuted = false,
+    this.onToggleGlobalMute,
     this.onRefresh,
   });
 
@@ -40,6 +43,9 @@ class ConversationTitleBar extends StatelessWidget
   final VoidCallback? onCreateGroup;
   final VoidCallback? onScan;
   final VoidCallback? onHideAll;
+  final VoidCallback? onManage;
+  final bool globalMuted;
+  final VoidCallback? onToggleGlobalMute;
   final VoidCallback? onRefresh;
 
   String get _displayName {
@@ -183,6 +189,12 @@ class ConversationTitleBar extends StatelessWidget
                   case 'hide_all':
                     onHideAll?.call();
                     break;
+                  case 'manage':
+                    onManage?.call();
+                    break;
+                  case 'toggle_global_mute':
+                    onToggleGlobalMute?.call();
+                    break;
                 }
               },
               itemBuilder: (context) => [
@@ -221,8 +233,28 @@ class ConversationTitleBar extends StatelessWidget
                 const PopupMenuItem(
                   value: 'hide_all',
                   child: ListTile(
-                    leading: Icon(Icons.visibility_off_outlined),
-                    title: Text('隐藏全部会话'),
+                    leading: Icon(Icons.inventory_2_outlined),
+                    title: Text('全部归档'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'manage',
+                  child: ListTile(
+                    leading: Icon(Icons.checklist),
+                    title: Text('多选管理'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'toggle_global_mute',
+                  child: ListTile(
+                    leading: Icon(
+                      globalMuted
+                          ? Icons.notifications_off
+                          : Icons.notifications_none,
+                    ),
+                    title: Text(globalMuted ? '关闭全局免打扰' : '开启全局免打扰'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

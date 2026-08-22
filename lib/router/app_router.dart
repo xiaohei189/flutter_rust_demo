@@ -85,11 +85,14 @@ class AppRouter {
     BuildContext context,
     Conversation conversation, {
     bool preLoaded = false,
+    bool focusAtMe = false,
   }) {
-    final queryParams = preLoaded ? '?preLoaded=true' : '';
-    context.push(
-      '${AppPaths.chatDetailOf(conversation.conversationId)}$queryParams',
-    );
+    final queryParams = <String>[
+      if (preLoaded) 'preLoaded=true',
+      if (focusAtMe) 'focusAtMe=true',
+    ].join('&');
+    final query = queryParams.isEmpty ? '' : '?$queryParams';
+    context.push('${AppPaths.chatDetailOf(conversation.conversationId)}$query');
   }
 
   /// 导航到聊天详情页（通过ID）
@@ -97,9 +100,14 @@ class AppRouter {
     BuildContext context,
     String conversationId, {
     bool preLoaded = false,
+    bool focusAtMe = false,
   }) {
-    final queryParams = preLoaded ? '?preLoaded=true' : '';
-    context.push('${AppPaths.chatDetailOf(conversationId)}$queryParams');
+    final queryParams = <String>[
+      if (preLoaded) 'preLoaded=true',
+      if (focusAtMe) 'focusAtMe=true',
+    ].join('&');
+    final query = queryParams.isEmpty ? '' : '?$queryParams';
+    context.push('${AppPaths.chatDetailOf(conversationId)}$query');
   }
 
   /// 导航到聊天设置页

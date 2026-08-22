@@ -23,6 +23,11 @@ class ChatListItemContent extends StatelessWidget {
     this.cachedUserProfile,
     this.previewText,
     this.timeText,
+    this.isSelectionMode = false,
+    this.isOnline,
+    this.typingText,
+    this.hasSendFailure = false,
+    this.onRetrySend,
   });
 
   final Conversation conversation;
@@ -33,6 +38,19 @@ class ChatListItemContent extends StatelessWidget {
   final UserProfile? cachedUserProfile;
   final String? previewText;
   final String? timeText;
+
+  /// 多选管理模式：显示复选框，点击由外层处理。
+  final bool isSelectionMode;
+
+  /// 单聊对方是否在线（null 表示未知，不显示绿点）。
+  final bool? isOnline;
+
+  /// 正在输入预览文案（非空时替换消息预览）。
+  final String? typingText;
+
+  /// 最近一条消息发送失败。
+  final bool hasSendFailure;
+  final VoidCallback? onRetrySend;
 
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -220,7 +238,7 @@ class ChatListItemContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final user = _getUser();
-    final unread = conversation.unreadCount;
+    final unread = ChatListViewModel.effectiveUnreadCount(conversation);
     final isPinned = conversation.isPinned;
 
     return Material(
@@ -236,14 +254,30 @@ class ChatListItemContent extends StatelessWidget {
           children: [
             Container(
               height: 72,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.only(
+                left: isSelectionMode ? 8 : 16,
+                right: 16,
+              ),
               child: Row(
                 children: [
-                  // 头像（带未读红点角标）
+                  if (isSelectionMode) ...[
+                    Icon(
+                      isSelected
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      size: 22,
+                      color: isSelected ? colors.primary : colors.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  // 头像（未读红点角标 / 在线绿点 / 群头像）
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      UserAvatar(user: user, radius: 24),
+                      if (_isGroup)
+                        _GroupAvatar(conversation: conversation, radius: 24)
+                      else
+                        UserAvatar(user: user, radius: 24),
                       if (unread > 0)
                         Positioned(
                           right: -4,
@@ -278,6 +312,23 @@ class ChatListItemContent extends StatelessWidget {
                             ),
                           ),
                         ),
+                      if (isOnline == true)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: colors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: colors.surface,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(width: 12),
@@ -302,48 +353,7 @@ class ChatListItemContent extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (_isGroup)
-                              const _TagLabel(
-                                text: '群聊',
-                                color: Color(0xFF4CAF50),
-                              ),
-                            if (conversation.conversationType == 4)
-                              const _TagLabel(
-                                text: '通知',
-                                color: Color(0xFF607D8B),
-                              ),
-                            if (ChatListViewModel.isAtMeConversation(
-                              conversation,
-                            ))
-                              _TagLabel(
-                                text: '@我',
-                                color: context.appColors.primary,
-                              ),
-                            if (conversation.isPrivateChat ||
-                                conversation.isMsgDestruct)
-                              const _TagLabel(
-                                text: '私聊',
-                                color: Color(0xFFFF9800),
-                              ),
-                            if (conversation.burnDuration > 0 ||
-                                conversation.isMsgDestruct)
-                              const _TagLabel(
-                                text: '阅后即焚',
-                                color: Color(0xFFE91E63),
-                              ),
-                            if (conversation.isNotInGroup)
-                              _TagLabel(text: '不在群内', color: colors.danger),
-                            if (_isMuted)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: Icon(
-                                  Icons.notifications_off_outlined,
-                                  size: 14,
-                                  color: colors.textSecondary.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                ),
-                              ),
+                            ..._buildTags(context),
                             const SizedBox(width: 8),
                             Text(
                               timeText ?? _formatTime(_displayTime),
@@ -358,24 +368,7 @@ class ChatListItemContent extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         // 第二行：消息预览
-                        RichText(
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: colors.textSecondary,
-                            ),
-                            children: [
-                              if (_hasDraft)
-                                TextSpan(
-                                  text: '[草稿] ',
-                                  style: TextStyle(color: colors.warning),
-                                ),
-                              TextSpan(text: _contentPreview),
-                            ],
-                          ),
-                        ),
+                        _buildPreviewLine(context),
                       ],
                     ),
                   ),
@@ -390,6 +383,109 @@ class ChatListItemContent extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// 标签收敛：最多展示 2 个，优先级 不在群内 > @我 > 通知。
+  List<Widget> _buildTags(BuildContext context) {
+    final colors = context.appColors;
+    final tags = <Widget>[];
+    if (conversation.isNotInGroup) {
+      tags.add(_TagLabel(text: '不在群内', color: colors.danger));
+    }
+    if (ChatListViewModel.isAtMeConversation(conversation) && tags.length < 2) {
+      tags.add(_TagLabel(text: '@我', color: colors.primary));
+    }
+    if (conversation.conversationType == 4 && tags.length < 2) {
+      tags.add(_TagLabel(text: '通知', color: colors.textSecondary));
+    }
+    if (_isMuted && tags.length < 2) {
+      tags.add(
+        Padding(
+          padding: const EdgeInsets.only(left: 6),
+          child: Icon(
+            Icons.notifications_off_outlined,
+            size: 14,
+            color: colors.textSecondary.withValues(alpha: 0.6),
+          ),
+        ),
+      );
+    }
+    return tags;
+  }
+
+  Widget _buildPreviewLine(BuildContext context) {
+    final colors = context.appColors;
+    if (typingText != null && typingText!.isNotEmpty) {
+      return Text(
+        typingText!,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 13, color: colors.primary),
+      );
+    }
+    if (hasSendFailure) {
+      return GestureDetector(
+        onTap: onRetrySend,
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, size: 14, color: colors.danger),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '发送失败，点击重试',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 13, color: colors.danger),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: TextStyle(fontSize: 13, color: colors.textSecondary),
+        children: [
+          if (_hasDraft)
+            TextSpan(
+              text: '[草稿] ',
+              style: TextStyle(color: colors.warning),
+            ),
+          TextSpan(text: _contentPreview),
+        ],
+      ),
+    );
+  }
+}
+
+/// 群聊头像：圆角方形 + 群组图标（群头像由服务端 faceUrl 提供时优先展示）。
+class _GroupAvatar extends StatelessWidget {
+  const _GroupAvatar({required this.conversation, required this.radius});
+
+  final Conversation conversation;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final url = conversation.faceUrl;
+    if (url.isNotEmpty) {
+      return UserAvatar(
+        user: User(id: conversation.groupId, name: '', avatar: url),
+        radius: radius,
+      );
+    }
+    return Container(
+      width: radius * 2,
+      height: radius * 2,
+      decoration: BoxDecoration(
+        color: colors.surfaceMuted,
+        borderRadius: BorderRadius.circular(radius * 0.5),
+      ),
+      child: Icon(Icons.group, size: radius * 1.2, color: colors.textSecondary),
     );
   }
 }

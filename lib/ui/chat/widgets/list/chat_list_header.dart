@@ -19,6 +19,8 @@ class ChatListHeader extends StatelessWidget {
     required this.syncProgress,
     required this.onFilterChange,
     required this.onOpenGroupFilter,
+    required this.onSearchTap,
+    this.activeFolderLabel,
   });
 
   final GroupFilter activeFilter;
@@ -28,6 +30,8 @@ class ChatListHeader extends StatelessWidget {
   final int syncProgress;
   final ValueChanged<GroupFilter> onFilterChange;
   final VoidCallback onOpenGroupFilter;
+  final VoidCallback onSearchTap;
+  final String? activeFolderLabel;
 
   String get _activeFilterLabel {
     switch (activeFilter) {
@@ -45,6 +49,8 @@ class ChatListHeader extends StatelessWidget {
         return '群组';
       case GroupFilter.done:
         return '已完成';
+      case GroupFilter.archived:
+        return '归档';
     }
   }
 
@@ -57,6 +63,30 @@ class ChatListHeader extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 常驻搜索框（点击进入搜索页）
+          GestureDetector(
+            key: const ValueKey('chat_list_search_field'),
+            onTap: onSearchTap,
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: colors.surfaceMuted,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, size: 18, color: colors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    '搜索',
+                    style: TextStyle(fontSize: 14, color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               GestureDetector(
@@ -72,7 +102,42 @@ class ChatListHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              if (isQuickTab)
+              if (activeFolderLabel != null)
+                GestureDetector(
+                  onTap: () => onFilterChange(GroupFilter.all),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.folder_outlined,
+                          size: 14,
+                          color: colors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          activeFolderLabel!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.close, size: 14, color: colors.primary),
+                      ],
+                    ),
+                  ),
+                )
+              else if (isQuickTab)
                 SegmentedToggle(
                   segments: [
                     '消息',

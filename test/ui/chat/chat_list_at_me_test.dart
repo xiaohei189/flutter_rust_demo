@@ -50,7 +50,7 @@ void main() {
     expect(find.text('@我'), findsOneWidget);
   });
 
-  testWidgets('会话列表项显示私聊/阅后即焚/不在群内标记', (tester) async {
+  testWidgets('会话列表项标签收敛：只显示关键标记', (tester) async {
     final conversation = fakeConversation(
       conversationId: 'sg_group_1',
       conversationType: 2,
@@ -70,8 +70,10 @@ void main() {
       ),
     );
 
-    expect(find.text('私聊'), findsOneWidget);
-    expect(find.text('阅后即焚'), findsOneWidget);
+    // 标签收敛：不在群内 优先展示；群聊/私聊/阅后即焚 均不在列表展示。
     expect(find.text('不在群内'), findsOneWidget);
+    expect(find.text('群聊'), findsNothing);
+    expect(find.text('私聊'), findsNothing);
+    expect(find.text('阅后即焚'), findsNothing);
   });
 }

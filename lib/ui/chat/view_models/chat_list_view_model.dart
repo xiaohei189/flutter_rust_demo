@@ -4,8 +4,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/conversation.dart';
 import '../../profile/providers/user_profile_provider.dart';
+import '../providers/conversation_folder_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../widgets/list/group_filter_panel.dart' show GroupFilter;
@@ -14,10 +17,17 @@ import '../widgets/list/group_filter_panel.dart' show GroupFilter;
 class ChatListState {
   final GroupFilter activeFilter;
 
-  const ChatListState({this.activeFilter = GroupFilter.all});
+  /// 激活的自定义分组名（null 表示未选择分组）。
+  final String? activeFolder;
 
-  ChatListState copyWith({GroupFilter? activeFilter}) {
-    return ChatListState(activeFilter: activeFilter ?? this.activeFilter);
+  const ChatListState({this.activeFilter = GroupFilter.all, this.activeFolder});
+
+  ChatListState copyWith({GroupFilter? activeFilter, String? activeFolder}) {
+    return ChatListState(
+      activeFilter: activeFilter ?? this.activeFilter,
+      // activeFolder 直接赋值：null 表示清除分组筛选。
+      activeFolder: activeFolder,
+    );
   }
 }
 
@@ -41,8 +51,14 @@ class ChatListViewModel extends Notifier<ChatListState> {
   }
 
   void setFilter(GroupFilter filter) {
-    if (state.activeFilter == filter) return;
-    state = state.copyWith(activeFilter: filter);
+    if (state.activeFilter == filter && state.activeFolder == null) return;
+    state = state.copyWith(activeFilter: filter, activeFolder: null);
+  }
+
+  /// 选择自定义分组（null 清除分组筛选）。
+  void setFolder(String? folder) {
+    if (state.activeFolder == folder) return;
+    state = state.copyWith(activeFolder: folder);
   }
 
   bool isQuickTab(GroupFilter filter) =>
@@ -57,21 +73,56 @@ class ChatListViewModel extends Notifier<ChatListState> {
   static bool isAtMeConversation(Conversation conversation) =>
       conversation.groupAtType == 1 || conversation.groupAtType == 3;
 
-  static bool _flagValue(Conversation conversation, String key) {
-    if (conversation.ex.isEmpty) return false;
+  // ==================== ex 标记（flagged/done/unread/archived）====================
+
+  static Map<String, dynamic> _exMap(Conversation conversation) {
+    if (conversation.ex.isEmpty) return <String, dynamic>{};
     try {
-      final map = jsonDecode(conversation.ex) as Map<String, dynamic>;
-      return map[key] == true;
+      final decoded = jsonDecode(conversation.ex);
+      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } catch (_) {
-      return false;
+      return <String, dynamic>{};
     }
   }
 
+  static bool _exFlag(Conversation conversation, String key) =>
+      _exMap(conversation)[key] == true;
+
   static bool isFlagged(Conversation conversation) =>
-      _flagValue(conversation, 'flagged');
+      _exFlag(conversation, 'flagged');
 
   static bool isDone(Conversation conversation) =>
-      _flagValue(conversation, 'done');
+      _exFlag(conversation, 'done');
+
+  /// 是否被本地标记为未读（微信「标为未读」语义，仅本地生效）。
+  static bool isMarkedUnread(Conversation conversation) =>
+      _exFlag(conversation, 'unread');
+
+  /// 是否已归档（从普通列表隐藏，可在「归档」筛选中恢复）。
+  static bool isArchived(Conversation conversation) =>
+      _exFlag(conversation, 'archived');
+
+  /// 展示用未读数：本地标未读时至少显示 1。
+  static int effectiveUnreadCount(Conversation conversation) {
+    final unread = conversation.unreadCount;
+    return isMarkedUnread(conversation) ? (unread < 1 ? 1 : unread) : unread;
+  }
+
+  /// 合并更新 ex 中的标记，保留其他 key。
+  static String updateFlags(
+    Conversation conversation, {
+    bool? flagged,
+    bool? done,
+    bool? unread,
+    bool? archived,
+  }) {
+    final map = _exMap(conversation);
+    if (flagged != null) map['flagged'] = flagged;
+    if (done != null) map['done'] = done;
+    if (unread != null) map['unread'] = unread;
+    if (archived != null) map['archived'] = archived;
+    return jsonEncode(map);
+  }
 
   static String flagsEx({required bool flagged, required bool done}) =>
       jsonEncode({'flagged': flagged, 'done': done});
@@ -85,24 +136,40 @@ class ChatListViewModel extends Notifier<ChatListState> {
   int doneCount(List<Conversation> conversations) =>
       conversations.where(isDone).length;
 
+  int archivedCount(List<Conversation> conversations) =>
+      conversations.where(isArchived).length;
+
   List<Conversation> filteredConversations(List<Conversation> conversations) {
+    final folder = state.activeFolder;
+    if (folder != null) {
+      final folders = ref.read(conversationFoldersProvider);
+      final memberIds = folders[folder] ?? const <String>[];
+      return conversations
+          .where((c) => !isArchived(c) && memberIds.contains(c.conversationId))
+          .toList();
+    }
+    final visible = state.activeFilter == GroupFilter.archived
+        ? conversations.where(isArchived).toList()
+        : conversations.where((c) => !isArchived(c)).toList();
     switch (state.activeFilter) {
       case GroupFilter.unread:
-        return conversations.where((c) => c.unreadCount > 0).toList();
+        return visible.where((c) => effectiveUnreadCount(c) > 0).toList();
       case GroupFilter.singleChat:
-        return conversations.where((c) => c.conversationType == 1).toList();
+        return visible.where((c) => c.conversationType == 1).toList();
       case GroupFilter.groupChat:
-        return conversations
+        return visible
             .where((c) => c.conversationType == 2 || c.conversationType == 3)
             .toList();
       case GroupFilter.atMe:
-        return conversations.where(isAtMeConversation).toList();
+        return visible.where(isAtMeConversation).toList();
       case GroupFilter.flagged:
-        return conversations.where(isFlagged).toList();
+        return visible.where(isFlagged).toList();
       case GroupFilter.done:
-        return conversations.where(isDone).toList();
+        return visible.where(isDone).toList();
+      case GroupFilter.archived:
+        return visible;
       case GroupFilter.all:
-        return conversations;
+        return visible;
     }
   }
 
@@ -115,6 +182,7 @@ class ChatListViewModel extends Notifier<ChatListState> {
       GroupFilter.singleChat => '单聊',
       GroupFilter.groupChat => '群组',
       GroupFilter.done => '已完成',
+      GroupFilter.archived => '归档',
     };
   }
 
@@ -164,31 +232,192 @@ class ChatListViewModel extends Notifier<ChatListState> {
     String conversationId,
     bool flagged,
   ) async {
-    final conversation = ref
-        .read(conversationListProvider.notifier)
-        .getConversation(conversationId);
+    final conversation = _getConversation(conversationId);
     if (conversation == null) return;
     await ref
         .read(messageRepositoryProvider)
         .setConversation(
           conversationId: conversationId,
-          ex: flagsEx(flagged: flagged, done: isDone(conversation)),
+          ex: updateFlags(conversation, flagged: flagged),
         );
     await refreshConversations();
   }
 
   Future<void> toggleConversationDone(String conversationId, bool done) async {
-    final conversation = ref
-        .read(conversationListProvider.notifier)
-        .getConversation(conversationId);
+    final conversation = _getConversation(conversationId);
     if (conversation == null) return;
     await ref
         .read(messageRepositoryProvider)
         .setConversation(
           conversationId: conversationId,
-          ex: flagsEx(flagged: isFlagged(conversation), done: done),
+          ex: updateFlags(conversation, done: done),
         );
     await refreshConversations();
+  }
+
+  /// 标为未读（本地标记，微信「标为未读」语义）。
+  Future<void> markConversationAsUnread(String conversationId) async {
+    final conversation = _getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: updateFlags(conversation, unread: true),
+        );
+    await refreshConversations();
+  }
+
+  /// 标为已读：清除本地未读标记并同步服务端已读。
+  Future<void> markConversationAsRead(String conversationId) async {
+    final conversation = _getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: updateFlags(conversation, unread: false),
+        );
+    await markConversationMessageAsRead(conversationId);
+    await refreshConversations();
+  }
+
+  /// 归档会话：从普通列表隐藏，可在「归档」筛选中恢复。
+  Future<void> archiveConversation(String conversationId) async {
+    final conversation = _getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: updateFlags(conversation, archived: true),
+        );
+    await refreshConversations();
+  }
+
+  Future<void> unarchiveConversation(String conversationId) async {
+    final conversation = _getConversation(conversationId);
+    if (conversation == null) return;
+    await ref
+        .read(messageRepositoryProvider)
+        .setConversation(
+          conversationId: conversationId,
+          ex: updateFlags(conversation, archived: false),
+        );
+    await refreshConversations();
+  }
+
+  /// 全部归档（替代原「隐藏全部会话」）。
+  Future<void> archiveAllConversations() async {
+    final conversations = ref.read(conversationListProvider).conversations;
+    final repository = ref.read(messageRepositoryProvider);
+    for (final conversation in conversations) {
+      if (isArchived(conversation)) continue;
+      await repository.setConversation(
+        conversationId: conversation.conversationId,
+        ex: updateFlags(conversation, archived: true),
+      );
+    }
+    await refreshConversations();
+  }
+
+  // ==================== 批量操作 ====================
+
+  Future<void> batchTogglePin(
+    Iterable<String> conversationIds,
+    bool pinned,
+  ) async {
+    final repository = ref.read(messageRepositoryProvider);
+    for (final id in conversationIds) {
+      await repository.setConversationPinned(
+        conversationId: id,
+        isPinned: pinned,
+      );
+    }
+    await refreshConversations();
+  }
+
+  Future<void> batchMarkRead(Iterable<String> conversationIds) async {
+    for (final id in conversationIds) {
+      final conversation = _getConversation(id);
+      if (conversation != null) {
+        await ref
+            .read(messageRepositoryProvider)
+            .setConversation(
+              conversationId: id,
+              ex: updateFlags(conversation, unread: false),
+            );
+      }
+      await markConversationMessageAsRead(id);
+    }
+    await refreshConversations();
+  }
+
+  Future<void> batchArchive(Iterable<String> conversationIds) async {
+    final repository = ref.read(messageRepositoryProvider);
+    for (final id in conversationIds) {
+      final conversation = _getConversation(id);
+      if (conversation != null) {
+        await repository.setConversation(
+          conversationId: id,
+          ex: updateFlags(conversation, archived: true),
+        );
+      }
+    }
+    await refreshConversations();
+  }
+
+  Future<void> batchDelete(Iterable<String> conversationIds) async {
+    for (final id in conversationIds) {
+      await deleteConversation(id);
+    }
+    await refreshConversations();
+  }
+
+  /// 重试最近一条发送失败的消息（列表预览「发送失败，点击重试」）。
+  Future<void> retryFailedSend(String conversationId) async {
+    final conversation = _getConversation(conversationId);
+    if (conversation == null) return;
+    final messages =
+        ref.read(messageServiceProvider).messages[conversationId] ?? const [];
+    ChatMessage? failed;
+    for (final message in messages.reversed) {
+      if (message.status == 3) {
+        failed = message;
+        break;
+      }
+    }
+    if (failed == null) return;
+    final sourceId = conversation.conversationType == 1
+        ? conversation.userId
+        : conversation.groupId;
+    final sessionType = switch (conversation.conversationType) {
+      1 => ChatSessionType.singleChat,
+      2 => ChatSessionType.writeGroupChat,
+      3 => ChatSessionType.readGroupChat,
+      _ => ChatSessionType.notificationChat,
+    };
+    try {
+      await ref
+          .read(messageServiceProvider.notifier)
+          .resendMessage(
+            message: failed,
+            sourceId: sourceId,
+            sessionType: sessionType,
+          );
+      ref
+          .read(messageServiceProvider.notifier)
+          .removeMessage(conversationId, failed.clientMsgId);
+      await refreshConversations();
+    } catch (_) {
+      // 重试失败保留失败状态，下次再试。
+    }
+  }
+
+  Conversation? _getConversation(String conversationId) {
+    return ref
+        .read(conversationListProvider.notifier)
+        .getConversation(conversationId);
   }
 
   Future<void> hideConversation(String conversationId) {

@@ -145,8 +145,12 @@ class MessageServiceConversationController {
       }
       newConversations.sort((a, b) {
         if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-        final aTime = a.latestMsgSendTime;
-        final bTime = b.latestMsgSendTime;
+        final aTime = a.draftTextTime > a.latestMsgSendTime
+            ? a.draftTextTime
+            : a.latestMsgSendTime;
+        final bTime = b.draftTextTime > b.latestMsgSendTime
+            ? b.draftTextTime
+            : b.latestMsgSendTime;
         return bTime.compareTo(aTime);
       });
       service.updateState(
