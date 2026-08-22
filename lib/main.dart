@@ -36,7 +36,7 @@ Future<void> main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. 初始化 Rust 库（bridge 必须先 init，才能调用 setLogDirectory）
+  // 1. 初始化 Rust 库（bridge 必须先 init，才能调用 setLogDirectory）XCZ
   await RustLib.init();
 
   // 2. 设置 Rust 日志目录（输出到应用数据目录下的 logs 目录）

@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/online_status_service.dart';
-import '../generated/rust/http/online.dart' show OnlineStatus;
+import '../domain/models/user_online_status.dart';
 
 final onlineStatusServiceProvider = Provider<OnlineStatusService>(
   (ref) => OnlineStatusService(),
 );
 
-final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(
+final onlineStatusStreamProvider = StreamProvider<Map<String, UserOnlineStatus>>(
   (ref) => ref.watch(onlineStatusServiceProvider).statusesStream,
 );
 
@@ -17,5 +17,5 @@ final onlineStatusStreamProvider = StreamProvider<Map<String, OnlineStatus>>(
 final userOnlineStatusProvider = Provider.family<bool?, String>((ref, userId) {
   final statuses = ref.watch(onlineStatusStreamProvider).value;
   final status = statuses?[userId];
-  return status == null ? null : status.status == 1;
+  return status?.isOnline;
 });

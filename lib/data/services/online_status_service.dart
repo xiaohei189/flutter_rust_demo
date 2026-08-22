@@ -1,16 +1,16 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import '../../core/utils/app_logger.dart';
+import '../../domain/models/user_online_status.dart';
 import '../../generated/rust/ffi/client.dart' as fb;
 import '../../generated/rust/http/online.dart' show OnlineStatus;
-import '../../core/utils/app_logger.dart';
 
 class OnlineStatusService {
   static final OnlineStatusService instance = OnlineStatusService();
 
   final _statusesController =
-      StreamController<Map<String, OnlineStatus>>.broadcast();
-  final Map<String, OnlineStatus> _statuses = {};
+      StreamController<Map<String, UserOnlineStatus>>.broadcast();
+  final Map<String, UserOnlineStatus> _statuses = {};
   final Map<String, int> _refCounts = {};
   OnlineStatusClient? _client;
 
@@ -19,12 +19,12 @@ class OnlineStatusService {
   /// 供单元测试创建独立实例，避免污染全局 singleton。
   OnlineStatusService.forTesting() : this();
 
-  Stream<Map<String, OnlineStatus>> get statusesStream =>
+  Stream<Map<String, UserOnlineStatus>> get statusesStream =>
       _statusesController.stream;
 
-  Map<String, OnlineStatus> get statuses => Map.unmodifiable(_statuses);
+  Map<String, UserOnlineStatus> get statuses => Map.unmodifiable(_statuses);
 
-  OnlineStatus? statusOf(String userId) => _statuses[userId];
+  UserOnlineStatus? statusOf(String userId) => _statuses[userId];
 
   void setClient(fb.OpenImBridgeClient? client) {
     _client = client == null ? null : _BridgeOnlineStatusClient(client);
@@ -62,7 +62,11 @@ class OnlineStatusService {
     try {
       final statuses = await client.subscribeUsersStatus(userIds: newIds);
       for (final status in statuses) {
-        _statuses[status.userId] = status;
+        _statuses[status.userId] = UserOnlineStatus(
+          userId: status.userId,
+          status: status.status,
+          platformIds: status.platformIds,
+        );
       }
       _notify();
     } catch (e) {
@@ -113,10 +117,10 @@ class OnlineStatusService {
     required int status,
     required List<int> platformIds,
   }) {
-    _statuses[userId] = OnlineStatus(
+    _statuses[userId] = UserOnlineStatus(
       userId: userId,
       status: status,
-      platformIds: Int32List.fromList(platformIds),
+      platformIds: platformIds,
     );
     _notify();
   }
