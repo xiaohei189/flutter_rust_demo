@@ -627,6 +627,29 @@ pub fn set_span_events_enabled(enabled: bool) {
     SPAN_EVENTS_ENABLED.store(enabled, Ordering::Relaxed);
 }
 
+/// 桌面端控制台 writer：stdout 管道断开（控制台关闭、flutter run 分离、父进程退出）时
+/// 忽略写入错误，避免 Rust 运行时因 I/O 失败直接 abort 整个进程。
+#[cfg(not(target_os = "android"))]
+#[derive(Clone, Copy, Default)]
+struct IgnoreErrorStdout;
+
+#[cfg(not(target_os = "android"))]
+impl std::io::Write for IgnoreErrorStdout {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        let stdout = std::io::stdout();
+        let mut lock = stdout.lock();
+        match lock.write(buf) {
+            Ok(n) => Ok(n),
+            Err(_) => Ok(buf.len()),
+        }
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        let _ = std::io::stdout().flush();
+        Ok(())
+    }
+}
+
 /// 初始化 OTel subscriber（文件 + OTel + 可选控制台）
 pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     // --- EnvFilter ---
@@ -680,7 +703,7 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     // --- 控制台层 ---
     #[cfg(not(target_os = "android"))]
     let (console_writer, _console_guard) = if config.is_log_standard_output {
-        tracing_appender::non_blocking(std::io::stdout())
+        tracing_appender::non_blocking(IgnoreErrorStdout)
     } else {
         tracing_appender::non_blocking(std::io::sink())
     };
