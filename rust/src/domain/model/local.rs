@@ -107,7 +107,7 @@ impl LocalConversation {
     }
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, Default, FromRow)]
 pub struct LocalUser {
     pub user_id: String,
     pub name: String,
@@ -119,7 +119,7 @@ pub struct LocalUser {
     pub global_recv_msg_opt: i32,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, Default, FromRow)]
 pub struct LocalFriend {
     pub owner_user_id: String,
     pub friend_user_id: String,
@@ -134,7 +134,7 @@ pub struct LocalFriend {
     pub is_pinned: i32,
 }
 
-#[derive(Debug, Clone, FromRow)]
+#[derive(Debug, Clone, Default, FromRow)]
 pub struct LocalGroup {
     pub group_id: String,
     pub name: String,

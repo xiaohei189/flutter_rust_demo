@@ -7,6 +7,7 @@ use super::MessageService;
 use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
 use crate::domain::constant::MessageSendStatus;
 use crate::domain::error::{Result, SdkError};
+use crate::core::conversation::enrich::batch_add_face_url_and_name;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::core::message::receive::checker::SeqPullContext;
@@ -330,16 +331,19 @@ impl MessageService {
         if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
             self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &local_log.content, now).await?;
         } else {
-            let conv = LocalConversation {
+            let login_user_id = self.user_id.get().await;
+            let mut conv = LocalConversation {
                 conversation_id: conversation_id.clone(),
                 conversation_type: 2,
-                user_id: send_id.to_string(),
+                user_id: String::new(),
                 group_id: group_id.to_string(),
-                show_name: format!("Group_{}", group_id),
+                show_name: String::new(),
                 latest_msg: local_log.content.clone(),
                 latest_msg_send_time: now,
                 ..Default::default()
             };
+            // 本地补全群名/群头像（对齐 Go SDK `batchAddFaceURLAndName`）
+            batch_add_face_url_and_name(&self.repositories, &login_user_id, std::slice::from_mut(&mut conv)).await?;
             self.repositories.conversation_repo.upsert(&conv).await?;
         }
         if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&conversation_id).await {

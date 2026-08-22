@@ -1,6 +1,7 @@
 //! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
 
 use crate::core::context::Repositories;
+use crate::core::conversation::enrich::batch_add_face_url_and_name;
 use crate::domain::error::Result;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
@@ -281,6 +282,38 @@ impl ConversationService {
     pub async fn clear_all(&self) -> Result<()> {
         self.repositories.conversation_repo.clear_all().await?;
         info!("会话数据已清空");
+        Ok(())
+    }
+
+    /// 刷新全部会话的头像和名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+    ///
+    /// 用户/好友/群组信息变更后调用：重新从本地数据源补全 show_name/face_url，
+    /// 仅当值变化时落库并发布 Changed 事件，避免空更新。
+    pub async fn refresh_face_url_and_name(&self) -> Result<()> {
+        let Some(user_id) = &self.user_id else {
+            return Ok(());
+        };
+        let login_user_id = user_id.get().await;
+        let mut conversations = self.repositories.conversation_repo.get_all().await?;
+        // 记录补全前的值，用于比较是否变化
+        let before: Vec<(String, String, String)> = conversations
+            .iter()
+            .map(|c| (c.conversation_id.clone(), c.show_name.clone(), c.face_url.clone()))
+            .collect();
+        batch_add_face_url_and_name(&self.repositories, &login_user_id, &mut conversations).await?;
+        let mut changed = Vec::new();
+        for (conv, (id, old_name, old_face)) in conversations.into_iter().zip(before) {
+            if conv.show_name != old_name || conv.face_url != old_face {
+                self.repositories
+                    .conversation_repo
+                    .update_face_url_and_name(&id, &conv.show_name, &conv.face_url)
+                    .await?;
+                changed.push(conv);
+            }
+        }
+        if !changed.is_empty() {
+            self.send(ConversationEvent::Changed(changed));
+        }
         Ok(())
     }
 }
@@ -703,5 +736,88 @@ mod tests {
         // 回填已持久化到会话表
         let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.latest_msg, "最新内容");
+    }
+
+    // ========================================================================
+    // refresh_face_url_and_name：用户/好友/群组信息变更后的会话名称联动
+    // ========================================================================
+
+    /// 好友备注变更后刷新会话名称并落库、发布事件（对齐 Go `DispatchUpdateConversation`）
+    #[tokio::test]
+    async fn test_refresh_face_url_and_name_updates_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories.clone(), hub).with_user_id(crate::domain::model::UserId::new("me"));
+
+        // 预置单聊会话（旧名称/旧头像）
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "si_me_u1".to_string(),
+                conversation_type: 1,
+                user_id: "u1".to_string(),
+                show_name: "旧名字".to_string(),
+                face_url: "http://old.png".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 好友信息变更（备注/头像更新）
+        repositories
+            .friend_repo
+            .upsert(&crate::domain::model::local::LocalFriend {
+                owner_user_id: "me".to_string(),
+                friend_user_id: "u1".to_string(),
+                remark: "新备注".to_string(),
+                nickname: "王强".to_string(),
+                face_url: "http://friend.png".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 消费 upsert 自身发布的 Changed 事件，后续断言只关心 refresh 发布的事件
+        let _ = rx.try_recv();
+
+        manager.refresh_face_url_and_name().await.unwrap();
+
+        // 会话名称/头像已更新并落库
+        let conv = manager.get_conversation("si_me_u1").await.unwrap().unwrap();
+        assert_eq!(conv.show_name, "新备注");
+        assert_eq!(conv.face_url, "http://friend.png");
+        // 发布 Changed 事件
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => assert_eq!(convs[0].show_name, "新备注"),
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+    }
+
+    /// 数据源无变化时不发布事件（避免空更新）
+    #[tokio::test]
+    async fn test_refresh_face_url_and_name_no_change_no_event() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub).with_user_id(crate::domain::model::UserId::new("me"));
+
+        // 会话已存在且无好友/用户/群组数据，refresh 后仍为空 → 无变化
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "si_me_u1".to_string(),
+                conversation_type: 1,
+                user_id: "u1".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 消费 upsert 自身发布的 Changed 事件
+        let _ = rx.try_recv();
+
+        manager.refresh_face_url_and_name().await.unwrap();
+        assert!(rx.try_recv().is_err(), "无变化不应发布事件");
     }
 }

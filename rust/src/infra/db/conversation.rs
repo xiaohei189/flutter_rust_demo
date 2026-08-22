@@ -49,4 +49,6 @@ pub trait ConversationRepository: Send + Sync {
     async fn increase_unread_count(&self, conversation_id: &str, seq: i64) -> Result<()>;
     async fn get_unread_count(&self, conversation_id: &str) -> Result<i32>;
     async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>>;
+    /// 更新会话头像和名称（对齐 Go SDK `UpdateConFaceUrlAndNickName` 落库）
+    async fn update_face_url_and_name(&self, conversation_id: &str, show_name: &str, face_url: &str) -> Result<()>;
 }

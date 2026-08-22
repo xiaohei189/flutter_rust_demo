@@ -11,6 +11,7 @@ use crate::domain::error::Result;
 use crate::domain::model::revoke::parse_revoke_tips_from_json;
 
 use crate::core::context::Repositories;
+use crate::core::conversation::enrich::batch_add_face_url_and_name;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::event::events::message::{MessageEvent, MessageListener, MessageListenerExt};
 use crate::domain::model::local::{LocalChatLog, LocalConversation};
@@ -330,14 +331,19 @@ impl MessageProcessor {
             if seen_convs.insert(conv_id.to_string()) {
                 let existing = self.repositories.conversation_repo.get_by_id(conv_id).await?;
                 if existing.is_none() {
-                    let show_name = if msg.session_type == 1 { msg.sender_nickname.clone() } else { format!("Group_{}", msg.group_id) };
-
-                    let conv = LocalConversation {
+                    // 初始值来自消息携带的昵称/头像，随后本地补全
+                    // （对齐 Go SDK `batchAddFaceURLAndName`：好友备注 > 昵称 > 用户昵称；群聊用群名；查不到保留原值）
+                    let mut conv = LocalConversation {
                         conversation_id: conv_id.to_string(),
                         conversation_type: msg.session_type,
-                        user_id: if msg.session_type == 1 { msg.recv_id.clone() } else { msg.send_id.clone() },
+                        // 单聊会话 user_id 为对方（自己发的消息取 recv_id，否则取 send_id）
+                        user_id: if msg.session_type == 1 {
+                            if is_self { msg.recv_id.clone() } else { msg.send_id.clone() }
+                        } else {
+                            String::new()
+                        },
                         group_id: if msg.session_type != 1 { msg.group_id.clone() } else { String::new() },
-                        show_name,
+                        show_name: msg.sender_nickname.clone(),
                         face_url: msg.sender_face_url.clone(),
                         latest_msg: if is_conversation_update { content_str.to_string() } else { String::new() },
                         latest_msg_send_time: if is_conversation_update { msg.send_time } else { 0 },
@@ -358,6 +364,8 @@ impl MessageProcessor {
                         is_msg_destruct: false,
                         msg_destruct_time: 0,
                     };
+                    // 本地补全 show_name/face_url（好友/用户/群组数据源优先）
+                    batch_add_face_url_and_name(&self.repositories, &login_user_id, std::slice::from_mut(&mut conv)).await?;
                     self.repositories.conversation_repo.upsert(&conv).await?;
                     debug!("[MsgHandler] 创建新会话: {}", conv_id);
                 }
@@ -1146,7 +1154,8 @@ mod tests {
         let conv = conversation_dao.get_by_id("sg_group_1").await.unwrap().unwrap();
         assert_eq!(conv.conversation_type, 3);
         assert_eq!(conv.group_id, "group_1");
-        assert_eq!(conv.show_name, "Group_group_1");
+        // 对齐 Go：本地无群信息时保留消息携带的发送者昵称（不再使用 Group_ 占位符，群信息存在时用群名）
+        assert_eq!(conv.show_name, "Alice");
         assert_eq!(conv.unread_count, 1);
     }
 }

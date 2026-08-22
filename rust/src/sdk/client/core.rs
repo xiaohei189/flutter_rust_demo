@@ -144,6 +144,7 @@ impl ConnectionApi for OpenIMClient {
         let friend = self.friend.clone();
         let group = self.group.clone();
         let conversation_syncer = self.conversation_syncer.clone();
+        let conversation_service = self.conversation.clone();
         let message_syncer = self.message_syncer.clone();
         let repositories = self.context.repositories.clone();
         tokio::spawn(async move {
@@ -206,6 +207,12 @@ impl ConnectionApi for OpenIMClient {
                 }
                 debug!("[SDK] 普通登录：后台开始会话增量同步");
                 let _ = conversation_syncer.sync_incremental().await;
+
+                // 对齐 Go SDK：好友/群组/用户数据源就绪后重算全部会话名称，
+                // 修复历史遗留的占位符（如 sg_xxx）或数据源晚于会话同步导致的空名
+                if let Err(e) = conversation_service.refresh_face_url_and_name().await {
+                    warn!("[SDK] 登录后刷新会话名称失败: {}", e);
+                }
             }
         });
 

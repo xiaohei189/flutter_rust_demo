@@ -10,6 +10,7 @@
 //! 再解析内层 detail 到目标类型。
 
 use crate::domain::constant::notification_type;
+use crate::core::conversation::service::ConversationService;
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
@@ -34,6 +35,7 @@ pub struct NotificationHandler {
     group_manager: Arc<GroupService>,
     user_manager: Arc<UserService>,
     conversation_syncer: Arc<ConversationSyncer>,
+    conversation_service: Arc<ConversationService>,
     message_processor: Arc<MessageProcessor>,
     friend_listener: Arc<dyn FriendListener>,
     group_listener: Arc<dyn GroupListener>,
@@ -47,6 +49,7 @@ impl NotificationHandler {
         group_manager: Arc<GroupService>,
         user_manager: Arc<UserService>,
         conversation_syncer: Arc<ConversationSyncer>,
+        conversation_service: Arc<ConversationService>,
         message_processor: Arc<MessageProcessor>,
         friend_listener: Arc<dyn FriendListener>,
         group_listener: Arc<dyn GroupListener>,
@@ -58,6 +61,7 @@ impl NotificationHandler {
             group_manager,
             user_manager,
             conversation_syncer,
+            conversation_service,
             message_processor,
             friend_listener,
             group_listener,
@@ -92,10 +96,18 @@ impl NotificationHandler {
                 if let Err(e) = self.friend_manager.sync_friends_incremental().await {
                     warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
                 }
+                // 好友备注/昵称/头像变更联动刷新会话名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+                if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
+                    warn!("[NOTIFY] 刷新会话名称失败: {}", e);
+                }
             }
             notification_type::FRIEND_DELETED => {
                 if let Err(e) = self.friend_manager.sync_friends_incremental().await {
                     warn!("[NOTIFY] 增量同步好友列表失败: {}", e);
+                }
+                // 好友删除后单聊会话回退到用户昵称
+                if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
+                    warn!("[NOTIFY] 刷新会话名称失败: {}", e);
                 }
             }
             notification_type::BLACK_ADDED => {
@@ -281,19 +293,27 @@ impl NotificationHandler {
     /// 1303 - 用户信息更新
     async fn handle_user_info_updated(&self, content: &[u8]) -> anyhow::Result<()> {
         let user_info: UserInfoJson = unmarshal_notification_elem(content)?;
+        let user = crate::domain::model::user::UserInfo {
+            user_id: user_info.user_id,
+            nickname: user_info.nickname,
+            face_url: user_info.face_url,
+            gender: 0,
+            telephone: String::new(),
+            email: String::new(),
+            remark: user_info.ex,
+            global_recv_msg_opt: user_info.global_recv_msg_opt,
+        };
 
-        self.user_listener.emit(UserEvent::UserInfoUpdated {
-            user: crate::domain::model::user::UserInfo {
-                user_id: user_info.user_id,
-                nickname: user_info.nickname,
-                face_url: user_info.face_url,
-                gender: 0,
-                telephone: String::new(),
-                email: String::new(),
-                remark: user_info.ex,
-                global_recv_msg_opt: user_info.global_recv_msg_opt,
-            },
-        });
+        // 写入本地用户表（对齐 Go SDK `saveUserInfo`），供会话名称补全使用
+        if let Err(e) = self.user_manager.save_user_info(&user).await {
+            warn!("[NOTIFY] 保存用户信息到本地失败: {}", e);
+        }
+        // 昵称/头像变更联动刷新会话名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+        if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
+            warn!("[NOTIFY] 刷新会话名称失败: {}", e);
+        }
+
+        self.user_listener.emit(UserEvent::UserInfoUpdated { user });
 
         Ok(())
     }
@@ -386,6 +406,10 @@ impl NotificationHandler {
         let group_id = self.parse_group_id(&msg.content);
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
+        }
+        // 群名/群头像变更联动刷新会话名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+        if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
+            warn!("[NOTIFY] 刷新会话名称失败: {}", e);
         }
         if !group_id.is_empty() {
             if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
@@ -516,10 +540,11 @@ mod tests {
         let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), repos.clone(), hub.clone()));
 
         let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
+        let conversation_service = Arc::new(ConversationService::new(repos.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
@@ -528,6 +553,7 @@ mod tests {
             group_service,
             user_service,
             syncer,
+            conversation_service,
             processor,
             noop_friend_listener(),
             noop_group_listener(),
@@ -558,14 +584,15 @@ mod tests {
         let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), repos.clone(), hub.clone()));
 
         let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
+        let conversation_service = Arc::new(ConversationService::new(repos.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
-        let handler = NotificationHandler::new(friend_service, group_service, user_service, syncer, processor, hub.clone(), hub.clone(), hub.clone(), user_id);
+        let handler = NotificationHandler::new(friend_service, group_service, user_service, syncer, conversation_service, processor, hub.clone(), hub.clone(), hub.clone(), user_id);
 
         handler.handle_notifications(&[]).await;
     }
@@ -653,14 +680,15 @@ mod tests {
         let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()));
 
-        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), hub.clone()));
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), repos.clone(), hub.clone()));
 
         let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
         let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
+        let conversation_service = Arc::new(ConversationService::new(repos.clone(), hub.clone()));
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
-        NotificationHandler::new(friend_service, group_service, user_service, syncer, processor, hub.clone(), hub.clone(), hub.clone(), user_id)
+        NotificationHandler::new(friend_service, group_service, user_service, syncer, conversation_service, processor, hub.clone(), hub.clone(), hub.clone(), user_id)
     }
 
     #[tokio::test]

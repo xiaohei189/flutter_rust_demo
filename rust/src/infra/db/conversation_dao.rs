@@ -48,7 +48,9 @@ impl ConversationDao {
     /// 从服务端同步会话时使用：保留本地维护的字段（latest_msg、latest_msg_send_time、
     /// unread_count、draft_text、draft_text_time），只更新从服务端获取的字段。
     ///
-    /// 对齐 Go SDK：服务端不返回 `latestMsg`，该字段由本地消息处理流程维护。
+    /// 对齐 Go SDK：服务端不返回 `latestMsg`，该字段由本地消息处理流程维护；
+    /// `show_name`/`face_url` 为本地计算字段，调用方（会话同步）在入库前已通过
+    /// `batchAddFaceURLAndName` 补全，因此同步时用补全后的值覆盖旧值，避免旧占位符残留。
     pub async fn upsert_preserving_local_fields(&self, conv: &LocalConversation) -> Result<()> {
         sqlx::query(
             "INSERT INTO local_conversations (conversation_id, conversation_type, user_id, group_id, show_name, face_url, latest_msg, latest_msg_send_time, unread_count, recv_msg_opt, is_pinned, is_private_chat, burn_duration, group_at_type, is_not_in_group, update_unread_count_time, attached_info, ex, draft_text, draft_text_time, max_seq, min_seq, is_msg_destruct, msg_destruct_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(conversation_id) DO UPDATE SET conversation_type=excluded.conversation_type, user_id=excluded.user_id, group_id=excluded.group_id, show_name=excluded.show_name, face_url=excluded.face_url, recv_msg_opt=excluded.recv_msg_opt, is_pinned=excluded.is_pinned, is_private_chat=excluded.is_private_chat, burn_duration=excluded.burn_duration, group_at_type=excluded.group_at_type, is_not_in_group=excluded.is_not_in_group, update_unread_count_time=excluded.update_unread_count_time, attached_info=excluded.attached_info, ex=excluded.ex, max_seq=excluded.max_seq, min_seq=excluded.min_seq, is_msg_destruct=excluded.is_msg_destruct, msg_destruct_time=excluded.msg_destruct_time",
@@ -80,6 +82,18 @@ impl ConversationDao {
         .execute(&self.pool)
         .await
         .map_err(|e| SdkError::database(format!("upsert_preserving_local_fields: {}", e)))?;
+        Ok(())
+    }
+
+    /// 更新会话头像和名称（对齐 Go SDK `UpdateConFaceUrlAndNickName` 落库）
+    pub async fn update_face_url_and_name(&self, conversation_id: &str, show_name: &str, face_url: &str) -> Result<()> {
+        sqlx::query("UPDATE local_conversations SET show_name = ?, face_url = ? WHERE conversation_id = ?")
+            .bind(show_name)
+            .bind(face_url)
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| SdkError::database(format!("update conversation face_url_and_name: {}", e)))?;
         Ok(())
     }
 
@@ -541,6 +555,9 @@ impl ConversationRepository for ConversationDao {
     async fn get_by_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
         self.get_multiple(conversation_ids).await
     }
+    async fn update_face_url_and_name(&self, conversation_id: &str, show_name: &str, face_url: &str) -> Result<()> {
+        self.update_face_url_and_name(conversation_id, show_name, face_url).await
+    }
 }
 
 #[cfg(test)]
@@ -671,13 +688,14 @@ mod tests {
         conv1.draft_text_time = 500;
         dao.upsert(&conv1).await.unwrap();
 
-        // 第二步：模拟服务端同步更新（latest_msg 为空）
+        // 第二步：模拟服务端同步更新（latest_msg 为空，show_name 为补全后的群名/好友名）
         let mut conv2 = make_conv("conv_update");
         conv2.latest_msg = String::new(); // 服务端不返回
         conv2.latest_msg_send_time = 0; // 服务端不返回
         conv2.unread_count = 0; // 服务端不返回
         conv2.draft_text = String::new(); // 服务端不返回
         conv2.draft_text_time = 0; // 服务端不返回
+        conv2.show_name = "补全后的群名".to_string(); // batchAddFaceURLAndName 计算值
         conv2.recv_msg_opt = 1; // 服务端可能更新此字段
         dao.upsert_preserving_local_fields(&conv2).await.unwrap();
 
@@ -691,6 +709,8 @@ mod tests {
 
         // 验证：服务端字段应被更新
         assert_eq!(saved.recv_msg_opt, 1, "recv_msg_opt should be updated from server");
+        // 验证：补全后的 show_name 应覆盖旧值（避免旧占位符残留，对齐 Go 同步覆盖）
+        assert_eq!(saved.show_name, "补全后的群名", "show_name should be updated with enriched value");
     }
 
     /// 完整端到端测试：消息处理更新 latest_msg 后，会话同步不应覆盖它

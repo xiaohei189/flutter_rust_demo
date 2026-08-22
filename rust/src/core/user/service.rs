@@ -1,23 +1,27 @@
 use crate::domain::error::{Result, SdkError};
+use crate::core::context::Repositories;
 use crate::core::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::infra::http::UserServerApi;
+use crate::domain::model::local::LocalUser;
 use crate::domain::model::user::UserInfo;
 
 use crate::infra::http::user::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, warn};
 
 pub struct UserService {
     api: Arc<dyn UserServerApi>,
+    repositories: Arc<Repositories>,
     listener: Arc<dyn UserListener>,
     self_user: Arc<RwLock<Option<UserInfo>>>,
 }
 
 impl UserService {
-    pub fn new(api: Arc<dyn UserServerApi>, listener: Arc<dyn UserListener>) -> Self {
+    pub fn new(api: Arc<dyn UserServerApi>, repositories: Arc<Repositories>, listener: Arc<dyn UserListener>) -> Self {
         Self {
             api,
+            repositories,
             listener,
             self_user: Arc::new(RwLock::new(None)),
         }
@@ -30,7 +34,31 @@ impl UserService {
 
         let users = resp.users_info.into_iter().map(server_to_domain).collect();
 
+        // 写入本地用户表（对齐 Go SDK `batchAddFaceURLAndName` 的 GetUsersInfo 落库），供会话名称补全使用
+        for user in &users {
+            if let Err(e) = self.save_user_info(user).await {
+                warn!("保存用户信息到本地失败: {}", e);
+            }
+        }
+
         Ok(users)
+    }
+
+    /// 保存用户信息到本地 users 表（对齐 Go SDK `saveUserInfo`），供会话名称补全使用
+    pub async fn save_user_info(&self, user: &UserInfo) -> Result<()> {
+        self.repositories
+            .user_repo
+            .upsert(&LocalUser {
+                user_id: user.user_id.clone(),
+                name: user.nickname.clone(),
+                face_url: user.face_url.clone(),
+                create_time: 0,
+                app_manger_level: 0,
+                ex: user.remark.clone(),
+                attached_info: String::new(),
+                global_recv_msg_opt: user.global_recv_msg_opt,
+            })
+            .await
     }
 
     /// 获取用户客户端配置（对齐 Go SDK `GetUserClientConfig` user/api.go L88-94）
@@ -96,6 +124,10 @@ impl UserService {
         };
 
         if let Some(updated_user) = updated_user {
+            // 写入本地用户表，供会话名称补全使用
+            if let Err(e) = self.save_user_info(&updated_user).await {
+                warn!("更新本地用户表失败: {}", e);
+            }
             self.listener.emit(UserEvent::UserInfoUpdated { user: updated_user });
         }
 

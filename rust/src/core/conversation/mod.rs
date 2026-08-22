@@ -22,8 +22,10 @@
 //! | [`syncer`] | `ConversationSyncer` | 服务端同步（增量/全量/HashReadSeq） |
 //! | (ports) | `ConversationServerApi` | 服务端 API 契约（位于 `domain::ports::conversation`） |
 //! | [`converter`] | - | ServerConversation -> LocalConversation 转换（`From` trait） |
+//! | [`enrich`] | - | show_name/face_url 本地补全（对齐 Go `batchAddFaceURLAndName`） |
 //! | [`types`] | - | 请求/响应 DTO 定义 |
 
 pub mod converter;
+pub mod enrich;
 pub mod service;
 pub mod syncer;

@@ -1,6 +1,7 @@
 //! 会话同步器 - 增量/全量同步（对齐 Go SDK `IncrSyncConversations` + `VersionSynchronizer`）
 
 use crate::core::context::Repositories;
+use crate::core::conversation::enrich::batch_add_face_url_and_name;
 use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::domain::model::local::LocalConversation;
@@ -110,25 +111,23 @@ impl ConversationSyncer {
             return Ok(conversations);
         }
 
-        // 4. 处理增量变更
+        // 4. 处理增量变更:先本地补全 show_name/face_url 再入库
+        // (对齐 Go SDK `batchAddFaceURLAndName`:服务端不下发这两个字段,由好友/用户/群组本地数据补全)
+        let insert_ids: std::collections::HashSet<String> = resp.insert.iter().map(|s| s.conversation_id.clone()).collect();
+        let mut changed: Vec<LocalConversation> = resp.update.iter().chain(resp.insert.iter()).map(|s| s.clone().into()).collect();
+        batch_add_face_url_and_name(&self.repositories, &user_id, &mut changed).await?;
+
         for conv_id in &resp.delete {
             self.repositories.conversation_repo.delete(conv_id).await?;
             self.send(ConversationEvent::Deleted(vec![conv_id.clone()]));
         }
 
-        for s in &resp.update {
-            let local: LocalConversation = s.clone().into();
-            self.repositories.conversation_repo.upsert_preserving_local_fields(&local).await?;
+        for local in &changed {
+            self.repositories.conversation_repo.upsert_preserving_local_fields(local).await?;
         }
 
-        for s in &resp.insert {
-            let local: LocalConversation = s.clone().into();
-            self.repositories.conversation_repo.upsert_preserving_local_fields(&local).await?;
-        }
-
-        if !resp.update.is_empty() || !resp.insert.is_empty() {
-            let changed: Vec<LocalConversation> = resp.update.iter().chain(resp.insert.iter()).map(|s| s.clone().into()).collect();
-            self.send(ConversationEvent::Changed(changed));
+        if !changed.is_empty() {
+            self.send(ConversationEvent::Changed(changed.clone()));
         }
 
         // 5. 持久化版本号到数据库（对齐 Go SDK `updateVersionInfo`）
@@ -143,7 +142,7 @@ impl ConversationSyncer {
 
         info!("增量同步完成，insert={}, update={}, delete={}", resp.insert.len(), resp.update.len(), resp.delete.len());
 
-        let inserted_convs: Vec<LocalConversation> = resp.insert.iter().map(|s| s.clone().into()).collect();
+        let inserted_convs: Vec<LocalConversation> = changed.into_iter().filter(|c| insert_ids.contains(&c.conversation_id)).collect();
         Ok(inserted_convs)
     }
 
@@ -161,14 +160,16 @@ impl ConversationSyncer {
         info!("开始全量同步会话");
 
         let user_id = self.user_id.get().await;
-        let resp = match self.api.pull_all(user_id).await {
+        let resp = match self.api.pull_all(user_id.clone()).await {
             Ok(r) => r,
             Err(e) => {
                 return Err(e);
             }
         };
 
-        let conversations: Vec<LocalConversation> = resp.conversations.unwrap_or_default().into_iter().map(|s| s.into()).collect();
+        let mut conversations: Vec<LocalConversation> = resp.conversations.unwrap_or_default().into_iter().map(|s| s.into()).collect();
+        // 补全 show_name/face_url(对齐 Go SDK `batchAddFaceURLAndName`)
+        batch_add_face_url_and_name(&self.repositories, &user_id, &mut conversations).await?;
 
         // 保留本地 latest_msg 等字段：先记录本地所有会话 ID
         let local_ids: std::collections::HashSet<String> = self
@@ -287,11 +288,13 @@ impl ConversationSyncer {
         if !conversation_ids_need_sync.is_empty() {
             info!("[ConvSync] {} 个会话不在本地，从服务端拉取", conversation_ids_need_sync.len());
             let user_id = self.user_id.get().await;
-            match self.api.pull_conversations_by_ids(user_id, conversation_ids_need_sync.clone()).await {
+            match self.api.pull_conversations_by_ids(user_id.clone(), conversation_ids_need_sync.clone()).await {
                 Ok(server_convs) => {
                     let mut conversations_to_insert = Vec::new();
-                    for s in &server_convs {
-                        let mut domain: LocalConversation = s.clone().into();
+                    // 补全 show_name/face_url(对齐 Go SDK `batchAddFaceURLAndName`)
+                    let mut enriched: Vec<LocalConversation> = server_convs.iter().map(|s| s.clone().into()).collect();
+                    batch_add_face_url_and_name(&self.repositories, &user_id, &mut enriched).await?;
+                    for mut domain in enriched {
                         // 计算未读数
                         if let Some(seq_info) = resp.seqs.get(&domain.conversation_id) {
                             let unread_count = if seq_info.max_seq > seq_info.has_read_seq {
@@ -588,6 +591,72 @@ mod tests {
         assert_eq!(conv.latest_msg_send_time, 5000);
         assert_eq!(conv.unread_count, 3);
         assert_eq!(conv.draft_text, "本地草稿");
+    }
+
+    /// 端到端链路：群表有群资料时，同步 sg_ 前缀超级群会话应把群名写入 DB
+    /// （复现「群聊名字还是 sg」问题：enrich 结果此前被 upsert_preserving_local_fields 丢弃）
+    #[tokio::test]
+    async fn test_sync_incremental_enriches_super_group_name_into_db() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        // 预置群表：超级群资料（对齐群同步后的本地数据）
+        repositories
+            .group_repo
+            .upsert_group(&crate::domain::model::local::LocalGroup {
+                group_id: "3001".to_string(),
+                name: "产品讨论超级群".to_string(),
+                face_url: "http://group.png".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 本地已存在旧会话：show_name 为旧占位符（升级前遗留数据）
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "sg_3001".to_string(),
+                conversation_type: 3,
+                group_id: "3001".to_string(),
+                show_name: "sg_3001".to_string(),
+                latest_msg: "旧消息".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 服务端增量下发该会话（服务端不下发 show_name/face_url）
+        let mut server_conv = make_server_conv("sg_3001", false, 0);
+        server_conv.conversation_type = 3;
+        server_conv.group_id = "3001".to_string();
+        let inc = GetIncrementalConversationResp {
+            version: 10,
+            version_id: "v10".to_string(),
+            full: false,
+            delete: vec![],
+            insert: vec![],
+            update: vec![server_conv],
+        };
+        let api = Arc::new(MockConversationApi::new().with_incremental(inc));
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories.clone());
+
+        syncer.sync_incremental().await.unwrap();
+
+        // 群名应覆盖旧占位符落库
+        let conv = repositories.conversation_repo.get_by_id("sg_3001").await.unwrap().unwrap();
+        assert_eq!(conv.show_name, "产品讨论超级群", "enrich 补全的群名应覆盖旧占位符");
+        assert_eq!(conv.face_url, "http://group.png");
+        // 本地 latest_msg 仍保留
+        assert_eq!(conv.latest_msg, "旧消息");
+
+        // Changed 事件携带补全后的名称
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => {
+                assert_eq!(convs[0].show_name, "产品讨论超级群");
+            }
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
     }
 
     #[tokio::test]
