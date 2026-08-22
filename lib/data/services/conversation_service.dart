@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../domain/models/conversation.dart';
+import '../mappers/conversation_mapper.dart';
 import '../../generated/rust/event/events/conversation.dart';
 import '../../core/utils/app_logger.dart';
 import 'im_client.dart';
@@ -172,7 +173,7 @@ class ConversationService {
     try {
       appLog.i('[ConversationService] 开始加载会话列表');
       final conversations = (await client.getConversations())
-          .map(ConversationMapping.fromLocalConversation)
+          .map(ConversationMapper.fromLocalConversation)
           .toList();
       appLog.i('[ConversationService] 加载到 ${conversations.length} 个会话');
 

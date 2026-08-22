@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/domain/models/user_profile.dart';
+import 'package:flutter_rust_demo/data/mappers/user_profile_mapper.dart';
 import 'package:flutter_rust_demo/generated/rust/model/user.dart';
 
 void main() {
-  test('UserProfileMapping.fromUserInfo 保留核心字段', () {
+  test('UserProfileMapper.fromUserInfo 保留核心字段', () {
     const raw = UserInfo(
       userId: 'u1',
       nickname: '张三',
@@ -15,7 +15,7 @@ void main() {
       globalRecvMsgOpt: 1,
     );
 
-    final profile = UserProfileMapping.fromUserInfo(raw);
+    final profile = UserProfileMapper.fromUserInfo(raw);
 
     expect(profile.userId, 'u1');
     expect(profile.nickname, '张三');

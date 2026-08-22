@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../data/mappers/conversation_mapper.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../generated/rust/event/events/message.dart' show MessageReceipt;
@@ -156,6 +157,13 @@ class MessageServiceReducer {
     return state.copyWith(uploadProgress: uploadProgress);
   }
 
+  /// 会话排序时间：草稿时间优先于最新消息时间（对齐微信「草稿置顶」）。
+  static int _conversationSortTime(Conversation c) {
+    final draft = c.draftTextTime;
+    final msg = c.latestMsgSendTime;
+    return draft > msg ? draft : msg;
+  }
+
   static MessageServiceState applyConversationEvent(
     MessageServiceState state,
     List<LocalConversation> incoming,
@@ -163,7 +171,7 @@ class MessageServiceReducer {
     if (incoming.isEmpty) return state;
     final newConversations = List<Conversation>.from(state.conversations);
     for (final raw in incoming) {
-      final conv = ConversationMapping.fromLocalConversation(raw);
+      final conv = ConversationMapper.fromLocalConversation(raw);
       final index = newConversations.indexWhere(
         (c) => c.conversationId == conv.conversationId,
       );
@@ -209,7 +217,7 @@ class MessageServiceReducer {
     }
     newConversations.sort((a, b) {
       if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
-      return b.latestMsgSendTime.compareTo(a.latestMsgSendTime);
+      return _conversationSortTime(b).compareTo(_conversationSortTime(a));
     });
     return state.copyWith(conversations: newConversations);
   }

@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import '../../generated/rust/model/user.dart' show UserInfo;
 import '../../core/utils/app_logger.dart';
+import '../../domain/models/user_profile.dart' show UserProfile;
+import '../mappers/user_profile_mapper.dart';
 import 'im_client.dart';
 
 abstract class UserService {
@@ -9,15 +10,15 @@ abstract class UserService {
 
   void setCurrentUserId(String userId);
   String get currentUserId;
-  UserInfo? get loginUserProfile;
-  Stream<UserInfo?> get loginUserStream;
-  Stream<Map<String, UserInfo>> get profilesStream;
-  UserInfo? getUserProfile(String userId);
-  List<UserInfo> getUserProfiles(List<String> userIds);
-  Future<UserInfo?> refreshLoginUserProfile();
+  UserProfile? get loginUserProfile;
+  Stream<UserProfile?> get loginUserStream;
+  Stream<Map<String, UserProfile>> get profilesStream;
+  UserProfile? getUserProfile(String userId);
+  List<UserProfile> getUserProfiles(List<String> userIds);
+  Future<UserProfile?> refreshLoginUserProfile();
   Future<void> preloadUserProfiles(List<String> userIds);
-  Future<UserInfo?> fetchUserProfile(String userId);
-  Future<UserInfo?> updateLoginUserProfile({
+  Future<UserProfile?> fetchUserProfile(String userId);
+  Future<UserProfile?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
     String? ex,
@@ -42,15 +43,15 @@ class UserServiceImpl implements UserService {
   static UserServiceImpl get instance => _instance;
 
   // 用户资料缓存
-  final Map<String, UserInfo> _profiles = {};
+  final Map<String, UserProfile> _profiles = {};
 
   // 当前登录用户资料
-  UserInfo? _loginUserProfile;
+  UserProfile? _loginUserProfile;
   String _currentUserId = '';
 
   // 流控制器
-  final _profilesController = StreamController<Map<String, UserInfo>>.broadcast();
-  final _loginUserController = StreamController<UserInfo?>.broadcast();
+  final _profilesController = StreamController<Map<String, UserProfile>>.broadcast();
+  final _loginUserController = StreamController<UserProfile?>.broadcast();
 
   bool _isDisposed = false;
 
@@ -68,35 +69,35 @@ class UserServiceImpl implements UserService {
 
   /// 当前登录用户资料
   @override
-  UserInfo? get loginUserProfile => _loginUserProfile;
+  UserProfile? get loginUserProfile => _loginUserProfile;
 
   /// 当前登录用户资料流
   @override
-  Stream<UserInfo?> get loginUserStream => _loginUserController.stream;
+  Stream<UserProfile?> get loginUserStream => _loginUserController.stream;
 
   /// 所有用户资料流
   @override
-  Stream<Map<String, UserInfo>> get profilesStream => _profilesController.stream;
+  Stream<Map<String, UserProfile>> get profilesStream => _profilesController.stream;
 
   /// 获取指定用户资料
   @override
-  UserInfo? getUserProfile(String userId) {
+  UserProfile? getUserProfile(String userId) {
     return _profiles[userId];
   }
 
   /// 获取多个用户资料
   @override
-  List<UserInfo> getUserProfiles(List<String> userIds) {
+  List<UserProfile> getUserProfiles(List<String> userIds) {
     return userIds
         .map((id) => _profiles[id])
         .where((profile) => profile != null)
-        .cast<UserInfo>()
+        .cast<UserProfile>()
         .toList();
   }
 
   /// 刷新当前登录用户资料
   @override
-  Future<UserInfo?> refreshLoginUserProfile() async {
+  Future<UserProfile?> refreshLoginUserProfile() async {
     final client = ImClient.instance.client;
     if (client == null || _currentUserId.isEmpty) {
       appLog.w('[UserService] 客户端为空或用户ID为空');
@@ -106,7 +107,9 @@ class UserServiceImpl implements UserService {
     try {
       appLog.i('[UserService] 刷新当前用户资料: $_currentUserId');
       final list = await client.getUsersInfo(userIds: [_currentUserId]);
-      final profile = list.isNotEmpty ? list.first : null;
+      final rawProfile = list.isNotEmpty ? list.first : null;
+      final profile =
+          rawProfile == null ? null : UserProfileMapper.fromUserInfo(rawProfile);
 
       if (profile != null) {
         _loginUserProfile = profile;
@@ -141,7 +144,8 @@ class UserServiceImpl implements UserService {
       final list = await client.getUsersInfo(userIds: uncachedIds);
 
       for (final p in list) {
-        _profiles[p.userId] = p;
+        final profile = UserProfileMapper.fromUserInfo(p);
+        _profiles[profile.userId] = profile;
       }
       _notifyProfilesChanged();
       appLog.i('[UserService] 批量加载用户资料完成');
@@ -152,7 +156,7 @@ class UserServiceImpl implements UserService {
 
   /// 获取单个用户资料（优先从缓存获取）
   @override
-  Future<UserInfo?> fetchUserProfile(String userId) async {
+  Future<UserProfile?> fetchUserProfile(String userId) async {
     // 先检查缓存
     if (_profiles.containsKey(userId)) {
       return _profiles[userId];
@@ -165,7 +169,7 @@ class UserServiceImpl implements UserService {
     try {
       final list = await client.getUsersInfo(userIds: [userId]);
       if (list.isNotEmpty) {
-        final profile = list.first;
+        final profile = UserProfileMapper.fromUserInfo(list.first);
         _profiles[userId] = profile;
         _notifyProfilesChanged();
         return profile;
@@ -178,7 +182,7 @@ class UserServiceImpl implements UserService {
 
   /// 更新当前登录用户资料
   @override
-  Future<UserInfo?> updateLoginUserProfile({
+  Future<UserProfile?> updateLoginUserProfile({
     String? nickname,
     String? faceUrl,
     String? ex,

@@ -10,25 +10,25 @@ final userServiceProvider = Provider<UserService>((ref) {
 });
 
 /// 当前登录用户资料流 Provider
-final loginUserStreamProvider = StreamProvider<UserInfo?>((ref) {
+final loginUserStreamProvider = StreamProvider<UserProfile?>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.loginUserStream;
 });
 
 /// 当前登录用户资料 Provider
-final loginUserProvider = Provider<UserInfo?>((ref) {
+final loginUserProvider = Provider<UserProfile?>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.loginUserProfile;
 });
 
 /// 用户资料缓存流 Provider
-final userProfilesStreamProvider = StreamProvider<Map<String, UserInfo>>((ref) {
+final userProfilesStreamProvider = StreamProvider<Map<String, UserProfile>>((ref) {
   final service = ref.watch(userServiceProvider);
   return service.profilesStream;
 });
 
 /// 指定用户资料 Provider（Family）（从新服务）
-final userProfileByIdProvider = Provider.family<UserInfo?, String>((
+final userProfileByIdProvider = Provider.family<UserProfile?, String>((
   ref,
   userId,
 ) {

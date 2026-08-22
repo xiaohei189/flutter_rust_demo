@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_rust_demo/domain/models/conversation.dart';
+import 'package:flutter_rust_demo/data/mappers/conversation_mapper.dart';
 import 'package:flutter_rust_demo/generated/rust/model/local.dart';
 
 void main() {
-  group('ConversationMapping', () {
+  group('ConversationMapper', () {
     test('fromLocalConversation 完整转换字段', () {
       final raw = const LocalConversation(
         conversationId: 'si_user_a_user_b',
@@ -33,7 +33,7 @@ void main() {
         msgDestructTime: 0,
       );
 
-      final conversation = ConversationMapping.fromLocalConversation(raw);
+      final conversation = ConversationMapper.fromLocalConversation(raw);
 
       expect(conversation.conversationId, 'si_user_a_user_b');
       expect(conversation.conversationType, 1);

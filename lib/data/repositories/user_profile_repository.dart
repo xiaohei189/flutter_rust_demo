@@ -26,7 +26,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   @override
   Future<UserProfile?> fetchProfile(String userId) async {
     final profile = await _userService.fetchUserProfile(userId);
-    return profile == null ? null : UserProfileMapping.fromUserInfo(profile);
+    return profile;
   }
 
   @override
