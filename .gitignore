@@ -42,12 +42,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
 
 # Rust 本地数据库和日志
 rust/conversations.db
 rust/logs/rust.log.*
 logs/rust.log.*
 logs/sdk.log.*
+logs/vm_widget_*.json
 
 # IDE 配置
 .idea/
