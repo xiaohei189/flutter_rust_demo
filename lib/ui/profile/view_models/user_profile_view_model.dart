@@ -8,7 +8,7 @@ import '../../../core/utils/app_logger.dart';
 import '../../../providers/im_providers.dart';
 import '../../chat/providers/message_revision_provider.dart';
 import '../../chat/providers/message_service_provider.dart';
-import 'user_avatar_store.dart';
+import '../../../data/services/user_avatar_store.dart';
 
 /// 用户资料展示状态：服务端资料 + 本地覆盖（头像路径/URL/加载/错误）。
 class UserProfileState {
@@ -109,7 +109,7 @@ class UserProfileLocalState {
 
 /// 用户资料 Notifier：只管理本地编辑状态，不再复制全局登录资料。
 class UserProfileNotifier extends Notifier<UserProfileLocalState> {
-  final UserAvatarStore _avatarStore = UserAvatarStore();
+  UserAvatarStore get _avatarStore => ref.read(userAvatarStoreProvider);
 
   @override
   UserProfileLocalState build() {

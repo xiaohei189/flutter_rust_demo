@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../previews/app_theme_preview.dart';
 import '../../../core/theme/app_theme.dart';
-import 'emoji_store.dart';
+import '../../../../data/services/emoji_store.dart';
 
 /// 表情面板 Tab
 enum EmojiTab { recent, emoji, favorite, gif }

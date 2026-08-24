@@ -6,7 +6,6 @@ import '../mappers/user_profile_mapper.dart';
 import 'im_client.dart';
 
 abstract class UserService {
-  static UserService get instance => UserServiceImpl.instance;
 
   void setCurrentUserId(String userId);
   String get currentUserId;
@@ -37,10 +36,6 @@ abstract class UserService {
 /// 3. 批量预加载用户资料
 /// 4. 管理当前登录用户信息
 class UserServiceImpl implements UserService {
-  static final UserServiceImpl _instance = UserServiceImpl();
-
-  /// 全局单例实例
-  static UserServiceImpl get instance => _instance;
 
   // 用户资料缓存
   final Map<String, UserProfile> _profiles = {};

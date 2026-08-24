@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/utils/app_logger.dart';
+import '../../core/utils/app_logger.dart';
 
 /// 用户头像：本地路径持久化、持久目录复制与展示 URL 解析。
 class UserAvatarStore {

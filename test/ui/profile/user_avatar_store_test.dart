@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_rust_demo/ui/profile/view_models/user_avatar_store.dart';
+import 'package:flutter_rust_demo/data/services/user_avatar_store.dart';
 
 void main() {
   final store = UserAvatarStore();

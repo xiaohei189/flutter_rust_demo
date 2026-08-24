@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -65,6 +66,22 @@ class MediaImportService {
     } catch (_) {
       return 0;
     }
+  }
+
+  /// 下载文件内容：远程 URL 走 HTTP，本地路径直接读取。
+  Future<Uint8List> downloadBytes(String source) async {
+    if (source.startsWith('http://') || source.startsWith('https://')) {
+      final response = await http.get(Uri.parse(source));
+      if (response.statusCode != 200) {
+        throw Exception('下载失败，HTTP ${response.statusCode}');
+      }
+      return response.bodyBytes;
+    }
+    final file = File(source);
+    if (!file.existsSync()) {
+      throw Exception('本地文件不存在: $source');
+    }
+    return file.readAsBytes();
   }
 
   /// 生成视频缩略图路径；失败返回空字符串。

@@ -41,6 +41,11 @@ final mediaImportServiceProvider = Provider<MediaImportService>((ref) {
   return const MediaImportService();
 });
 
+/// 用户头像本地存储 Provider
+final userAvatarStoreProvider = Provider<UserAvatarStore>((ref) {
+  return UserAvatarStore();
+});
+
 // ==================== 基础设施 DI 桥 ====================
 // 单例只在此基础设施层暴露；业务/UI 一律通过 Provider 访问。
 

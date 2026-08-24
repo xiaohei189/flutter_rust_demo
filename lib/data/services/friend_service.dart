@@ -8,7 +8,6 @@ import 'package:flutter_rust_demo/generated/rust/http/friend.dart'
 import 'friend_service_parts.dart';
 
 abstract class FriendService {
-  static FriendService get instance => FriendServiceImpl.instance;
 
   Future<void> addFriend(
     fb.OpenImBridgeClient client, {
@@ -109,10 +108,6 @@ abstract class FriendService {
 class FriendServiceImpl
     with FriendApplicationsMixin, FriendListMixin, FriendBlacklistMixin
     implements FriendService {
-  static final FriendServiceImpl _instance = FriendServiceImpl();
-
-  /// 全局单例实例
-  static FriendServiceImpl get instance => _instance;
 
   FriendServiceImpl();
 }

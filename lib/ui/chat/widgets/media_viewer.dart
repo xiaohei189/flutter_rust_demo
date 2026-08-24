@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
 import '../../../providers/im_providers.dart';
@@ -59,20 +57,7 @@ Future<void> saveMessageMedia(
   ).read(mediaImportServiceProvider);
 
   try {
-    final Uint8List bytes;
-    if (_isRemote(source)) {
-      final response = await http.get(Uri.parse(source));
-      if (response.statusCode != 200) {
-        throw Exception('下载失败，HTTP ${response.statusCode}');
-      }
-      bytes = response.bodyBytes;
-    } else {
-      final file = File(source);
-      if (!file.existsSync()) {
-        throw Exception('本地文件不存在: $source');
-      }
-      bytes = await file.readAsBytes();
-    }
+    final bytes = await mediaImportService.downloadBytes(source);
 
     final savedPath = await mediaImportService.saveFile(
       fileName: suggestedName,

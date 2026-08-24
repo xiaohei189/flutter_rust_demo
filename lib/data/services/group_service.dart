@@ -7,7 +7,6 @@ import 'group_service_member_mixin.dart';
 import 'group_service_application_mixin.dart';
 
 abstract class GroupService {
-  static GroupService get instance => GroupServiceImpl.instance;
 
   Future<List<GroupInfo>> getGroupList(fb.OpenImBridgeClient client);
 
@@ -172,10 +171,6 @@ abstract class GroupService {
 class GroupServiceImpl
     with GroupListMixin, GroupInfoMixin, GroupMemberMixin, GroupApplicationMixin
     implements GroupService {
-  static final GroupServiceImpl _instance = GroupServiceImpl();
-
-  /// 全局单例实例
-  static GroupServiceImpl get instance => _instance;
 
   GroupServiceImpl();
 }
