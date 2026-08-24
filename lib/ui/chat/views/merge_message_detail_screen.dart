@@ -8,6 +8,7 @@ import '../../../../ui/chat/mappers/message_display.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../domain/models/user.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../providers/im_providers.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../providers/message_service_provider.dart';
@@ -135,6 +136,8 @@ class MergeMessageDetailScreen extends ConsumerWidget {
             avatar: sub.senderFaceUrl.isNotEmpty ? sub.senderFaceUrl : null,
           ),
           currentUserId: currentUserId,
+          onPlayAudio: (source) =>
+              ref.read(audioPlayerServiceProvider).play(source),
           onTap:
               sub.messageType == MessageType.image &&
                   sub.displayImageSource.isNotEmpty

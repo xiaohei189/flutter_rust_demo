@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/conversation_flags.dart';
 import '../../profile/providers/user_profile_provider.dart';
 import '../providers/conversation_folder_provider.dart';
 import '../providers/conversation_provider.dart';
@@ -74,39 +73,26 @@ class ChatListViewModel extends Notifier<ChatListState> {
       conversation.groupAtType == 1 || conversation.groupAtType == 3;
 
   // ==================== ex 标记（flagged/done/unread/archived）====================
-
-  static Map<String, dynamic> _exMap(Conversation conversation) {
-    if (conversation.ex.isEmpty) return <String, dynamic>{};
-    try {
-      final decoded = jsonDecode(conversation.ex);
-      return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-    } catch (_) {
-      return <String, dynamic>{};
-    }
-  }
-
-  static bool _exFlag(Conversation conversation, String key) =>
-      _exMap(conversation)[key] == true;
+  // 编解码逻辑统一在领域模型 ConversationFlags，此处仅做转发。
 
   static bool isFlagged(Conversation conversation) =>
-      _exFlag(conversation, 'flagged');
+      ConversationFlags.fromConversation(conversation).flagged;
 
   static bool isDone(Conversation conversation) =>
-      _exFlag(conversation, 'done');
+      ConversationFlags.fromConversation(conversation).done;
 
   /// 是否被本地标记为未读（微信「标为未读」语义，仅本地生效）。
   static bool isMarkedUnread(Conversation conversation) =>
-      _exFlag(conversation, 'unread');
+      ConversationFlags.fromConversation(conversation).markedUnread;
 
   /// 是否已归档（从普通列表隐藏，可在「归档」筛选中恢复）。
   static bool isArchived(Conversation conversation) =>
-      _exFlag(conversation, 'archived');
+      ConversationFlags.fromConversation(conversation).archived;
 
   /// 展示用未读数：本地标未读时至少显示 1。
-  static int effectiveUnreadCount(Conversation conversation) {
-    final unread = conversation.unreadCount;
-    return isMarkedUnread(conversation) ? (unread < 1 ? 1 : unread) : unread;
-  }
+  static int effectiveUnreadCount(Conversation conversation) =>
+      ConversationFlags.fromConversation(conversation)
+          .effectiveUnreadCount(conversation);
 
   /// 合并更新 ex 中的标记，保留其他 key。
   static String updateFlags(
@@ -116,16 +102,19 @@ class ChatListViewModel extends Notifier<ChatListState> {
     bool? unread,
     bool? archived,
   }) {
-    final map = _exMap(conversation);
-    if (flagged != null) map['flagged'] = flagged;
-    if (done != null) map['done'] = done;
-    if (unread != null) map['unread'] = unread;
-    if (archived != null) map['archived'] = archived;
-    return jsonEncode(map);
+    final flags = ConversationFlags.fromConversation(conversation);
+    return flags
+        .copyWith(
+          flagged: flagged,
+          done: done,
+          markedUnread: unread,
+          archived: archived,
+        )
+        .encodeMerged(conversation.ex);
   }
 
   static String flagsEx({required bool flagged, required bool done}) =>
-      jsonEncode({'flagged': flagged, 'done': done});
+      ConversationFlags(flagged: flagged, done: done).encodeMerged('');
 
   int atMeCount(List<Conversation> conversations) =>
       conversations.where(isAtMeConversation).length;

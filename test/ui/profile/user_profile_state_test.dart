@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/domain/models/user_profile.dart';
+import 'package:flutter_rust_demo/domain/models/user_profile_remark.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 
 UserProfile _profile({String nickname = ' 张三 ', String remark = ''}) =>
@@ -38,23 +39,24 @@ void main() {
     });
   });
 
-  group('UserProfileState ex 序列化', () {
-    test('parseEx 兼容非法 JSON', () {
-      expect(UserProfileState.parseEx(null), {'alias': '', 'signature': ''});
-      expect(UserProfileState.parseEx('not-json'), {
-        'alias': '',
-        'signature': '',
-      });
+  group('UserProfileRemark ex 序列化', () {
+    test('parse 兼容非法 JSON', () {
+      final empty = UserProfileRemark.parse(null);
+      expect(empty.alias, '');
+      expect(empty.signature, '');
+      final invalid = UserProfileRemark.parse('not-json');
+      expect(invalid.alias, '');
+      expect(invalid.signature, '');
     });
 
     test('buildEx 保留已有字段并更新别名', () {
-      final ex = UserProfileState.buildEx(
+      final ex = UserProfileRemark.buildEx(
         currentEx: '{"alias":"旧名","signature":"旧签名"}',
         alias: '新名',
       );
-      final decoded = UserProfileState.parseEx(ex);
-      expect(decoded['alias'], '新名');
-      expect(decoded['signature'], '旧签名');
+      final decoded = UserProfileRemark.parse(ex);
+      expect(decoded.alias, '新名');
+      expect(decoded.signature, '旧签名');
     });
   });
 }

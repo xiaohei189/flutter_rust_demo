@@ -37,6 +37,7 @@ class MessageBubble extends StatelessWidget {
   final List<MessageReactionGroup> reactionGroups;
   final int? uploadProgress;
   final GroupReadReceipt? groupReadReceipt;
+  final void Function(String source)? onPlayAudio;
 
   const MessageBubble({
     super.key,
@@ -53,6 +54,7 @@ class MessageBubble extends StatelessWidget {
     this.reactionGroups = const [],
     this.uploadProgress,
     this.groupReadReceipt,
+    this.onPlayAudio,
   });
 
   User _buildSenderUser() {
@@ -145,6 +147,7 @@ class MessageBubble extends StatelessWidget {
         message: message,
         isFromMe: isFromMe,
         uploadProgress: uploadProgress,
+        onPlayAudio: onPlayAudio,
       ),
     );
 

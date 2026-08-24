@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../data/services/auth_api.dart' show usedForLogin;
+import '../../../../domain/models/auth.dart' show VerificationCodeUsage;
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../providers/auth_provider.dart';
@@ -55,7 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .sendCode(
           areaCode: _areaCode,
           phoneNumber: _phone,
-          usedFor: usedForLogin,
+          usedFor: VerificationCodeUsage.login,
         );
   }
 

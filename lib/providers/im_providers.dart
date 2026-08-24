@@ -26,6 +26,21 @@ final mediaUploadServiceProvider = Provider<MediaUploadService>((ref) {
   return const MediaUploadServiceImpl();
 });
 
+/// 音频播放服务 Provider
+final audioPlayerServiceProvider = Provider<AudioPlayerService>((ref) {
+  return AudioPlayerService();
+});
+
+/// 图片选择服务 Provider
+final imagePickerServiceProvider = Provider<ImagePickerService>((ref) {
+  return ImagePickerService();
+});
+
+/// 媒体导入服务 Provider（文件选择/定位/视频时长与缩略图）
+final mediaImportServiceProvider = Provider<MediaImportService>((ref) {
+  return const MediaImportService();
+});
+
 // ==================== 基础设施 DI 桥 ====================
 // 单例只在此基础设施层暴露；业务/UI 一律通过 Provider 访问。
 

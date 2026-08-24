@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/conversation_draft.dart';
 import '../../../domain/models/friend.dart';
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message_search_result.dart'
@@ -137,13 +136,8 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
   String? get draftText {
     final conv = conversation;
     if (conv == null || conv.draftText.isEmpty) return null;
-    try {
-      final map = jsonDecode(conv.draftText) as Map<String, dynamic>?;
-      final text = map?['text'] as String?;
-      return (text != null && text.isNotEmpty) ? text : conv.draftText;
-    } catch (_) {
-      return conv.draftText;
-    }
+    final text = ConversationDraft.textOf(conv.draftText);
+    return (text == null || text.isEmpty) ? null : text;
   }
 
   ChatSendTarget? get sendTarget {
@@ -235,7 +229,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
 
   Future<void> saveDraft(String text) async {
     if (text.isNotEmpty) {
-      await _messageService.saveDraft(arg, jsonEncode({'text': text}));
+      await _messageService.saveDraft(arg, ConversationDraft.encode(text));
     } else {
       await _messageService.clearDraft(arg);
     }

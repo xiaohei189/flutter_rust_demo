@@ -27,5 +27,3 @@ class AudioPlayerService {
     await _player.stop();
   }
 }
-
-final audioPlayerService = AudioPlayerService();

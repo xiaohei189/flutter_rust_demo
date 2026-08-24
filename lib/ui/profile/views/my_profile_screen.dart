@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../../domain/models/user.dart';
+import '../../../../providers/im_providers.dart';
 import '../providers/user_profile_provider.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -76,8 +76,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
   Future<void> _pickImage() async {
     appLog.i('[MyProfile] 开始选择图片...');
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final image = await ref.read(imagePickerServiceProvider).pickImageFromGallery();
 
     if (image == null) {
       appLog.i('[MyProfile] 用户取消选择图片');

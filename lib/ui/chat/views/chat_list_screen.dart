@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../providers/connection_provider.dart';
@@ -23,6 +22,7 @@ import '../providers/conversation_folder_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../view_models/chat_list_view_model.dart';
+import '../widgets/list/chat_list_dialogs.dart';
 import '../view_models/conversation_view_model.dart';
 
 /// 会话列表页（参考飞书风格）
@@ -35,6 +35,7 @@ class ChatListScreen extends ConsumerStatefulWidget {
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   late final ChatListViewModel _viewModel;
+  late final ChatListDialogs _dialogs;
 
   bool _selectionMode = false;
   final Set<String> _selectedIds = <String>{};
@@ -43,6 +44,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   void initState() {
     super.initState();
     _viewModel = ref.read(chatListViewModelProvider.notifier);
+    _dialogs = ChatListDialogs(ref: ref, viewModel: _viewModel);
   }
 
   void _enterSelectionMode() {
@@ -135,11 +137,11 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           },
           onCreateFolder: () {
             AppRouter.goBack(context);
-            _createFolder();
+            _dialogs.showCreateFolderDialog(context);
           },
           onDeleteFolder: (name) {
             AppRouter.goBack(context);
-            _deleteFolder(name);
+            _dialogs.showDeleteFolderDialog(context, name);
           },
         ),
       ),
@@ -195,10 +197,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         onCreateGroup: () => AppRouter.goToCreateGroup(context),
         onScan: () async {
           final raw = await context.push<String>('/scan');
-          if (raw == null || !mounted) return;
-          _handleScanResult(raw);
+          if (raw == null || !context.mounted) return;
+          _dialogs.handleScanResult(context, raw);
         },
-        onHideAll: _confirmArchiveAllConversations,
+        onHideAll: () => _dialogs.confirmArchiveAll(context),
         onManage: _enterSelectionMode,
       ),
       body: Column(
@@ -428,7 +430,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       onUnarchive: () =>
           _viewModel.unarchiveConversation(conversation.conversationId),
       onMoveToFolder: () async {
-        final folder = await _pickFolder();
+        final folder = await _dialogs.pickFolder(context);
         if (folder == null) return;
         await ref
             .read(conversationFoldersProvider.notifier)
@@ -529,7 +531,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                         icon: Icons.folder_outlined,
                         label: '分组',
                         onTap: () async {
-                          final folder = await _pickFolder();
+                          final folder = await _dialogs.pickFolder(context);
                           if (folder == null) return;
                           await _runBatch((ids) async {
                             final notifier = ref.read(
@@ -643,168 +645,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               ],
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Future<void> _createFolder() async {
-    final name = await _promptFolderName(context);
-    if (name == null) return;
-    await ref.read(conversationFoldersProvider.notifier).createFolder(name);
-  }
-
-  Future<void> _deleteFolder(String name) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除分组'),
-        content: Text('确定删除分组「$name」吗？会话不会被删除。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '删除',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    await ref.read(conversationFoldersProvider.notifier).removeFolder(name);
-    if (ref.read(chatListViewModelProvider).activeFolder == name) {
-      _viewModel.setFolder(null);
-    }
-  }
-
-  Future<String?> _pickFolder() async {
-    final folders = ref.read(conversationFoldersProvider);
-    final names = folders.keys.toList();
-    return showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('移动到分组'),
-        children: [
-          for (final name in names)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(ctx).pop(name),
-              child: Text(name),
-            ),
-          if (names.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-              child: Text('还没有分组，先新建一个吧', style: TextStyle(fontSize: 13)),
-            ),
-          SimpleDialogOption(
-            onPressed: () async {
-              final name = await _promptFolderName(ctx);
-              if (name == null) return;
-              await ref
-                  .read(conversationFoldersProvider.notifier)
-                  .createFolder(name);
-              if (ctx.mounted) Navigator.of(ctx).pop(name);
-            },
-            child: const Text('新建分组…'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<String?> _promptFolderName(BuildContext ctx) async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
-      context: ctx,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('新建分组'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: '分组名称'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogCtx).pop(controller.text.trim()),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-    return (name == null || name.isEmpty) ? null : name;
-  }
-
-  Future<void> _confirmArchiveAllConversations() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('全部归档'),
-        content: const Text('确定归档所有会话吗？可在「归档」分组中恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(
-              '归档',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) {
-      await _viewModel.archiveAllConversations();
-    }
-  }
-
-  void _handleScanResult(String raw) {
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      _showUnsupportedUrlDialog(raw);
-      return;
-    }
-    if (raw.startsWith('g_') || raw.startsWith('sg_')) {
-      AppRouter.goToGroupInfoById(context, raw);
-    } else {
-      AppRouter.goToUserProfile(context, userId: raw);
-    }
-  }
-
-  void _showUnsupportedUrlDialog(String url) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('扫描到链接'),
-        content: SelectableText(url),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: url));
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已复制链接'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: const Text('复制链接'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('关闭'),
-          ),
         ],
       ),
     );

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../providers/im_providers.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart';
+import '../../../../domain/models/user_profile_remark.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
@@ -13,7 +14,6 @@ import '../../../../ui/core/theme/app_theme.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../providers/user_profile_provider.dart';
-import '../view_models/user_profile_view_model.dart';
 import '../widgets/profile_sections.dart';
 import '../widgets/add_friend_dialog.dart';
 
@@ -37,7 +37,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   bool _isLoading = false;
   bool _isFriend = false;
   bool _isSelf = false;
-  Map<String, String> _exData = {};
+  UserProfileRemark _remark = UserProfileRemark.empty;
 
   @override
   void initState() {
@@ -54,12 +54,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       if (userProfileState.profile != null &&
           userProfileState.profile!.userId == widget.user.id) {
         _userProfile = userProfileState.profile;
-        _exData = UserProfileState.parseEx(_userProfile?.remark);
+        _remark = UserProfileRemark.parse(_userProfile?.remark);
       } else {
         _userProfile = await ref
             .read(userProfileRepositoryProvider)
             .fetchProfile(widget.user.id);
-        _exData = UserProfileState.parseEx(_userProfile?.remark);
+        _remark = UserProfileRemark.parse(_userProfile?.remark);
       }
 
       // 判断是否是自己
@@ -145,16 +145,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   rows: [
                     ('用户名称', displayProfile?.nickname ?? displayUser.name),
                     ('用户 ID', displayUser.id),
-                    if (_exData['alias'] != null &&
-                        _exData['alias']!.isNotEmpty)
-                      ('别名', _exData['alias']!),
-                    if (_exData['signature'] != null &&
-                        _exData['signature']!.isNotEmpty)
-                      ('个性签名', _exData['signature']!),
+                    if (_remark.alias.isNotEmpty)
+                      ('别名', _remark.alias),
+                    if (_remark.signature.isNotEmpty)
+                      ('个性签名', _remark.signature),
                     if (displayProfile != null &&
                         displayProfile.remark.isNotEmpty &&
-                        _exData['alias'] == null &&
-                        _exData['signature'] == null)
+                        _remark.alias.isEmpty && _remark.signature.isEmpty)
                       ('备注信息', displayProfile.remark),
                     if (displayUser.avatar != null &&
                         displayUser.avatar!.isNotEmpty)

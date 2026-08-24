@@ -38,6 +38,7 @@ class MessageList extends StatefulWidget {
     this.groupReadReceipts,
     this.messageActionsBuilder,
     this.messageReactions = const {},
+    this.onPlayAudio,
   });
 
   final List<ChatMessage> messages;
@@ -57,6 +58,7 @@ class MessageList extends StatefulWidget {
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final Map<String, List<MessageReactionGroup>> messageReactions;
+  final void Function(String source)? onPlayAudio;
 
   @override
   State<MessageList> createState() => MessageListState();
@@ -200,6 +202,7 @@ class MessageListState extends State<MessageList> {
               widget.messageReactions[message.clientMsgId] ?? const [],
           uploadProgress: widget.uploadProgress,
           groupReadReceipts: widget.groupReadReceipts,
+          onPlayAudio: widget.onPlayAudio,
         );
 
         return Column(
@@ -308,6 +311,7 @@ class _VisibleMessageBubble extends StatelessWidget {
     this.reactionGroups = const [],
     this.uploadProgress,
     this.groupReadReceipts,
+    this.onPlayAudio,
   });
 
   final ChatMessage message;
@@ -324,6 +328,7 @@ class _VisibleMessageBubble extends StatelessWidget {
   final List<MessageReactionGroup> reactionGroups;
   final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
+  final void Function(String source)? onPlayAudio;
 
   @override
   Widget build(BuildContext context) {
@@ -344,6 +349,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         groupReadReceipt:
             groupReadReceipts?[message.clientMsgId] ??
             groupReadReceipts?[message.serverMsgId],
+        onPlayAudio: onPlayAudio,
       );
     }
 
@@ -370,6 +376,7 @@ class _VisibleMessageBubble extends StatelessWidget {
         groupReadReceipt:
             groupReadReceipts?[message.clientMsgId] ??
             groupReadReceipts?[message.serverMsgId],
+        onPlayAudio: onPlayAudio,
       ),
     );
   }

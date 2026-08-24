@@ -1,13 +1,7 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
+import '../../../../data/services/image_picker_service.dart';
+import '../../../../data/services/media_import_service.dart';
 import '../../../../domain/models/friend.dart';
 import '../../../../domain/models/user.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,17 +16,19 @@ class ChatMediaActions {
     required this.onError,
     required this.onScrollToBottom,
     required this.preLoaded,
+    required this.imagePickerService,
+    required this.mediaImportService,
   });
 
   final ChatDetailViewModel viewModel;
   final void Function(String message) onError;
   final VoidCallback onScrollToBottom;
   final bool preLoaded;
+  final ImagePickerService imagePickerService;
+  final MediaImportService mediaImportService;
 
   Future<void> pickImage(BuildContext context) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+    final picked = await imagePickerService.pickImageFromGallery(
       imageQuality: 85,
       maxWidth: 1920,
     );
@@ -44,13 +40,12 @@ class ChatMediaActions {
 
   /// 相册多选连发（压缩后逐张发送，最多 9 张）
   Future<void> pickImages(BuildContext context) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(
+    final picked = await imagePickerService.pickMultiImage(
       imageQuality: 85,
       maxWidth: 1920,
       limit: 9,
     );
-    if (picked.isEmpty) return;
+    if (picked == null || picked.isEmpty) return;
     for (final image in picked) {
       final ok = await viewModel.sendImage(image.path);
       if (!ok) {
@@ -62,9 +57,7 @@ class ChatMediaActions {
   }
 
   Future<void> pickFromCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.camera,
+    final picked = await imagePickerService.takePhoto(
       imageQuality: 85,
       maxWidth: 1920,
     );
@@ -75,29 +68,10 @@ class ChatMediaActions {
   }
 
   Future<void> pickLocation(BuildContext context) async {
-    double? latitude;
-    double? longitude;
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (serviceEnabled) {
-        var permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
-        }
-        if (permission == LocationPermission.whileInUse ||
-            permission == LocationPermission.always) {
-          final position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-            ),
-          );
-          latitude = position.latitude;
-          longitude = position.longitude;
-        }
-      }
-    } catch (_) {
-      // 定位失败时仍允许手动填写坐标
-    }
+    // 定位失败时仍允许手动填写坐标
+    final position = await mediaImportService.currentLocation();
+    final latitude = position?.latitude;
+    final longitude = position?.longitude;
 
     if (!context.mounted) return;
     final location = await _askLocation(
@@ -201,11 +175,9 @@ class ChatMediaActions {
 
   Future<void> pickFile(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.pickFiles();
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.first;
-      if (file.path == null) return;
-      final ok = await viewModel.sendFile(file.path!);
+      final path = await mediaImportService.pickFile();
+      if (path == null || path.isEmpty) return;
+      final ok = await viewModel.sendFile(path);
       if (!ok) onError('发送文件失败');
       if (!preLoaded) onScrollToBottom();
     } catch (e) {
@@ -215,28 +187,14 @@ class ChatMediaActions {
 
   Future<void> pickVideo(BuildContext context) async {
     try {
-      final picker = ImagePicker();
-      final video = await picker.pickVideo(source: ImageSource.gallery);
+      final video = await imagePickerService.pickVideoFromGallery();
       if (video == null) return;
 
       var duration = 0;
       var snapshotPath = '';
       try {
-        final controller = VideoPlayerController.file(File(video.path));
-        await controller.initialize();
-        duration = controller.value.duration.inSeconds;
-        await controller.dispose();
-        final tempDir = await getTemporaryDirectory();
-        snapshotPath =
-            (await VideoThumbnail.thumbnailFile(
-              video: video.path,
-              thumbnailPath:
-                  '${tempDir.path}/video_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
-              imageFormat: ImageFormat.JPEG,
-              maxHeight: 720,
-              quality: 80,
-            )) ??
-            '';
+        duration = await mediaImportService.videoDuration(video.path);
+        snapshotPath = await mediaImportService.videoThumbnail(video.path);
       } catch (_) {
         // 时长或缩略图解析失败不阻塞发送
       }

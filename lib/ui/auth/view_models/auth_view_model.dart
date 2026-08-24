@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/services/auth_api.dart' as auth_api;
-import '../../../data/services/login_storage.dart';
-import '../../../providers/current_user_provider.dart';
 import '../../../core/utils/app_logger.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../../domain/models/auth.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../chat/providers/message_service_provider.dart';
+import '../providers/auth_provider.dart';
 
 /// 登录/注册流程状态
 class AuthState {
@@ -30,9 +31,11 @@ class AuthState {
   }
 }
 
-/// 登录/注册 ViewModel：负责验证码倒计时、HTTP 登录注册、凭证保存与 MessageService 初始化。
+/// 登录/注册 ViewModel：负责验证码倒计时、登录注册、凭证保存与 MessageService 初始化。
 class AuthViewModel extends Notifier<AuthState> {
   Timer? _countdownTimer;
+
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
   @override
   AuthState build() {
@@ -47,7 +50,7 @@ class AuthViewModel extends Notifier<AuthState> {
   Future<void> sendCode({
     required String areaCode,
     required String phoneNumber,
-    required int usedFor,
+    required VerificationCodeUsage usedFor,
   }) async {
     if (phoneNumber.trim().isEmpty) {
       state = state.copyWith(errorText: '请先输入手机号');
@@ -67,7 +70,7 @@ class AuthViewModel extends Notifier<AuthState> {
     });
 
     try {
-      await auth_api.sendVerificationCode(
+      await _authRepository.sendVerificationCode(
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         usedFor: usedFor,
@@ -95,15 +98,15 @@ class AuthViewModel extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, errorText: null);
     try {
       appLog.i('[登录] 密码登录开始');
-      final resp = await auth_api.loginAsync(
+      final session = await _authRepository.loginWithPassword(
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         password: password,
         platform: 5,
       );
       return await _completeAuth(
-        userId: resp.userId,
-        imToken: resp.imToken,
+        userId: session.userId,
+        imToken: session.imToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -131,7 +134,7 @@ class AuthViewModel extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, errorText: null);
     try {
       appLog.i('[登录] 验证码登录开始');
-      final result = await auth_api
+      final session = await _authRepository
           .loginWithVerifyCode(
             areaCode: areaCode,
             phoneNumber: phoneNumber,
@@ -141,12 +144,12 @@ class AuthViewModel extends Notifier<AuthState> {
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () => throw Exception(
-              '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: ${auth_api.kAuthBaseUrl}/account/login',
+              '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: ${_authRepository.authBaseUrl}/account/login',
             ),
           );
       return await _completeAuth(
-        userId: result.userId,
-        imToken: result.imToken,
+        userId: session.userId,
+        imToken: session.imToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -177,7 +180,7 @@ class AuthViewModel extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, errorText: null);
     try {
       appLog.i('[Register] 注册开始');
-      final result = await auth_api.registerWithVerifyCode(
+      final session = await _authRepository.registerWithVerifyCode(
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         nickname: nickname,
@@ -185,8 +188,8 @@ class AuthViewModel extends Notifier<AuthState> {
         platform: 5,
       );
       return await _completeAuth(
-        userId: result.userId,
-        imToken: result.imToken,
+        userId: session.userId,
+        imToken: session.imToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -204,7 +207,7 @@ class AuthViewModel extends Notifier<AuthState> {
     required String wsUrl,
     required String apiBaseUrl,
   }) async {
-    final credentials = await LoginStorage.loadCredentials();
+    final credentials = await _authRepository.loadCredentials();
     if (credentials == null) return false;
     ref.read(currentUserIdProvider.notifier).setUserId(credentials.userId);
     try {
@@ -219,7 +222,7 @@ class AuthViewModel extends Notifier<AuthState> {
       return true;
     } catch (e) {
       appLog.w('自动登录失败，跳转登录页: $e');
-      await LoginStorage.clearCredentials();
+      await _authRepository.clearCredentials();
       return false;
     }
   }
@@ -231,7 +234,7 @@ class AuthViewModel extends Notifier<AuthState> {
       appLog.w('[Auth] 退出登录 SDK 失败: $e');
     }
     ref.read(currentUserIdProvider.notifier).clear();
-    await LoginStorage.clearCredentials();
+    await _authRepository.clearCredentials();
   }
 
   Future<bool> _completeAuth({
@@ -243,7 +246,7 @@ class AuthViewModel extends Notifier<AuthState> {
     required String apiBaseUrl,
   }) async {
     try {
-      await LoginStorage.saveCredentials(
+      await _authRepository.saveCredentials(
         userId: userId,
         imToken: imToken,
         areaCode: areaCode,
@@ -270,7 +273,7 @@ class AuthViewModel extends Notifier<AuthState> {
     final msg = _cleanError(e);
     state = state.copyWith(
       isLoading: false,
-      errorText: '$msg\n请求地址: ${auth_api.kAuthBaseUrl}/account/login',
+      errorText: '$msg\n请求地址: ${_authRepository.authBaseUrl}/account/login',
     );
   }
 

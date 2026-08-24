@@ -52,9 +52,6 @@ class ChatSettingsViewModel extends FamilyNotifier<ChatSettingsState, String> {
   ChatSettingsState get currentState => state;
 
   Conversation? get _conversation {
-    final newService = ref.read(conversationServiceProvider);
-    final conversation = newService.getConversation(arg);
-    if (conversation != null) return conversation;
     return ref
         .read(conversationListProvider)
         .conversations

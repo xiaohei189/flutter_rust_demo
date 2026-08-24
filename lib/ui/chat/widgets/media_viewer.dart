@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 
+import '../../../providers/im_providers.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_image.dart';
 
@@ -51,6 +52,12 @@ Future<void> saveMessageMedia(
     return;
   }
 
+  // await 前捕获服务，避免跨异步间隙使用 BuildContext。
+  final mediaImportService = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(mediaImportServiceProvider);
+
   try {
     final Uint8List bytes;
     if (_isRemote(source)) {
@@ -67,8 +74,7 @@ Future<void> saveMessageMedia(
       bytes = await file.readAsBytes();
     }
 
-    final savedPath = await FilePicker.platform.saveFile(
-      dialogTitle: '保存文件',
+    final savedPath = await mediaImportService.saveFile(
       fileName: suggestedName,
       bytes: bytes,
     );

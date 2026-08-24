@@ -9,6 +9,7 @@ import '../../../domain/models/user.dart';
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../providers/im_providers.dart';
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -85,6 +86,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onError: _showError,
       onScrollToBottom: _scrollToBottom,
       preLoaded: widget.preLoaded,
+      imagePickerService: ref.read(imagePickerServiceProvider),
+      mediaImportService: ref.read(mediaImportServiceProvider),
     );
     _messageActions = ChatMessageActions(
       viewModel: _viewModel!,
@@ -464,6 +467,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         },
         messageActionsBuilder: _buildMessageActions,
         onMessageTap: _handleMessageTap,
+        onPlayAudio: (source) =>
+            ref.read(audioPlayerServiceProvider).play(source),
       ),
     );
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../data/services/auth_api.dart' show usedForRegister;
+import '../../../../domain/models/auth.dart' show VerificationCodeUsage;
 import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -51,7 +51,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         .sendCode(
           areaCode: _areaCode,
           phoneNumber: _phone,
-          usedFor: usedForRegister,
+          usedFor: VerificationCodeUsage.register,
         );
   }
 

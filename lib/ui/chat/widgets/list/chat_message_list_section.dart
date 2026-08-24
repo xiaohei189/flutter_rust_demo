@@ -25,6 +25,7 @@ class ChatMessageListSection extends ConsumerWidget {
     required this.onMessageVisible,
     required this.onMessageTap,
     this.messageActionsBuilder,
+    this.onPlayAudio,
   });
 
   final String conversationId;
@@ -39,6 +40,7 @@ class ChatMessageListSection extends ConsumerWidget {
   final void Function(ChatMessage message) onMessageVisible;
   final void Function(ChatMessage message) onMessageTap;
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
+  final void Function(String source)? onPlayAudio;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,6 +74,7 @@ class ChatMessageListSection extends ConsumerWidget {
         messageActionsBuilder: messageActionsBuilder,
         messageReactions: messageReactions,
         onMessageTap: onMessageTap,
+        onPlayAudio: onPlayAudio,
       ),
     );
   }

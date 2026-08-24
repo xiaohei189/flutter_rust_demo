@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/user_profile.dart';
+import '../../../domain/models/user_profile_remark.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../../providers/im_providers.dart';
 import '../../chat/providers/message_revision_provider.dart';
@@ -58,53 +58,16 @@ class UserProfileState {
     UserProfile profile, {
     String? localAvatarPath,
   }) {
-    final exData = parseEx(profile.remark);
+    final remark = UserProfileRemark.parse(profile.remark);
     return UserProfileState(
       profile: profile,
       nickname: profile.nickname.trim(),
-      alias: exData['alias'] ?? '',
-      signature: exData['signature'] ?? '',
+      alias: remark.alias,
+      signature: remark.signature,
       localAvatarPath: localAvatarPath,
       isLoading: false,
       error: null,
     );
-  }
-
-  /// 从 ex 字段解析别名和签名
-  static Map<String, String> parseEx(String? rawEx) {
-    if (rawEx == null || rawEx.trim().isEmpty) {
-      return {'alias': '', 'signature': ''};
-    }
-    try {
-      final decoded = jsonDecode(rawEx);
-      if (decoded is Map<String, dynamic>) {
-        return {
-          'alias': (decoded['alias'] as String?)?.trim() ?? '',
-          'signature': (decoded['signature'] as String?)?.trim() ?? '',
-        };
-      }
-    } catch (_) {}
-    return {'alias': '', 'signature': ''};
-  }
-
-  /// 构建 ex 字段
-  static String buildEx({
-    required String currentEx,
-    String? alias,
-    String? signature,
-  }) {
-    Map<String, dynamic> map;
-    try {
-      final decoded = jsonDecode(currentEx);
-      map = decoded is Map<String, dynamic>
-          ? Map<String, dynamic>.from(decoded)
-          : <String, dynamic>{};
-    } catch (_) {
-      map = <String, dynamic>{};
-    }
-    if (alias != null) map['alias'] = alias;
-    if (signature != null) map['signature'] = signature;
-    return jsonEncode(map);
   }
 }
 
@@ -231,7 +194,7 @@ class UserProfileNotifier extends Notifier<UserProfileLocalState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final currentEx = _serverProfile?.remark ?? '';
-      final newEx = UserProfileState.buildEx(
+      final newEx = UserProfileRemark.buildEx(
         currentEx: currentEx,
         alias: alias,
       );
@@ -255,7 +218,7 @@ class UserProfileNotifier extends Notifier<UserProfileLocalState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final currentEx = _serverProfile?.remark ?? '';
-      final newEx = UserProfileState.buildEx(
+      final newEx = UserProfileRemark.buildEx(
         currentEx: currentEx,
         signature: signature,
       );

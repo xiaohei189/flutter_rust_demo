@@ -133,5 +133,3 @@ class VideoPlayerService {
   }
 }
 
-// 全局视频播放服务实例
-final videoPlayerService = VideoPlayerService();

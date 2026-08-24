@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../domain/models/conversation.dart';
+import '../../../../domain/models/conversation_draft.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../core/theme/app_theme.dart';
@@ -212,15 +211,9 @@ class ChatListItemContent extends StatelessWidget {
 
   String get _contentPreview {
     if (conversation.draftText.isNotEmpty) {
-      try {
-        final map = jsonDecode(conversation.draftText) as Map<String, dynamic>?;
-        final text = map?['text'] as String?;
-        if (text != null && text.isNotEmpty) return text;
-        // draftText 是 JSON 但无 text key，不显示原始 JSON
-      } catch (_) {
-        // 非 JSON 格式，直接作为纯文本
-        return conversation.draftText;
-      }
+      final draft = ConversationDraft.textOf(conversation.draftText);
+      // 非 JSON 纯文本直接展示；JSON 但无有效 text key 时回退最新消息。
+      if (draft != null) return draft;
     }
     final preview = previewText ?? latestMessagePreview(conversation.latestMsg);
     return preview;

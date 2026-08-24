@@ -51,9 +51,6 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
   GroupInfoState get currentState => state;
 
   Conversation? get conversation {
-    final newService = ref.read(conversationServiceProvider);
-    final fromService = newService.getConversation(arg);
-    if (fromService != null) return fromService;
     return ref
         .read(conversationListProvider)
         .conversations

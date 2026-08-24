@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../data/services/audio_player_service.dart';
 import '../../../mappers/message_display.dart';
 import '../../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../core/theme/app_theme.dart';
@@ -184,10 +183,14 @@ class AudioMessageContent extends StatelessWidget {
     super.key,
     required this.message,
     required this.isFromMe,
+    this.onPlay,
   });
 
   final ChatMessage message;
   final bool isFromMe;
+
+  /// 播放语音回调；为空时（预览/测试场景）点击不触发播放。
+  final void Function(String source)? onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +202,7 @@ class AudioMessageContent extends StatelessWidget {
           ).showSnackBar(const SnackBar(content: Text('语音地址为空，无法播放')));
           return;
         }
-        audioPlayerService.play(message.soundSource);
+        onPlay?.call(message.soundSource);
       },
       child: Row(
         mainAxisSize: MainAxisSize.min,

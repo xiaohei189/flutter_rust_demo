@@ -13,6 +13,7 @@ Widget buildMessageContent({
   required ChatMessage message,
   required bool isFromMe,
   int? uploadProgress,
+  void Function(String source)? onPlayAudio,
 }) {
   return switch (message.messageType) {
     MessageType.image => ImageMessageContent(
@@ -28,6 +29,7 @@ Widget buildMessageContent({
     MessageType.audio => AudioMessageContent(
       message: message,
       isFromMe: isFromMe,
+      onPlay: onPlayAudio,
     ),
     MessageType.file => FileMessageContent(
       message: message,
