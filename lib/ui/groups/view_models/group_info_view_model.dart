@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/app_logger.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
 import '../../../providers/current_user_provider.dart';
+import '../../../providers/im_providers.dart';
 import '../../chat/providers/conversation_provider.dart';
 import '../providers/group_provider.dart';
 
@@ -13,6 +15,8 @@ class GroupInfoState {
   final bool isLoading;
   final String groupName;
   final String groupDescription;
+  /// 本地乐观更新的头像 URL（含缓存穿透参数），优先于会话数据展示
+  final String? localAvatarUrl;
   final String? error;
 
   const GroupInfoState({
@@ -20,6 +24,7 @@ class GroupInfoState {
     this.isLoading = false,
     this.groupName = '群聊',
     this.groupDescription = '暂无描述',
+    this.localAvatarUrl,
     this.error,
   });
 
@@ -28,6 +33,8 @@ class GroupInfoState {
     bool? isLoading,
     String? groupName,
     String? groupDescription,
+    String? localAvatarUrl,
+    bool clearLocalAvatarUrl = false,
     String? error,
     bool clearError = false,
   }) {
@@ -36,6 +43,9 @@ class GroupInfoState {
       isLoading: isLoading ?? this.isLoading,
       groupName: groupName ?? this.groupName,
       groupDescription: groupDescription ?? this.groupDescription,
+      localAvatarUrl: clearLocalAvatarUrl
+          ? null
+          : (localAvatarUrl ?? this.localAvatarUrl),
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -66,13 +76,16 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
 
   User get groupUser {
     final conv = conversation;
+    final avatar =
+        state.localAvatarUrl ??
+        (conv != null && conv.faceUrl.isNotEmpty ? conv.faceUrl : null);
     if (conv == null) {
-      return User(id: arg, name: '未知群组', avatar: null);
+      return User(id: arg, name: '未知群组', avatar: avatar);
     }
     return User(
       id: groupId,
       name: state.groupName,
-      avatar: conv.faceUrl.isNotEmpty ? conv.faceUrl : null,
+      avatar: avatar,
     );
   }
 
@@ -142,6 +155,8 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
   Future<bool> updateGroupAvatar(String url) async {
     state = state.copyWith(clearError: true);
     try {
+      // 本地立即生效（带时间戳穿透缓存），不等服务端回包
+      state = state.copyWith(localAvatarUrl: _addCacheBuster(url));
       await ref
           .read(groupRepositoryProvider)
           .setGroupInfo(groupId, faceUrl: url);
@@ -151,6 +166,20 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
       state = state.copyWith(error: '更新失败: $e');
       return false;
     }
+  }
+
+  /// 为头像 URL 添加时间戳参数，绕过 ImageCache 旧图缓存
+  String _addCacheBuster(String url) {
+    if (url.isEmpty) return url;
+    final separator = url.contains('?') ? '&' : '?';
+    return '$url${separator}_t=${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  /// 上传头像文件到服务器，返回可访问的图片 URL
+  Future<String> uploadAvatar(String filePath) {
+    appLog.i('[GroupInfo] 开始上传群头像: $filePath');
+    final service = ref.read(mediaUploadServiceProvider);
+    return service.uploadFile(filePath: filePath, fileName: 'group_avatar.jpg');
   }
 
   Future<bool> kickMember(String userId) {

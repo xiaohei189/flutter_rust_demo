@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flutter_rust_demo/data/services/media_upload_service.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/domain/models/group.dart';
 import 'package:flutter_rust_demo/domain/models/group_member.dart';
+import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/conversation_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/view_models/conversation_view_model.dart';
 import 'package:flutter_rust_demo/ui/groups/providers/group_info_provider.dart';
@@ -11,6 +13,25 @@ import 'package:flutter_rust_demo/ui/groups/providers/group_provider.dart';
 import 'package:flutter_rust_demo/ui/groups/view_models/group_info_view_model.dart';
 
 import '../../support/fakes/fake_group_repository.dart';
+
+/// 记录上传参数并返回预设 URL 的假上传服务
+class FakeMediaUploadService implements MediaUploadService {
+  FakeMediaUploadService(this.urlToReturn);
+
+  final String urlToReturn;
+  String? uploadedPath;
+  String? uploadedName;
+
+  @override
+  Future<String> uploadFile({
+    required String filePath,
+    required String fileName,
+  }) async {
+    uploadedPath = filePath;
+    uploadedName = fileName;
+    return urlToReturn;
+  }
+}
 
 class FakeGroupRepository extends BaseFakeGroupRepository {
   FakeGroupRepository({this.shouldFail = false});
@@ -86,13 +107,18 @@ Conversation _makeGroupConversation() => const Conversation(
   msgDestructTime: 0,
 );
 
-GroupInfoViewModel buildViewModel(FakeGroupRepository repository) {
+GroupInfoViewModel buildViewModel(
+  FakeGroupRepository repository, {
+  MediaUploadService? uploadService,
+}) {
   final container = ProviderContainer(
     overrides: [
       groupRepositoryProvider.overrideWithValue(repository),
       conversationListProvider.overrideWith(
         () => FakeConversationListNotifier(_makeGroupConversation()),
       ),
+      if (uploadService != null)
+        mediaUploadServiceProvider.overrideWithValue(uploadService),
     ],
   );
   addTearDown(container.dispose);
@@ -142,7 +168,7 @@ void main() {
       expect(viewModel.currentState.groupDescription, '新描述');
     });
 
-    test('updateGroupAvatar 成功时调用仓库', () async {
+    test('updateGroupAvatar 成功时调用仓库并本地立即生效', () async {
       final repository = FakeGroupRepository();
       final viewModel = buildViewModel(repository);
 
@@ -152,6 +178,46 @@ void main() {
 
       expect(ok, isTrue);
       expect(repository.avatarUpdates, ['http://example.com/new.png']);
+      // 本地头像带时间戳缓存穿透参数，且 groupUser 优先展示本地值
+      expect(viewModel.currentState.localAvatarUrl, isNotNull);
+      expect(
+        viewModel.currentState.localAvatarUrl,
+        contains('_t='),
+      );
+      expect(
+        viewModel.groupUser.avatar,
+        viewModel.currentState.localAvatarUrl,
+      );
+    });
+
+    test('未更新头像时 groupUser 回退到会话 faceUrl', () {
+      final viewModel = buildViewModel(FakeGroupRepository());
+
+      expect(viewModel.currentState.localAvatarUrl, isNull);
+      expect(viewModel.groupUser.avatar, 'http://example.com/avatar.png');
+    });
+
+    test('uploadAvatar 上传文件并返回服务器 URL', () async {
+      final repository = FakeGroupRepository();
+      final upload = FakeMediaUploadService('http://example.com/up.png');
+      final viewModel = buildViewModel(repository, uploadService: upload);
+
+      final url = await viewModel.uploadAvatar('/tmp/group_avatar.jpg');
+
+      expect(upload.uploadedPath, '/tmp/group_avatar.jpg');
+      expect(upload.uploadedName, 'group_avatar.jpg');
+      expect(url, 'http://example.com/up.png');
+    });
+
+    test('uploadAvatar 失败时向上抛出异常', () async {
+      final repository = FakeGroupRepository();
+      final failing = _FailingUploadService();
+      final viewModel = buildViewModel(repository, uploadService: failing);
+
+      await expectLater(
+        viewModel.uploadAvatar('/tmp/group_avatar.jpg'),
+        throwsA(isA<Exception>()),
+      );
     });
 
     test('kickMember 成功时转发给群成员仓库', () async {
@@ -164,4 +230,15 @@ void main() {
       expect(repository.kickedUserIds, ['u2']);
     });
   });
+}
+
+/// 抛异常的假上传服务，用于验证错误传播。
+class _FailingUploadService implements MediaUploadService {
+  @override
+  Future<String> uploadFile({
+    required String filePath,
+    required String fileName,
+  }) async {
+    throw Exception('upload failed');
+  }
 }

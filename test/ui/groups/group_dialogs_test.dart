@@ -112,6 +112,53 @@ void main() {
     expect(action, 'dismiss');
   });
 
+  testWidgets('群头像选择弹窗：从相册选择返回 gallery', (tester) async {
+    String? action;
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              action = await showGroupAvatarPickerSheet(context);
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('更换群头像'), findsOneWidget);
+    expect(find.text('从相册选择'), findsOneWidget);
+    expect(find.text('输入图片链接'), findsOneWidget);
+    await tester.tap(find.text('从相册选择'));
+    await tester.pumpAndSettle();
+    expect(action, 'gallery');
+  });
+
+  testWidgets('群头像选择弹窗：输入图片链接返回 url', (tester) async {
+    String? action;
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              action = await showGroupAvatarPickerSheet(context);
+            },
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('输入图片链接'));
+    await tester.pumpAndSettle();
+    expect(action, 'url');
+  });
+
   testWidgets('编辑字段弹窗回调保存后的文本', (tester) async {
     String? saved;
     await tester.pumpWidget(

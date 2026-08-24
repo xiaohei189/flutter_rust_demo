@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../domain/models/conversation.dart';
+import '../../../../providers/im_providers.dart';
 import '../../../../domain/models/group_member.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
@@ -17,6 +18,7 @@ import '../providers/group_provider.dart';
 import '../view_models/group_info_view_model.dart';
 import '../widgets/group_member_section.dart';
 import '../widgets/group_dialogs.dart';
+import '../widgets/group_member_actions.dart';
 
 enum _JoinTimeFilter { all, today, week, month }
 
@@ -32,8 +34,10 @@ class GroupInfoScreen extends ConsumerStatefulWidget {
 
 class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
   late final GroupInfoViewModel _viewModel;
+  late final GroupMemberActions _memberActions;
   String _memberKeyword = '';
   _JoinTimeFilter _joinTimeFilter = _JoinTimeFilter.all;
+  bool _avatarUploading = false;
 
   Conversation? get _conversation => _viewModel.conversation;
   String get _groupId => _viewModel.groupId;
@@ -44,6 +48,10 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     super.initState();
     _viewModel = ref.read(
       groupInfoViewModelProvider(widget.conversationId).notifier,
+    );
+    _memberActions = GroupMemberActions(
+      viewModel: _viewModel,
+      roleName: _roleName,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_viewModel.load());
@@ -63,7 +71,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 size: 20,
                 color: context.appColors.textSecondary,
               ),
-              onTap: () => _showGroupManageSheet(),
+              onTap: () => _memberActions.showGroupManageSheet(context),
             ),
             const ListDivider(),
             ListRow(
@@ -73,12 +81,12 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 size: 20,
                 color: context.appColors.textSecondary,
               ),
-              onTap: _transferOwner,
+              onTap: () => _memberActions.transferOwner(context),
             ),
             const ListDivider(),
             DangerActionRow(
               title: l10n?.dismissGroup ?? '解散群组',
-              onTap: _dismissGroup,
+              onTap: () => _memberActions.dismissGroup(context),
             ),
           ],
         ),
@@ -156,7 +164,17 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    UserAvatar(user: _groupUser, radius: 22),
+                    if (_avatarUploading)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else
+                      UserAvatar(user: _groupUser, radius: 22),
                     const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_ios,
@@ -203,8 +221,9 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 .length,
             joinTimeFilterLabel: _joinTimeFilterLabel,
             onKeywordChanged: (value) => setState(() => _memberKeyword = value),
-            onMemberTap: _showMemberActions,
-            onOwnerAdminTap: _showOwnerAdminList,
+            onMemberTap: (member) =>
+                _memberActions.showMemberActions(context, member),
+            onOwnerAdminTap: () => _memberActions.showOwnerAdminList(context),
             onJoinTimeFilterTap: _showJoinTimeFilter,
           ),
           if (isOwner) _buildOwnerManageCard(l10n),
@@ -265,68 +284,6 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     );
   }
 
-  Future<void> _showMemberActions(GroupMember member) async {
-    final currentUserId = _viewModel.currentUserId;
-    final canManage = _viewModel.canManage;
-    final isOwner = _viewModel.isOwner;
-
-    if (!canManage || member.userId == currentUserId) {
-      return;
-    }
-
-    final action = await showGroupMemberActionsSheet(
-      context,
-      member,
-      isOwner: isOwner,
-    );
-
-    switch (action) {
-      case 'kick':
-        await _kickMember(member);
-      case 'mute':
-        await _muteMemberDialog(member);
-      case 'unmute':
-        await _unmuteMember(member);
-      case 'setAdmin':
-        await _setAdmin(member, true);
-      case 'unsetAdmin':
-        await _setAdmin(member, false);
-      case 'transfer':
-        await _transferOwner(target: member);
-    }
-  }
-
-  Future<void> _setAdmin(GroupMember member, bool isAdmin) async {
-    final ok = await _viewModel.setAdmin(member.userId, isAdmin);
-    if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isAdmin ? '已设为管理员' : '已取消管理员'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_viewModel.currentState.error ?? '设置管理员失败')),
-      );
-    }
-  }
-
-  void _showOwnerAdminList() {
-    final members = _viewModel.members.where((m) => m.roleLevel >= 2).toList();
-    if (members.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('暂无群主和管理员'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    showGroupOwnerAdminSheet(context, members, roleName: _roleName);
-  }
-
   String get _joinTimeFilterLabel => switch (_joinTimeFilter) {
     _JoinTimeFilter.all => '全部',
     _JoinTimeFilter.today => '今天',
@@ -380,142 +337,58 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     }
   }
 
-  Future<void> _kickMember(GroupMember member) async {
-    final confirmed = await confirmKickMember(context, member);
-    if (confirmed != true) return;
-    final ok = await _viewModel.kickMember(member.userId);
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已踢出'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      _showError(_viewModel.currentState.error ?? '踢出成员失败');
-    }
-  }
-
-  Future<void> _muteMemberDialog(GroupMember member) async {
-    final duration = await showGroupMuteDurationSheet(context);
-    if (duration == null) return;
-    final ok = await _viewModel.muteMember(member.userId, duration);
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已禁言'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      _showError(_viewModel.currentState.error ?? '禁言失败');
-    }
-  }
-
-  Future<void> _unmuteMember(GroupMember member) async {
-    final ok = await _viewModel.unmuteMember(member.userId);
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('已取消禁言'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      _showError(_viewModel.currentState.error ?? '取消禁言失败');
-    }
-  }
-
-  Future<void> _showGroupManageSheet() async {
-    final action = await showGroupManageSheet(context);
-
-    switch (action) {
-      case 'muteAll':
-        await _setMuteAll(true);
-      case 'unmuteAll':
-        await _setMuteAll(false);
-      case 'transfer':
-        await _transferOwner();
-      case 'dismiss':
-        await _dismissGroup();
-    }
-  }
-
-  Future<void> _setMuteAll(bool isMute) async {
-    final ok = await _viewModel.muteAll(isMute);
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isMute ? '已全员禁言' : '已解除全员禁言'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      _showError(_viewModel.currentState.error ?? '全员禁言操作失败');
-    }
-  }
-
-  Future<void> _transferOwner({GroupMember? target}) async {
-    final members = _viewModel.members;
-    final currentUserId = _viewModel.currentUserId;
-    final candidates = members.where((m) => m.userId != currentUserId).toList();
-    if (candidates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('暂无可转让成员'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    GroupMember? selected = target;
-    selected ??= await showGroupOwnerPickerSheet(context, candidates);
-    if (selected == null) return;
-
-    final ok = await _viewModel.transferOwner(selected.userId);
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('群主已转让'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } else {
-      _showError(_viewModel.currentState.error ?? '转让群主失败');
-    }
-  }
-
-  Future<void> _dismissGroup() async {
-    final confirmed = await confirmDismissGroup(context);
-    if (confirmed != true) return;
-    final ok = await _viewModel.dismissGroup();
-    if (!mounted) return;
-    if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('群组已解散'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      AppRouter.goBack(context);
-    } else {
-      _showError(_viewModel.currentState.error ?? '解散群组失败');
-    }
-  }
-
-  /// 更换群头像（输入图片 URL）
+  /// 更换群头像：底部弹窗选择「从相册选择 / 输入图片链接」
   Future<void> _changeGroupAvatar() async {
+    final action = await showGroupAvatarPickerSheet(context);
+    if (!mounted) return;
+    switch (action) {
+      case 'gallery':
+        await _pickAvatarFromGallery();
+      case 'url':
+        await _editAvatarUrl();
+    }
+  }
+
+  /// 从相册选择图片，上传服务器后更新群头像
+  Future<void> _pickAvatarFromGallery() async {
+    final image = await ref
+        .read(imagePickerServiceProvider)
+        .pickImageFromGallery();
+    if (image == null || !mounted) return;
+
+    setState(() => _avatarUploading = true);
+    try {
+      final url = await _viewModel.uploadAvatar(image.path);
+      if (url.isEmpty || url.contains('example.com')) {
+        _showError('头像上传失败，请重试');
+        return;
+      }
+      final ok = await _viewModel.updateGroupAvatar(url);
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('群头像已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        _showError(_viewModel.currentState.error ?? '更新失败');
+      }
+    } catch (e) {
+      if (mounted) _showError('头像上传失败: $e');
+    } finally {
+      if (mounted) setState(() => _avatarUploading = false);
+    }
+  }
+
+  /// 输入图片链接更新群头像（保留原能力）
+  Future<void> _editAvatarUrl() async {
     final url = await showChangeGroupAvatarDialog(
       context,
       initialUrl: _conversation?.faceUrl ?? '',
     );
-    if (url == null || url.isEmpty) return;
+    if (url == null || url.isEmpty || !mounted) return;
     final ok = await _viewModel.updateGroupAvatar(url);
     if (!mounted) return;
     if (ok) {

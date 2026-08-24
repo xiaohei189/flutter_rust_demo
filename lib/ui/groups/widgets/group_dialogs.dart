@@ -271,6 +271,39 @@ Future<bool> confirmDismissGroup(BuildContext context) {
   ).then((value) => value ?? false);
 }
 
+/// 群头像选择底部弹窗，返回动作标识：gallery（相册选择）/ url（输入链接）。
+Future<String?> showGroupAvatarPickerSheet(BuildContext context) {
+  return showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: context.appColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('更换群头像', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('从相册选择'),
+            onTap: () => Navigator.of(ctx).pop('gallery'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.link),
+            title: const Text('输入图片链接'),
+            onTap: () => Navigator.of(ctx).pop('url'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// 更换群头像（输入图片 URL）。
 Future<String?> showChangeGroupAvatarDialog(
   BuildContext context, {

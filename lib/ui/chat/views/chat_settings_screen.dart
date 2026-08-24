@@ -237,45 +237,62 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   List<Widget> _buildSingleHeader() {
+    final conversation = _viewModel.conversation;
     return [
       Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            UserAvatar(user: _viewModel.chatUser, radius: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _viewModel.displayName,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '在线',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.appColors.textSecondary.withValues(
-                        alpha: 0.8,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            if (conversation != null && conversation.userId.isNotEmpty) {
+              AppRouter.goToUserProfile(context, userId: conversation.userId);
+            }
+          },
+          child: Row(
+            children: [
+              UserAvatar(user: _viewModel.chatUser, radius: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _viewModel.displayName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '在线',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appColors.textSecondary.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.chevron_right,
-                color: context.appColors.textSecondary,
+              IconButton(
+                icon: Icon(
+                  Icons.chevron_right,
+                  color: context.appColors.textSecondary,
+                ),
+                onPressed: () {
+                  if (conversation != null &&
+                      conversation.userId.isNotEmpty) {
+                    AppRouter.goToUserProfile(
+                      context,
+                      userId: conversation.userId,
+                    );
+                  }
+                },
               ),
-              onPressed: () {},
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ];
@@ -286,46 +303,59 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         .watch(groupMemberProvider(_viewModel.groupId))
         .members
         .length;
+    final conversation = _viewModel.conversation;
 
     return [
       Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            UserAvatar(user: _viewModel.chatUser, radius: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _viewModel.displayName,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    memberCount > 0 ? '群聊 · $memberCount 人' : '群聊',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.appColors.textSecondary.withValues(
-                        alpha: 0.8,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
+            if (conversation != null) {
+              AppRouter.goToGroupInfo(context, conversation);
+            }
+          },
+          child: Row(
+            children: [
+              UserAvatar(user: _viewModel.chatUser, radius: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _viewModel.displayName,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      memberCount > 0 ? '群聊 · $memberCount 人' : '群聊',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.appColors.textSecondary.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.chevron_right,
-                color: context.appColors.textSecondary,
+              IconButton(
+                icon: Icon(
+                  Icons.chevron_right,
+                  color: context.appColors.textSecondary,
+                ),
+                onPressed: () {
+                  if (conversation != null) {
+                    AppRouter.goToGroupInfo(context, conversation);
+                  }
+                },
               ),
-              onPressed: () {},
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ];
