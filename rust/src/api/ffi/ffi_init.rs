@@ -119,6 +119,7 @@ mod android_logcat {
         }
     }
 
+    #[derive(Clone, Copy)]
     pub struct LogcatMakeWriter;
 
     impl tracing_subscriber::fmt::MakeWriter<'_> for LogcatMakeWriter {

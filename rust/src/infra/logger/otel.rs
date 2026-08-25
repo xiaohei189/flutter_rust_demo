@@ -711,12 +711,7 @@ pub fn init_otel_subscriber(config: &LogConfig) -> anyhow::Result<()> {
     std::mem::forget(_console_guard);
 
     #[cfg(target_os = "android")]
-    let console_writer = {
-        let (nc, _cg) = tracing_appender::non_blocking(std::io::stdout());
-        std::mem::forget(_cg);
-        nc
-    };
-
+    let console_writer = crate::api::ffi::ffi_init::logcat_make_writer();
     let console_layer_fmt = tracing_subscriber::fmt::layer()
         .with_writer(console_writer.clone())
         .with_ansi(!cfg!(target_os = "android"))
