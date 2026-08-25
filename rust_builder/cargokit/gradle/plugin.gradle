@@ -59,6 +59,9 @@ abstract class CargoKitBuildTask extends DefaultTask {
 
         def rootProjectDir = project.rootProject.projectDir
 
+        def localProps = new Properties()
+        project.rootProject.file("local.properties").withInputStream { localProps.load(it) }
+
         def envVars = [
             "CARGOKIT_ROOT_PROJECT_DIR=${rootProjectDir}",
             "CARGOKIT_TOOL_TEMP_DIR=${buildDir}/build_tool",
@@ -72,13 +75,25 @@ abstract class CargoKitBuildTask extends DefaultTask {
             "CARGOKIT_MIN_SDK_VERSION=${minSdkVersion}",
             "CARGOKIT_TARGET_PLATFORMS=${targetPlatforms.join(',')}",
             "CARGOKIT_JAVA_HOME=${System.properties['java.home']}",
+            "FLUTTER_ROOT=${localProps.getProperty('flutter.sdk')}",
         ]
 
-        def cmd = "chmod +x ${path} && ${envVars.join(' ')} ${path} build-gradle"
+        // Windows 无 sh：通过 cmd /c 运行 run_build_tool.cmd，并用 ProcessBuilder
+        // 显式注入环境变量，避免路径含空格导致解析失败。
+        def command = Os.isFamily(Os.FAMILY_WINDOWS)
+            ? ["cmd", "/c", path.toString(), "build-gradle"]
+            : ["sh", path.toString(), "build-gradle"]
 
-        logger.lifecycle("Running cargokit: ${cmd}")
+        logger.lifecycle("Running cargokit: ${command.join(' ')}")
 
-        def process = Runtime.getRuntime().exec(["sh", "-c", cmd] as String[])
+        def pb = new ProcessBuilder(command)
+        def env = pb.environment()
+        envVars.each { entry ->
+            def idx = entry.indexOf('=')
+            env.put(entry.substring(0, idx), entry.substring(idx + 1))
+        }
+
+        def process = pb.start()
 
         // Read output concurrently to avoid pipe deadlock
         def outputThread = Thread.start {
@@ -88,9 +103,17 @@ abstract class CargoKitBuildTask extends DefaultTask {
                 logger.lifecycle("cargokit: ${line}")
             }
         }
+        def errorThread = Thread.start {
+            def reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))
+            def line
+            while ((line = reader.readLine()) != null) {
+                logger.lifecycle("cargokit: ${line}")
+            }
+        }
 
         process.waitFor()
         outputThread.join()
+        errorThread.join()
 
         def exitCode = process.exitValue()
         if (exitCode != 0) {
@@ -149,11 +172,8 @@ class CargoKitPlugin implements Plugin<Project> {
 
             def platforms = com.flutter.gradle.FlutterPluginUtils.getTargetPlatforms(project).collect()
 
-            // Same thing addFlutterDependencies does in flutter.gradle
-            if (buildType == "debug") {
-                platforms.add("android-x86")
-                platforms.add("android-x64")
-            }
+            // 模拟器/虚拟机场景：仅构建当前目标 ABI，不做多余交叉编译
+            // (debug 原本会无条件追加 android-x86/android-x64)
 
             // The task name depends on plugin properties, which are not available
             // at this point
