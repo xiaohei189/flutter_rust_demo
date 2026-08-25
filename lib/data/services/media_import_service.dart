@@ -3,10 +3,11 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:get_thumbnail_video/index.dart';
+import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 /// 媒体导入服务：包装文件选择、定位、视频时长与缩略图等平台插件。
 class MediaImportService {
@@ -88,15 +89,15 @@ class MediaImportService {
   Future<String> videoThumbnail(String videoPath) async {
     try {
       final tempDir = await getTemporaryDirectory();
-      return await VideoThumbnail.thumbnailFile(
-            video: videoPath,
-            thumbnailPath:
-                '${tempDir.path}/video_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            imageFormat: ImageFormat.JPEG,
-            maxHeight: 720,
-            quality: 80,
-          ) ??
-          '';
+      final thumb = await VideoThumbnail.thumbnailFile(
+        video: videoPath,
+        thumbnailPath:
+            '${tempDir.path}/video_thumb_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        imageFormat: ImageFormat.JPEG,
+        maxHeight: 720,
+        quality: 80,
+      );
+      return thumb.path;
     } catch (_) {
       return '';
     }
