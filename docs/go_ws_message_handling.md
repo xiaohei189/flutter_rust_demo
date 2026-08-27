@@ -1,6 +1,6 @@
 # OpenIM Go SDK WebSocket 消息处理技术文档
 
-> 源码基准：`/home/weirui/workspace/openim-sdk-core/`
+> 源码基准：`../openim-sdk-core/`
 > 核心包：`internal/interaction/`
 > 本文档梳理 Go SDK 从 WebSocket 接收到消息落库/UI 通知的全链路逻辑，作为 Rust SDK 实现的对齐参考。
 
