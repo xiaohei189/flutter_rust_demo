@@ -229,7 +229,11 @@ class AuthViewModel extends Notifier<AuthState> {
 
   Future<void> logout() async {
     try {
-      await ref.read(messageServiceProvider.notifier).logout();
+      // 带超时兜底：SDK 断开/关库即使卡住，也保证 5 秒内继续清理并允许跳转登录页
+      await ref
+          .read(messageServiceProvider.notifier)
+          .logout()
+          .timeout(const Duration(seconds: 5), onTimeout: () {});
     } catch (e) {
       appLog.w('[Auth] 退出登录 SDK 失败: $e');
     }

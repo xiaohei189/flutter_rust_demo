@@ -160,8 +160,10 @@ class MineScreen extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(authViewModelProvider.notifier).logout();
-              if (context.mounted) {
-                AppRouter.goToLogin(context);
+              // 对话框已 pop，builder 的 context 已失效，改用全局根导航跳转
+              final rootContext = AppRouter.rootNavigatorKey.currentContext;
+              if (rootContext != null && rootContext.mounted) {
+                AppRouter.goToLogin(rootContext);
               }
             },
             child: Text(
