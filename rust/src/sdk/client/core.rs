@@ -22,6 +22,8 @@ use crate::core::user::service::UserService;
 use crate::sdk::client::context::RuntimeContext;
 
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::time::timeout;
 
 // ============================================================================
 // SDK API 类型定义
@@ -265,10 +267,16 @@ impl ConnectionApi for OpenIMClient {
         self.user.clear().await;
         self.friend.clear().await;
         self.group.clear().await;
-        self.online_status.clear_subscriptions().await?;
+        // 在线状态退订走 WS RPC（send_rpc 超时 30s），登出不应阻塞 UI：1s 短超时，失败仅告警（对齐 Go「失败不影响后续流程」）
+        match timeout(Duration::from_secs(1), self.online_status.clear_subscriptions()).await {
+            Ok(Ok(_)) => {}
+            Ok(Err(e)) => warn!("[SDK] 登出时清理在线状态订阅失败: {}", e),
+            Err(_) => warn!("[SDK] 登出时清理在线状态订阅超时，忽略"),
+        }
         self.connection.disconnect().await;
         self.context.shutdown();
-        self.context.close_db().await;
+        // 关闭本地数据库（防御性短超时，避免极端情况下阻塞登出）
+        let _ = timeout(Duration::from_secs(2), self.context.close_db()).await;
         info!("用户登出成功");
         Ok(())
     }
