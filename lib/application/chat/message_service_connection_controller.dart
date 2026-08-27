@@ -8,7 +8,6 @@ import '../../../data/services/online_status_service.dart';
 import '../../../data/services/im_client.dart';
 import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
-import 'message_service_state.dart';
 
 /// 连接初始化、事件订阅与断开。
 class MessageServiceConnectionController {
@@ -33,7 +32,14 @@ class MessageServiceConnectionController {
     String? userId,
     String? imToken,
   }) async {
-    if (imClient.isInitialized && service.currentState.isConnected) {
+    // 仅当仍是同一用户且已连接时才跳过（热更新场景）；切换账号必须重新初始化
+    final sameUser =
+        userId == null ||
+        service.currentState.currentUserId.isEmpty ||
+        service.currentState.currentUserId == userId;
+    if (imClient.isInitialized &&
+        service.currentState.isConnected &&
+        sameUser) {
       onlineStatusService.setClient(imClient.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
       return;
@@ -147,6 +153,10 @@ class MessageServiceConnectionController {
         connectionService.updateStatus(ConnectionStatus.kickedOffline);
         service.updateState(service.currentState.copyWith(isConnected: false));
       },
+      logout: () {
+        connectionService.updateStatus(ConnectionStatus.disconnected);
+        service.updateState(service.currentState.copyWith(isConnected: false));
+      },
       tokenExpired: () {
         connectionService.updateStatus(ConnectionStatus.tokenExpired);
         service.updateState(service.currentState.copyWith(isConnected: false));
@@ -165,6 +175,6 @@ class MessageServiceConnectionController {
     await imClient.close();
     onlineStatusService.setClient(null);
     connectionService.updateStatus(ConnectionStatus.disconnected);
-    service.updateState(MessageServiceState());
+    service.resetState();
   }
 }

@@ -31,7 +31,7 @@ impl Infra {
     /// 创建基础设施：数据库连接池 + HTTP 客户端
     pub async fn new(config: &ClientConfig) -> Result<Self> {
         std::fs::create_dir_all(&config.data_dir).map_err(|e| SdkError::database(format!("create data_dir {}: {}", config.data_dir, e)))?;
-        let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.platform_id);
+        let db_url = format!("sqlite:{}/openim_{}.db", config.data_dir, config.user_id); // 对齐 Go SDK：库文件名含登录用户 ID，账号间数据隔离
         let db_pool = create_pool(&db_url).await?;
         let http_client = Arc::new(HttpApiClient::new(config.api_base_url.clone(), config.token.clone(), "sdk_init".to_string()));
         Ok(Self { http_client, db_pool })
@@ -117,6 +117,11 @@ impl RuntimeContext {
         self.cancel_token.clone()
     }
 
+    /// 关闭本地数据库连接池（对齐 Go SDK logout 的 db.Close()）
+    pub async fn close_db(&self) {
+        self.infra.db_pool.close().await;
+    }
+
     pub fn shutdown(&self) {
         self.cancel_token.cancel();
     }
@@ -154,3 +159,41 @@ mod tests {
         let _ = std::fs::remove_dir_all(&data_dir);
     }
 }
+    /// 对齐 Go SDK：数据库文件名包含登录用户 ID，账号间数据隔离；close_db 幂等可重复调用
+    #[tokio::test]
+    async fn test_db_file_isolated_by_user_and_close_db_idempotent() {
+        let data_dir = std::env::temp_dir()
+            .join(format!("openim_test_iso_{}", chrono::Utc::now().timestamp_millis()))
+            .to_string_lossy()
+            .to_string();
+        std::fs::create_dir_all(&data_dir).unwrap();
+
+        let config = ClientConfig {
+            user_id: "user_iso".to_string(),
+            token: "token123".to_string(),
+            platform_id: 5,
+            ws_url: Some("ws://localhost:10001".to_string()),
+            api_base_url: "http://localhost:10002".to_string(),
+            upload_url: Some("http://localhost:10003".to_string()),
+            data_dir: data_dir.clone(),
+        };
+        let listeners = EventHub::new();
+        let cancel_token = CancellationToken::new();
+
+        let context = RuntimeContext::new(config, listeners, cancel_token).await.unwrap();
+        // 库文件名按用户 ID 生成，而不是按平台 ID
+        assert!(
+            std::path::Path::new(&format!("{}/openim_user_iso.db", data_dir)).exists(),
+            "数据库文件应按用户 ID 隔离命名"
+        );
+        assert!(
+            !std::path::Path::new(&format!("{}/openim_5.db", data_dir)).exists(),
+            "不应再按平台 ID 命名数据库"
+        );
+
+        // 登出对齐 Go：关闭数据库连接池，且幂等
+        context.close_db().await;
+        context.close_db().await;
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }

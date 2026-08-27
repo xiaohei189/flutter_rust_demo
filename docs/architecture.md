@@ -254,7 +254,7 @@ lib/
 
 ## 数据持久化
 
-- **SQLite** 数据库：`{data_dir}/openim_{platform_id}.db`
+- **SQLite** 数据库：`{data_dir}/openim_{user_id}.db`（按用户隔离，对齐 Go SDK）
 - **连接池**：sqlx，最大 5 连接
 - **表**：`local_chat_logs`, `local_conversations`, `local_users`, `local_friends`, `local_groups`, `local_group_members`, `local_blacks`, `notification_seqs`, `sending_messages`, `sync_versions`, `uploads`
 

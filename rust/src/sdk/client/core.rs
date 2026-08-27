@@ -258,14 +258,17 @@ impl ConnectionApi for OpenIMClient {
         Ok(())
     }
 
-    /// 登出
+    /// 登出（对齐 Go SDK logout：通知登出事件 → 断开连接 → 关闭本地数据库 → 重置 SDK 状态）
     #[tracing::instrument(level = "info", skip(self))]
     async fn logout(&self) -> Result<()> {
+        self.connection.send(ConnectionEvent::Logout);
         self.user.clear().await;
         self.friend.clear().await;
         self.group.clear().await;
         self.online_status.clear_subscriptions().await?;
-        self.connection.send(ConnectionEvent::Logout);
+        self.connection.disconnect().await;
+        self.context.shutdown();
+        self.context.close_db().await;
         info!("用户登出成功");
         Ok(())
     }

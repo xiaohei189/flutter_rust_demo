@@ -491,7 +491,20 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   Future<void> disconnect() => connectionController.disconnect();
 
-  Future<void> logout() => ref.read(imClientProvider).logout();
+  Future<void> logout() async {
+    try {
+      await ref.read(imClientProvider).logout();
+    } finally {
+      // 对齐 Go SDK：登出后断开连接、关闭客户端并复位内存状态，确保切换账号时重新初始化
+      await disconnect();
+    }
+  }
+
+  /// 登出/切换账号后重置全部内存状态（对齐 Go SDK 登出后 SDK 回到初始状态）
+  void resetState() {
+    seenClientMsgIds.clear();
+    updateState(MessageServiceState());
+  }
 
   Future<void> markConversationMessageAsRead(String conversationId) =>
       conversationController.markConversationMessageAsRead(conversationId);

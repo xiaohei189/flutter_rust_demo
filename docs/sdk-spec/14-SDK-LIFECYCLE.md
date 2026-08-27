@@ -189,7 +189,7 @@ login(userID, token)
 │   │                                                       │
 │   ├── 4.1 创建/打开数据库                                  │
 │   │   └── db.NewDataBase(ctx, userID, dataDir, logLevel)  │
-│   │       数据库路径: {dataDir}/openim_{platformID}.db     │
+│   │       数据库路径: {dataDir}/openim_{userID}.db     │
 │   │                                                       │
 │   ├── 4.2 checkSendingMessage(ctx)                        │
 │   │   ├── 获取所有 sending_messages                        │
@@ -330,21 +330,26 @@ logout(isTokenValid)
 ### 4.2 Rust 实现
 
 ```rust
-// rust/src/sdk/client/client.rs
+// rust/src/sdk/client/core.rs
 impl OpenIMClient {
     pub async fn logout(&self) -> Result<()> {
+        // 发布登出事件
+        self.connection.send(ConnectionEvent::Logout);
+
         // 清理各模块缓存
         self.user.clear().await;
         self.friend.clear().await;
         self.group.clear().await;
-        self.conversation.clear_all().await;
         self.online_status.clear_subscriptions().await?;
+
+        // 断开 WebSocket 连接
+        self.connection.disconnect().await;
 
         // 取消所有异步任务
         self.context.shutdown();  // 调用 cancel_token.cancel()
 
-        // 发布登出事件
-        self.event_bus.publish(SdkEvent::Logout);
+        // 关闭本地数据库
+        self.context.close_db().await;
 
         info!("用户登出成功");
         Ok(())
@@ -711,6 +716,8 @@ Flutter App                    Rust SDK                      Server
     │                              │                            │
     │── logout() ────────────────►│                            │
     │                              │── 清理各模块缓存           │
+    │                              │── 断开 WebSocket 连接      │
+    │                              │── 关闭本地数据库            │
     │                              │── cancel_token.cancel()   │
     │                              │── publish(Logout) ──►     │
     │◄── Stream: Logout ──────────│                            │
