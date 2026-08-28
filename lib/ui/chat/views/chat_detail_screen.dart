@@ -447,28 +447,33 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     String currentUserId,
   ) {
     return Expanded(
-      child: ChatMessageListSection(
-        conversationId: widget.conversationId,
-        user: user,
-        currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
-        currentUserAvatar: ref
-            .read(userProfileProvider.notifier)
-            .getDisplayAvatarUrl(),
-        scrollController: _scrollController,
-        isLoading: chatDetailState.isLoading,
-        selectMode: chatDetailState.selectMode,
-        selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
-        messageReactions: _messageReactions,
-        onMessageVisible: (msg) {
-          if (!msg.isRead &&
-              msg.sendId != (currentUserId.isNotEmpty ? currentUserId : null)) {
-            _viewModel?.markConversationMessageAsRead();
-          }
-        },
-        messageActionsBuilder: _buildMessageActions,
-        onMessageTap: _handleMessageTap,
-        onPlayAudio: (source) =>
-            ref.read(audioPlayerServiceProvider).play(source),
+      // RepaintBoundary 隔离消息列表重绘：键盘弹出动画期间列表视口逐帧变化时，
+      // 只重绘列表图层，避免影响顶栏/输入区等其他区域。
+      child: RepaintBoundary(
+        child: ChatMessageListSection(
+          conversationId: widget.conversationId,
+          user: user,
+          currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
+          currentUserAvatar: ref
+              .read(userProfileProvider.notifier)
+              .getDisplayAvatarUrl(),
+          scrollController: _scrollController,
+          isLoading: chatDetailState.isLoading,
+          selectMode: chatDetailState.selectMode,
+          selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
+          messageReactions: _messageReactions,
+          onMessageVisible: (msg) {
+            if (!msg.isRead &&
+                msg.sendId !=
+                    (currentUserId.isNotEmpty ? currentUserId : null)) {
+              _viewModel?.markConversationMessageAsRead();
+            }
+          },
+          messageActionsBuilder: _buildMessageActions,
+          onMessageTap: _handleMessageTap,
+          onPlayAudio: (source) =>
+              ref.read(audioPlayerServiceProvider).play(source),
+        ),
       ),
     );
   }
@@ -498,6 +503,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     User user,
     String currentUserId,
   ) {
+    // 输入区高度上限：多行输入 + 表情/附件面板可能超出可用高度。
+    // 用屏幕可用高度近似（maybeOf 不注册 MediaQuery 依赖，键盘动画期间不会整页每帧重建；
+    // 面板内部 Flexible 会在受限时自动收缩兜底）。
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final maxInputHeight =
+        (mediaQuery?.size.height ?? 0) -
+        (mediaQuery?.padding.top ?? 0) -
+        kToolbarHeight;
     return _bodyReady
         ? Column(
             children: [
@@ -525,7 +538,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   message: chatDetailState.quotedMessage!,
                   onClose: () => _viewModel?.clearQuotedMessage(),
                 ),
-              _buildChatInput(),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxInputHeight),
+                child: _buildChatInput(),
+              ),
             ],
           )
         : ColoredBox(
@@ -583,6 +599,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       },
       child: Scaffold(
         backgroundColor: context.appColors.background,
+        // 键盘处理使用 Flutter 标准配置（resizeToAvoidBottomInset: true + adjustResize），
+        // 由 Scaffold 统一按 viewInsets 缩小 body，避免手动键盘占位与系统 IME 配合导致键盘收起再弹出。
         appBar: ChatDetailAppBar(
           user: user,
           unread: unread,

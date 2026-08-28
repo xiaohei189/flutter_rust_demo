@@ -5,13 +5,15 @@ import 'package:visibility_detector/visibility_detector.dart';
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart' show MessageType;
 import '../../../../domain/models/user.dart';
-import '../../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
+import '../../../../domain/models/group_read_receipt.dart'
+    show GroupReadReceipt;
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../previews/app_theme_preview.dart';
 import '../../../previews/fake_data.dart';
 import '../../../core/theme/app_theme.dart';
-import '../menu/message_action_menu.dart' show MessageActions, showMessageToolPanel;
+import '../menu/message_action_menu.dart'
+    show MessageActions, showMessageToolPanel;
 import '../bubble/message_bubble.dart';
 import '../menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import 'message_skeleton.dart';
@@ -68,8 +70,8 @@ class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
   List<String?> _cachedDateLabels = const [];
-  List<String> _cachedDateLabelIds = const [];
-
+  String _cachedDateLabelTailId = '';
+  int _cachedDateLabelCount = -1;
 
   void _pruneMessageKeys(List<ChatMessage> messages) {
     if (_messageKeys.length <= _maxMessageKeys) return;
@@ -109,10 +111,11 @@ class MessageListState extends State<MessageList> {
       message: message,
       currentUserId: widget.currentUserId ?? '',
       actions: actions,
-      reactions: widget.messageReactions[message.clientMsgId]
-          ?.map((group) => group.emoji)
-          .toSet() ??
-      const {},
+      reactions:
+          widget.messageReactions[message.clientMsgId]
+              ?.map((group) => group.emoji)
+              .toSet() ??
+          const {},
     );
   }
 
@@ -147,7 +150,9 @@ class MessageListState extends State<MessageList> {
     const useReverse = true;
     final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
     final dateLabels = _dateLabelsFor(widget.messages);
-    final maxBubbleWidth = MediaQuery.sizeOf(context).width * 0.65;
+    // maybeOf 不注册 MediaQuery 依赖：键盘动画期间 viewInsets 逐帧变化不会让列表每帧重建。
+    final maxBubbleWidth =
+        (MediaQuery.maybeOf(context)?.size.width ?? 0) * 0.65;
 
     return ListView.builder(
       controller: widget.scrollController,
@@ -185,14 +190,13 @@ class MessageListState extends State<MessageList> {
           currentUserId: widget.currentUserId,
           currentUserAvatar: widget.currentUserAvatar,
           maxBubbleWidth: maxBubbleWidth,
-          cachedSenderProfile:
-              widget.cachedSenderProfiles?[message.sendId],
+          cachedSenderProfile: widget.cachedSenderProfiles?[message.sendId],
           cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
           onLongPress: (msg) => _openMessageToolPanel(msg, messageKey),
           onVisible: widget.onMessageVisible,
           onTap: widget.onMessageTap,
-          selectionIndicator: widget.selectMode &&
-                  message.messageType != MessageType.system
+          selectionIndicator:
+              widget.selectMode && message.messageType != MessageType.system
               ? _SelectionCheckbox(
                   selected: selected,
                   onTap: () => widget.onMessageTap?.call(message),
@@ -217,23 +221,19 @@ class MessageListState extends State<MessageList> {
     );
   }
 
+  /// 按「最新消息 id + 消息数」做 O(1) 缓存标记，
+  /// 避免键盘弹出动画等高频 build 时全量比较消息 id 列表。
   List<String?> _dateLabelsFor(List<ChatMessage> messages) {
-    final ids = messages.map((m) => m.clientMsgId).toList();
-    if (ids.length == _cachedDateLabelIds.length &&
-        _sameDateLabelIds(ids, _cachedDateLabelIds)) {
+    final tailId = messages.isEmpty ? '' : messages.last.clientMsgId;
+    if (messages.length == _cachedDateLabelCount &&
+        tailId == _cachedDateLabelTailId) {
       return _cachedDateLabels;
     }
     final labels = _buildDateLabels(messages);
     _cachedDateLabels = labels;
-    _cachedDateLabelIds = ids;
+    _cachedDateLabelCount = messages.length;
+    _cachedDateLabelTailId = tailId;
     return labels;
-  }
-
-  static bool _sameDateLabelIds(List<String> a, List<String> b) {
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 
   /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
@@ -384,10 +384,7 @@ class _VisibleMessageBubble extends StatelessWidget {
 
 /// 多选模式下显示在消息气泡同行的圆形勾选框。
 class _SelectionCheckbox extends StatelessWidget {
-  const _SelectionCheckbox({
-    required this.selected,
-    required this.onTap,
-  });
+  const _SelectionCheckbox({required this.selected, required this.onTap});
 
   final bool selected;
   final VoidCallback onTap;

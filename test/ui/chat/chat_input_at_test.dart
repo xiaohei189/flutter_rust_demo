@@ -6,13 +6,13 @@ import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input.dart';
 
 void main() {
   GroupMember makeMember(String id, String name) => GroupMember(
-        groupId: 'g1',
-        userId: id,
-        nickname: name,
-        faceUrl: '',
-        roleLevel: 1,
-        joinSource: '',
-      );
+    groupId: 'g1',
+    userId: id,
+    nickname: name,
+    faceUrl: '',
+    roleLevel: 1,
+    joinSource: '',
+  );
 
   testWidgets('输入 @ 后显示群成员列表，选择后插入 @昵称', (tester) async {
     final controller = TextEditingController();
@@ -96,8 +96,9 @@ void main() {
     await tester.pump();
 
     controller.text = '@不存在的名字';
-    controller.selection =
-        const TextSelection.collapsed(offset: 6); // '@不存在的名字'.length
+    controller.selection = const TextSelection.collapsed(
+      offset: 6,
+    ); // '@不存在的名字'.length
     controller.notifyListeners();
     await tester.pump();
 

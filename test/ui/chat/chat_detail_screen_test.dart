@@ -13,6 +13,7 @@ import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
+import 'package:flutter_rust_demo/domain/models/chat_session_type.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/domain/models/user_profile.dart'
@@ -102,6 +103,13 @@ Widget _buildHostWithOnline(
 }
 
 class TestMessageServiceNotifier extends MessageServiceNotifier {
+  @override
+  Future<void> sendTyping({
+    required String sourceId,
+    required ChatSessionType sessionType,
+    required bool focus,
+  }) async {}
+
   TestMessageServiceNotifier(this.initialState);
 
   final MessageServiceState initialState;
@@ -253,5 +261,31 @@ void main() {
     expect(find.text('离线'), findsOneWidget);
 
     onlineStatusService.dispose();
+  });
+
+  testWidgets('首次点击输入框即建立文本输入连接（键盘可弹出）', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+      ),
+    );
+
+    await tester.pumpWidget(_buildHost(service));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.testTextInput.hasAnyClients, isFalse, reason: '初始不应有文本输入连接');
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+
+    expect(
+      tester.testTextInput.hasAnyClients,
+      isTrue,
+      reason: '首次点击输入框后应建立文本输入连接（键盘可弹出）',
+    );
+    expect(find.text('发送'), findsOneWidget, reason: '聚焦后应展开完整工具栏');
   });
 }

@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'chat_composer_controller.dart';
-import 'collapsed_input_bar.dart';
+import 'input_toolbar_icon.dart';
 import 'voice_recorder_controller.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
@@ -243,7 +243,8 @@ class _ChatInputState extends State<ChatInput> {
   /// 与输入框共享同一个 controller，草稿天然同步；只编辑不发送，关闭后回主界面发送。
   void _openComposerSheet() {
     _closeAllPanels();
-    FocusScope.of(context).unfocus(); // 收起键盘，给抽屉让位
+    // 不主动收键盘：抽屉内输入框 autofocus 会接管焦点，键盘保持连续，
+    // 避免“先收起键盘、抽屉弹出后再弹键盘”导致的键盘翻动。
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -310,6 +311,8 @@ class _ChatInputState extends State<ChatInput> {
   @override
   Widget build(BuildContext context) {
     final isExpanded = _isInputExpanded;
+    final emojiActive = _composer.activePanel == ComposerPanel.emoji;
+    final moreActive = _composer.activePanel == ComposerPanel.attachment;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -336,60 +339,87 @@ class _ChatInputState extends State<ChatInput> {
               // 子项撑满宽度，避免工具栏/面板被默认居中
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 聚焦/面板展开态：输入行 + 底部完整工具栏
-                // 未聚焦态：默认一行（声音+输入框+表情+更多）
+                // 输入行结构恒定：🎤 + 输入框 + 😊 + ➕。
+                // 折叠/展开只切换行内图标的显隐（Visibility 保留 Element）与底部工具栏，
+                // 输入框始终是同一个 Element，避免同帧替换 TextField 导致 IME 连接丢失（首次点击键盘不弹出）。
+                Row(
+                  children: [
+                    Visibility(
+                      visible: !isExpanded,
+                      maintainState: true,
+                      child: InputToolbarIcon(
+                        icon: Icons.mic_none,
+                        tooltip: '语音（长按录音，上滑取消）',
+                        onTap: () => _focusNode.requestFocus(),
+                        onLongPressStart: (details) =>
+                            _voiceRecorder.start(context, details),
+                        onLongPressMoveUpdate: _voiceRecorder.onMove,
+                        onLongPressEnd: (details) =>
+                            _voiceRecorder.stop(context, details),
+                      ),
+                    ),
+                    Expanded(child: _buildInputRow()),
+                    Visibility(
+                      visible: !isExpanded,
+                      maintainState: true,
+                      child: InputToolbarIcon(
+                        icon: emojiActive
+                            ? Icons.emoji_emotions
+                            : Icons.emoji_emotions_outlined,
+                        tooltip: '表情',
+                        onTap: () => _togglePanel(ComposerPanel.emoji),
+                      ),
+                    ),
+                    Visibility(
+                      visible: !isExpanded,
+                      maintainState: true,
+                      child: InputToolbarIcon(
+                        icon: moreActive
+                            ? Icons.add_circle
+                            : Icons.add_circle_outline,
+                        tooltip: '更多',
+                        onTap: () => _togglePanel(ComposerPanel.attachment),
+                      ),
+                    ),
+                  ],
+                ),
                 if (isExpanded) ...[
-                  _buildInputRow(),
                   if (_composer.atKeyword != null) _buildAtMemberList(),
                   const SizedBox(height: 8),
                   _composer.isMarkdownMode
                       ? _buildFormatBar()
                       : _buildToolbarRow(),
-                ] else
-                  CollapsedInputBar(
-                    controller: widget.controller,
-                    focusNode: _focusNode,
-                    isMarkdownMode: _composer.isMarkdownMode,
-                    onOpenComposer: _openComposerSheet,
-                    onSubmitted: _doSend,
-                    emojiActive: _composer.activePanel == ComposerPanel.emoji,
-                    moreActive:
-                        _composer.activePanel == ComposerPanel.attachment,
-                    onToggleEmoji: () => _togglePanel(ComposerPanel.emoji),
-                    onToggleMore: () => _togglePanel(ComposerPanel.attachment),
-                    onVoiceLongPressStart: (details) =>
-                        _voiceRecorder.start(context, details),
-                    onVoiceLongPressMoveUpdate: _voiceRecorder.onMove,
-                    onVoiceLongPressEnd: (details) =>
-                        _voiceRecorder.stop(context, details),
-                    onVoiceTap: () => _focusNode.requestFocus(),
-                  ),
+                ],
               ],
             ),
           ),
-          // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            alignment: Alignment.topCenter,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Offstage(
-                  offstage: _composer.activePanel != ComposerPanel.emoji,
-                  child: EmojiPanel(
-                    onEmojiSelected: _insertEmoji,
-                    onGifSelected: widget.onGifSelected,
+          // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
+          // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
+          Flexible(
+            fit: FlexFit.loose,
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Offstage(
+                    offstage: _composer.activePanel != ComposerPanel.emoji,
+                    child: EmojiPanel(
+                      onEmojiSelected: _insertEmoji,
+                      onGifSelected: widget.onGifSelected,
+                    ),
                   ),
-                ),
-                Offstage(
-                  offstage: _composer.activePanel != ComposerPanel.attachment,
-                  child: AttachmentPanel(
-                    items: _attachmentItems,
-                    onItemTap: () => _composer.closePanels(),
+                  Offstage(
+                    offstage: _composer.activePanel != ComposerPanel.attachment,
+                    child: AttachmentPanel(
+                      items: _attachmentItems,
+                      onItemTap: () => _composer.closePanels(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

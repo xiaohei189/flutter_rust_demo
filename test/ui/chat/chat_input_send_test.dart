@@ -12,16 +12,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(
-            controller: controller,
-            onSend: (_, _) => sent++,
-          ),
+          body: ChatInput(controller: controller, onSend: (_, _) => sent++),
         ),
       ),
     );
 
     await tester.tap(find.byType(TextField));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('发送'), findsOneWidget, reason: '聚焦后应展开完整工具栏');
     expect(find.text('Aa'), findsOneWidget, reason: 'Markdown 切换应显示 Aa 标识');
     expect(find.text('输入消息...'), findsOneWidget);
@@ -43,27 +40,20 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(
-            controller: controller,
-            onSend: (_, _) {},
-          ),
+          body: ChatInput(controller: controller, onSend: (_, _) {}),
         ),
       ),
     );
 
     await tester.tap(find.byType(TextField));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('发送'), findsOneWidget);
 
     await tester.tap(find.byTooltip('更多'));
     await tester.pumpAndSettle();
 
     expect(find.text('相册'), findsOneWidget, reason: '更多面板应展开');
-    expect(
-      find.text('发送'),
-      findsOneWidget,
-      reason: '面板展开时工具栏不应被折叠行替换',
-    );
+    expect(find.text('发送'), findsOneWidget, reason: '面板展开时工具栏不应被折叠行替换');
   });
 
   testWidgets('Markdown 模式左侧显示切换箭头并保留发送按钮', (tester) async {
@@ -73,19 +63,20 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(
-            controller: controller,
-            onSend: (_, _) => sent++,
-          ),
+          body: ChatInput(controller: controller, onSend: (_, _) => sent++),
         ),
       ),
     );
 
     await tester.tap(find.byType(TextField));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Aa'));
     await tester.pumpAndSettle();
-    expect(find.text('Markdown...'), findsNothing, reason: 'Markdown 模式不应改变输入框提示词');
+    expect(
+      find.text('Markdown...'),
+      findsNothing,
+      reason: 'Markdown 模式不应改变输入框提示词',
+    );
     expect(find.text('输入消息...'), findsOneWidget);
 
     final toggle = find.byIcon(Icons.swap_vert);
@@ -109,16 +100,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(
-            controller: controller,
-            onSend: (_, _) {},
-          ),
+          body: ChatInput(controller: controller, onSend: (_, _) {}),
         ),
       ),
     );
 
     await tester.tap(find.byType(TextField));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('表情'));
     await tester.pumpAndSettle();
 
@@ -152,16 +140,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(
-            controller: controller,
-            onSend: (_, _) {},
-          ),
+          body: ChatInput(controller: controller, onSend: (_, _) {}),
         ),
       ),
     );
 
     await tester.tap(find.byType(TextField));
-    await tester.pump();
+    await tester.pumpAndSettle();
     final inputY = tester.getTopLeft(find.byType(TextField)).dy;
     final toolbarY = tester.getTopLeft(find.text('发送')).dy;
     expect(inputY, lessThan(toolbarY), reason: '工具栏应在输入框下方');
@@ -217,7 +202,11 @@ void main() {
     await tester.tap(find.text('Aa'));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.swap_vert), findsOneWidget, reason: 'Markdown 格式栏应显示切换箭头');
+    expect(
+      find.byIcon(Icons.swap_vert),
+      findsOneWidget,
+      reason: 'Markdown 格式栏应显示切换箭头',
+    );
     expect(find.text('B'), findsOneWidget, reason: 'Markdown 格式栏应显示格式按钮');
     expect(find.text('发送'), findsOneWidget, reason: 'Markdown 格式栏应保留发送按钮');
   });
