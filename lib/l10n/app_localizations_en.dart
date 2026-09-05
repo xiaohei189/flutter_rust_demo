@@ -18,10 +18,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabContacts => 'Contacts';
 
   @override
-  String get tabDiscover => 'Discover';
+  String get tabWorkbench => 'Workbench';
 
   @override
-  String get tabMine => 'Mine';
+  String get workbenchTitle => 'Workbench';
 
   @override
   String get loginTitle => 'Welcome';
@@ -31,9 +31,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactsTitle => 'Contacts';
-
-  @override
-  String get discoverTitle => 'Discover';
 
   @override
   String get friendListTitle => 'Friends';

@@ -11,6 +11,7 @@ class InputToolbarIcon extends StatelessWidget {
     required this.onTap,
     this.enabled = true,
     this.active = false,
+    this.size,
     this.onLongPressStart,
     this.onLongPressMoveUpdate,
     this.onLongPressEnd,
@@ -21,6 +22,9 @@ class InputToolbarIcon extends StatelessWidget {
   final VoidCallback onTap;
   final bool enabled;
   final bool active;
+
+  /// 按钮尺寸（图标 24 居中）：null 时用默认 28；传更小值可单独缩小某按钮、收紧它与相邻元素的间距
+  final double? size;
   final void Function(LongPressStartDetails)? onLongPressStart;
   final void Function(LongPressMoveUpdateDetails)? onLongPressMoveUpdate;
   final void Function(LongPressEndDetails)? onLongPressEnd;
@@ -34,8 +38,9 @@ class InputToolbarIcon extends StatelessWidget {
         label: tooltip,
         button: true,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          // 默认按钮尺寸（图标 24 居中）；可传 size 单独覆盖（如表情/更多用更小值收紧它们之间的间距）
+          width: size ?? 28,
+          height: size ?? 28,
           child: IconButton(
             icon: Icon(
               icon,

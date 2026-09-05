@@ -3,19 +3,19 @@ import 'package:flutter/services.dart';
 
 import '../../../../domain/models/group_member.dart';
 import '../../../core/theme/app_theme.dart';
+import '../message_content_type.dart';
+import 'at_member_suggestions.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'chat_composer_controller.dart';
-import 'input_toolbar_icon.dart';
-import 'voice_recorder_controller.dart';
+import 'chat_input_field.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
-import 'chat_input_field.dart';
+import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
-import 'at_member_suggestions.dart';
 import 'recording_overlay.dart';
-import '../message_content_type.dart';
+import 'voice_recorder_controller.dart';
 
 /// 底部输入区：
 /// - 按钮变形（mic ↔ 发送）
@@ -245,9 +245,12 @@ class _ChatInputState extends State<ChatInput> {
     _closeAllPanels();
     // 不主动收键盘：抽屉内输入框 autofocus 会接管焦点，键盘保持连续，
     // 避免“先收起键盘、抽屉弹出后再弹键盘”导致的键盘翻动。
+    final wasFocused = _focusNode.hasFocus;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      // 高度由抽屉内拖拽把手自管理：enableDrag 会让整体拖动（工具栏被拖到键盘下）且松手自动回弹，
+      // 改为把手拖动调整高度并保持，底部工具栏固定
       // 覆盖 M3 BottomSheet 默认 maxWidth 640，抽屉全宽
       constraints: const BoxConstraints(maxWidth: double.infinity),
       // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
@@ -264,7 +267,13 @@ class _ChatInputState extends State<ChatInput> {
         onGifSelected: widget.onGifSelected,
         attachmentItems: _attachmentItems,
       ),
-    );
+    ).then((_) {
+      // 缩回后恢复打开前的输入区状态：若打开前未聚焦（工具栏收起），
+      // 则取消主输入框焦点，避免抽屉关闭后焦点回弹导致底部工具栏意外展开。
+      if (mounted && !wasFocused && _focusNode.hasFocus) {
+        _focusNode.unfocus();
+      }
+    });
   }
 
   // ==================== Markdown 格式插入 ====================
@@ -323,9 +332,14 @@ class _ChatInputState extends State<ChatInput> {
           if (_voiceRecorder.isRecording)
             RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.fromLTRB(
+              12, // 左：语音按钮距屏幕左侧（调小→语音更靠左）
+              8, // 上：输入框距输入区顶部（输入区内部顶部预留间隙）
+              12, // 右：更多按钮距屏幕右侧
+              8, // 下：输入框/工具栏距输入区底部（输入区内部底部统一预留间隙，静态不随状态变化）
+            ),
             decoration: BoxDecoration(
-              color: context.appColors.onPrimary,
+              color: context.appColors.inputBackground,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.06),
@@ -363,6 +377,8 @@ class _ChatInputState extends State<ChatInput> {
                       visible: !isExpanded,
                       maintainState: true,
                       child: InputToolbarIcon(
+                        // size 只影响表情↔更多之间的间距（不作用于语音 🎤）；调小（如 24）→ 更近，调大 → 更远
+                        size: 26,
                         icon: emojiActive
                             ? Icons.emoji_emotions
                             : Icons.emoji_emotions_outlined,
@@ -374,6 +390,8 @@ class _ChatInputState extends State<ChatInput> {
                       visible: !isExpanded,
                       maintainState: true,
                       child: InputToolbarIcon(
+                        // 与表情按钮同尺寸，共同决定 😊↔➕ 间距
+                        size: 26,
                         icon: moreActive
                             ? Icons.add_circle
                             : Icons.add_circle_outline,
@@ -385,7 +403,6 @@ class _ChatInputState extends State<ChatInput> {
                 ),
                 if (isExpanded) ...[
                   if (_composer.atKeyword != null) _buildAtMemberList(),
-                  const SizedBox(height: 8),
                   _composer.isMarkdownMode
                       ? _buildFormatBar()
                       : _buildToolbarRow(),

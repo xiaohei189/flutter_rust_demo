@@ -4,6 +4,12 @@ import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 import 'app_image.dart';
 
+/// 会话列表/顶部栏统一使用的头像半径，保证名字大小与字体一致。
+const double kConversationAvatarRadius = 26;
+
+/// 名字占位头像的统一底色：取自飞书参考图（RGB ≈ 74,132,255）。
+const Color kNameAvatarBackground = Color(0xFF4A84FF);
+
 /// 用户头像组件 - 支持网络图片、本地图片、颜色图标
 class UserAvatar extends StatelessWidget {
   final User user;
@@ -57,14 +63,42 @@ class UserAvatar extends StatelessWidget {
     return _buildFallbackAvatar(context);
   }
 
-  /// 构建默认头像
+  /// 构建默认头像：全名（自适应缩放）+ 统一品牌底色，保证底色一致。
   Widget _buildFallbackAvatar(BuildContext context) {
     final colors = context.appColors;
+    final label = _labelOf(user.name);
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Color(user.avatarColor),
-      child: Icon(Icons.person, size: radius * 1.2, color: colors.surface),
+      backgroundColor: kNameAvatarBackground,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: radius * 0.22,
+          vertical: radius * 0.08,
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: TextStyle(
+              color: colors.onPrimary,
+              // 与旁边标题字号一致（r=26 时约 16），避免头像名字比标题还大。
+              fontSize: radius * 0.62,
+              fontWeight: FontWeight.w500,
+              height: 1,
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  /// 取展示名：空值回退为问号；名字较短直接展示全名，过长则取前 4 字再加省略号。
+  static String _labelOf(String name) {
+    final n = name.trim();
+    if (n.isEmpty) return '?';
+    if (n.length <= 4) return n;
+    return '${n.substring(0, 4)}…';
   }
 
   /// 判断是否为本地文件路径

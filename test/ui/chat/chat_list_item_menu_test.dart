@@ -16,10 +16,9 @@ void main() {
             onPressed: () {
               showChatListItemMenu(
                 context,
+                rowRect: const Rect.fromLTWH(100, 100, 300, 60),
                 conversation: fakeConversation(unreadCount: 1),
                 isMuted: false,
-                onArchive: () {},
-                onDelete: () {},
               );
             },
             child: const Text('open'),
@@ -32,8 +31,8 @@ void main() {
 
     expect(find.text('置顶'), findsOneWidget);
     expect(find.text('标为已读'), findsOneWidget);
-    expect(find.text('归档'), findsOneWidget);
-    expect(find.text('删除'), findsOneWidget);
+    expect(find.text('消息免打扰'), findsOneWidget);
+    expect(find.text('完成'), findsOneWidget);
   });
 
   testWidgets('无未读会话显示标为未读与取消归档', (tester) async {
@@ -44,12 +43,11 @@ void main() {
             onPressed: () {
               showChatListItemMenu(
                 context,
+                rowRect: const Rect.fromLTWH(100, 100, 300, 60),
                 conversation: fakeConversation(
                   ex: ChatListViewModel.flagsEx(flagged: false, done: false),
                 ),
                 isMuted: false,
-                onArchive: () {},
-                onDelete: () {},
               );
             },
             child: const Text('open'),
@@ -61,28 +59,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('标为未读'), findsOneWidget);
-    expect(find.text('归档'), findsOneWidget);
-  });
-
-  testWidgets('清空聊天记录确认后触发回调', (tester) async {
-    var cleared = false;
-    await tester.pumpWidget(
-      _host(
-        Builder(
-          builder: (context) => TextButton(
-            onPressed: () {
-              confirmClearChatHistory(context, () => cleared = true);
-            },
-            child: const Text('open'),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('清空'));
-    await tester.pumpAndSettle();
-    expect(cleared, isTrue);
+    expect(find.text('消息免打扰'), findsOneWidget);
   });
 }

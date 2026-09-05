@@ -134,29 +134,16 @@ String formatConversationTime(int? timeMs) {
   if (timeMs == null || timeMs <= 0) return '';
   final time = DateTime.fromMillisecondsSinceEpoch(timeMs);
   final now = DateTime.now();
+  // 当天显示时间；否则按设计稿以日期格式展示
   if (_isSameDay(time, now)) {
     return DateFormat('HH:mm').format(time);
   }
-  final yesterday = now.subtract(const Duration(days: 1));
-  if (_isSameDay(time, yesterday)) {
-    return '昨天';
-  }
-  if (_isSameWeek(time, now)) {
-    const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    return weekdays[time.weekday - 1];
-  }
   if (time.year == now.year) {
-    return DateFormat('M/d').format(time);
+    return DateFormat('M月d日').format(time);
   }
-  return DateFormat('yyyy/M/d').format(time);
+  return DateFormat('yyyy年M月d日').format(time);
 }
 
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-bool _isSameWeek(DateTime a, DateTime b) {
-  final start = b.subtract(Duration(days: b.weekday - 1));
-  final end = start.add(const Duration(days: 6));
-  return !a.isBefore(start.subtract(const Duration(days: 1))) &&
-      !a.isAfter(end.add(const Duration(days: 1)));
-}

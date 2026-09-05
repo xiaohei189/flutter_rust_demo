@@ -33,116 +33,36 @@ class ChatListHeader extends StatelessWidget {
   final VoidCallback onSearchTap;
   final String? activeFolderLabel;
 
-  String get _activeFilterLabel {
-    switch (activeFilter) {
-      case GroupFilter.all:
-        return '消息';
-      case GroupFilter.unread:
-        return '未读';
-      case GroupFilter.flagged:
-        return '标记';
-      case GroupFilter.atMe:
-        return '@我';
-      case GroupFilter.singleChat:
-        return '单聊';
-      case GroupFilter.groupChat:
-        return '群组';
-      case GroupFilter.done:
-        return '已完成';
-      case GroupFilter.archived:
-        return '归档';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
       color: colors.surface,
-      padding: const EdgeInsets.fromLTRB(12, 8, 16, 10),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 常驻搜索框（点击进入搜索页）
-          GestureDetector(
-            key: const ValueKey('chat_list_search_field'),
-            onTap: onSearchTap,
-            child: Container(
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: colors.surfaceMuted,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, size: 18, color: colors.textSecondary),
-                  const SizedBox(width: 6),
-                  Text(
-                    '搜索',
-                    style: TextStyle(fontSize: 14, color: colors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
           Row(
             children: [
               GestureDetector(
                 onTap: onOpenGroupFilter,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.tune, size: 18, color: colors.textPrimary),
+                behavior: HitTestBehavior.opaque,
+                child: SizedBox(
+                  width: 36,
+                  height: 44,
+                  child: Icon(Icons.menu, size: 26, color: colors.textPrimary),
                 ),
               ),
-              const SizedBox(width: 10),
-              if (activeFolderLabel != null)
-                GestureDetector(
-                  onTap: () => onFilterChange(GroupFilter.all),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.folder_outlined,
-                          size: 14,
-                          color: colors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          activeFolderLabel!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.close, size: 14, color: colors.primary),
-                      ],
-                    ),
-                  ),
-                )
-              else if (isQuickTab)
-                SegmentedToggle(
+              const SizedBox(width: 6),
+              Expanded(
+                flex: 3,
+                child: SegmentedToggle(
+                  height: 44,
+                  activeColor: const Color(0xFF3370FF),
                   segments: [
                     '消息',
                     totalUnreadCount > 0 ? '未读 $totalUnreadCount' : '未读',
-                    if (activeFilter == GroupFilter.flagged) '标记',
+                    '标记',
                   ],
                   selectedIndex: activeFilter == GroupFilter.all
                       ? 0
@@ -162,36 +82,8 @@ class ChatListHeader extends StatelessWidget {
                         break;
                     }
                   },
-                )
-              else
-                GestureDetector(
-                  onTap: () => onFilterChange(GroupFilter.all),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _activeFilterLabel,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.close, size: 14, color: colors.primary),
-                      ],
-                    ),
-                  ),
                 ),
+              ),
               const Spacer(),
             ],
           ),

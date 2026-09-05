@@ -116,17 +116,17 @@ abstract class AppLocalizations {
   /// **'Contacts'**
   String get tabContacts;
 
-  /// No description provided for @tabDiscover.
+  /// No description provided for @tabWorkbench.
   ///
   /// In en, this message translates to:
-  /// **'Discover'**
-  String get tabDiscover;
+  /// **'Workbench'**
+  String get tabWorkbench;
 
-  /// No description provided for @tabMine.
+  /// No description provided for @workbenchTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mine'**
-  String get tabMine;
+  /// **'Workbench'**
+  String get workbenchTitle;
 
   /// No description provided for @loginTitle.
   ///
@@ -145,12 +145,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contacts'**
   String get contactsTitle;
-
-  /// No description provided for @discoverTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Discover'**
-  String get discoverTitle;
 
   /// No description provided for @friendListTitle.
   ///

@@ -27,12 +27,13 @@ class ChatListItemContent extends StatelessWidget {
     this.typingText,
     this.hasSendFailure = false,
     this.onRetrySend,
+    this.contentHorizontalPadding,
   });
 
   final Conversation conversation;
   final bool isSelected;
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final ValueChanged<Rect> onLongPress;
   final String? currentUserId;
   final UserProfile? cachedUserProfile;
   final String? previewText;
@@ -50,38 +51,23 @@ class ChatListItemContent extends StatelessWidget {
   /// 最近一条消息发送失败。
   final bool hasSendFailure;
   final VoidCallback? onRetrySend;
+  final double? contentHorizontalPadding;
 
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
-
-  static bool _isSameWeek(DateTime a, DateTime b) {
-    final start = b.subtract(Duration(days: b.weekday - 1));
-    final end = start.add(const Duration(days: 6));
-    return !a.isBefore(start.subtract(const Duration(days: 1))) &&
-        !a.isAfter(end.add(const Duration(days: 1)));
-  }
-
-  static const _weekdayZh = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
   String _formatTime(int? timeMs) {
     if (timeMs == null || timeMs <= 0) return '';
     final time = DateTime.fromMillisecondsSinceEpoch(timeMs);
     final now = DateTime.now();
-    const formatToday = 'HH:mm';
+    // 当天显示时间；否则按设计稿以日期格式展示
     if (_isSameDay(time, now)) {
-      return DateFormat(formatToday).format(time);
-    }
-    final yesterday = now.subtract(const Duration(days: 1));
-    if (_isSameDay(time, yesterday)) {
-      return '昨天';
-    }
-    if (_isSameWeek(time, now)) {
-      return _weekdayZh[time.weekday - 1];
+      return DateFormat('HH:mm').format(time);
     }
     if (time.year == now.year) {
-      return DateFormat('M/d').format(time);
+      return DateFormat('M月d日').format(time);
     }
-    return DateFormat('yyyy/M/d').format(time);
+    return DateFormat('yyyy年M月d日').format(time);
   }
 
   String get _conversationDisplayName {
@@ -123,6 +109,7 @@ class ChatListItemContent extends StatelessWidget {
 
   static bool _isConversationIdPrefix(String s) =>
       s.startsWith('si_') || s.startsWith('sg_') || s.startsWith('sn_');
+
 
   User _getUser() {
     String userId;
@@ -227,11 +214,32 @@ class ChatListItemContent extends StatelessWidget {
   bool get _isGroup =>
       conversation.conversationType == 2 || conversation.conversationType == 3;
 
+  /// 占位标签：无 external/bot/agent 数据，先用会话 ID 稳定伪随机分配一个，
+  /// 用于对齐设计稿的「外部/智能体/机器人」文字胶囊。
+  static const List<String> _placeholderTagNames = ['外部', '智能体', '机器人'];
+
+  static const Map<String, Color> _placeholderTagColors = {
+    // 从飞书参考图采样（略取饱和值）。
+    '外部': Color(0xFF2D6BE0),
+    '智能体': Color(0xFF7A3BE8),
+    '机器人': Color(0xFFE8960C),
+  };
+
+  String? _placeholderTagName() {
+    if (conversation.conversationId.isEmpty) return null;
+    var h = 0;
+    for (final code in conversation.conversationId.codeUnits) {
+      h = (h * 31 + code) & 0x7fffffff;
+    }
+    // 约 1/3 不展示，其余稳定落到某个标签上，避免每次刷新漂移。
+    if (h % 3 == 0) return null;
+    return _placeholderTagNames[h % _placeholderTagNames.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final user = _getUser();
-    final unread = ChatListViewModel.effectiveUnreadCount(conversation);
     final isPinned = conversation.isPinned;
 
     return Material(
@@ -240,149 +248,135 @@ class ChatListItemContent extends StatelessWidget {
           : (isSelected
                 ? colors.primary.withValues(alpha: 0.06)
                 : colors.surface),
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: Column(
-          children: [
-            Container(
-              height: 72,
-              padding: EdgeInsets.only(
-                left: isSelectionMode ? 8 : 16,
-                right: 16,
-              ),
-              child: Row(
+      child: GestureDetector(
+        onLongPressStart: (d) {
+          final box = context.findRenderObject() as RenderBox?;
+          if (box != null && box.attached) {
+            onLongPress(box.localToGlobal(Offset.zero) & box.size);
+          } else {
+            onLongPress(Rect.fromLTWH(d.globalPosition.dx, d.globalPosition.dy, 0, 0));
+          }
+        },
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: contentHorizontalPadding ??
+                  (isSelectionMode ? 8 : 16),
+            ),
+            child: Row(
+            children: [
+              if (isSelectionMode) ...[
+                Icon(
+                  isSelected
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  size: 22,
+                  color: isSelected ? colors.primary : colors.textSecondary,
+                ),
+                const SizedBox(width: 6),
+              ],
+              // 头像（在线绿点 / 群头像），未读仅以时间蓝色标识，不叠加数字角标
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  if (isSelectionMode) ...[
-                    Icon(
-                      isSelected
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      size: 22,
-                      color: isSelected ? colors.primary : colors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  // 头像（未读红点角标 / 在线绿点 / 群头像）
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      if (_isGroup)
-                        _GroupAvatar(conversation: conversation, radius: 24)
-                      else
-                        UserAvatar(user: user, radius: 24),
-                      if (unread > 0)
-                        Positioned(
-                          right: -4,
-                          top: -4,
-                          child: Container(
-                            constraints: const BoxConstraints(
-                              minWidth: 18,
-                              minHeight: 18,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _isMuted
-                                  ? colors.textSecondary
-                                  : colors.danger,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: colors.surface,
-                                width: 1.5,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              unread > 99 ? '99+' : '$unread',
-                              style: TextStyle(
-                                color: colors.surface,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                  if (_isGroup)
+                    _GroupAvatar(
+                      conversation: conversation,
+                      radius: kConversationAvatarRadius,
+                    )
+                  else
+                    UserAvatar(user: user, radius: kConversationAvatarRadius),
+                  if (isOnline == true)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: colors.success,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: colors.surface,
+                            width: 2,
                           ),
                         ),
-                      if (isOnline == true)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: colors.success,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: colors.surface,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  // 内容区
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 第一行：名称 + 标签 + 时间
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                user.name,
-                                style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            ..._buildTags(context),
-                            const SizedBox(width: 8),
-                            Text(
-                              timeText ?? _formatTime(_displayTime),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: unread > 0
-                                    ? colors.primary
-                                    : colors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        // 第二行：消息预览
-                        _buildPreviewLine(context),
-                      ],
+                      ),
                     ),
-                  ),
                 ],
               ),
-            ),
-            // 底部分割线（缩进到头像之后）
-            Padding(
-              padding: const EdgeInsets.only(left: 68),
-              child: Divider(height: 1, color: colors.divider),
-            ),
-          ],
+              const SizedBox(width: 12),
+              // 内容区
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 第一行：名称 + 标签（紧跟标题） + 时间（固定最右）
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  user.name,
+                                  style: TextStyle(
+                                    color: colors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              ..._buildTags(context),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // 时间：自然宽度，位于行最右
+                        Text(
+                          timeText ?? _formatTime(_displayTime),
+                          style: TextStyle(
+                            fontSize: 12,
+                            // 对齐设计稿：未读不以日期变色，统一灰色，未读态走角标/筛选。
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // 第二行：消息预览
+                    _buildPreviewLine(context),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
       ),
     );
   }
+
 
   /// 标签收敛：最多展示 2 个，优先级 不在群内 > @我 > 通知。
   List<Widget> _buildTags(BuildContext context) {
     final colors = context.appColors;
     final tags = <Widget>[];
+    // 占位：无 external/bot/agent 数据，先展示设计稿同款文字胶囊。
+    final placeholder = _placeholderTagName();
+    if (placeholder != null) {
+      tags.add(
+        _TagLabel(
+          text: placeholder,
+          color: _placeholderTagColors[placeholder]!,
+        ),
+      );
+    }
     if (conversation.isNotInGroup) {
       tags.add(_TagLabel(text: '不在群内', color: colors.danger));
     }
@@ -440,7 +434,7 @@ class ChatListItemContent extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
-        style: TextStyle(fontSize: 13, color: colors.textSecondary),
+        style: TextStyle(fontSize: 15, color: colors.textSecondary),
         children: [
           if (_hasDraft)
             TextSpan(
@@ -454,7 +448,8 @@ class ChatListItemContent extends StatelessWidget {
   }
 }
 
-/// 群聊头像：圆角方形 + 群组图标（群头像由服务端 faceUrl 提供时优先展示）。
+/// 群聊头像：统一圆形 + 群组图标（群头像由服务端 faceUrl 提供时优先展示；
+/// 无头像时用与单聊一致的彩色圆底，保证列表头像视觉统一）。
 class _GroupAvatar extends StatelessWidget {
   const _GroupAvatar({required this.conversation, required this.radius});
 
@@ -471,14 +466,10 @@ class _GroupAvatar extends StatelessWidget {
         radius: radius,
       );
     }
-    return Container(
-      width: radius * 2,
-      height: radius * 2,
-      decoration: BoxDecoration(
-        color: colors.surfaceMuted,
-        borderRadius: BorderRadius.circular(radius * 0.5),
-      ),
-      child: Icon(Icons.group, size: radius * 1.2, color: colors.textSecondary),
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: kNameAvatarBackground,
+      child: Icon(Icons.group, size: radius * 1.2, color: colors.onPrimary),
     );
   }
 }
@@ -501,7 +492,7 @@ class _TagLabel extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           color: color,
         ),

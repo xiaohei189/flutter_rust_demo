@@ -91,10 +91,11 @@ class ChatListItem extends StatelessWidget {
       hasSendFailure: hasSendFailure,
       onRetrySend: onRetrySend,
       onTap: onTap,
-      onLongPress: () {
+      onLongPress: (Rect rowRect) {
         if (isSelectionMode) return;
         showChatListItemMenu(
           context,
+          rowRect: rowRect,
           conversation: conversation,
           isMuted: conversation.recvMsgOpt == 1,
           onPinToggle: onPinToggle,

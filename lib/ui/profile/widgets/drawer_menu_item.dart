@@ -10,12 +10,16 @@ class DrawerMenuItem extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.trailing,
+    this.iconColor,
+    this.labelColor,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final String? trailing;
+  final Color? iconColor;
+  final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +32,15 @@ class DrawerMenuItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, size: 24, color: colors.textPrimary),
+              Icon(icon, size: 24, color: iconColor ?? colors.textPrimary),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(fontSize: 16, color: colors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: labelColor ?? colors.textPrimary,
+                  ),
                 ),
               ),
               if (trailing != null) ...[

@@ -59,73 +59,86 @@ class ChatActionToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      // 工具栏总高：内容行顶部留 8（图标偏下），配合输入区容器底部 padding 8，
+      // 使图标在「输入框底部 → 输入区底部」的整个浅灰区域中垂直居中
       height: 44,
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  // 😊 表情
-                  _ToolbarIcon(
-                    icon: emojiActive ? Icons.keyboard : Icons.emoji_emotions_outlined,
-                    tooltip: emojiActive ? '键盘' : '表情',
-                    onTap: onEmoji,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Align(
+                  // 图标行垂直居中，避免 SingleChildScrollView 撑满后内容顶对齐、底部露出背景色
+                  alignment: Alignment.center,
+                  child: Row(
+                    children: [
+                      // 😊 表情
+                      _ToolbarIcon(
+                        icon: emojiActive
+                            ? Icons.keyboard
+                            : Icons.emoji_emotions_outlined,
+                        tooltip: emojiActive ? '键盘' : '表情',
+                        onTap: onEmoji,
+                      ),
+                      // @ 提及
+                      _ToolbarIcon(
+                        icon: Icons.alternate_email,
+                        tooltip: '@ 提及',
+                        onTap: onAt,
+                      ),
+                      // 🎤 语音（长按录音，上滑取消）
+                      if (onVoiceLongPressStart != null)
+                        _VoiceToolbarIcon(
+                          onLongPressStart: onVoiceLongPressStart!,
+                          onLongPressMoveUpdate: onVoiceLongPressMoveUpdate,
+                          onLongPressEnd: onVoiceLongPressEnd,
+                          onTap: onVoiceTap,
+                        )
+                      else
+                        _ToolbarIcon(
+                          icon: Icons.mic_none,
+                          tooltip: '语音',
+                          onTap: onVoiceTap ?? () {},
+                        ),
+                      // 🖼️ 相册
+                      _ToolbarIcon(
+                        icon: Icons.photo_library_outlined,
+                        tooltip: '相册',
+                        onTap: onImage,
+                        enabled: imageEnabled,
+                      ),
+                      // Aa 格式
+                      _ToolbarIcon(
+                        textLabel: 'Aa',
+                        tooltip: markdownTooltip,
+                        active: markdownActive,
+                        onTap: onFormat,
+                      ),
+                      // ➕ 更多
+                      _ToolbarIcon(
+                        icon: moreActive
+                            ? Icons.add_circle
+                            : Icons.add_circle_outline,
+                        tooltip: '更多',
+                        onTap: onMore,
+                      ),
+                    ],
                   ),
-                  // @ 提及
-                  _ToolbarIcon(
-                    icon: Icons.alternate_email,
-                    tooltip: '@ 提及',
-                    onTap: onAt,
-                  ),
-                  // 🎤 语音（长按录音，上滑取消）
-                  if (onVoiceLongPressStart != null)
-                    _VoiceToolbarIcon(
-                      onLongPressStart: onVoiceLongPressStart!,
-                      onLongPressMoveUpdate: onVoiceLongPressMoveUpdate,
-                      onLongPressEnd: onVoiceLongPressEnd,
-                      onTap: onVoiceTap,
-                    )
-                  else
-                    _ToolbarIcon(
-                      icon: Icons.mic_none,
-                      tooltip: '语音',
-                      onTap: onVoiceTap ?? () {},
-                    ),
-                  // 🖼️ 相册
-                  _ToolbarIcon(
-                    icon: Icons.photo_library_outlined,
-                    tooltip: '相册',
-                    onTap: onImage,
-                    enabled: imageEnabled,
-                  ),
-                  // Aa 格式
-                  _ToolbarIcon(
-                    textLabel: 'Aa',
-                    tooltip: markdownTooltip,
-                    active: markdownActive,
-                    onTap: onFormat,
-                  ),
-                  // ➕ 更多
-                  _ToolbarIcon(
-                    icon: moreActive ? Icons.add_circle : Icons.add_circle_outline,
-                    tooltip: '更多',
-                    onTap: onMore,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-          // ➡️ 发送（始终显示，最右；无文字时置灰）
-          ValueListenableBuilder<bool>(
-            valueListenable: hasText,
-            builder: (_, hasTextValue, __) {
-              return SendButton(enabled: hasTextValue, onSend: onSend);
-            },
-          ),
-        ],
+            // ➡️ 发送（始终显示，最右；无文字时置灰）
+            ValueListenableBuilder<bool>(
+              valueListenable: hasText,
+              builder: (_, hasTextValue, __) {
+                return SendButton(enabled: hasTextValue, onSend: onSend);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -158,8 +171,9 @@ class _ToolbarIcon extends StatelessWidget {
         label: tooltip,
         button: true,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          // 工具栏图标尺寸（图标 24 居中）：调小 → 图标之间间距更小
+          width: 36,
+          height: 36,
           child: IconButton(
             icon: textLabel != null
                 ? Text(
@@ -216,8 +230,9 @@ class _VoiceToolbarIcon extends StatelessWidget {
         label: '语音（长按录音，上滑取消）',
         button: true,
         child: SizedBox(
-          width: 44,
-          height: 44,
+          // 工具栏图标尺寸（图标 24 居中）：调小 → 图标之间间距更小
+          width: 36,
+          height: 36,
           child: IconButton(
             icon: Icon(
               Icons.mic_none,
@@ -250,7 +265,9 @@ class SendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final bg = enabled ? colors.primary : colors.textSecondary.withValues(alpha: 0.22);
+    final bg = enabled
+        ? colors.primary
+        : colors.textSecondary.withValues(alpha: 0.22);
     return Semantics(
       button: true,
       label: '发送',
@@ -270,7 +287,9 @@ class SendButton extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: enabled ? Colors.white : Colors.white.withValues(alpha: 0.85),
+              color: enabled
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.85),
             ),
           ),
         ),

@@ -16,8 +16,10 @@ abstract final class AppPaths {
   static const String main = '/main';
   static const String tabChat = '/main/chat';
   static const String tabContacts = '/main/contacts';
-  static const String tabDiscover = '/main/discover';
-  static const String tabMine = '/main/mine';
+  static const String tabCalendar = '/main/calendar';
+  static const String tabWorkbench = '/main/workbench';
+  static const String tabCloud = '/main/cloud';
+  static const String tabMore = '/main/more';
 
   // ==================== 聊天 ====================
   static const String chatDetail = '/chat/:id';

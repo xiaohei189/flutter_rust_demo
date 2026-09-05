@@ -25,7 +25,7 @@ class ChatInputField extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       minLines: 1,
-      maxLines: isMarkdownMode ? 12 : 8,
+      maxLines: isMarkdownMode ? 12 : 5,
       maxLength: 4000,
       buildCounter:
           (_, {required currentLength, required isFocused, int? maxLength}) =>
@@ -57,15 +57,29 @@ class ChatInputField extends StatelessWidget {
           borderSide: BorderSide.none,
         ),
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.open_in_full, size: 18),
-          tooltip: '展开编辑',
-          onPressed: onOpenComposer,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        contentPadding: const EdgeInsets.only(
+          left: 12, // 输入框左侧内边距（文字距输入框左缘）
+          right: 0, // 输入框右侧内边距（放大箭头在右侧，0 让箭头尽量贴右）
+          top: 10, // 输入框上下内边距（决定单行高度/行高）
+          bottom: 10,
         ),
-        suffixIconConstraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        suffixIcon: Tooltip(
+          message: '展开编辑',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onOpenComposer,
+            child: const SizedBox(
+              // 放大箭头区域：width 越大箭头越靠输入框左（右侧留白越多）；越小越贴右缘（与「输入框→表情」间距相关）
+              width: 26,
+              height: 32, // 箭头点击高度
+              child: Icon(Icons.open_in_full, size: 18),
+            ),
+          ),
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 26, // 与上方箭头区域宽度保持一致
+          minHeight: 32,
+        ),
       ),
       onTapOutside: (_) {},
       onSubmitted: (_) => onSubmitted(),

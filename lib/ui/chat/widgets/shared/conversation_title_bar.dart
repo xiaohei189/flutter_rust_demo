@@ -1,12 +1,13 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
+import '../../../../domain/models/user.dart';
+import '../../../core/widgets/user_avatar.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// 会话列表顶部栏（参考飞书风格）
 /// 左侧：用户头像 + 昵称/用户名
-/// 右侧：搜索图标 + 「+」按钮
+/// 右侧：搜索图标 + 「+」按钮（仅保留列表批量操作「多选管理」，
+/// 其余应用类入口已收敛到「工作台」Tab）
 class ConversationTitleBar extends StatelessWidget
     implements PreferredSizeWidget {
   const ConversationTitleBar({
@@ -14,38 +15,26 @@ class ConversationTitleBar extends StatelessWidget
     required this.currentUserId,
     this.nickname,
     this.avatarUrl,
+    this.statusText,
     required this.isSyncing,
     required this.isConnected,
     this.syncProgress = 0,
     this.onAvatarTap,
     this.onSearchTap,
-    this.onAddFriend,
-    this.onAddGroup,
-    this.onCreateGroup,
-    this.onScan,
-    this.onHideAll,
     this.onManage,
-    this.globalMuted = false,
-    this.onToggleGlobalMute,
     this.onRefresh,
   });
 
   final String currentUserId;
   final String? nickname;
   final String? avatarUrl;
+  final String? statusText;
   final bool isSyncing;
   final bool isConnected;
   final int syncProgress;
   final VoidCallback? onAvatarTap;
   final VoidCallback? onSearchTap;
-  final VoidCallback? onAddFriend;
-  final VoidCallback? onAddGroup;
-  final VoidCallback? onCreateGroup;
-  final VoidCallback? onScan;
-  final VoidCallback? onHideAll;
   final VoidCallback? onManage;
-  final bool globalMuted;
-  final VoidCallback? onToggleGlobalMute;
   final VoidCallback? onRefresh;
 
   String get _displayName {
@@ -54,41 +43,8 @@ class ConversationTitleBar extends StatelessWidget
     return '我';
   }
 
-  String get _avatarInitial {
-    if (nickname != null && nickname!.isNotEmpty) {
-      final cn = RegExp(r'[\u4e00-\u9fa5]').firstMatch(nickname!);
-      if (cn != null) return cn.group(0)!;
-      return nickname!.substring(0, 1).toUpperCase();
-    }
-    if (currentUserId.isNotEmpty) {
-      return currentUserId.substring(0, 1).toUpperCase();
-    }
-    return '我';
-  }
-
-  /// 判断是否为本地文件路径
-  bool _isLocalPath(String path) {
-    if (path.startsWith('http://') ||
-        path.startsWith('https://') ||
-        path.startsWith('ftp://')) {
-      return false;
-    }
-    if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
-      return true;
-    }
-    if (path.startsWith('/')) {
-      return true;
-    }
-    return false;
-  }
-
-  ImageProvider? _getAvatarImage() {
-    if (avatarUrl == null || avatarUrl!.isEmpty) return null;
-    if (_isLocalPath(avatarUrl!)) {
-      return FileImage(File(avatarUrl!));
-    }
-    return NetworkImage(avatarUrl!);
-  }
+  /// 头像下方的状态/签名行（连接失败时优先显示错误）。
+  String get _statusText => statusText?.trim() ?? '';
 
   @override
   Size get preferredSize => const Size.fromHeight(56);
@@ -108,29 +64,46 @@ class ConversationTitleBar extends StatelessWidget
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            // 左侧：头像 + 名字
+            // 左侧：头像 + 名字（大头像 + 状态点 + 大昵称）
             GestureDetector(
               key: const ValueKey('chat_avatar_button'),
               onTap: onAvatarTap,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: colors.primary.withValues(alpha: 0.15),
-                    backgroundImage: _getAvatarImage(),
-                    child: avatarUrl == null || avatarUrl!.isEmpty
-                        ? Text(
-                            _avatarInitial,
-                            style: TextStyle(
-                              color: colors.primary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // 复用列表同款 UserAvatar：实色底 + 全名，图片/回退一致，底色统一。
+                      UserAvatar(
+                        user: User(
+                          id: currentUserId,
+                          name: _displayName,
+                          avatar: avatarUrl,
+                        ),
+                        radius: kConversationAvatarRadius,
+                      ),
+                      // 在线/忙碌状态点
+                      if (isConnected)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: colors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: colors.surface,
+                                width: 1.5,
+                              ),
                             ),
-                          )
-                        : null,
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -139,14 +112,26 @@ class ConversationTitleBar extends StatelessWidget
                         _displayName,
                         style: TextStyle(
                           color: colors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
                         ),
                       ),
                       if (!isConnected)
                         Text(
                           '连接失败',
                           style: TextStyle(fontSize: 11, color: colors.danger),
+                        )
+                      else
+                        // 对齐设计稿：昵称下方常显一行状态；未设签名时用默认「在线」。
+                        Text(
+                          _statusText.isNotEmpty ? _statusText : '在线',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textSecondary,
+                          ),
                         ),
                     ],
                   ),
@@ -154,13 +139,13 @@ class ConversationTitleBar extends StatelessWidget
               ),
             ),
             const Spacer(),
-            // 右侧：搜索 + 加号
+            // 右侧：搜索 + 加号（列表批量操作入口）
             Semantics(
               label: '搜索',
               button: true,
               child: IconButton(
                 key: const ValueKey('chat_search_button'),
-                icon: const Icon(Icons.search, size: 26),
+                icon: const Icon(Icons.search, size: 30),
                 color: colors.textPrimary,
                 onPressed: onSearchTap,
                 style: IconButton.styleFrom(
@@ -170,91 +155,21 @@ class ConversationTitleBar extends StatelessWidget
               ),
             ),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.add_circle_outline, size: 26),
+              icon: Icon(Icons.add_circle, size: 30, color: colors.textPrimary),
               color: colors.surface,
               onSelected: (value) {
                 switch (value) {
-                  case 'add_friend':
-                    onAddFriend?.call();
-                    break;
-                  case 'add_group':
-                    onAddGroup?.call();
-                    break;
-                  case 'create_group':
-                    onCreateGroup?.call();
-                    break;
-                  case 'scan':
-                    onScan?.call();
-                    break;
-                  case 'hide_all':
-                    onHideAll?.call();
-                    break;
                   case 'manage':
                     onManage?.call();
-                    break;
-                  case 'toggle_global_mute':
-                    onToggleGlobalMute?.call();
                     break;
                 }
               },
               itemBuilder: (context) => [
                 const PopupMenuItem(
-                  value: 'add_friend',
-                  child: ListTile(
-                    leading: Icon(Icons.person_add_outlined),
-                    title: Text('添加好友'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'add_group',
-                  child: ListTile(
-                    leading: Icon(Icons.group_add_outlined),
-                    title: Text('加群'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'create_group',
-                  child: ListTile(
-                    leading: Icon(Icons.group_outlined),
-                    title: Text('发起群聊'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'scan',
-                  child: ListTile(
-                    leading: Icon(Icons.qr_code_scanner_outlined),
-                    title: Text('扫一扫'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'hide_all',
-                  child: ListTile(
-                    leading: Icon(Icons.inventory_2_outlined),
-                    title: Text('全部归档'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                const PopupMenuItem(
                   value: 'manage',
                   child: ListTile(
                     leading: Icon(Icons.checklist),
                     title: Text('多选管理'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'toggle_global_mute',
-                  child: ListTile(
-                    leading: Icon(
-                      globalMuted
-                          ? Icons.notifications_off
-                          : Icons.notifications_none,
-                    ),
-                    title: Text(globalMuted ? '关闭全局免打扰' : '开启全局免打扰'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

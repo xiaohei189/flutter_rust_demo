@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../providers/connection_provider.dart';
 import '../../../providers/current_user_provider.dart';
@@ -20,7 +19,6 @@ import '../../core/view_models/connection_view_model.dart';
 import '../providers/chat_list_provider.dart';
 import '../providers/conversation_folder_provider.dart';
 import '../providers/conversation_provider.dart';
-import '../providers/message_service_provider.dart';
 import '../view_models/chat_list_view_model.dart';
 import '../widgets/list/chat_list_dialogs.dart';
 import '../view_models/conversation_view_model.dart';
@@ -76,24 +74,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     if (mounted) _exitSelectionMode();
   }
 
-  Future<void> _toggleGlobalMute() async {
-    final profile = ref.read(userProfileViewProvider).profile;
-    final muted = profile?.globalRecvMsgOpt == 1;
-    try {
-      await ref
-          .read(messageRepositoryProvider)
-          .setGlobalMsgRecvOpt(globalRecvOpt: muted ? 0 : 1);
-      await ref.read(messageServiceProvider.notifier).refreshLoginUserProfile();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(muted ? '关闭全局免打扰失败' : '开启全局免打扰失败'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
 
   void _openGroupFilterPanel() {
     final conversationState = ref.read(conversationListProvider);
@@ -167,16 +147,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final totalUnread = conversationState.totalUnreadCount;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       appBar: ConversationTitleBar(
         currentUserId: currentUserId,
         nickname: userProfileState.profile?.nickname,
+        statusText: userProfileState.signature,
         avatarUrl: _viewModel.displayAvatarUrl,
         isSyncing: conversationState.isSyncing,
         isConnected: connectionState.isConnected,
         syncProgress: conversationState.syncProgress,
-        globalMuted: userProfileState.profile?.globalRecvMsgOpt == 1,
-        onToggleGlobalMute: _toggleGlobalMute,
         onAvatarTap: () {
           Navigator.of(context).push(
             LeftSlideRoute(
@@ -192,15 +171,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           AppRouter.goToSearch(context);
         },
         onRefresh: _viewModel.refreshConversations,
-        onAddFriend: () => AppRouter.goToAddContact(context),
-        onAddGroup: () => AppRouter.goToSearch(context),
-        onCreateGroup: () => AppRouter.goToCreateGroup(context),
-        onScan: () async {
-          final raw = await context.push<String>('/scan');
-          if (raw == null || !context.mounted) return;
-          _dialogs.handleScanResult(context, raw);
-        },
-        onHideAll: () => _dialogs.confirmArchiveAll(context),
         onManage: _enterSelectionMode,
       ),
       body: Column(
@@ -216,7 +186,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             onSearchTap: () => AppRouter.goToSearch(context),
             activeFolderLabel: listState.activeFolder,
           ),
-          Divider(height: 1, color: colors.divider),
           if (!connectionState.isConnected) _buildOfflineBanner(context),
           Expanded(
             child: RefreshIndicator(

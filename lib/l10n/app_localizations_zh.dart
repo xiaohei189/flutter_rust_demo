@@ -18,10 +18,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tabContacts => '通讯录';
 
   @override
-  String get tabDiscover => '发现';
+  String get tabWorkbench => '工作台';
 
   @override
-  String get tabMine => '我的';
+  String get workbenchTitle => '工作台';
 
   @override
   String get loginTitle => '欢迎使用';
@@ -31,9 +31,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get contactsTitle => '通讯录';
-
-  @override
-  String get discoverTitle => '发现';
 
   @override
   String get friendListTitle => '好友列表';

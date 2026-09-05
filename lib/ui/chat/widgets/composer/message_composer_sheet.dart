@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../message_content_type.dart';
 import 'attachment_panel.dart';
 import 'chat_action_toolbar.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_format_bar.dart';
-import '../message_content_type.dart';
 
 /// 展开编辑抽屉（飞书式）：全宽大编辑区，用于长文 / Markdown 输入。
 ///
@@ -53,6 +53,9 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   bool _isMarkdownMode = false;
 
   _Panel _activePanel = _Panel.none;
+
+  /// 抽屉高度占屏幕比例（拖拽把手可调整 0.3~0.95）
+  double _heightFactor = 0.85;
 
   void _insertEmoji(String emoji) {
     final controller = widget.controller;
@@ -166,77 +169,107 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final mediaQuery = MediaQuery.of(context);
+    // 可用高度 = 屏幕高度 - 顶部安全区 - 键盘占位，
+    // 保证抽屉顶部始终在状态栏下方（把手/缩回按钮可正常选中）
+    final availableHeight =
+        mediaQuery.size.height -
+        mediaQuery.padding.top -
+        mediaQuery.viewInsets.bottom;
     return Padding(
       // 键盘弹出时整体抬起
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.85,
+        height: availableHeight * _heightFactor,
         child: Column(
           children: [
-            // 拖拽把手（下滑缩回提示）
-            Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 6),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.divider,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // 最小头部：仅保留缩回按钮
-            SizedBox(
-              height: 44,
-              child: Row(
-                children: [
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close_fullscreen,
-                      size: 20,
-                      color: colors.textSecondary,
-                    ),
-                    tooltip: '缩回',
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                  ),
-                ],
-              ),
-            ),
-            // 大编辑区：无填充背景，与抽屉融为一体
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                child: TextField(
-                  controller: widget.controller,
-                  autofocus: true,
-                  // expands 填满抽屉剩余高度（minLines/maxLines 需为 null）
-                  expands: true,
-                  minLines: null,
-                  maxLines: null,
-                  maxLength: 4000,
-                  buildCounter: (
-                    _,
-                    {
-                    required currentLength,
-                    required isFocused,
-                    int? maxLength,
-                  }) =>
-                      const SizedBox.shrink(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: colors.textPrimary,
-                    fontFamily: _isMarkdownMode ? 'monospace' : null,
-                  ),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: colors.surface,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
+            // 拖拽把手：拖动只改变编辑区高度（底部工具栏固定），避免默认 BottomSheet 整体拖动导致工具栏消失
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragUpdate: (details) {
+                final availableHeight =
+                    MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top -
+                    MediaQuery.of(context).viewInsets.bottom;
+                final next = _heightFactor - details.delta.dy / availableHeight;
+                if (next <= 0.50) {
+                  // 缩小到阈值以下：自动退出到单行编辑（关闭抽屉）
+                  Navigator.of(context).pop();
+                  return;
+                }
+                setState(() {
+                  _heightFactor = next.clamp(0.35, 0.95);
+                });
+              },
+              // 全宽可拖拽条：把手横线居中，向上/向下拖动调整编辑区高度，松手保持
+              child: Container(
+                width: double.infinity,
+                height: 26,
+                alignment: Alignment.center,
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.divider,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+              ),
+            ),
+            // 编辑区 + 右上角缩回按钮：按钮与文字首行同一行（不再单独占一行）
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                      child: TextField(
+                        controller: widget.controller,
+                        autofocus: true,
+                        // expands 填满抽屉剩余高度（minLines/maxLines 需为 null）
+                        expands: true,
+                        // expands 时默认垂直居中，显式顶部对齐避免首行距顶部大片空白
+                        textAlignVertical: TextAlignVertical.top,
+                        minLines: null,
+                        maxLines: null,
+                        maxLength: 4000,
+                        buildCounter:
+                            (
+                              _, {
+                              required currentLength,
+                              required isFocused,
+                              int? maxLength,
+                            }) => const SizedBox.shrink(),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: colors.textPrimary,
+                          fontFamily: _isMarkdownMode ? 'monospace' : null,
+                        ),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, right: 4),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.close_fullscreen,
+                        size: 20,
+                        color: colors.textSecondary,
+                      ),
+                      tooltip: '缩回',
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
               ),
             ),
             // 底部工具栏：Markdown 模式切换为格式栏
@@ -259,7 +292,9 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 emojiActive: _activePanel == _Panel.emoji,
                 moreActive: _activePanel == _Panel.attachment,
                 markdownActive: _isMarkdownMode,
-                markdownTooltip: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+                markdownTooltip: _isMarkdownMode
+                    ? '关闭 Markdown'
+                    : 'Markdown 格式',
                 hasText: widget.hasText,
                 onEmoji: () => _togglePanel(_Panel.emoji),
                 onAt: widget.onAtMention ?? () {},

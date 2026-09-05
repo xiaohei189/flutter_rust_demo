@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/auth.dart' show VerificationCodeUsage;
+import '../../../../core/utils/app_logger.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../providers/auth_provider.dart';
@@ -27,6 +28,15 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _loggedFirstBuild = false;
+
+  @override
+  void initState() {
+    super.initState();
+    appLog.i(
+      '[LoginMeasure] T2 登录页 init ',
+    );
+  }
   final _areaCodeController = TextEditingController(text: '+86');
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -99,6 +109,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_loggedFirstBuild) {
+      _loggedFirstBuild = true;
+      appLog.i(
+        '[LoginMeasure] T3 登录页首帧 build ',
+      );
+    }
     final authState = ref.watch(authViewModelProvider);
     final loading = authState.isLoading;
     final countdown = authState.countdown;
@@ -160,6 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
+                        key: const ValueKey('login_phone'),
                         controller: _phoneController,
                         decoration: const InputDecoration(
                           labelText: '手机号',
@@ -214,6 +231,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ] else
                   TextFormField(
+                    key: const ValueKey('login_password'),
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
@@ -243,6 +261,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 FilledButton(
+                  key: const ValueKey('login_submit'),
                   onPressed: loading ? null : _login,
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
