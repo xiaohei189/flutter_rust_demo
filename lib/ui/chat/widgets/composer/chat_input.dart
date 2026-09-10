@@ -76,6 +76,13 @@ class _ChatInputState extends State<ChatInput> {
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
 
+  /// 缓存两个常驻面板的 widget 实例：
+  /// Flutter 在 `child.widget == newWidget` 时直接复用 Element、不重建子树
+  /// （framework.dart 的 Element.updateChild 快路径），因此父级（页面）重建时
+  /// 隐藏面板不再参与 build/layout，同时面板状态照旧保留。
+  late final Widget _emojiPanel;
+  late final Widget _attachmentPanel;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +100,14 @@ class _ChatInputState extends State<ChatInput> {
       atMembers: widget.atMembers,
     );
     _initAttachmentItems();
+    _emojiPanel = EmojiPanel(
+      onEmojiSelected: _insertEmoji,
+      onGifSelected: widget.onGifSelected,
+    );
+    _attachmentPanel = AttachmentPanel(
+      items: _cachedAttachmentItems,
+      onItemTap: () => _composer.closePanels(),
+    );
     _voiceRecorder = VoiceRecorderController(
       onVoiceRecord: widget.onVoiceRecord,
     )..addListener(_onRecordingChanged);
@@ -423,17 +438,11 @@ class _ChatInputState extends State<ChatInput> {
                 children: [
                   Offstage(
                     offstage: _composer.activePanel != ComposerPanel.emoji,
-                    child: EmojiPanel(
-                      onEmojiSelected: _insertEmoji,
-                      onGifSelected: widget.onGifSelected,
-                    ),
+                    child: _emojiPanel,
                   ),
                   Offstage(
                     offstage: _composer.activePanel != ComposerPanel.attachment,
-                    child: AttachmentPanel(
-                      items: _attachmentItems,
-                      onItemTap: () => _composer.closePanels(),
-                    ),
+                    child: _attachmentPanel,
                   ),
                 ],
               ),
