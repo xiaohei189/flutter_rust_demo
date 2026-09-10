@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart';
@@ -20,10 +19,6 @@ import '../../../core/widgets/user_avatar.dart';
 
 /// 消息气泡：负责统一布局，内容按类型委托给独立组件。
 class MessageBubble extends StatelessWidget {
-  static final DateFormat _timeFormat = DateFormat('HH:mm');
-  static final DateFormat _monthDayFormat = DateFormat('MM月dd日');
-  static final DateFormat _fullDateFormat = DateFormat('yyyy年MM月dd日');
-
   final ChatMessage message;
   final User otherUser;
   final String? currentUserId;
@@ -116,7 +111,7 @@ class MessageBubble extends StatelessWidget {
     }
 
     final isFromMe = _isFromMe;
-    final timeText = _formatMessageTime(message.sendDateTime);
+    final timeText = formatMessageTime(message.sendDateTime);
     final senderUser = _buildSenderUser();
     final screenWidth = maxBubbleWidth ?? MediaQuery.sizeOf(context).width;
 
@@ -282,27 +277,6 @@ class MessageBubble extends StatelessWidget {
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {
     AppRouter.goToUserProfile(context, userId: user.id, user: user);
-  }
-
-  String _formatMessageTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final msgDay = DateTime(dateTime.year, dateTime.month, dateTime.day);
-    final diff = today.difference(msgDay).inDays;
-    final timeStr = _timeFormat.format(dateTime);
-
-    if (diff == 0) {
-      return timeStr;
-    } else if (diff == 1) {
-      return '昨天 $timeStr';
-    } else if (diff < 7) {
-      const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-      return '${weekdays[dateTime.weekday - 1]} $timeStr';
-    } else if (now.year == dateTime.year) {
-      return '${_monthDayFormat.format(dateTime)} $timeStr';
-    } else {
-      return '${_fullDateFormat.format(dateTime)} $timeStr';
-    }
   }
 }
 

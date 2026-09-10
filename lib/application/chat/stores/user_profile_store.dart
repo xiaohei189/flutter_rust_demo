@@ -17,6 +17,12 @@ class UserProfileStore {
     UserProfile? loginUserProfile,
     bool clearLoginUserProfile = false,
   }) {
+    if (currentUserId == null &&
+        userProfiles == null &&
+        loginUserProfile == null &&
+        !clearLoginUserProfile) {
+      return this;
+    }
     return UserProfileStore(
       currentUserId: currentUserId ?? this.currentUserId,
       userProfiles: userProfiles ?? this.userProfiles,

@@ -236,16 +236,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   ChatDetailState get _chatState =>
       ref.read(chatDetailViewModelProvider(widget.conversationId));
 
-  Conversation? get _conversation {
-    final conversations = ref.read(conversationListProvider).conversations;
-    try {
-      return conversations.firstWhere(
-        (c) => c.conversationId == widget.conversationId,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
+  /// 当前会话：复用 conversationByIdProvider 的结果（会话列表变化时才重算），
+  /// 避免在 build 内多次全表扫描会话列表。
+  Conversation? get _conversation =>
+      ref.read(conversationByIdProvider(widget.conversationId));
 
   bool get _isGroup {
     final conversation = _conversation;
@@ -504,12 +498,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     String currentUserId,
   ) {
     // 输入区高度上限：多行输入 + 表情/附件面板可能超出可用高度。
-    // 用屏幕可用高度近似（maybeOf 不注册 MediaQuery 依赖，键盘动画期间不会整页每帧重建；
-    // 面板内部 Flexible 会在受限时自动收缩兜底）。
-    final mediaQuery = MediaQuery.maybeOf(context);
+    // 用屏幕可用高度近似，面板内部 Flexible 会在受限时自动收缩兜底。
+    // 这里按 aspect 取值（height/padding）：键盘动画期间 viewInsets 逐帧变化不会
+    // 触发本页重建；若改用 MediaQuery.maybeOf 会注册无条件依赖，键盘每帧都重建整页。
     final maxInputHeight =
-        (mediaQuery?.size.height ?? 0) -
-        (mediaQuery?.padding.top ?? 0) -
+        (MediaQuery.maybeHeightOf(context) ?? 0) -
+        (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
         kToolbarHeight;
     return _bodyReady
         ? Column(

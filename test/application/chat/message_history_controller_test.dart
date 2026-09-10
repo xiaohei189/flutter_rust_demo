@@ -100,4 +100,45 @@ void main() {
     expect(messages, hasLength(1));
     expect(() => messages.add(_message('m2', 2, 'b')), throwsUnsupportedError);
   });
+
+  group('mergeHistoryPage', () {
+    test('历史分页插到已有消息前面', () {
+      final merged = MessageHistoryController.mergeHistoryPage(
+        existing: [_message('m3', 3, 'c')],
+        incoming: [_message('m1', 1, 'a'), _message('m2', 2, 'b')],
+      );
+
+      expect(merged.map((m) => m.clientMsgId), ['m1', 'm2', 'm3']);
+    });
+
+    test('同 clientMsgId 以新拉取到的为准且不重复', () {
+      final merged = MessageHistoryController.mergeHistoryPage(
+        existing: [_message('m2', 2, '旧内容'), _message('m3', 3, 'c')],
+        incoming: [_message('m1', 1, 'a'), _message('m2', 2, '新内容')],
+      );
+
+      expect(merged.map((m) => m.clientMsgId), ['m1', 'm2', 'm3']);
+      expect(merged[1].content, contains('新内容'));
+    });
+
+    test('分页内部重复时只保留第一条', () {
+      final merged = MessageHistoryController.mergeHistoryPage(
+        existing: const [],
+        incoming: [_message('m1', 1, 'a'), _message('m1', 1, 'a')],
+      );
+
+      expect(merged, hasLength(1));
+    });
+
+    test('不修改传入的已有列表（旧状态仍可安全复用）', () {
+      final existing = <ChatMessage>[_message('m2', 2, 'b')];
+      final merged = MessageHistoryController.mergeHistoryPage(
+        existing: existing,
+        incoming: [_message('m1', 1, 'a')],
+      );
+
+      expect(existing.map((m) => m.clientMsgId), ['m2']);
+      expect(merged.map((m) => m.clientMsgId), ['m1', 'm2']);
+    });
+  });
 }

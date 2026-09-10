@@ -58,6 +58,15 @@ class MessageServiceState {
           groupRevision: groupRevision ?? 0,
         );
 
+  /// 以 Store 组合直接构造（copyWith 复用未变更领域实例时使用）。
+  const MessageServiceState._({
+    required this.connection,
+    required this.conversation,
+    required this.message,
+    required this.userProfile,
+    required this.social,
+  });
+
   bool get isConnected => connection.isConnected;
   bool get isSyncingConversations => conversation.isSyncingConversations;
   int get syncProgress => conversation.syncProgress;
@@ -92,23 +101,34 @@ class MessageServiceState {
     Map<String, int>? uploadProgress,
     Map<String, GroupReadReceipt>? groupReadReceipts,
   }) {
-    return MessageServiceState(
-      isConnected: isConnected ?? connection.isConnected,
-      isInitializing: isInitializing ?? connection.isInitializing,
-      isSyncingConversations:
-          isSyncingConversations ?? conversation.isSyncingConversations,
-      syncProgress: syncProgress ?? conversation.syncProgress,
-      totalUnreadCount: totalUnreadCount ?? conversation.totalUnreadCount,
-      currentUserId: currentUserId ?? userProfile.currentUserId,
-      userProfiles: userProfiles ?? userProfile.userProfiles,
-      loginUserProfile: loginUserProfile ?? userProfile.loginUserProfile,
-      conversations: conversations ?? conversation.conversations,
-      messages: messages ?? message.messages,
-      typingUsers: typingUsers ?? message.typingUsers,
-      uploadProgress: uploadProgress ?? message.uploadProgress,
-      groupReadReceipts: groupReadReceipts ?? message.groupReadReceipts,
-      friendRevision: friendRevision ?? social.friendRevision,
-      groupRevision: groupRevision ?? social.groupRevision,
+    // 委派给各 Store 的 copyWith：未变更的领域直接复用原实例，
+    // 避免每次消息事件/历史加载都重建 5 个 Store 对象。
+    return MessageServiceState._(
+      connection: connection.copyWith(
+        isConnected: isConnected,
+        isInitializing: isInitializing,
+      ),
+      conversation: conversation.copyWith(
+        conversations: conversations,
+        isSyncingConversations: isSyncingConversations,
+        syncProgress: syncProgress,
+        totalUnreadCount: totalUnreadCount,
+      ),
+      message: message.copyWith(
+        messages: messages,
+        typingUsers: typingUsers,
+        uploadProgress: uploadProgress,
+        groupReadReceipts: groupReadReceipts,
+      ),
+      userProfile: userProfile.copyWith(
+        currentUserId: currentUserId,
+        userProfiles: userProfiles,
+        loginUserProfile: loginUserProfile,
+      ),
+      social: social.copyWith(
+        friendRevision: friendRevision,
+        groupRevision: groupRevision,
+      ),
     );
   }
 }

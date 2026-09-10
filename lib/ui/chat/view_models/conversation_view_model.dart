@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../providers/message_service_provider.dart';
 import '../utils/conversation_display.dart';
 
@@ -83,12 +84,16 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
     final typingUsers = ref.watch(
       messageServiceProvider.select((s) => s.typingUsers),
     );
-    final messages = ref.watch(
-      messageServiceProvider.select((s) => s.messages),
+    // 只依赖「失败会话集合键」而不是整个 messages：
+    // 历史消息翻页/新消息会替换 messages Map 身份，若直接 watch 会在每次消息
+    // 变化时重算全部会话的预览（每个会话一次 JSON 解析）与时间格式化。
+    final failedConversationKey = ref.watch(
+      messageServiceProvider.select(
+        (s) => failedConversationIdsKeyOf(s.messages),
+      ),
     );
     final previews = <String, String>{};
     final timeTexts = <String, String>{};
-    final failedConversationIds = <String>{};
     for (final conversation in conversations) {
       previews[conversation.conversationId] = latestMessagePreview(
         conversation.latestMsg,
@@ -101,13 +106,6 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
         displayTime,
       );
     }
-    for (final entry in messages.entries) {
-      final list = entry.value;
-      // 最近一条消息发送失败（status == 3）时在列表中提示重试。
-      if (list.isNotEmpty && list.last.status == 3) {
-        failedConversationIds.add(entry.key);
-      }
-    }
     return ConversationListState(
       conversations: conversations,
       isSyncing: isSyncing,
@@ -115,7 +113,9 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
       previews: previews,
       timeTexts: timeTexts,
       typingByConversation: Map.unmodifiable(typingUsers),
-      failedConversationIds: failedConversationIds,
+      failedConversationIds: failedConversationKey.isEmpty
+          ? const <String>{}
+          : failedConversationKey.split(',').toSet(),
     );
   }
 
@@ -138,4 +138,23 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
       return null;
     }
   }
+}
+
+/// 计算「最近一条消息发送失败」的会话集合键（空集合返回空串）。
+///
+/// 返回值是可值比较的字符串，配合 `select` 使用：只有失败集合真正变化时
+/// 才会让会话列表重建，消息加载/新消息不会触发全表重算。
+/// 会话 ID 形如 `si_<uid>_<uid>` / `g_<gid>` / `sg_<gid>`，不含逗号。
+String failedConversationIdsKeyOf(Map<String, List<ChatMessage>> messages) {
+  List<String>? failed;
+  for (final entry in messages.entries) {
+    final list = entry.value;
+    // status == 3 表示发送失败（MessageSendStatus.sendFailed）。
+    if (list.isNotEmpty && list.last.status == 3) {
+      (failed ??= <String>[]).add(entry.key);
+    }
+  }
+  if (failed == null) return '';
+  if (failed.length > 1) failed.sort();
+  return failed.join(',');
 }

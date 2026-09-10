@@ -150,9 +150,9 @@ class MessageListState extends State<MessageList> {
     const useReverse = true;
     final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
     final dateLabels = _dateLabelsFor(widget.messages);
-    // maybeOf 不注册 MediaQuery 依赖：键盘动画期间 viewInsets 逐帧变化不会让列表每帧重建。
-    final maxBubbleWidth =
-        (MediaQuery.maybeOf(context)?.size.width ?? 0) * 0.65;
+    // 只依赖 size.width 这一个 aspect：键盘动画期间 viewInsets 逐帧变化不会让列表
+    // 每帧重建（MediaQuery.maybeOf 会注册无条件依赖，任何字段变化都会重建）。
+    final maxBubbleWidth = (MediaQuery.maybeWidthOf(context) ?? 0) * 0.65;
 
     return ListView.builder(
       controller: widget.scrollController,

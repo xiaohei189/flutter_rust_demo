@@ -20,6 +20,12 @@ class MessageStore {
     Map<String, int>? uploadProgress,
     Map<String, GroupReadReceipt>? groupReadReceipts,
   }) {
+    if (messages == null &&
+        typingUsers == null &&
+        uploadProgress == null &&
+        groupReadReceipts == null) {
+      return this;
+    }
     return MessageStore(
       messages: messages ?? this.messages,
       typingUsers: typingUsers ?? this.typingUsers,

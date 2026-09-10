@@ -54,6 +54,13 @@ class ChatMessageListSection extends ConsumerWidget {
     final cachedCurrentUserProfile = ref.watch(
       messageServiceProvider.select((s) => s.loginUserProfile),
     );
+    // 只有列表里还存在「对方发来的未读消息」时才需要逐项可见性检测：
+    // 历史消息已读的会话（重进会话的常见情况）不再挂 VisibilityDetector，
+    // 省掉每个可见项的订阅与逐帧可见性计算。
+    final currentId = currentUserId ?? '';
+    final needsVisibilityTracking = messages.any(
+      (m) => !m.isRead && (currentId.isEmpty || m.sendId != currentId),
+    );
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -70,7 +77,7 @@ class ChatMessageListSection extends ConsumerWidget {
         uploadProgress: uploadProgress,
         groupReadReceipts: groupReadReceipts,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
-        onMessageVisible: onMessageVisible,
+        onMessageVisible: needsVisibilityTracking ? onMessageVisible : null,
         messageActionsBuilder: messageActionsBuilder,
         messageReactions: messageReactions,
         onMessageTap: onMessageTap,

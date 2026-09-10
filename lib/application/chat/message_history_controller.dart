@@ -6,6 +6,7 @@ import 'package:flutter_rust_demo/domain/message_sorting.dart'
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'message_service_notifier.dart';
 import 'message_service_reducer.dart';
@@ -97,12 +98,10 @@ class MessageHistoryController {
       final beforeCount = currentMessages.length;
 
       final incoming = result.messages;
-      currentMessages.insertAll(0, incoming);
-
-      final seenIds = <String>{};
-      final merged = currentMessages
-          .where((msg) => seenIds.add(msg.clientMsgId))
-          .toList();
+      final merged = mergeHistoryPage(
+        existing: currentMessages,
+        incoming: incoming,
+      );
       final dedupRemoved = beforeCount + incoming.length - merged.length;
       newMessages[conversationId] = merged;
 
@@ -135,5 +134,26 @@ class MessageHistoryController {
         clientMsgId,
       ),
     );
+  }
+
+  /// 合并新拉取的历史分页与已有消息列表。
+  ///
+  /// 分页结果放在前面（同一 clientMsgId 以新拉取到的为准），只对分页结果建 ID
+  /// 集合、已有列表用 contains 过滤：避免 `insertAll(0, ...)` 的 O(n) 位移与
+  /// 逐条 `Set.add` 的二次全量遍历，也保证不修改传入列表（旧状态仍被 UI 持有）。
+  @visibleForTesting
+  static List<ChatMessage> mergeHistoryPage({
+    required List<ChatMessage> existing,
+    required List<ChatMessage> incoming,
+  }) {
+    final merged = <ChatMessage>[];
+    final incomingIds = <String>{};
+    for (final msg in incoming) {
+      if (incomingIds.add(msg.clientMsgId)) merged.add(msg);
+    }
+    for (final msg in existing) {
+      if (!incomingIds.contains(msg.clientMsgId)) merged.add(msg);
+    }
+    return merged;
   }
 }

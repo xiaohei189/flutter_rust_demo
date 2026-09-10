@@ -19,6 +19,12 @@ class ConversationStore {
     int? syncProgress,
     int? totalUnreadCount,
   }) {
+    if (conversations == null &&
+        isSyncingConversations == null &&
+        syncProgress == null &&
+        totalUnreadCount == null) {
+      return this;
+    }
     return ConversationStore(
       conversations: conversations ?? this.conversations,
       isSyncingConversations:
