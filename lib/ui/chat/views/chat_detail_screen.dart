@@ -67,6 +67,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final GlobalKey<MessageListState> _messageListKey =
       GlobalKey<MessageListState>();
   bool _bodyReady = false;
+  Timer? _routeTransitionTimer;
   String _lastMessageListTailId = '';
   final Map<String, List<MessageReactionGroup>> _messageReactions = {};
   final Set<String> _pinnedMessageIds = {};
@@ -117,15 +118,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         unawaited(viewModel.loadMessages());
       }
       if (mounted) setState(() => _bodyReady = true);
-      unawaited(viewModel.markConversationMessageAsRead());
       _restoreDraft(viewModel);
-      unawaited(viewModel.subscribeOnlineStatus());
+      // 标记已读 / 订阅在线状态的 RPC 回包会改写会话、未读与在线状态，
+      // 进而触发本页（以及栈里仍挂载的会话列表）重建。放到入场转场结束后再发，
+      // 避免与首帧渲染抢 UI 线程；两者都不影响消息内容的首屏展示。
+      _afterRouteTransition(() {
+        unawaited(viewModel.markConversationMessageAsRead());
+        unawaited(viewModel.subscribeOnlineStatus());
+      });
+    });
+  }
+
+  /// 入场转场（约 300ms）结束后执行，避免转场期间触发额外重建。
+  void _afterRouteTransition(VoidCallback action) {
+    // 用可取消的 Timer：页面提前销毁时不留悬挂回调（也避免 widget 测试残留 pending timer）
+    _routeTransitionTimer?.cancel();
+    _routeTransitionTimer = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      action();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _routeTransitionTimer?.cancel();
     final viewModel = _viewModel;
     if (viewModel != null) {
       unawaited(viewModel.unsubscribeOnlineStatus());
