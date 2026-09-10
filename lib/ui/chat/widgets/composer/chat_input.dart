@@ -76,12 +76,20 @@ class _ChatInputState extends State<ChatInput> {
   /// 缓存的附件列表，避免每次 build 创建新对象
   late List<AttachmentItem> _cachedAttachmentItems;
 
-  /// 缓存两个常驻面板的 widget 实例：
-  /// Flutter 在 `child.widget == newWidget` 时直接复用 Element、不重建子树
-  /// （framework.dart 的 Element.updateChild 快路径），因此父级（页面）重建时
-  /// 隐藏面板不再参与 build/layout，同时面板状态照旧保留。
-  late final Widget _emojiPanel;
-  late final Widget _attachmentPanel;
+  /// 两个面板按需构建：从未打开过就不创建（进入会话不付面板的 build/layout 成本）；
+  /// 打开过一次后常驻树中（Offstage 保状态），并且缓存 widget 实例——Flutter 在
+  /// `child.widget == newWidget` 时直接复用 Element 不重建子树（Element.updateChild 快路径），
+  /// 约束未变时 layout 也提前返回。因此「首次进入零成本 + 之后重建零成本 + 状态保留」。
+  late final Widget _emojiPanel = EmojiPanel(
+    onEmojiSelected: _insertEmoji,
+    onGifSelected: widget.onGifSelected,
+  );
+  late final Widget _attachmentPanel = AttachmentPanel(
+    items: _cachedAttachmentItems,
+    onItemTap: () => _composer.closePanels(),
+  );
+  bool _emojiPanelOpened = false;
+  bool _attachmentPanelOpened = false;
 
   @override
   void initState() {
@@ -100,14 +108,6 @@ class _ChatInputState extends State<ChatInput> {
       atMembers: widget.atMembers,
     );
     _initAttachmentItems();
-    _emojiPanel = EmojiPanel(
-      onEmojiSelected: _insertEmoji,
-      onGifSelected: widget.onGifSelected,
-    );
-    _attachmentPanel = AttachmentPanel(
-      items: _cachedAttachmentItems,
-      onItemTap: () => _composer.closePanels(),
-    );
     _voiceRecorder = VoiceRecorderController(
       onVoiceRecord: widget.onVoiceRecord,
     )..addListener(_onRecordingChanged);
@@ -224,6 +224,15 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _onComposerChanged() {
+    // 面板第一次被激活时才标记：build 里据此决定是否把面板放进树（按需构建）
+    switch (_composer.activePanel) {
+      case ComposerPanel.emoji:
+        _emojiPanelOpened = true;
+      case ComposerPanel.attachment:
+        _attachmentPanelOpened = true;
+      case ComposerPanel.none:
+        break;
+    }
     if (mounted) setState(() {});
   }
 
@@ -436,14 +445,17 @@ class _ChatInputState extends State<ChatInput> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Offstage(
-                    offstage: _composer.activePanel != ComposerPanel.emoji,
-                    child: _emojiPanel,
-                  ),
-                  Offstage(
-                    offstage: _composer.activePanel != ComposerPanel.attachment,
-                    child: _attachmentPanel,
-                  ),
+                  if (_emojiPanelOpened)
+                    Offstage(
+                      offstage: _composer.activePanel != ComposerPanel.emoji,
+                      child: _emojiPanel,
+                    ),
+                  if (_attachmentPanelOpened)
+                    Offstage(
+                      offstage:
+                          _composer.activePanel != ComposerPanel.attachment,
+                      child: _attachmentPanel,
+                    ),
                 ],
               ),
             ),
