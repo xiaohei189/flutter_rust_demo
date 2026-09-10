@@ -57,7 +57,28 @@ impl ConnectionManager {
         info!("WebSocket handshake done: {}", full_url);
 
         let compressor = GzipCompressor::new();
-        let auth_result: std::result::Result<WebSocketConnectResp, SdkError> = match read.next().await {
+        // 升级成功只说明 TCP/WS 握手完成，服务端可能还没回认证帧（服务重启、网关半死）。
+        // 这里必须限时，否则 login → createClient → UI 会永久挂起。
+        let auth_frame = match timeout(self.auth_timeout, read.next()).await {
+            Ok(frame) => frame,
+            Err(_) => {
+                error!(
+                    "WebSocket auth timeout after {:?}, url={}",
+                    self.auth_timeout, full_url
+                );
+                *self.state.write().await = crate::core::connection::manager::ConnectionState::Disconnected;
+                self.send(ConnectionEvent::ConnectFailed {
+                    // 对齐 Go sdkerrs.NetworkError = 10000
+                    err_code: 10000,
+                    error: format!(
+                        "WebSocket auth timeout ({}s)",
+                        self.auth_timeout.as_secs()
+                    ),
+                });
+                return Err(SdkError::timeout("WebSocket auth timeout"));
+            }
+        };
+        let auth_result: std::result::Result<WebSocketConnectResp, SdkError> = match auth_frame {
             Some(Ok(WsMessage::Text(text))) => serde_json::from_str::<WebSocketConnectResp>(&text).map_err(|e| SdkError::connection(format!("auth parse error: {}", e))),
             Some(Ok(WsMessage::Binary(data))) => {
                 let data = compressor.decompress(&data).unwrap_or(data);

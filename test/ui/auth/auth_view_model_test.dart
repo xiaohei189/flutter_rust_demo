@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +17,9 @@ class FakeMessageServiceNotifier extends MessageServiceNotifier {
   final List<Map<String, String?>> initializeCalls = [];
   int logoutCount = 0;
 
+  /// 模拟 Rust 握手卡死（服务重启后网关不回认证帧）
+  bool hangInitialize = false;
+
   @override
   MessageServiceState build() => MessageServiceState();
 
@@ -31,6 +36,9 @@ class FakeMessageServiceNotifier extends MessageServiceNotifier {
       'userId': userId,
       'imToken': imToken,
     });
+    if (hangInitialize) {
+      return Completer<void>().future;
+    }
   }
 
   @override
@@ -234,6 +242,26 @@ void main() {
       );
       expect(ok, isTrue);
       expect(messageService.initializeCalls.single['userId'], 'u1');
+    });
+
+    test('SDK 初始化卡住时按超时失败并结束 loading', () async {
+      messageService.hangInitialize = true;
+      final originalTimeout = AuthViewModel.initializeTimeout;
+      AuthViewModel.initializeTimeout = const Duration(milliseconds: 300);
+      addTearDown(() => AuthViewModel.initializeTimeout = originalTimeout);
+
+      final ok = await viewModel().loginWithPassword(
+        areaCode: '+86',
+        phoneNumber: '13800000000',
+        password: '123456',
+        wsUrl: 'ws://x',
+        apiBaseUrl: 'http://x',
+      );
+
+      expect(ok, isFalse);
+      expect(state().isLoading, isFalse, reason: '超时后必须结束登录转圈');
+      expect(state().errorText, contains('IM 初始化超时'));
+      expect(messageService.logoutCount, 1, reason: '超时后应尽力清理半成品客户端');
     });
   });
 

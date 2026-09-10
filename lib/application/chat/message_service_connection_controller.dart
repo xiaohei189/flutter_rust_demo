@@ -26,7 +26,39 @@ class MessageServiceConnectionController {
 
   final MessageServiceNotifier service;
 
+  /// 创建客户端（Rust 建库 + 登录握手）的超时。
+  ///
+  /// Rust 侧对 WS 升级和认证帧各有 10s 超时，这里留出余量做兜底：服务重启期间
+  /// 网关"接了连接但不回认证帧"时，不能让外层一直 awaiting。
+  static const Duration _clientCreateTimeout = Duration(seconds: 25);
+
+  /// 进行中的初始化：并发调用复用同一次结果，避免拿到"假成功"。
+  Future<void>? _initializeInFlight;
+
   Future<void> initialize({
+    String? wsUrl,
+    String? apiBaseUrl,
+    String? userId,
+    String? imToken,
+  }) {
+    final inFlight = _initializeInFlight;
+    if (inFlight != null) {
+      appLog.w('⚠️ 初始化正在进行中，复用同一次初始化结果');
+      return inFlight;
+    }
+    final future = _doInitialize(
+      wsUrl: wsUrl,
+      apiBaseUrl: apiBaseUrl,
+      userId: userId,
+      imToken: imToken,
+    );
+    _initializeInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_initializeInFlight, future)) _initializeInFlight = null;
+    });
+  }
+
+  Future<void> _doInitialize({
     String? wsUrl,
     String? apiBaseUrl,
     String? userId,
@@ -42,11 +74,6 @@ class MessageServiceConnectionController {
         sameUser) {
       onlineStatusService.setClient(imClient.client);
       appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
-      return;
-    }
-
-    if (service.currentState.isInitializing) {
-      appLog.w('⚠️ 初始化正在进行中，跳过重复调用');
       return;
     }
 
@@ -85,12 +112,19 @@ class MessageServiceConnectionController {
         service.currentState.copyWith(currentUserId: resolvedUserId),
       );
 
-      await imClient.createClient(
-        userId: resolvedUserId,
-        token: resolvedImToken,
-        wsUrl: wsUrl,
-        apiBaseUrl: apiBaseUrl!,
-      );
+      await imClient
+          .createClient(
+            userId: resolvedUserId,
+            token: resolvedImToken,
+            wsUrl: wsUrl,
+            apiBaseUrl: apiBaseUrl!,
+          )
+          .timeout(
+            _clientCreateTimeout,
+            onTimeout: () => throw TimeoutException(
+              'IM 客户端初始化超时（${_clientCreateTimeout.inSeconds} 秒），请确认服务已启动后重试',
+            ),
+          );
       onlineStatusService.setClient(imClient.client);
       unawaited(service.loadConversations());
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/app_logger.dart';
@@ -34,6 +35,13 @@ class AuthState {
 /// 登录/注册 ViewModel：负责验证码倒计时、登录注册、凭证保存与 MessageService 初始化。
 class AuthViewModel extends Notifier<AuthState> {
   Timer? _countdownTimer;
+
+  /// 登录收尾阶段的兜底超时（凭证保存 + SDK 初始化）。
+  ///
+  /// Rust 握手或平台通道异常时（服务重启、网关半死），必须保证 UI 不会永久
+  /// 停在 loading。测试可改小该值。
+  @visibleForTesting
+  static Duration initializeTimeout = const Duration(seconds: 30);
 
   AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
@@ -140,12 +148,6 @@ class AuthViewModel extends Notifier<AuthState> {
             phoneNumber: phoneNumber,
             verifyCode: verifyCode,
             platform: 5,
-          )
-          .timeout(
-            const Duration(seconds: 30),
-            onTimeout: () => throw Exception(
-              '登录请求超时（30秒）。请检查：① 网络是否可用 ② 认证服务是否已启动\n请求地址: ${_authRepository.authBaseUrl}/account/login',
-            ),
           );
       return await _completeAuth(
         userId: session.userId,
@@ -211,14 +213,12 @@ class AuthViewModel extends Notifier<AuthState> {
     if (credentials == null) return false;
     ref.read(currentUserIdProvider.notifier).setUserId(credentials.userId);
     try {
-      await ref
-          .read(messageServiceProvider.notifier)
-          .initialize(
-            wsUrl: wsUrl,
-            apiBaseUrl: apiBaseUrl,
-            userId: credentials.userId,
-            imToken: credentials.imToken,
-          );
+      await _initializeWithTimeout(
+        wsUrl: wsUrl,
+        apiBaseUrl: apiBaseUrl,
+        userId: credentials.userId,
+        imToken: credentials.imToken,
+      );
       return true;
     } catch (e) {
       appLog.w('自动登录失败，跳转登录页: $e');
@@ -228,6 +228,47 @@ class AuthViewModel extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await _bestEffortLogout();
+    ref.read(currentUserIdProvider.notifier).clear();
+    await _authRepository.clearCredentials();
+  }
+
+  /// 初始化 SDK，并在超时后清理半成品客户端后抛出可读错误。
+  ///
+  /// 这里是最外层兜底：`MessageService` 内部还有更精确的超时，
+  /// 覆盖平台通道等其它可能卡住的等待。
+  Future<void> _initializeWithTimeout({
+    required String wsUrl,
+    required String apiBaseUrl,
+    required String userId,
+    required String imToken,
+  }) async {
+    appLog.i('[LoginMeasure] T5 SDK 初始化开始');
+    await ref
+        .read(messageServiceProvider.notifier)
+        .initialize(
+          wsUrl: wsUrl,
+          apiBaseUrl: apiBaseUrl,
+          userId: userId,
+          imToken: imToken,
+        )
+        .timeout(
+          initializeTimeout,
+          onTimeout: () async {
+            appLog.w(
+              '[LoginMeasure] T5 SDK 初始化超时（${initializeTimeout.inSeconds}s），清理半成品客户端',
+            );
+            await _bestEffortLogout();
+            throw TimeoutException(
+              'IM 初始化超时（${initializeTimeout.inSeconds} 秒），请确认服务已启动后重试',
+            );
+          },
+        );
+    appLog.i('[LoginMeasure] T6 SDK 初始化完成');
+  }
+
+  /// 尽力清理 SDK，失败或超时都不阻塞调用方（登出/超时兜底共用）。
+  Future<void> _bestEffortLogout() async {
     try {
       // 带超时兜底：SDK 断开/关库即使卡住，也保证 5 秒内继续清理并允许跳转登录页
       await ref
@@ -237,8 +278,6 @@ class AuthViewModel extends Notifier<AuthState> {
     } catch (e) {
       appLog.w('[Auth] 退出登录 SDK 失败: $e');
     }
-    ref.read(currentUserIdProvider.notifier).clear();
-    await _authRepository.clearCredentials();
   }
 
   Future<bool> _completeAuth({
@@ -256,19 +295,21 @@ class AuthViewModel extends Notifier<AuthState> {
         areaCode: areaCode,
         phoneNumber: phoneNumber,
       );
+      appLog.i('[LoginMeasure] T4 凭证已保存');
       ref.read(currentUserIdProvider.notifier).setUserId(userId);
-      await ref
-          .read(messageServiceProvider.notifier)
-          .initialize(
-            wsUrl: wsUrl,
-            apiBaseUrl: apiBaseUrl,
-            userId: userId,
-            imToken: imToken,
-          );
+      await _initializeWithTimeout(
+        wsUrl: wsUrl,
+        apiBaseUrl: apiBaseUrl,
+        userId: userId,
+        imToken: imToken,
+      );
       state = state.copyWith(isLoading: false, errorText: null);
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorText: '初始化失败: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorText: '初始化失败: ${_cleanError(e)}',
+      );
       return false;
     }
   }
@@ -281,6 +322,8 @@ class AuthViewModel extends Notifier<AuthState> {
     );
   }
 
-  String _cleanError(Object e) =>
-      e.toString().replaceFirst(RegExp(r'^Exception:?\s*'), '');
+  String _cleanError(Object e) => e.toString().replaceFirst(
+    RegExp(r'^(Exception|TimeoutException|StateError):?\s*'),
+    '',
+  );
 }

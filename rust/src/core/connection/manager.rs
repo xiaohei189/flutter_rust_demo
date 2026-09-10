@@ -34,6 +34,8 @@ pub const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(30);
 pub const RECONNECT_BASE_DELAY: Duration = Duration::from_secs(1);
 pub const RECONNECT_MAX_DELAY: Duration = Duration::from_secs(60);
 pub const MAX_RECONNECT_ATTEMPTS: u32 = 300;
+/// 等待服务端认证帧的超时（与 WebSocket 升级超时同量级）
+pub const AUTH_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub use crate::domain::constant::ConnectionState;
 
@@ -57,6 +59,9 @@ pub struct ConnectionManager {
     pub(crate) is_manual_disconnect: Arc<RwLock<bool>>,
     pub(crate) compressor: GzipCompressor,
     pub(crate) message_batcher: MessageBatcher,
+    /// 等待服务端认证帧的超时：升级成功但网关不回帧时必须失败，
+    /// 否则 login → createClient → UI 会永久挂起（服务重启后最易命中）。
+    pub(crate) auth_timeout: Duration,
     pub(crate) push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<(PushMessages, String)>>>>,
     pub(crate) user_push_tx: Arc<std::sync::Mutex<Option<tokio::sync::mpsc::UnboundedSender<UserEvent>>>>,
     pub(crate) listener: Arc<dyn ConnectionListener>,
@@ -96,6 +101,7 @@ impl ConnectionManager {
             is_manual_disconnect: Arc::new(RwLock::new(false)),
             compressor,
             message_batcher,
+            auth_timeout: AUTH_HANDSHAKE_TIMEOUT,
             push_tx,
             user_push_tx: Arc::new(std::sync::Mutex::new(None)),
             listener,
@@ -234,6 +240,7 @@ impl ConnectionManager {
             is_manual_disconnect: self.is_manual_disconnect.clone(),
             compressor: GzipCompressor::new(),
             message_batcher: self.message_batcher.clone(),
+            auth_timeout: self.auth_timeout,
             push_tx: self.push_tx.clone(),
             user_push_tx: self.user_push_tx.clone(),
             listener: self.listener.clone(),
@@ -340,6 +347,33 @@ mod tests {
         assert!(!manager.is_connected().await);
         manager.set_state(ConnectionState::Connected).await;
         assert!(manager.is_connected().await);
+    }
+
+    /// 服务重启时最典型的场景：网关接受了 WS 升级但迟迟不回认证帧。
+    /// 若认证帧读取没有超时，connect 会永久挂起，进而把「登录转圈」一直卡住。
+    #[tokio::test]
+    async fn test_connect_fails_fast_when_server_never_sends_auth_frame() {
+        use futures_util::StreamExt;
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind 本地端口");
+        let addr = listener.local_addr().expect("读取本地端口");
+        // 只完成 WS 升级，之后不回任何帧、也不关闭连接
+        tokio::spawn(async move {
+            if let Ok((stream, _)) = listener.accept().await {
+                if let Ok(mut ws) = tokio_tungstenite::accept_async(stream).await {
+                    while ws.next().await.is_some() {}
+                }
+            }
+        });
+
+        let mut manager = ConnectionManager::new(CancellationToken::new(), crate::core::event::test_util::noop_connection_listener());
+        manager.auth_timeout = Duration::from_millis(300);
+
+        let result = tokio::time::timeout(std::time::Duration::from_secs(10), manager.connect(&format!("ws://{addr}/"), "token", "u1", 5)).await;
+
+        let connect_result = result.expect("connect 必须在认证超时内返回，而不是永久挂起");
+        assert!(connect_result.is_err(), "服务端不回认证帧时应当返回错误");
+        assert!(!manager.is_connected().await, "认证失败后不应处于已连接状态");
     }
 }
 
