@@ -70,6 +70,7 @@ class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
   List<String?> _cachedDateLabels = const [];
+  String _cachedDateLabelHeadId = '';
   String _cachedDateLabelTailId = '';
   int _cachedDateLabelCount = -1;
 
@@ -221,25 +222,98 @@ class MessageListState extends State<MessageList> {
     );
   }
 
-  /// 按「最新消息 id + 消息数」做 O(1) 缓存标记，
-  /// 避免键盘弹出动画等高频 build 时全量比较消息 id 列表。
+  /// 日期分隔标签（每条消息是否需要 + 文案）。
+  ///
+  /// 用「首条 id + 尾条 id + 条数」做 O(1) 命中判断；未命中时只在两种常见变更上做
+  /// 增量计算（尾部追加新消息 / 头部前插更早一页），其余情况才整表重算。
+  /// 这样每翻一页不再对整表重新分配 DateTime（长历史下是 O(n) 的实时开销）。
   List<String?> _dateLabelsFor(List<ChatMessage> messages) {
-    final tailId = messages.isEmpty ? '' : messages.last.clientMsgId;
-    if (messages.length == _cachedDateLabelCount &&
+    final count = messages.length;
+    final headId = count == 0 ? '' : messages.first.clientMsgId;
+    final tailId = count == 0 ? '' : messages.last.clientMsgId;
+    if (count == _cachedDateLabelCount &&
+        headId == _cachedDateLabelHeadId &&
         tailId == _cachedDateLabelTailId) {
       return _cachedDateLabels;
     }
-    final labels = _buildDateLabels(messages);
+
+    final now = DateTime.now();
+    List<String?>? labels;
+    if (_cachedDateLabelCount > 0 && count > _cachedDateLabelCount) {
+      if (headId == _cachedDateLabelHeadId &&
+          messages[_cachedDateLabelCount - 1].clientMsgId ==
+              _cachedDateLabelTailId) {
+        // 尾部追加（收到/发出新消息）：旧标签全部有效，只续算新增部分
+        labels = List<String?>.of(_cachedDateLabels, growable: true);
+        _appendDateLabels(labels, messages, _cachedDateLabelCount, now);
+      } else if (tailId == _cachedDateLabelTailId &&
+          messages[count - _cachedDateLabelCount].clientMsgId ==
+              _cachedDateLabelHeadId) {
+        // 头部前插（加载更早一页）：除旧块首条外，旧标签都可复用
+        labels = _buildPrependedDateLabels(
+          messages,
+          count - _cachedDateLabelCount,
+          now,
+        );
+      }
+    }
+    labels ??= _buildDateLabels(messages, now);
+
     _cachedDateLabels = labels;
-    _cachedDateLabelCount = messages.length;
+    _cachedDateLabelCount = count;
+    _cachedDateLabelHeadId = headId;
     _cachedDateLabelTailId = tailId;
     return labels;
   }
 
-  /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
-  static List<String?> _buildDateLabels(List<ChatMessage> messages) {
+  /// 头部前插更早一页：只算前插块自身的标签，并按新前驱重判旧块首条；
+  /// 旧块其余标签直接复用。
+  List<String?> _buildPrependedDateLabels(
+    List<ChatMessage> messages,
+    int prependCount,
+    DateTime now,
+  ) {
     final labels = List<String?>.filled(messages.length, null);
-    final now = DateTime.now();
+    for (var i = 0; i < prependCount; i++) {
+      final current = messages[i].sendDateTime;
+      if (i == 0 || !_isSameDate(current, messages[i - 1].sendDateTime)) {
+        labels[i] = _formatDateLabel(current, now);
+      }
+    }
+    final firstOld = messages[prependCount].sendDateTime;
+    labels[prependCount] =
+        _isSameDate(firstOld, messages[prependCount - 1].sendDateTime)
+        ? null
+        : _formatDateLabel(firstOld, now);
+    for (var i = 1; i < _cachedDateLabelCount; i++) {
+      labels[prependCount + i] = _cachedDateLabels[i];
+    }
+    return labels;
+  }
+
+  /// 尾部追加：从 [start] 开始续算标签（[start] 之前已是有效标签）。
+  static void _appendDateLabels(
+    List<String?> labels,
+    List<ChatMessage> messages,
+    int start,
+    DateTime now,
+  ) {
+    for (var i = start; i < messages.length; i++) {
+      final current = messages[i].sendDateTime;
+      if (i == 0 || !_isSameDate(current, messages[i - 1].sendDateTime)) {
+        labels.add(_formatDateLabel(current, now));
+      } else {
+        labels.add(null);
+      }
+    }
+  }
+
+  /// 预计算每条消息是否需要日期分隔符及对应文案，避免 itemBuilder 内重复格式化。
+  static List<String?> _buildDateLabels(
+    List<ChatMessage> messages,
+    DateTime now,
+  ) {
+    final labels = List<String?>.filled(messages.length, null);
     for (var i = 0; i < messages.length; i++) {
       final current = messages[i].sendDateTime;
       if (i == 0 || !_isSameDate(current, messages[i - 1].sendDateTime)) {
