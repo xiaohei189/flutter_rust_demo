@@ -42,6 +42,7 @@ class MessageServiceConversationController {
     );
     if (isTyping) {
       typingUsers[conversationId] = userId;
+      appLog.i('[Typing] 开始显示「正在输入」conv=$conversationId user=$userId');
       _typingTimers[conversationId] = Timer(
         typingTtl,
         () => _applyTypingStatus(
@@ -51,6 +52,9 @@ class MessageServiceConversationController {
         ),
       );
     } else {
+      if (typingUsers.containsKey(conversationId)) {
+        appLog.i('[Typing] 结束「正在输入」conv=$conversationId user=$userId');
+      }
       typingUsers.remove(conversationId);
     }
     service.updateState(

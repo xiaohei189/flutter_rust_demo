@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/app_logger.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/conversation_draft.dart';
 import '../../../domain/models/friend.dart';
@@ -245,6 +246,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
   void sendTyping({required bool focus}) {
     final target = sendTarget;
     if (target == null) return;
+    appLog.i('[Typing] 发送输入状态 focus=$focus source=${target.recvId}');
     unawaited(
       _messageService.sendTyping(
         sourceId: target.recvId,

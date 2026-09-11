@@ -105,6 +105,9 @@ class MessageEventApplier {
         ),
       );
     }
+    // 该发送者此前在「正在输入」→ 消息到达即结束该状态（reducer 里清理，这里补日志便于排查）
+    final wasTyping =
+        service.currentState.typingUsers[conversationId] == chatMessage.sendId;
     service.updateState(
       MessageServiceReducer.appendIncomingMessage(
         service.currentState,
@@ -112,6 +115,11 @@ class MessageEventApplier {
         chatMessage,
       ),
     );
+    if (wasTyping) {
+      appLog.i(
+        '[Typing] 收到消息，结束「正在输入」conv=$conversationId user=${chatMessage.sendId}',
+      );
+    }
   }
 }
 
