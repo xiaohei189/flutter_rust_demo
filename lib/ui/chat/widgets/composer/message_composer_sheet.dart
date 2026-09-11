@@ -54,6 +54,20 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
 
   _Panel _activePanel = _Panel.none;
 
+  /// 面板按需构建（与主输入框同一标准）：从未打开过就不创建，
+  /// 打开过一次后常驻树中（Offstage 保状态）并复用同一 widget 实例，
+  /// 父级重建时 Flutter 直接复用 Element、不重建子树。
+  late final Widget _emojiPanel = EmojiPanel(
+    onEmojiSelected: _insertEmoji,
+    onGifSelected: widget.onGifSelected,
+  );
+  late final Widget _attachmentPanel = AttachmentPanel(
+    items: widget.attachmentItems,
+    onItemTap: _closeAllPanels,
+  );
+  bool _emojiPanelOpened = false;
+  bool _attachmentPanelOpened = false;
+
   /// 抽屉高度占屏幕比例（拖拽把手可调整 0.3~0.95）
   double _heightFactor = 0.85;
 
@@ -71,7 +85,14 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   }
 
   void _togglePanel(_Panel panel) {
-    setState(() => _activePanel = _activePanel == panel ? _Panel.none : panel);
+    final opening = _activePanel != panel;
+    setState(() {
+      _activePanel = opening ? panel : _Panel.none;
+      if (opening) {
+        if (panel == _Panel.emoji) _emojiPanelOpened = true;
+        if (panel == _Panel.attachment) _attachmentPanelOpened = true;
+      }
+    });
   }
 
   void _closeAllPanels() {
@@ -316,20 +337,16 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Offstage(
-                    offstage: _activePanel != _Panel.emoji,
-                    child: EmojiPanel(
-                      onEmojiSelected: _insertEmoji,
-                      onGifSelected: widget.onGifSelected,
+                  if (_emojiPanelOpened)
+                    Offstage(
+                      offstage: _activePanel != _Panel.emoji,
+                      child: _emojiPanel,
                     ),
-                  ),
-                  Offstage(
-                    offstage: _activePanel != _Panel.attachment,
-                    child: AttachmentPanel(
-                      items: widget.attachmentItems,
-                      onItemTap: _closeAllPanels,
+                  if (_attachmentPanelOpened)
+                    Offstage(
+                      offstage: _activePanel != _Panel.attachment,
+                      child: _attachmentPanel,
                     ),
-                  ),
                 ],
               ),
             ),
