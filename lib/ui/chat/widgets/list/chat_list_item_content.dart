@@ -208,6 +208,9 @@ class ChatListItemContent extends StatelessWidget {
   /// 免打扰：recvMsgOpt 1=接收但不通知
   bool get _isMuted => conversation.recvMsgOpt == 1;
 
+  /// 有未读（未读数为 -1 表示不显示，对齐 OpenIM 约定）
+  bool get _hasUnread => conversation.unreadCount > 0;
+
   bool get _isGroup =>
       conversation.conversationType == 2 || conversation.conversationType == 3;
 
@@ -275,7 +278,7 @@ class ChatListItemContent extends StatelessWidget {
                 const SizedBox(width: 6),
               ],
               // 头像（单聊用用户头像、群聊用群头像）；在线状态不在列表展示
-              // （对齐飞书稿：presence 只在会话详情头部显示），未读仅以时间蓝色标识
+              // （对齐飞书稿：presence 只在会话详情头部显示）
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -323,15 +326,25 @@ class ChatListItemContent extends StatelessWidget {
                           timeText ?? _formatTime(_displayTime),
                           style: TextStyle(
                             fontSize: 12,
-                            // 对齐设计稿：未读不以日期变色，统一灰色，未读态走角标/筛选。
-                            color: colors.textSecondary,
+                            // 飞书式：有未读时时间用主色蓝（免打扰仍为灰）
+                            color: _hasUnread && !_isMuted
+                                ? colors.primary
+                                : colors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    // 第二行：消息预览
-                    _buildPreviewLine(context),
+                    // 第二行：消息预览 + 未读角标（飞书式，行右下角）
+                    Row(
+                      children: [
+                        Expanded(child: _buildPreviewLine(context)),
+                        if (_hasUnread) ...[
+                          const SizedBox(width: 8),
+                          _buildUnreadBadge(context),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -343,6 +356,46 @@ class ChatListItemContent extends StatelessWidget {
     );
   }
 
+
+  /// 未读角标（飞书式）：普通会话为蓝色数字胶囊（超 99 显示 99+），
+  /// 免打扰会话只显示一个灰点，不暴露具体数字。
+  Widget _buildUnreadBadge(BuildContext context) {
+    final colors = context.appColors;
+    if (_isMuted) {
+      return Container(
+        width: 8,
+        height: 8,
+        margin: const EdgeInsets.only(right: 4),
+        decoration: BoxDecoration(
+          color: colors.textSecondary.withValues(alpha: 0.45),
+          shape: BoxShape.circle,
+        ),
+      );
+    }
+    final text = conversation.unreadCount > 99
+        ? '99+'
+        : '${conversation.unreadCount}';
+    return Container(
+      // 高度不超过预览文字行高，避免把会话行撑高造成溢出
+      constraints: const BoxConstraints(minWidth: 15),
+      height: 14,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: colors.primary,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: colors.onPrimary,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          height: 1,
+        ),
+      ),
+    );
+  }
 
   /// 标签收敛：最多展示 2 个，优先级 不在群内 > @我 > 通知。
   List<Widget> _buildTags(BuildContext context) {
