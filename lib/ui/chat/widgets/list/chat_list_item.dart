@@ -39,9 +39,6 @@ class ChatListItem extends StatelessWidget {
   /// 多选管理模式：显示复选框，点击切换选中。
   final bool isSelectionMode;
 
-  /// 单聊对方是否在线（null 表示未知）。
-  final bool? isOnline;
-
   /// 正在输入预览文案。
   final String? typingText;
 
@@ -71,7 +68,6 @@ class ChatListItem extends StatelessWidget {
     this.previewText,
     this.timeText,
     this.isSelectionMode = false,
-    this.isOnline,
     this.typingText,
     this.hasSendFailure = false,
     this.onRetrySend,
@@ -86,7 +82,6 @@ class ChatListItem extends StatelessWidget {
       previewText: previewText,
       timeText: timeText,
       isSelectionMode: isSelectionMode,
-      isOnline: isOnline,
       typingText: typingText,
       hasSendFailure: hasSendFailure,
       onRetrySend: onRetrySend,

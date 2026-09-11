@@ -23,7 +23,6 @@ class ChatListItemContent extends StatelessWidget {
     this.previewText,
     this.timeText,
     this.isSelectionMode = false,
-    this.isOnline,
     this.typingText,
     this.hasSendFailure = false,
     this.onRetrySend,
@@ -42,8 +41,6 @@ class ChatListItemContent extends StatelessWidget {
   /// 多选管理模式：显示复选框，点击由外层处理。
   final bool isSelectionMode;
 
-  /// 单聊对方是否在线（null 表示未知，不显示绿点）。
-  final bool? isOnline;
 
   /// 正在输入预览文案（非空时替换消息预览）。
   final String? typingText;
@@ -277,7 +274,8 @@ class ChatListItemContent extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
               ],
-              // 头像（在线绿点 / 群头像），未读仅以时间蓝色标识，不叠加数字角标
+              // 头像（单聊用用户头像、群聊用群头像）；在线状态不在列表展示
+              // （对齐飞书稿：presence 只在会话详情头部显示），未读仅以时间蓝色标识
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -288,23 +286,6 @@ class ChatListItemContent extends StatelessWidget {
                     )
                   else
                     UserAvatar(user: user, radius: kConversationAvatarRadius),
-                  if (isOnline == true)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: colors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colors.surface,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(width: 12),

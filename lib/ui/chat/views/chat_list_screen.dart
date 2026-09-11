@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/connection_provider.dart';
 import '../../../providers/current_user_provider.dart';
-import '../../../providers/online_status_provider.dart';
 import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../../router/app_router.dart';
@@ -324,9 +323,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final otherUserProfile = otherUserId != null && otherUserId != currentUserId
         ? cachedUserProfiles[otherUserId]
         : null;
-    final isOnline = otherUserId != null && otherUserId != currentUserId
-        ? ref.watch(userOnlineStatusProvider(otherUserId))
-        : null;
     final typingUserId = typingByConversation[conversation.conversationId];
     final String? typingText;
     if (typingUserId != null) {
@@ -350,7 +346,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       currentUserId: currentUserId,
       isSelectionMode: _selectionMode,
       isSelected: _selectedIds.contains(conversation.conversationId),
-      isOnline: isOnline,
       typingText: typingText,
       hasSendFailure: hasSendFailure,
       onRetrySend: () =>
