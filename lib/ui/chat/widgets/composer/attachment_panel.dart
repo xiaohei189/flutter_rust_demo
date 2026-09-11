@@ -35,18 +35,24 @@ class AttachmentPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.attachmentBackground,
       ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.86,
+      // 高度受限时（小屏 / 键盘弹出）可滚动，避免 RenderFlex 溢出
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 320),
+        child: SingleChildScrollView(
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.86,
+            ),
+            itemCount: items.length,
+            itemBuilder: (_, i) => _buildItem(context, items[i]),
+          ),
         ),
-        itemCount: items.length,
-        itemBuilder: (_, i) => _buildItem(context, items[i]),
       ),
     );
   }

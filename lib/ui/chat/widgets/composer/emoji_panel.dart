@@ -14,10 +14,14 @@ class EmojiPanel extends StatefulWidget {
     super.key,
     required this.onEmojiSelected,
     this.onGifSelected,
+    this.onBackspace,
   });
 
   final ValueChanged<String> onEmojiSelected;
   final ValueChanged<String>? onGifSelected;
+
+  /// 底部退格：删除输入框光标前一个字符（对齐飞书稿的 ⌫）
+  final VoidCallback? onBackspace;
 
   /// 默认表情列表（Unicode Emoji）
   static const List<String> defaultEmojis = [
@@ -122,7 +126,7 @@ class EmojiPanel extends StatefulWidget {
 }
 
 class _EmojiPanelState extends State<EmojiPanel> {
-  EmojiTab _activeTab = EmojiTab.recent;
+  EmojiTab _activeTab = EmojiTab.emoji;
   List<String> _recent = const [];
   List<String> _favorites = const [];
 
@@ -170,17 +174,16 @@ class _EmojiPanelState extends State<EmojiPanel> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
-      constraints: const BoxConstraints(maxHeight: 280),
+      constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
-        color: colors.onPrimary,
-        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
+        color: colors.attachmentBackground,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTabBar(context),
-          const Divider(height: 1),
           Flexible(child: _buildContent(context)),
+          // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
+          _buildBottomBar(context),
         ],
       ),
     );
@@ -188,15 +191,15 @@ class _EmojiPanelState extends State<EmojiPanel> {
 
   Widget _buildContent(BuildContext context) {
     switch (_activeTab) {
+      case EmojiTab.emoji:
+        // 「最常使用」置顶 + 「默认表情」常驻（对齐飞书稿的分区）
+        return _buildEmojiSections(context);
       case EmojiTab.recent:
-        final emojis = _recent.isNotEmpty ? _recent : EmojiPanel.defaultEmojis;
         return _buildEmojiGrid(
           context,
-          emojis,
+          _recent.isNotEmpty ? _recent : EmojiPanel.defaultEmojis,
           header: _recent.isEmpty ? '默认表情' : '最常使用',
         );
-      case EmojiTab.emoji:
-        return _buildEmojiGrid(context, EmojiPanel.defaultEmojis);
       case EmojiTab.favorite:
         return _buildEmojiGrid(
           context,
@@ -240,28 +243,34 @@ class _EmojiPanelState extends State<EmojiPanel> {
               ),
             )
           else
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 7,
-                mainAxisSpacing: 2,
-                crossAxisSpacing: 2,
-              ),
-              itemCount: emojis.length,
-              itemBuilder: (_, i) {
-                final emoji = emojis[i];
-                return GestureDetector(
-                  onTap: () => _handleEmojiTap(emoji),
-                  onLongPress: () => _handleEmojiLongPress(emoji),
-                  child: Center(
-                    child: Text(emoji, style: const TextStyle(fontSize: 28)),
-                  ),
-                );
-              },
-            ),
+            _emojiGrid(context, emojis),
         ],
       ),
+    );
+  }
+
+  /// 表情九宫格（7 列，不滚动，交给外层滚动容器）
+  Widget _emojiGrid(BuildContext context, List<String> emojis) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+      ),
+      itemCount: emojis.length,
+      itemBuilder: (_, i) {
+        final emoji = emojis[i];
+        return GestureDetector(
+          onTap: () => _handleEmojiTap(emoji),
+          onLongPress: () => _handleEmojiLongPress(emoji),
+          child: Center(
+            child: Text(emoji, style: const TextStyle(fontSize: 28)),
+          ),
+        );
+      },
     );
   }
 
@@ -308,34 +317,115 @@ class _EmojiPanelState extends State<EmojiPanel> {
     );
   }
 
-  Widget _buildTabBar(BuildContext context) {
+  /// 「最常使用 + 默认表情」分区（同一滚动视图，对齐飞书稿）
+  Widget _buildEmojiSections(BuildContext context) {
+    final colors = context.appColors;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_recent.isNotEmpty) ...[
+            _sectionHeader(colors, '最常使用'),
+            _emojiGrid(context, _recent),
+            const SizedBox(height: 12),
+          ],
+          _sectionHeader(colors, '默认表情'),
+          _emojiGrid(context, EmojiPanel.defaultEmojis),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionHeader(AppColors colors, String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 13, color: colors.textSecondary),
+    ),
+  );
+
+  /// 底部 Tab 栏：新建（稿子里的 +，暂不支持自定义表情，置灰）、表情、收藏、GIF、退格
+  Widget _buildBottomBar(BuildContext context) {
     final colors = context.appColors;
     final tabs = <(EmojiTab, IconData, String)>[
-      (EmojiTab.recent, Icons.history, '最近'),
       (EmojiTab.emoji, Icons.emoji_emotions_outlined, '表情'),
       (EmojiTab.favorite, Icons.favorite_border, '收藏'),
       (EmojiTab.gif, Icons.gif, 'GIF'),
     ];
-    return SizedBox(
-      height: 40,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ...tabs.map(
-            (t) => IconButton(
-              icon: Icon(
-                t.$2,
-                size: 20,
-                color: _activeTab == t.$1
-                    ? colors.primary
-                    : colors.textSecondary,
+    Widget tabButton((EmojiTab, IconData, String) t) {
+      final selected = _activeTab == t.$1;
+      return Tooltip(
+        message: t.$3,
+        child: Semantics(
+          label: t.$3,
+          button: true,
+          selected: selected,
+          child: InkResponse(
+            onTap: () => setState(() => _activeTab = t.$1),
+            radius: 22,
+            child: Container(
+              width: 40,
+              height: 32,
+              decoration: BoxDecoration(
+                color: selected ? colors.surface : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
               ),
-              tooltip: t.$3,
-              onPressed: () => setState(() => _activeTab = t.$1),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              child: Icon(
+                t.$2,
+                size: 22,
+                color: selected ? colors.textPrimary : colors.textSecondary,
+              ),
             ),
           ),
+        ),
+      );
+    }
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: null,
+            tooltip: '添加表情（暂不支持自定义表情）',
+            icon: Icon(Icons.add, size: 24, color: colors.textSecondary),
+          ),
+          const SizedBox(width: 4),
+          for (final t in tabs) ...[tabButton(t), const SizedBox(width: 6)],
+          const Spacer(),
+          if (widget.onBackspace != null)
+            Tooltip(
+              message: '删除',
+              child: Semantics(
+                label: '删除',
+                button: true,
+                child: InkResponse(
+                  onTap: widget.onBackspace,
+                  radius: 22,
+                  child: Container(
+                    width: 44,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.attachmentBackground,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.backspace_outlined,
+                      size: 20,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

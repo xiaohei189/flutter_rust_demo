@@ -79,6 +79,7 @@ class _ChatInputState extends State<ChatInput> {
   late final Widget _emojiPanel = EmojiPanel(
     onEmojiSelected: _insertEmoji,
     onGifSelected: widget.onGifSelected,
+    onBackspace: _handleBackspace,
   );
   late final Widget _attachmentPanel = AttachmentPanel(
     items: _cachedAttachmentItems,
@@ -121,46 +122,74 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _initAttachmentItems() {
-    // 颜色对齐飞书稿：文件/拍照橙、位置/相册/名片蓝、视频紫
+    // 严格对齐飞书稿：文件 / 云文档 / 日程 / 位置 / 个人名片 / 定时消息 / 任务 / 开启边写边译 / 更多
     const blue = Color(0xFF3370FF);
     const orange = Color(0xFFFF8A00);
     const purple = Color(0xFF7F3BF5);
+    const green = Color(0xFF00B42A);
+    void notSupported(String label) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$label 暂未开放'),
+          duration: const Duration(milliseconds: 1200),
+        ),
+      );
+    }
+
     _cachedAttachmentItems = [
       AttachmentItem(
-        icon: Icons.photo_library_outlined,
-        label: '相册',
-        color: blue,
-        onTap: widget.onImagesPick ?? widget.onImagePick,
-      ),
-      AttachmentItem(
-        icon: Icons.camera_alt_outlined,
-        label: '拍照',
-        color: orange,
-        onTap: widget.onCameraPick,
-      ),
-      AttachmentItem(
-        icon: Icons.videocam_outlined,
-        label: '视频',
-        color: purple,
-        onTap: widget.onVideoPick,
-      ),
-      AttachmentItem(
-        icon: Icons.location_on_outlined,
-        label: '位置',
-        color: blue,
-        onTap: widget.onLocationPick,
-      ),
-      AttachmentItem(
-        icon: Icons.insert_drive_file_outlined,
+        icon: Icons.folder_open,
         label: '文件',
         color: orange,
         onTap: widget.onFilePick,
       ),
       AttachmentItem(
-        icon: Icons.person_add_outlined,
-        label: '名片',
+        icon: Icons.description_outlined,
+        label: '云文档',
+        color: blue,
+        onTap: () => notSupported('云文档'),
+      ),
+      AttachmentItem(
+        icon: Icons.calendar_today_outlined,
+        label: '日程',
+        color: orange,
+        onTap: () => notSupported('日程'),
+      ),
+      AttachmentItem(
+        icon: Icons.location_on,
+        label: '位置',
+        color: blue,
+        onTap: widget.onLocationPick,
+      ),
+      AttachmentItem(
+        icon: Icons.contact_page_outlined,
+        label: '个人名片',
         color: blue,
         onTap: widget.onCardSend != null ? () => widget.onCardSend!() : null,
+      ),
+      AttachmentItem(
+        icon: Icons.schedule_send_outlined,
+        label: '定时消息',
+        color: blue,
+        onTap: () => notSupported('定时消息'),
+      ),
+      AttachmentItem(
+        icon: Icons.task_alt,
+        label: '任务',
+        color: purple,
+        onTap: () => notSupported('任务'),
+      ),
+      AttachmentItem(
+        icon: Icons.translate,
+        label: '开启边写边译',
+        color: green,
+        onTap: () => notSupported('边写边译'),
+      ),
+      AttachmentItem(
+        icon: Icons.more_horiz,
+        label: '更多',
+        color: const Color(0xFF646A73),
+        onTap: () => notSupported('更多'),
       ),
     ];
   }
@@ -267,6 +296,27 @@ class _ChatInputState extends State<ChatInput> {
 
   void _closeAllPanels() {
     _composer.closePanels();
+  }
+
+  /// 表情面板的退格：删除光标前一个字符（有选区则删选区）
+  void _handleBackspace() {
+    final controller = widget.controller;
+    final text = controller.text;
+    final selection = controller.selection;
+    final end = selection.end >= 0 ? selection.end : text.length;
+    if (end <= 0) return;
+    final start = selection.start >= 0 ? selection.start : end;
+    var removeStart = start == end ? end - 1 : start;
+    // 避免把代理对（emoji）拆成半个字符
+    if (removeStart > 0 &&
+        text.codeUnitAt(removeStart) >= 0xDC00 &&
+        text.codeUnitAt(removeStart) <= 0xDFFF) {
+      removeStart -= 1;
+    }
+    controller.value = TextEditingValue(
+      text: text.replaceRange(removeStart, end, ''),
+      selection: TextSelection.collapsed(offset: removeStart),
+    );
   }
 
   /// 打开"展开编辑"抽屉（飞书式半屏大编辑区）。

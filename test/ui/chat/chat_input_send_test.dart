@@ -52,7 +52,7 @@ void main() {
     await tester.tap(find.byTooltip('更多'));
     await tester.pumpAndSettle();
 
-    expect(find.text('相册'), findsOneWidget, reason: '更多面板应展开');
+    expect(find.text('文件'), findsOneWidget, reason: '更多面板应展开');
     expect(find.byTooltip('发送'), findsOneWidget, reason: '面板展开时工具栏不应被折叠行替换');
   });
 
@@ -94,7 +94,7 @@ void main() {
     expect(sent, 1, reason: 'Markdown 模式下发送按钮仍应可发送');
   });
 
-  testWidgets('表情面板 Tab 栏位于内容上方', (tester) async {
+  testWidgets('表情面板：默认表情分区 + 底部 Tab 栏（飞书稿）', (tester) async {
     final controller = TextEditingController();
 
     await tester.pumpWidget(
@@ -110,19 +110,21 @@ void main() {
     await tester.tap(find.byTooltip('表情'));
     await tester.pumpAndSettle();
 
-    final tab = find.byIcon(Icons.history);
+    final header = find.text('默认表情');
     final emoji = find.text('😀').first;
-    expect(tab, findsOneWidget, reason: '表情面板应显示 Tab 栏');
+    expect(header, findsOneWidget, reason: '表情内容应带分区标题');
     expect(emoji, findsWidgets, reason: '表情面板应显示表情内容');
+    final backspace = find.byIcon(Icons.backspace_outlined);
+    expect(backspace, findsOneWidget, reason: '底部 Tab 栏右侧应有退格键');
     expect(
       find.byIcon(Icons.emoji_emotions),
       findsOneWidget,
       reason: '面板展开时表情按钮应为激活态',
     );
     expect(
-      tester.getTopLeft(tab).dy,
-      lessThan(tester.getTopLeft(emoji).dy),
-      reason: 'Tab 栏应位于表情内容上方',
+      tester.getTopLeft(header).dy,
+      lessThan(tester.getTopLeft(backspace).dy),
+      reason: '内容应位于底部 Tab 栏上方',
     );
 
     // 再点一次表情按钮关闭面板（飞书稿：图标保持表情，不再切成键盘）
@@ -155,7 +157,7 @@ void main() {
 
     await tester.tap(find.byTooltip('更多'));
     await tester.pumpAndSettle();
-    final panelY = tester.getTopLeft(find.text('相册')).dy;
+    final panelY = tester.getTopLeft(find.text('文件')).dy;
     expect(toolbarY, lessThan(panelY), reason: '面板应位于工具栏下方');
   });
 
@@ -182,7 +184,7 @@ void main() {
 
     // 抽屉内仍是文字发送按钮（未随主输入区改版）
     final toolbarY = tester.getTopLeft(find.text('发送')).dy;
-    final panelTabY = tester.getTopLeft(find.byIcon(Icons.history)).dy;
+    final panelTabY = tester.getTopLeft(find.text('默认表情')).dy;
     expect(toolbarY, lessThan(panelTabY), reason: '长消息抽屉中面板应在工具栏下方');
   });
 
