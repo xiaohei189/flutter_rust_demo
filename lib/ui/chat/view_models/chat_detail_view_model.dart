@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
@@ -91,6 +92,8 @@ class ChatDetailState {
 class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     with ChatDetailSelectionMixin, ChatDetailForwardMixin {
   DateTime? _lastTypingSent;
+  Timer? _typingStopTimer;
+  bool _typingNotified = false;
   DateTime? _lastMarkReadTime;
   String? _onlineStatusUserId;
   ChatDetailSendController? _sendController;
@@ -105,6 +108,10 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
 
   @override
   ChatDetailState build(String conversationId) {
+    ref.onDispose(() {
+      _typingStopTimer?.cancel();
+      _typingStopTimer = null;
+    });
     return const ChatDetailState();
   }
 
@@ -247,14 +254,40 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     );
   }
 
-  void onTextChanged() {
-    final now = DateTime.now();
-    if (_lastTypingSent != null &&
-        now.difference(_lastTypingSent!).inSeconds < 3) {
+  /// 输入变化：节流发「正在输入」，并在停止输入 [_typingStopDelay] 后发「结束输入」。
+  ///
+  /// 对齐 openim-flutter-demo `chat_logic.dart`：输入 → yes，停 1s → no。
+  /// [text] 为空（如发送后清空输入框）直接结束输入状态。
+  void onTextChanged({String? text}) {
+    if (text != null && text.isEmpty) {
+      stopTyping();
       return;
     }
-    _lastTypingSent = now;
-    sendTyping(focus: true);
+    final now = DateTime.now();
+    final shouldNotify =
+        _lastTypingSent == null ||
+        now.difference(_lastTypingSent!).inSeconds >= 3;
+    if (shouldNotify) {
+      _lastTypingSent = now;
+      _typingNotified = true;
+      sendTyping(focus: true);
+    }
+    _typingStopTimer?.cancel();
+    _typingStopTimer = Timer(typingStopDelay, stopTyping);
+  }
+
+  /// 停止输入判定的防抖时长（与参考实现一致：停 1 秒即认为不再输入）
+  @visibleForTesting
+  static Duration typingStopDelay = const Duration(seconds: 1);
+
+  /// 结束「正在输入」：停止输入、发送消息、退出会话时调用。
+  /// 只在之前确实发过 yes 时才发 no，避免多余请求。
+  void stopTyping() {
+    _typingStopTimer?.cancel();
+    _typingStopTimer = null;
+    if (!_typingNotified) return;
+    _typingNotified = false;
+    sendTyping(focus: false);
   }
 
   Future<void> subscribeOnlineStatus() async {
@@ -273,8 +306,12 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     await ref.read(chatAuxRepositoryProvider).unsubscribeOnlineStatus([userId]);
   }
 
-  Future<bool> sendText(String text, MessageContentType type) =>
-      _send.sendText(text, type);
+  Future<bool> sendText(String text, MessageContentType type) async {
+    final ok = await _send.sendText(text, type);
+    // 发送完成即结束「正在输入」，对端不用等防抖超时
+    stopTyping();
+    return ok;
+  }
   Future<bool> sendImage(String filePath) => _send.sendImage(filePath);
   Future<bool> sendGif(String url) => _send.sendGif(url);
   Future<bool> sendVideo({

@@ -23,6 +23,18 @@ class MessageServiceReducer {
       list.add(message);
     }
     newMessages[conversationId] = List<ChatMessage>.from(list);
+
+    // 对方消息已到达 → 立即结束其「正在输入」状态（业界通行做法，避免提示挂住）
+    final typingUsers = state.typingUsers;
+    final typingUserId = typingUsers[conversationId];
+    if (typingUserId != null && typingUserId == message.sendId) {
+      final nextTypingUsers = Map<String, String>.from(typingUsers)
+        ..remove(conversationId);
+      return state.copyWith(
+        messages: newMessages,
+        typingUsers: nextTypingUsers,
+      );
+    }
     return state.copyWith(messages: newMessages);
   }
 

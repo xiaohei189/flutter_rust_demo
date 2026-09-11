@@ -145,6 +145,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _routeTransitionTimer?.cancel();
     final viewModel = _viewModel;
     if (viewModel != null) {
+      // 退出会话：结束「正在输入」，避免对端提示挂住
+      viewModel.stopTyping();
       unawaited(viewModel.unsubscribeOnlineStatus());
       unawaited(viewModel.saveDraft(_textController.text));
     }
@@ -165,7 +167,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _onTextChanged() {
-    _viewModel?.onTextChanged();
+    _viewModel?.onTextChanged(text: _textController.text);
   }
 
   bool _focusAtMeHandled = false;

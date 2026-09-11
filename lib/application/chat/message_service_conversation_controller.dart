@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
@@ -20,6 +21,42 @@ class MessageServiceConversationController {
 
   bool _loadingConversations = false;
   bool _reloadConversationsPending = false;
+
+  /// 「正在输入」本地兜底过期：收到 yes 后 [_typingTtl] 内没有刷新就自动清除。
+  ///
+  /// 对齐 Go SDK entering.go 的 inputStatesTimeout（15s），
+  /// 防的是对端不发「结束输入」或消息丢失时提示一直挂着。
+  @visibleForTesting
+  static Duration typingTtl = const Duration(seconds: 15);
+  final Map<String, Timer> _typingTimers = {};
+
+  /// 更新输入状态；开启时同时挂一个兜底过期定时器
+  void _applyTypingStatus({
+    required String conversationId,
+    required String userId,
+    required bool isTyping,
+  }) {
+    _typingTimers.remove(conversationId)?.cancel();
+    final typingUsers = Map<String, String>.from(
+      service.currentState.typingUsers,
+    );
+    if (isTyping) {
+      typingUsers[conversationId] = userId;
+      _typingTimers[conversationId] = Timer(
+        typingTtl,
+        () => _applyTypingStatus(
+          conversationId: conversationId,
+          userId: userId,
+          isTyping: false,
+        ),
+      );
+    } else {
+      typingUsers.remove(conversationId);
+    }
+    service.updateState(
+      service.currentState.copyWith(typingUsers: typingUsers),
+    );
+  }
 
   void handleEvent(ConversationEvent event) {
     event.maybeWhen(
@@ -61,16 +98,10 @@ class MessageServiceConversationController {
         appLog.i(
           '[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}',
         );
-        final typingUsers = Map<String, String>.from(
-          service.currentState.typingUsers,
-        );
-        if (platformIds.isNotEmpty) {
-          typingUsers[cid] = uid;
-        } else {
-          typingUsers.remove(cid);
-        }
-        service.updateState(
-          service.currentState.copyWith(typingUsers: typingUsers),
+        _applyTypingStatus(
+          conversationId: cid,
+          userId: uid,
+          isTyping: platformIds.isNotEmpty,
         );
       },
       syncFailed: (reinstalled, e) =>

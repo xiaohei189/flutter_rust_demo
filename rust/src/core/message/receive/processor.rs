@@ -58,14 +58,37 @@ pub struct MessageProcessor {
     conv_locks: RwLock<HashMap<String, Arc<Mutex<()>>>>,
     /// 输入状态缓存（对齐 Go SDK entering.go typing.state）：
     /// (conversation_id, user_id) -> (platform_id -> 过期时间点)，15 秒过期
-    typing_states: RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>,
+    /// 用 Arc 持有：后台清理任务需要共享同一份状态（对齐 Go 的 cache.OnEvicted）
+    typing_states: Arc<RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>>,
 }
 
 /// 输入状态过期时间（对齐 Go SDK entering.go inputStatesTimeout = 15s）
 const TYPING_STATE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
+type TypingStates = Arc<RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>>;
+
+/// 清理已过期的输入状态，返回需要广播「结束输入」的 (conversation_id, user_id)。
+///
+/// 对齐 Go SDK entering.go 的 `state.OnEvicted` → `changes()` 语义。
+pub(crate) async fn sweep_expired(typing_states: TypingStates, now: std::time::Instant) -> Vec<(String, String)> {
+    let mut evicted = Vec::new();
+    let mut guard = typing_states.write().await;
+    guard.retain(|key, platforms| {
+        platforms.retain(|_, expire| *expire > now);
+        if platforms.is_empty() {
+            evicted.push(key.clone());
+            false
+        } else {
+            true
+        }
+    });
+    evicted
+}
+
 impl MessageProcessor {
     pub fn new(repositories: Arc<Repositories>, user_id: UserId, listener: Arc<dyn ConversationListener>, message_listener: Arc<dyn MessageListener>) -> Self {
+        let typing_states: Arc<RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>> = Arc::new(RwLock::new(HashMap::new()));
+        Self::spawn_typing_expiry_task(typing_states.clone(), listener.clone());
         Self {
             repositories,
             user_id,
@@ -73,8 +96,34 @@ impl MessageProcessor {
             listener,
             message_listener,
             conv_locks: RwLock::new(HashMap::new()),
-            typing_states: RwLock::new(HashMap::new()),
+            typing_states,
         }
+    }
+
+    /// 后台清理过期输入状态，并在过期时广播「结束输入」。
+    ///
+    /// 对齐 Go SDK entering.go：`state.OnEvicted` → `changes()` 会带空 platformIDs 回调，
+    /// 这样即使对端不发送 `msgTips=no`（或消息丢了），UI 的「正在输入」也会自动消失。
+    fn spawn_typing_expiry_task(typing_states: TypingStates, listener: Arc<dyn ConversationListener>) {
+        let Ok(handle) = tokio::runtime::Handle::try_current() else {
+            // 无 tokio runtime（如纯同步测试环境）：跳过后台任务，不影响其它逻辑
+            return;
+        };
+        handle.spawn(async move {
+            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(1));
+            loop {
+                ticker.tick().await;
+                let evicted = sweep_expired(typing_states.clone(), std::time::Instant::now()).await;
+                for (conversation_id, user_id) in evicted {
+                    debug!("[Typing] 输入状态过期，广播结束输入: conv={}, user={}", conversation_id, user_id);
+                    listener.emit(ConversationEvent::UserInputStatusChanged {
+                        conversation_id,
+                        user_id,
+                        platform_ids: Vec::new(),
+                    });
+                }
+            }
+        });
     }
 
     pub(crate) fn send(&self, e: ConversationEvent) {
@@ -439,6 +488,34 @@ impl MessageProcessor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 输入状态到期必须被清理并返回，供上层广播「结束输入」
+    /// （对齐 Go SDK entering.go 的 state.OnEvicted → changes()）
+    #[tokio::test]
+    async fn test_sweep_expired_typing_states() {
+        let states: TypingStates = Arc::new(RwLock::new(HashMap::new()));
+        let now = std::time::Instant::now();
+        {
+            let mut guard = states.write().await;
+            // 已过期
+            guard.insert(
+                ("c1".to_string(), "u1".to_string()),
+                HashMap::from([(5, now - std::time::Duration::from_secs(1))]),
+            );
+            // 仍未过期
+            guard.insert(
+                ("c2".to_string(), "u2".to_string()),
+                HashMap::from([(5, now + std::time::Duration::from_secs(5))]),
+            );
+        }
+
+        let evicted = sweep_expired(states.clone(), std::time::Instant::now()).await;
+
+        assert_eq!(evicted, vec![("c1".to_string(), "u1".to_string())]);
+        let guard = states.read().await;
+        assert!(guard.get(&("c1".to_string(), "u1".to_string())).is_none(), "过期项应被移除");
+        assert!(guard.get(&("c2".to_string(), "u2".to_string())).is_some(), "未过期项应保留");
+    }
 
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
