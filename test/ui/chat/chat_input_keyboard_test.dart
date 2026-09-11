@@ -31,7 +31,7 @@ void main() {
       isTrue,
       reason: '首次点击后输入框应持有焦点',
     );
-    expect(find.text('发送'), findsOneWidget, reason: '聚焦后应展开完整工具栏');
+    expect(find.byTooltip('发送'), findsOneWidget, reason: '聚焦后应展开完整工具栏');
   });
 
   testWidgets('失焦后再点击仍能重建文本输入连接', (tester) async {

@@ -286,6 +286,10 @@ void main() {
       isTrue,
       reason: '首次点击输入框后应建立文本输入连接（键盘可弹出）',
     );
-    expect(find.text('发送'), findsOneWidget, reason: '聚焦后应展开完整工具栏');
+    expect(
+      find.byTooltip('发送'),
+      findsOneWidget,
+      reason: '聚焦后应显示发送按钮（飞书稿为常驻纸飞机图标）',
+    );
   });
 }

@@ -6,7 +6,6 @@ import '../../../core/theme/app_theme.dart';
 import '../message_content_type.dart';
 import 'at_member_suggestions.dart';
 import 'attachment_panel.dart';
-import 'chat_action_toolbar.dart';
 import 'chat_composer_controller.dart';
 import 'chat_input_field.dart';
 import 'emoji_panel.dart';
@@ -67,9 +66,6 @@ class _ChatInputState extends State<ChatInput> {
   late FocusNode _focusNode;
   late final ChatComposerController _composer;
 
-  /// 聚焦或面板展开时保持完整输入布局，避免打开面板后工具栏被折叠行替换。
-  bool get _isInputExpanded => _focusNode.hasFocus || _composer.hasActivePanel;
-
   /// 语音录制状态（权限、临时文件、上滑取消、60s 上限）
   late final VoiceRecorderController _voiceRecorder;
 
@@ -125,35 +121,45 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _initAttachmentItems() {
+    // 颜色对齐飞书稿：文件/拍照橙、位置/相册/名片蓝、视频紫
+    const blue = Color(0xFF3370FF);
+    const orange = Color(0xFFFF8A00);
+    const purple = Color(0xFF7F3BF5);
     _cachedAttachmentItems = [
       AttachmentItem(
         icon: Icons.photo_library_outlined,
         label: '相册',
+        color: blue,
         onTap: widget.onImagesPick ?? widget.onImagePick,
       ),
       AttachmentItem(
         icon: Icons.camera_alt_outlined,
         label: '拍照',
+        color: orange,
         onTap: widget.onCameraPick,
       ),
       AttachmentItem(
         icon: Icons.videocam_outlined,
         label: '视频',
+        color: purple,
         onTap: widget.onVideoPick,
       ),
       AttachmentItem(
         icon: Icons.location_on_outlined,
         label: '位置',
+        color: blue,
         onTap: widget.onLocationPick,
       ),
       AttachmentItem(
         icon: Icons.insert_drive_file_outlined,
         label: '文件',
+        color: orange,
         onTap: widget.onFilePick,
       ),
       AttachmentItem(
         icon: Icons.person_add_outlined,
         label: '名片',
+        color: blue,
         onTap: widget.onCardSend != null ? () => widget.onCardSend!() : null,
       ),
     ];
@@ -343,7 +349,6 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
-    final isExpanded = _isInputExpanded;
     final emojiActive = _composer.activePanel == ComposerPanel.emoji;
     final moreActive = _composer.activePanel == ComposerPanel.attachment;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
@@ -356,81 +361,28 @@ class _ChatInputState extends State<ChatInput> {
           if (_voiceRecorder.isRecording)
             RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
           Container(
-            padding: const EdgeInsets.fromLTRB(
-              12, // 左：语音按钮距屏幕左侧（调小→语音更靠左）
-              8, // 上：输入框距输入区顶部（输入区内部顶部预留间隙）
-              12, // 右：更多按钮距屏幕右侧
-              8, // 下：输入框/工具栏距输入区底部（输入区内部底部统一预留间隙，静态不随状态变化）
-            ),
-            decoration: BoxDecoration(
-              color: context.appColors.inputBackground,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 6,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
+            color: context.appColors.inputBackground,
+            padding: const EdgeInsets.only(top: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               // 子项撑满宽度，避免工具栏/面板被默认居中
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 输入行结构恒定：🎤 + 输入框 + 😊 + ➕。
-                // 折叠/展开只切换行内图标的显隐（Visibility 保留 Element）与底部工具栏，
-                // 输入框始终是同一个 Element，避免同帧替换 TextField 导致 IME 连接丢失（首次点击键盘不弹出）。
-                Row(
-                  children: [
-                    Visibility(
-                      visible: !isExpanded,
-                      maintainState: true,
-                      child: InputToolbarIcon(
-                        icon: Icons.mic_none,
-                        tooltip: '语音（长按录音，上滑取消）',
-                        onTap: () => _focusNode.requestFocus(),
-                        onLongPressStart: (details) =>
-                            _voiceRecorder.start(context, details),
-                        onLongPressMoveUpdate: _voiceRecorder.onMove,
-                        onLongPressEnd: (details) =>
-                            _voiceRecorder.stop(context, details),
-                      ),
-                    ),
-                    Expanded(child: _buildInputRow()),
-                    Visibility(
-                      visible: !isExpanded,
-                      maintainState: true,
-                      child: InputToolbarIcon(
-                        // size 只影响表情↔更多之间的间距（不作用于语音 🎤）；调小（如 24）→ 更近，调大 → 更远
-                        size: 26,
-                        icon: emojiActive
-                            ? Icons.emoji_emotions
-                            : Icons.emoji_emotions_outlined,
-                        tooltip: '表情',
-                        onTap: () => _togglePanel(ComposerPanel.emoji),
-                      ),
-                    ),
-                    Visibility(
-                      visible: !isExpanded,
-                      maintainState: true,
-                      child: InputToolbarIcon(
-                        // 与表情按钮同尺寸，共同决定 😊↔➕ 间距
-                        size: 26,
-                        icon: moreActive
-                            ? Icons.add_circle
-                            : Icons.add_circle_outline,
-                        tooltip: '更多',
-                        onTap: () => _togglePanel(ComposerPanel.attachment),
-                      ),
-                    ),
-                  ],
+                // @ 成员候选：贴在胶囊上方
+                if (_composer.atKeyword != null) _buildAtMemberList(),
+                // 输入胶囊：白底圆角，右侧内嵌「展开编辑」
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: _buildInputRow(),
                 ),
-                if (isExpanded) ...[
-                  if (_composer.atKeyword != null) _buildAtMemberList(),
-                  _composer.isMarkdownMode
-                      ? _buildFormatBar()
-                      : _buildToolbarRow(),
-                ],
+                const SizedBox(height: 4),
+                // Markdown 模式用格式栏替换操作行（避免出现两个发送按钮）
+                if (_composer.isMarkdownMode)
+                  _buildFormatBar()
+                else
+                  // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
+                  _buildActionRow(emojiActive, moreActive),
+                const SizedBox(height: 6),
               ],
             ),
           ),
@@ -476,43 +428,130 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  /// 第三层：工具栏行（与展开抽屉共用 [ChatActionToolbar]）。
-  Widget _buildToolbarRow() {
-    return ChatActionToolbar(
-      emojiActive: _composer.activePanel == ComposerPanel.emoji,
-      moreActive: _composer.activePanel == ComposerPanel.attachment,
-      markdownActive: _composer.isMarkdownMode,
-      markdownTooltip: _composer.isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
-      hasText: _composer.hasText,
-      // 😊
-      onEmoji: () => _togglePanel(ComposerPanel.emoji),
-      // @ 提及
-      onAt: () => widget.onAtMention?.call(),
-      // 🎤 语音（长按录音，上滑取消）
-      onVoiceLongPressStart: (details) =>
-          _voiceRecorder.start(context, details),
-      onVoiceLongPressMoveUpdate: _voiceRecorder.onMove,
-      onVoiceLongPressEnd: (details) => _voiceRecorder.stop(context, details),
-      onVoiceTap: () => _focusNode.requestFocus(), // 聚焦自动收起面板
-      // 🖼️ 相册
-      onImage: widget.onImagePick ?? () {},
-      imageEnabled: widget.onImagePick != null,
-      // Aa 格式
-      onFormat: () {
-        HapticFeedback.lightImpact();
-        final enteringMarkdown = !_composer.isMarkdownMode;
-        _composer.setMarkdownMode(enteringMarkdown);
-        if (enteringMarkdown) {
-          // 进入 Markdown 模式时收起面板，避免面板+格式栏同屏
-          _composer.closePanels();
-          _focusNode.requestFocus();
-        }
-      },
-      // ➕ 更多
-      onMore: () => _togglePanel(ComposerPanel.attachment),
-      // ➡️ 发送
-      onSend: _doSend,
+  /// 常驻操作行（飞书稿）：😊 @ 🎤 🖼 Aa ⊕ 均匀分布，最右固定发送。
+  /// 开关面板只改图标形态（蓝色/实心），行结构与输入框 Element 始终不变，
+  /// 因此聚焦、切面板都不会替换 TextField（键盘不会闪）。
+  Widget _buildActionRow(bool emojiActive, bool moreActive) {
+    final colors = context.appColors;
+    final imagePicker = widget.onImagesPick ?? widget.onImagePick;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          for (final icon in <Widget>[
+            InputToolbarIcon(
+              icon: emojiActive
+                  ? Icons.emoji_emotions
+                  : Icons.emoji_emotions_outlined,
+              tooltip: '表情',
+              active: emojiActive,
+              onTap: () => _togglePanel(ComposerPanel.emoji),
+            ),
+            InputToolbarIcon(
+              icon: Icons.alternate_email,
+              tooltip: '@ 提及',
+              onTap: () => widget.onAtMention?.call(),
+            ),
+            InputToolbarIcon(
+              icon: Icons.mic_none,
+              tooltip: '语音（长按录音，上滑取消）',
+              onTap: () => _focusNode.requestFocus(),
+              onLongPressStart: (details) =>
+                  _voiceRecorder.start(context, details),
+              onLongPressMoveUpdate: _voiceRecorder.onMove,
+              onLongPressEnd: (details) =>
+                  _voiceRecorder.stop(context, details),
+            ),
+            InputToolbarIcon(
+              icon: Icons.image_outlined,
+              tooltip: '相册',
+              enabled: imagePicker != null,
+              onTap: () => imagePicker?.call(),
+            ),
+            _buildMarkdownToggle(colors),
+            InputToolbarIcon(
+              icon: moreActive ? Icons.cancel : Icons.add_circle_outline,
+              tooltip: moreActive ? '收起' : '更多',
+              active: moreActive,
+              onTap: () => _togglePanel(ComposerPanel.attachment),
+            ),
+          ])
+            Expanded(child: Center(child: icon)),
+          const SizedBox(width: 4),
+          _buildSendButton(colors),
+        ],
+      ),
     );
+  }
+
+  /// Aa：Markdown 模式开关（激活时蓝色）
+  Widget _buildMarkdownToggle(AppColors colors) {
+    final active = _composer.isMarkdownMode;
+    return Tooltip(
+      message: active ? '关闭 Markdown' : 'Markdown 格式',
+      child: Semantics(
+        label: 'Aa',
+        button: true,
+        child: InkResponse(
+          onTap: _toggleMarkdown,
+          radius: 20,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Center(
+              child: Text(
+                'Aa',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: active
+                      ? colors.primary
+                      : colors.textPrimary.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 发送：纸飞机图标，无文字时置灰不可点
+  Widget _buildSendButton(AppColors colors) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _composer.hasText,
+      builder: (_, hasText, __) => Tooltip(
+        message: '发送',
+        child: Semantics(
+          label: '发送',
+          button: true,
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 36),
+            onPressed: hasText ? _doSend : null,
+            icon: Icon(
+              Icons.send_outlined,
+              size: 26,
+              color: hasText
+                  ? colors.primary
+                  : colors.textSecondary.withValues(alpha: 0.4),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Aa 点击：切换 Markdown 模式（进入时收起面板并聚焦）
+  void _toggleMarkdown() {
+    HapticFeedback.lightImpact();
+    final enteringMarkdown = !_composer.isMarkdownMode;
+    _composer.setMarkdownMode(enteringMarkdown);
+    if (enteringMarkdown) {
+      // 进入 Markdown 模式时收起面板，避免面板+格式栏同屏
+      _composer.closePanels();
+      _focusNode.requestFocus();
+    }
   }
 
   /// 第二层（Markdown 模式）：格式按钮栏，替换普通工具栏。
@@ -527,9 +566,7 @@ class _ChatInputState extends State<ChatInput> {
       },
       trailing: ValueListenableBuilder<bool>(
         valueListenable: _composer.hasText,
-        builder: (_, hasText, __) {
-          return SendButton(enabled: hasText, onSend: _doSend);
-        },
+        builder: (_, __, ___) => _buildSendButton(context.appColors),
       ),
     );
   }

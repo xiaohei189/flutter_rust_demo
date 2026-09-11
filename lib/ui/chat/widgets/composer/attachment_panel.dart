@@ -9,10 +9,18 @@ class AttachmentItem {
   final String label;
   final VoidCallback? onTap;
 
-  const AttachmentItem({required this.icon, required this.label, this.onTap});
+  /// 图标颜色（飞书稿里每个入口一个色）
+  final Color? color;
+
+  const AttachmentItem({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.color,
+  });
 }
 
-/// 附件 Grid 面板：在输入区上方展开，4 列宫格布局
+/// 附件 Grid 面板（飞书稿）：浅灰底 + 4 列白卡，卡片内彩色图标 + 下方标题
 class AttachmentPanel extends StatelessWidget {
   final List<AttachmentItem> items;
   final VoidCallback? onItemTap;
@@ -23,15 +31,22 @@ class AttachmentPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 20),
       decoration: BoxDecoration(
         color: colors.attachmentBackground,
-        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
       ),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: items.map((item) => _buildItem(context, item)).toList(),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.86,
+        ),
+        itemCount: items.length,
+        itemBuilder: (_, i) => _buildItem(context, items[i]),
       ),
     );
   }
@@ -39,44 +54,41 @@ class AttachmentPanel extends StatelessWidget {
   Widget _buildItem(BuildContext context, AttachmentItem item) {
     final colors = context.appColors;
     final enabled = item.onTap != null;
-    return SizedBox(
-      width: 72,
-      child: InkWell(
-        onTap: () {
-          item.onTap?.call();
-          onItemTap?.call();
-        },
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
+    final iconColor = enabled
+        ? (item.color ?? colors.primary)
+        : colors.textSecondary.withValues(alpha: 0.4);
+    return InkWell(
+      onTap: enabled
+          ? () {
+              item.onTap?.call();
+              onItemTap?.call();
+            }
+          : null,
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: enabled
-                    ? colors.primary.withValues(alpha: 0.08)
-                    : colors.background,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                item.icon,
-                size: 28,
-                color: enabled ? colors.primary : colors.textSecondary,
-              ),
+              child: Icon(item.icon, size: 30, color: iconColor),
             ),
-            const SizedBox(height: 6),
-            Text(
-              item.label,
-              style: TextStyle(
-                fontSize: 12,
-                color: enabled
-                    ? colors.textPrimary
-                    : colors.textSecondary.withValues(alpha: 0.5),
-              ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              color: enabled ? colors.textPrimary : colors.textSecondary,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -90,12 +102,26 @@ Widget attachmentPanelPreview() {
     padding: EdgeInsets.all(16),
     child: AttachmentPanel(
       items: [
-        AttachmentItem(icon: Icons.photo_library_outlined, label: '相册'),
-        AttachmentItem(icon: Icons.camera_alt_outlined, label: '拍照'),
-        AttachmentItem(icon: Icons.videocam_outlined, label: '视频'),
-        AttachmentItem(icon: Icons.location_on_outlined, label: '位置'),
-        AttachmentItem(icon: Icons.insert_drive_file_outlined, label: '文件'),
-        AttachmentItem(icon: Icons.person_add_outlined, label: '名片'),
+        AttachmentItem(
+          icon: Icons.folder_open,
+          label: '文件',
+          color: Color(0xFFFF8A00),
+        ),
+        AttachmentItem(
+          icon: Icons.calendar_today_outlined,
+          label: '日程',
+          color: Color(0xFFFF8A00),
+        ),
+        AttachmentItem(
+          icon: Icons.location_on,
+          label: '位置',
+          color: Color(0xFF3370FF),
+        ),
+        AttachmentItem(
+          icon: Icons.photo_library_outlined,
+          label: '相册',
+          color: Color(0xFF3370FF),
+        ),
       ],
     ),
   );

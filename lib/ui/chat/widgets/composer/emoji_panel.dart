@@ -193,7 +193,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
         return _buildEmojiGrid(
           context,
           emojis,
-          header: _recent.isEmpty ? '默认表情（使用后会出现在这里）' : '最近使用',
+          header: _recent.isEmpty ? '默认表情' : '最常使用',
         );
       case EmojiTab.emoji:
         return _buildEmojiGrid(context, EmojiPanel.defaultEmojis);
@@ -244,9 +244,9 @@ class _EmojiPanelState extends State<EmojiPanel> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 8,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
+                crossAxisCount: 7,
+                mainAxisSpacing: 2,
+                crossAxisSpacing: 2,
               ),
               itemCount: emojis.length,
               itemBuilder: (_, i) {
@@ -255,7 +255,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
                   onTap: () => _handleEmojiTap(emoji),
                   onLongPress: () => _handleEmojiLongPress(emoji),
                   child: Center(
-                    child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                    child: Text(emoji, style: const TextStyle(fontSize: 28)),
                   ),
                 );
               },

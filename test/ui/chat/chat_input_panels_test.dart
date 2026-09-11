@@ -54,8 +54,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(panelHeight(tester), opened, reason: '父级重建后应保持展开');
 
-    // 展开态工具栏上的按钮变成「键盘」，点它收起面板
-    await tester.tap(find.byTooltip('键盘'));
+    // 再点一次表情按钮收起面板（面板内 Tab 也叫「表情」，取输入行那个）
+    await tester.tap(find.byTooltip('表情').first);
     await tester.pumpAndSettle();
     expect(panelInTree, findsOneWidget, reason: '收起后仍常驻树中保留状态');
     expect(panelHeight(tester), 0, reason: '再点一次应收起');
