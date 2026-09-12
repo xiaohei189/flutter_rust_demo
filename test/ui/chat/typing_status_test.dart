@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:typed_data' show Int32List;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/application/chat/message_service_conversation_controller.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
-import 'package:flutter_rust_demo/application/chat/message_service_state.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart'
     show messageInfoFromChatMessage;
 import 'package:flutter_rust_demo/data/services/im_client.dart';
@@ -51,7 +49,7 @@ class _FakeService extends MessageServiceNotifier {
   }
 }
 
-Conversation _conversation() => Conversation(
+Conversation _conversation() => const Conversation(
   conversationId: _convId,
   conversationType: 1,
   userId: 'user_b',
@@ -177,11 +175,6 @@ void main() {
       service.updateState(
         service.currentState.copyWith(typingUsers: {_convId: 'user_b'}),
       );
-      final controller = MessageServiceConversationController(
-        service,
-        ImClient.instance,
-      );
-
       service.onMessageEventForTest(
         MessageEvent.newMessage(
           conversationId: _convId,

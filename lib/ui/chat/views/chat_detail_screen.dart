@@ -569,16 +569,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       chatDetailViewModelProvider(widget.conversationId),
     );
     final userProfileState = ref.watch(userProfileViewProvider);
-    final unread = ref.watch(
-      conversationListProvider.select(
-        (state) =>
-            state.conversations
-                .where((c) => c.conversationId == widget.conversationId)
-                .firstOrNull
-                ?.unreadCount ??
-            0,
-      ),
-    );
     final user = _getUser(userProfileState);
     final conversation = _conversation;
     final otherUserId = conversation?.conversationType == 1
@@ -616,7 +606,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         // 由 Scaffold 统一按 viewInsets 缩小 body，避免手动键盘占位与系统 IME 配合导致键盘收起再弹出。
         appBar: ChatDetailAppBar(
           user: user,
-          unread: unread,
           isTyping: isTyping,
           isGroup: _isGroup,
           online: online,

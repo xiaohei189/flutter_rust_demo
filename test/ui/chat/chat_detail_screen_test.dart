@@ -186,7 +186,7 @@ void main() {
     expect(find.text('新消息'), findsOneWidget);
   });
 
-  testWidgets('会话未读徽标随未读数变化', (tester) async {
+  testWidgets('顶栏不展示未读数（未读只属于会话列表）', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final service = TestMessageServiceNotifier(
       MessageServiceState(
@@ -199,11 +199,12 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    final badge = find.descendant(
-      of: find.byType(AppBar),
-      matching: find.text('2'),
+    // 进入会话即已读；头部若展示未读数会"闪一下"（先画 N，mark-read 后清零）
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('2')),
+      findsNothing,
+      reason: '头部不应展示未读数',
     );
-    expect(badge, findsOneWidget);
 
     service.state = service.currentState.copyWith(
       conversations: [_makeConversation(unreadCount: 0)],

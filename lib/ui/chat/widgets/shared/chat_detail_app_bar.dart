@@ -9,7 +9,6 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ChatDetailAppBar({
     super.key,
     required this.user,
-    required this.unread,
     required this.isTyping,
     required this.isGroup,
     required this.onBack,
@@ -19,7 +18,6 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   final User user;
-  final int unread;
   final bool isTyping;
   final bool isGroup;
   final bool? online;
@@ -35,32 +33,8 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       centerTitle: false,
       leading: IconButton(
-        icon: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Icon(Icons.arrow_back_ios_new, size: 22),
-            if (unread > 0)
-              Positioned(
-                right: -8,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: context.appColors.danger,
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                  ),
-                  child: Text(
-                    unread > 99 ? '99+' : '$unread',
-                    style: TextStyle(
-                      color: context.appColors.onPrimary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+        // 头部不展示会话未读数：进入会话即已读，未读只属于会话列表（对齐飞书）
+        icon: const Icon(Icons.arrow_back_ios_new, size: 22),
         onPressed: onBack,
       ),
       title: InkWell(
@@ -145,7 +119,6 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 Widget chatDetailAppBarPreview() => Scaffold(
   appBar: ChatDetailAppBar(
     user: const User(id: 'u1', name: '张三'),
-    unread: 3,
     isTyping: false,
     isGroup: false,
     online: true,

@@ -13,7 +13,6 @@ void main() {
         home: Scaffold(
           appBar: ChatDetailAppBar(
             user: const User(id: 'u1', name: '张三'),
-            unread: 3,
             isTyping: false,
             isGroup: false,
             online: true,
@@ -40,7 +39,6 @@ void main() {
         home: Scaffold(
           appBar: ChatDetailAppBar(
             user: const User(id: 'g1', name: '技术群'),
-            unread: 0,
             isTyping: false,
             isGroup: true,
             online: null,
