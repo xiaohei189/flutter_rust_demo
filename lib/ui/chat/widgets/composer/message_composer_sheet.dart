@@ -5,9 +5,10 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_theme.dart';
 import '../message_content_type.dart';
 import 'attachment_panel.dart';
-import 'chat_action_toolbar.dart';
+import 'chat_action_toolbar.dart' show SendButton;
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
+import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 
 /// 展开编辑抽屉（飞书式）：全宽大编辑区，用于长文 / Markdown 输入。
@@ -26,6 +27,7 @@ class MessageComposerSheet extends StatefulWidget {
     this.onAtMention,
     this.onGifSelected,
     this.attachmentItems = const [],
+    this.sendToLabel = '发送消息',
   });
 
   final TextEditingController controller;
@@ -40,6 +42,9 @@ class MessageComposerSheet extends StatefulWidget {
   final VoidCallback? onAtMention;
   final ValueChanged<String>? onGifSelected;
   final List<AttachmentItem> attachmentItems;
+
+  /// 输入区占位文案（飞书稿为「发送给 XXX」）
+  final String sendToLabel;
 
   @override
   State<MessageComposerSheet> createState() => _MessageComposerSheetState();
@@ -107,6 +112,100 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
       _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
     );
     Navigator.of(context).pop();
+  }
+
+  /// 底部操作行（对齐飞书稿）：😊 @ 🖼 📄 Aa ——右侧固定纸飞机发送。
+  Widget _buildActionRow(AppColors colors) {
+    final emojiActive = _activePanel == _Panel.emoji;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Row(
+        children: [
+          for (final icon in <Widget>[
+            InputToolbarIcon(
+              icon: emojiActive
+                  ? Icons.emoji_emotions
+                  : Icons.emoji_emotions_outlined,
+              tooltip: '表情',
+              active: emojiActive,
+              onTap: () => _togglePanel(_Panel.emoji),
+            ),
+            InputToolbarIcon(
+              icon: Icons.alternate_email,
+              tooltip: '@ 提及',
+              onTap: widget.onAtMention ?? () {},
+            ),
+            InputToolbarIcon(
+              icon: Icons.image_outlined,
+              tooltip: '相册',
+              enabled: widget.onImagePick != null,
+              onTap: widget.onImagePick ?? () {},
+            ),
+            InputToolbarIcon(
+              icon: Icons.upload_file_outlined,
+              tooltip: '文件',
+              onTap: () => _togglePanel(_Panel.attachment),
+            ),
+            Tooltip(
+              message: 'Markdown 格式',
+              child: Semantics(
+                label: 'Aa',
+                button: true,
+                child: InkResponse(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _isMarkdownMode = !_isMarkdownMode);
+                    _closeAllPanels();
+                  },
+                  radius: 20,
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: Center(
+                      child: Text(
+                        'Aa',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ])
+            Expanded(child: Center(child: icon)),
+          const SizedBox(width: 4),
+          ValueListenableBuilder<bool>(
+            valueListenable: widget.hasText,
+            builder: (_, hasText, __) => Tooltip(
+              message: '发送',
+              child: Semantics(
+                label: '发送',
+                button: true,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 44,
+                    height: 36,
+                  ),
+                  onPressed: hasText ? _send : null,
+                  icon: Icon(
+                    Icons.send_outlined,
+                    size: 26,
+                    color: hasText
+                        ? colors.primary
+                        : colors.textSecondary.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ==================== Markdown 格式插入（与主输入框同逻辑） ====================
@@ -204,7 +303,8 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
         height: availableHeight * _heightFactor,
         child: Column(
           children: [
-            // 拖拽把手：拖动只改变编辑区高度（底部工具栏固定），避免默认 BottomSheet 整体拖动导致工具栏消失
+            // 头部：标题 + 缩回（对齐飞书稿）。整行仍可拖动调整高度，
+            // 避免默认 BottomSheet 整体拖动导致工具栏消失。
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onVerticalDragUpdate: (details) {
@@ -222,28 +322,34 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                   _heightFactor = next.clamp(0.35, 0.95);
                 });
               },
-              // 全宽可拖拽条：把手横线居中，向上/向下拖动调整编辑区高度，松手保持
               child: Container(
                 width: double.infinity,
-                height: 26,
-                alignment: Alignment.center,
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                height: 44,
+                padding: const EdgeInsets.only(left: 16, right: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      '无标题',
+                      style: TextStyle(fontSize: 17, color: colors.textSecondary),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close_fullscreen,
+                        size: 20,
+                        color: colors.textSecondary,
+                      ),
+                      tooltip: '缩回',
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
                 ),
               ),
             ),
-            // 编辑区 + 右上角缩回按钮：按钮与文字首行同一行（不再单独占一行）
+            // 编辑区（缩回按钮已移到顶部标题行）
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Padding(
+              child: Padding(
                       padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
                       child: TextField(
                         controller: widget.controller,
@@ -270,27 +376,16 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: colors.surface,
+                          hintText: widget.sendToLabel,
+                          hintStyle: TextStyle(
+                            fontSize: 16,
+                            color: colors.textSecondary,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, right: 4),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.close_fullscreen,
-                        size: 20,
-                        color: colors.textSecondary,
-                      ),
-                      tooltip: '缩回',
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
               ),
             ),
             // 底部工具栏：Markdown 模式切换为格式栏
@@ -309,26 +404,7 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 ),
               )
             else
-              ChatActionToolbar(
-                emojiActive: _activePanel == _Panel.emoji,
-                moreActive: _activePanel == _Panel.attachment,
-                markdownActive: _isMarkdownMode,
-                markdownTooltip: _isMarkdownMode
-                    ? '关闭 Markdown'
-                    : 'Markdown 格式',
-                hasText: widget.hasText,
-                onEmoji: () => _togglePanel(_Panel.emoji),
-                onAt: widget.onAtMention ?? () {},
-                onImage: widget.onImagePick ?? () {},
-                imageEnabled: widget.onImagePick != null,
-                onFormat: () {
-                  HapticFeedback.lightImpact();
-                  setState(() => _isMarkdownMode = !_isMarkdownMode);
-                  _closeAllPanels();
-                },
-                onMore: () => _togglePanel(_Panel.attachment),
-                onSend: _send,
-              ),
+              _buildActionRow(colors),
             // 表情/附件面板（互斥展开，与主输入框一致）
             AnimatedSize(
               duration: const Duration(milliseconds: 200),

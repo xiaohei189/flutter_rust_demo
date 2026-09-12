@@ -491,7 +491,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Widget _buildChatInput() {
+  Widget _buildChatInput(User user) {
     return ChatInput(
       controller: _textController,
       onSend: _sendMessage,
@@ -508,6 +508,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       atMembers: _atMembers,
       onAtMemberSelected: _onAtMemberSelected,
       isGroupChat: _isGroup,
+      sendToLabel: '发送给 ${user.name}',
     );
   }
 
@@ -553,7 +554,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 ),
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxInputHeight),
-                child: _buildChatInput(),
+                child: _buildChatInput(user),
               ),
             ],
           )

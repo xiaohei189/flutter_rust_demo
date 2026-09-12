@@ -39,6 +39,9 @@ class ChatInput extends StatefulWidget {
   final ValueChanged<String>? onAtMemberSelected;
   final bool isGroupChat;
 
+  /// 展开编辑抽屉的占位文案（如「发送给 张三」）
+  final String? sendToLabel;
+
   const ChatInput({
     super.key,
     required this.controller,
@@ -56,6 +59,7 @@ class ChatInput extends StatefulWidget {
     this.atMembers,
     this.onAtMemberSelected,
     this.isGroupChat = false,
+    this.sendToLabel,
   });
 
   @override
@@ -346,6 +350,7 @@ class _ChatInputState extends State<ChatInput> {
         onAtMention: widget.onAtMention,
         onGifSelected: widget.onGifSelected,
         attachmentItems: _attachmentItems,
+        sendToLabel: widget.sendToLabel ?? '发送消息',
       ),
     ).then((_) {
       // 缩回后恢复打开前的输入区状态：若打开前未聚焦（工具栏收起），

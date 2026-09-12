@@ -182,8 +182,8 @@ void main() {
     await tester.tap(find.byTooltip('表情'));
     await tester.pumpAndSettle();
 
-    // 抽屉内仍是文字发送按钮（未随主输入区改版）
-    final toolbarY = tester.getTopLeft(find.text('发送')).dy;
+    // 抽屉内工具栏同样改成了纸飞机发送按钮
+    final toolbarY = tester.getTopLeft(find.byTooltip('发送')).dy;
     final panelTabY = tester.getTopLeft(find.text('默认表情')).dy;
     expect(toolbarY, lessThan(panelTabY), reason: '长消息抽屉中面板应在工具栏下方');
   });
