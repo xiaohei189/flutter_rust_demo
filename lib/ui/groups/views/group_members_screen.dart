@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
 import '../../../router/app_router.dart';
+import '../../../providers/current_user_provider.dart';
 import '../../chat/widgets/settings_dialogs.dart' show showInviteMemberSheet;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
@@ -78,6 +79,7 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
     final colors = context.appColors;
     final state = ref.watch(groupMemberProvider(widget.groupId));
     final members = _filtered(state.members);
+    final currentUserId = ref.watch(currentUserIdProvider);
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -132,6 +134,7 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
                       final member = members[index];
                       return _MemberRow(
                         member: member,
+                        isSelf: member.userId == currentUserId,
                         onTap: () => _openMember(member),
                       );
                     },
@@ -144,9 +147,14 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
 }
 
 class _MemberRow extends StatelessWidget {
-  const _MemberRow({required this.member, required this.onTap});
+  const _MemberRow({
+    required this.member,
+    required this.isSelf,
+    required this.onTap,
+  });
 
   final GroupMember member;
+  final bool isSelf;
   final VoidCallback onTap;
 
   @override
@@ -182,6 +190,12 @@ class _MemberRow extends StatelessWidget {
                 style: TextStyle(fontSize: 16, color: colors.textPrimary),
               ),
             ),
+            // 「外部」标签：协议层暂无"外部联系人"字段，先按 UI 稿展示
+            // （自己不算外部）；等 SDK 提供字段后替换为真实判断。
+            if (!isSelf) ...[
+              const SizedBox(width: 6),
+              const _RoleTag(text: '外部'),
+            ],
             if (roleTag != null) ...[
               const SizedBox(width: 6),
               _RoleTag(text: roleTag),
