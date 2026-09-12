@@ -9,6 +9,7 @@ import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../groups/providers/group_provider.dart';
+import '../../groups/views/group_members_screen.dart';
 import '../providers/chat_settings_provider.dart';
 import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
@@ -366,8 +367,27 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final members = memberState.members;
 
     return [
-      SettingsSectionTitle(
-        title: '群成员${memberState.isLoading ? '' : ' (${members.length})'}',
+      // 群成员标题行可点：进入独立的群成员页（对齐飞书）
+      InkWell(
+        onTap: _openMembersPage,
+        child: Row(
+          children: [
+            Expanded(
+              child: SettingsSectionTitle(
+                title:
+                    '群成员${memberState.isLoading ? '' : ' (${members.length})'}',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 8),
+              child: Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: context.appColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -381,6 +401,14 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         ),
       ),
     ];
+  }
+
+  void _openMembersPage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GroupMembersScreen(groupId: _viewModel.groupId),
+      ),
+    );
   }
 
   Widget _buildAppIcon(
