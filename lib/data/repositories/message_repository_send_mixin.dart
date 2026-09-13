@@ -18,9 +18,45 @@ mixin MessageRepositorySendMixin on Object {
     required String sourceId,
     required SessionType sessionType,
   }) async {
+    // 对齐 Go SDK 两段式：CreateTextMessage + SendMessage（发送同一条本地消息，
+    // 便于上层先乐观上屏、再按同一 clientMsgId 收敛状态）
+    final msg = await createTextMessage(text: text);
+    return sendPreparedMessage(
+      message: msg,
+      sourceId: sourceId,
+      sessionType: sessionType,
+    );
+  }
+
+  /// 构造本地文本消息（对齐 Go `CreateTextMessage`）：不发网络，
+  /// 供上层乐观上屏（status=sending，clientMsgId 由本地生成）。
+  Future<MsgStruct> createTextMessage({required String text}) =>
+      ffi_message_builder.createTextMessage(text: text);
+
+  /// 构造本地 Markdown 消息（对齐 Go `CreateMarkdownMessage`）
+  Future<MsgStruct> createMarkdownMessage({required String text}) =>
+      ffi_message_builder.createMarkdownMessage(text: text);
+
+  /// 构造本地 @ 消息（对齐 Go `CreateTextAtMessage`）
+  Future<MsgStruct> createAtTextMessage({
+    required String text,
+    required List<String> atUserIds,
+  }) => ffi_message_builder.createAtTextMessage(
+    text: text,
+    atUserList: atUserIds,
+    atUsersInfo: const [],
+    quoteMsg: null,
+  );
+
+  /// 发送已构建的本地消息（对齐 Go `SendMessage`）
+  Future<ChatMessage> sendPreparedMessage({
+    required MsgStruct message,
+    required String sourceId,
+    required SessionType sessionType,
+  }) async {
     return messageFromMsgStruct(
-      await client.sendTextMessage(
-        text: text,
+      await ffi_message_advanced.sendMessage(
+        msgStruct: message,
         sourceId: sourceId,
         sessionType: sessionType,
       ),
@@ -32,12 +68,11 @@ mixin MessageRepositorySendMixin on Object {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(
-      await client.sendMarkdownMessage(
-        text: text,
-        sourceId: sourceId,
-        sessionType: sessionType,
-      ),
+    final msg = await createMarkdownMessage(text: text);
+    return sendPreparedMessage(
+      message: msg,
+      sourceId: sourceId,
+      sessionType: sessionType,
     );
   }
 
@@ -47,13 +82,11 @@ mixin MessageRepositorySendMixin on Object {
     required String sourceId,
     required SessionType sessionType,
   }) async {
-    return messageFromMsgStruct(
-      await client.sendAtTextMessage(
-        text: text,
-        atUserIds: atUserIds,
-        sourceId: sourceId,
-        sessionType: sessionType,
-      ),
+    final msg = await createAtTextMessage(text: text, atUserIds: atUserIds);
+    return sendPreparedMessage(
+      message: msg,
+      sourceId: sourceId,
+      sessionType: sessionType,
     );
   }
 

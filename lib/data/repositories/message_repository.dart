@@ -6,6 +6,7 @@ import '../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../domain/models/user_profile.dart' show UserProfile;
 import '../../generated/rust/constant/enums.dart' show SessionType;
+import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
 
 export 'message_repository_impl.dart';
 
@@ -28,6 +29,25 @@ abstract class MessageRepository {
 
   Future<ChatMessage> sendTextMessage({
     required String text,
+    required String sourceId,
+    required SessionType sessionType,
+  });
+
+  /// 构造本地文本消息（对齐 Go `CreateTextMessage`）：不发网络，供上层乐观上屏
+  Future<MsgStruct> createTextMessage({required String text});
+
+  /// 构造本地 Markdown 消息（对齐 Go `CreateMarkdownMessage`）
+  Future<MsgStruct> createMarkdownMessage({required String text});
+
+  /// 构造本地 @ 消息（对齐 Go `CreateTextAtMessage`）
+  Future<MsgStruct> createAtTextMessage({
+    required String text,
+    required List<String> atUserIds,
+  });
+
+  /// 发送已构建的本地消息（对齐 Go `SendMessage`）
+  Future<ChatMessage> sendPreparedMessage({
+    required MsgStruct message,
     required String sourceId,
     required SessionType sessionType,
   });
