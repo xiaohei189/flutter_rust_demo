@@ -1,4 +1,3 @@
-import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/domain/message_sorting.dart'
@@ -27,45 +26,6 @@ class MessageHistoryController {
         service.currentState.messages[conversationId] ?? const [],
       ),
     );
-  }
-
-  /// 将发送结果写入全局消息状态（替代已移除的 messageSent 事件）
-  void upsertSentMessage(String conversationId, ChatMessage result) {
-    final state = service.currentState;
-    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
-    final list = newMessages.putIfAbsent(conversationId, () => []);
-    final idx = list.indexWhere((m) => m.clientMsgId == result.clientMsgId);
-    final msgInfo = ChatMessage(
-      clientMsgId: result.clientMsgId,
-      serverMsgId: result.serverMsgId,
-      sendId: result.sendId,
-      recvId: result.recvId,
-      groupId: result.groupId,
-      senderPlatformId: result.senderPlatformId,
-      senderNickname: result.senderNickname,
-      senderFaceUrl: result.senderFaceUrl,
-      sessionType: result.sessionType,
-      msgFrom: result.msgFrom,
-      contentType: result.contentType,
-      content: result.content,
-      seq: result.seq,
-      sendTime: normalizeMessageSendTime(result.sendTime.toInt()),
-      createTime: result.createTime > 0
-          ? result.createTime
-          : normalizeMessageSendTime(result.sendTime.toInt()),
-      status: result.status,
-      isRead: false,
-      attachedInfo: '',
-      ex: '',
-    );
-    if (idx >= 0) {
-      list[idx] = msgInfo;
-    } else {
-      service.seenClientMsgIds.add(result.clientMsgId);
-      list.add(msgInfo);
-    }
-    newMessages[conversationId] = List<ChatMessage>.from(list);
-    service.updateState(state.copyWith(messages: newMessages));
   }
 
   Future<bool> loadHistoryMessages(

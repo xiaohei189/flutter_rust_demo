@@ -31,14 +31,20 @@ class _FakeService extends MessageServiceNotifier {
   @override
   void updateState(MessageServiceState next) => _state = next;
 
-  @override
-  void upsertSentMessage(String conversationId, ChatMessage result) =>
+  /// 模拟 SDK 事件（`MessageEvent.newMessage` / 发送结果事件）落到状态。
+  void emitMessageEvent(String conversationId, ChatMessage message) =>
       updateState(
-        MessageServiceReducer.appendIncomingMessage(
+        MessageServiceReducer.upsertIncomingMessage(
           currentState,
           conversationId,
-          result,
+          message,
         ),
+      );
+
+  /// 模拟 SDK 的 `MessageEvent.sendFailed`
+  void emitSendFailed(String conversationId, String clientMsgId) =>
+      updateState(
+        MessageServiceReducer.applySendFailed(currentState, clientMsgId),
       );
 
   @override
@@ -52,19 +58,6 @@ class _FakeService extends MessageServiceNotifier {
         ),
       );
 
-  @override
-  void mergeSentMessage(
-    String conversationId,
-    String clientMsgId,
-    ChatMessage sent,
-  ) => updateState(
-    MessageServiceReducer.mergeSentMessage(
-      currentState,
-      conversationId,
-      clientMsgId,
-      sent,
-    ),
-  );
 }
 
 /// 本地构造返回 clientMsgId=m1 的文本消息；发送结果由测试用 Completer 控制。
@@ -161,7 +154,7 @@ MessageSendPipeline _pipeline(_FakeService service, _FakeRepo repo) =>
     );
 
 void main() {
-  test('发送先本地构造并乐观上屏（对齐 Go CreateXxxMessage + add）', () async {
+  test('构造本地消息后交给 SDK 发送（Dart 不自己上屏，等 SDK 事件）', () async {
     final repo = _FakeRepo();
     final service = _FakeService();
 
@@ -172,20 +165,23 @@ void main() {
       text: 'hi',
     );
 
-    // 尚未收到网络结果，气泡已在列表中且状态为「发送中」
+    // 发送用的是本地构造的那一条（id 一致，服务端回执/去重才能对齐）
+    expect(repo.calls, ['create:hi', 'send:m1:u2:singleChat']);
+    expect(pending.message.clientMsgId, 'm1');
+    expect(pending.message.sendId, 'u1');
+    expect(pending.message.recvId, 'u2');
+    // 上屏由 SDK 事件负责：此刻本地还没有任何消息
+    expect(service.currentState.messages['c1'], isNull);
+
+    // SDK 上屏事件（Rust 本地入库后 emit）→ 气泡出现且为「发送中」
+    service.emitMessageEvent('c1', pending.message);
     final list = service.currentState.messages['c1']!;
     expect(list, hasLength(1));
     expect(list.single.clientMsgId, 'm1');
     expect(list.single.status, MessageSendStatus.sending.value);
-    expect(list.single.sendId, 'u1');
-    expect(list.single.recvId, 'u2');
-
-    // 发送用的就是本地构造的那一条（id 一致，服务端回执/去重才能对齐）
-    expect(repo.calls, ['create:hi', 'send:m1:u2:singleChat']);
-    expect(pending.message.clientMsgId, 'm1');
   });
 
-  test('发送成功：就地合并服务端字段，不新增气泡', () async {
+  test('发送成功：SDK 事件收敛为成功，不新增气泡', () async {
     final repo = _FakeRepo();
     final service = _FakeService();
 
@@ -195,10 +191,14 @@ void main() {
       sessionType: ChatSessionType.singleChat,
       text: 'hi',
     );
+    service.emitMessageEvent('c1', pending.message);
+
     repo.sendCompleter.complete(_serverConfirmed());
     final sent = await pending.done;
-
     expect(sent.serverMsgId, 'srv-1');
+
+    // 成功事件（同一 clientMsgId）就地覆盖
+    service.emitMessageEvent('c1', sent);
     final list = service.currentState.messages['c1']!;
     expect(list, hasLength(1));
     expect(list.single.clientMsgId, 'm1');
@@ -207,7 +207,7 @@ void main() {
     expect(list.single.serverMsgId, 'srv-1');
   });
 
-  test('发送失败：保留气泡并标为失败，重发沿用同一 clientMsgId', () async {
+  test('发送失败：SDK sendFailed 事件标红，重发沿用同一 clientMsgId', () async {
     final repo = _FakeRepo();
     final service = _FakeService();
     final pipeline = _pipeline(service, repo);
@@ -218,8 +218,10 @@ void main() {
       sessionType: ChatSessionType.singleChat,
       text: 'hi',
     );
+    service.emitMessageEvent('c1', pending.message);
     repo.sendCompleter.completeError(Exception('网络不可用'));
     await expectLater(pending.done, throwsException);
+    service.emitSendFailed('c1', 'm1');
 
     final afterFail = service.currentState.messages['c1']!;
     expect(afterFail, hasLength(1));
@@ -242,6 +244,10 @@ void main() {
 
     repo.sendCompleter.complete(_serverConfirmed(seq: 8, serverMsgId: 'srv-2'));
     await retry.done;
+    service.emitMessageEvent(
+      'c1',
+      _serverConfirmed(seq: 8, serverMsgId: 'srv-2'),
+    );
 
     final afterRetry = service.currentState.messages['c1']!;
     expect(afterRetry, hasLength(1));

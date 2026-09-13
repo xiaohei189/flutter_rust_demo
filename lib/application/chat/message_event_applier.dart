@@ -92,10 +92,16 @@ class MessageEventApplier {
     );
   }
 
-  /// 收到新消息事件时直接追加到对应会话列表（对齐 Go SDK OnRecvNewMessage 驱动 UI 更新）
+  /// 新消息事件（含**自己发送**的本地消息，SDK 驱动 UI）→ 按 clientMsgId 幂等上屏。
+  ///
+  /// 发送方自己的消息也由 SDK 推事件（本地消息上屏 + 发送结果收敛共用同一事件），
+  /// 因此这里只对「别人发来的消息」做后台通知，避免给自己的消息弹通知。
   void appendIncomingMessage(String conversationId, MessageInfo message) {
     final chatMessage = messageFromMessageInfo(message);
-    if (appLifecycleService.isBackground.value) {
+    final isFromMe =
+        chatMessage.sendId.isNotEmpty &&
+        chatMessage.sendId == service.currentState.currentUserId;
+    if (!isFromMe && appLifecycleService.isBackground.value) {
       unawaited(
         localNotificationService.showMessageNotification(
           title: chatMessage.senderNickname.isNotEmpty
@@ -109,7 +115,7 @@ class MessageEventApplier {
     final wasTyping =
         service.currentState.typingUsers[conversationId] == chatMessage.sendId;
     service.updateState(
-      MessageServiceReducer.appendIncomingMessage(
+      MessageServiceReducer.upsertIncomingMessage(
         service.currentState,
         conversationId,
         chatMessage,

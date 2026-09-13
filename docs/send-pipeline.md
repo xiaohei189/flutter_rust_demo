@@ -10,7 +10,7 @@
 |---|---|---|
 | Phase 1 | 两段式 create+send、`MessageSendPipeline` 乐观上屏、状态收敛、失败重发、单测 | ✅ `e1c9fb7` |
 | Phase 2 | 僵尸 sending 兜底、上传进度统一、弱网实测 | ✅ `Phase 2` 提交 |
-| Phase 3 | Rust 侧 emit 本地消息事件，Dart 只消费（可选最彻底形态） | ⏳ |
+| Phase 3 | Rust 侧 emit 本地消息事件，Dart 只消费（最彻底形态） | ✅ 已实施 |
 
 Phase 1 实测（模拟器 x64，断开 adb reverse 模拟服务不可达）：
 
@@ -32,6 +32,37 @@ Phase 2 实测（模拟器 x64，`docker pause openim-server` 模拟服务无响
 - 本地消息超过 `30s`（Dart `kStaleSendingTimeoutMs` / Rust `STALE_SENDING_RETRY_MS`）仍为
   「发送中」且无上传进度 → 视为僵尸，标为失败并允许重发（Rust 侧 `can_resend` 同步放宽，
   避免"UI 已标失败但 SDK 拒绝重发"）。
+
+## 7. Phase 3：时间线由 SDK 驱动（已实施）
+
+发送方自己的消息也由 SDK 产生并 emit 事件，Dart 侧**不再构造任何本地消息**，
+`MessageServiceState.messages` 变成「SDK 事件 + 历史分页」的纯投影：
+
+| 时机 | Rust | Dart |
+|---|---|---|
+| 发送前（上传之前） | 本地入库(`status=sending`) + emit `MessageEvent::NewMessage` | `upsertIncomingMessage`（同一 clientMsgId 就地覆盖）→ 气泡立刻出现 |
+| 上传中 | emit `MessageEvent::UploadProgress`（clientMsgId 维度） | 气泡下进度条 |
+| 发送成功 | 回写 serverMsgId/状态后再 emit 一次 `NewMessage` | 同一 clientMsgId 覆盖为 ✓ |
+| 发送失败（上传失败/RPC 超时/队列失败） | `mark_send_failed_impl`：标失败 + emit `sendFailed` | 同一 clientMsgId 标红，可点重发 |
+| 重发 | 只改状态、不重复 emit 上屏事件 | 点失败标记 → 置 sending → 重发同一 clientMsgId |
+
+关键点：
+
+1. **上屏时机提前到上传之前**——媒体上传可能数秒，气泡不应等上传结束才出现；
+   上传完成后 Rust 会回填 URL 写回本地行（二次写入不重复上屏）。
+2. **Dart 侧删除**：`upsertSentMessage` / `seenClientMsgIds` / `mergeSentMessage` /
+   pipeline 里的乐观插入与状态写入（只保留「重发置 sending」这一 UI 动作）。
+3. **乱序保护**：事件可能「成功」先于「发送中」到达，`upsertIncomingMessage` 保证
+   终态不会被旧的「发送中」事件改回。
+4. **不给自己推通知**：自发消息同样走 `NewMessage`，后台通知按 sendId 过滤。
+
+实测（模拟器 x64）：
+
+- 在线发送：`messageEvent: NewMessage` → 气泡 → 成功事件 → ✓（单条）；
+- `docker pause openim-server` 断网发送：气泡立刻出现（发送中）→ 30s 后 `send_failed`
+  事件标红 → 恢复后点失败标记重发 → 同一 clientMsgId ✓、无重复气泡；
+- 媒体：上传失败（暂停服务端导致 `part_limit` 超时）同样走 `send_failed` 收敛，
+  气泡保留本地预览可重发。
 
 ## 1. 现状问题
 

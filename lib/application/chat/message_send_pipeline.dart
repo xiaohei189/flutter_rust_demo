@@ -250,7 +250,6 @@ class MessageSendPipeline {
     final resending = message.copyWith(status: MessageSendStatus.sending.value);
     final done = _resend(
       resending,
-      conversationId: conversationId,
       sourceId: sourceId,
       sessionType: sessionType,
     );
@@ -259,7 +258,7 @@ class MessageSendPipeline {
   }
 
   // ==========================================================================
-  // 内部：构造 → 乐观上屏 → 发送 → 状态收敛
+  // 内部：构造 → 交给 SDK（本地入库 + 上屏事件 + 发送 + 状态事件）
   // ==========================================================================
 
   Future<PendingSend> _prepare({
@@ -275,64 +274,38 @@ class MessageSendPipeline {
       sourceId: sourceId,
       sessionType: sessionType,
     );
-    service.upsertSentMessage(conversationId, message);
-    final done = _send(
-      local,
-      conversationId: conversationId,
-      sourceId: sourceId,
-      sessionType: sessionType,
-    );
-    // 失败已写入消息状态（气泡标红、可重发）；这里保证即使调用方不监听
-    // done，也不会产生未处理的异步异常。
+    // 本地消息由 SDK 上屏：Rust 在发送前入库并 emit `NewMessage`（同一 clientMsgId），
+    // UI 只消费事件，不再自己构造本地消息。
+    final done = _send(local, sourceId: sourceId, sessionType: sessionType);
+    // 失败的收敛由 SDK 的 sendFailed 事件完成；这里保证即使调用方不监听 done，
+    // 也不会产生未处理的异步异常。
     unawaited(done.then<void>((_) {}, onError: (Object _) {}));
     return PendingSend(message: message, done: done);
   }
 
   Future<ChatMessage> _send(
     MsgStruct local, {
-    required String conversationId,
     required String sourceId,
     required ChatSessionType sessionType,
   }) async {
-    try {
-      final sent = await repository.sendPreparedMessage(
-        message: local,
-        sourceId: sourceId,
-        sessionType: _sdkSessionType(sessionType),
-      );
-      service.mergeSentMessage(conversationId, local.clientMsgId, sent);
-      return sent;
-    } catch (e) {
-      _markFailed(conversationId, local.clientMsgId);
-      rethrow;
-    }
+    // 状态含成功/失败都由 SDK 事件收敛（本地消息上屏事件 + sendFailed 事件），
+    // Dart 不再自己写消息状态；这里只负责把消息交给 SDK 发送。
+    return repository.sendPreparedMessage(
+      message: local,
+      sourceId: sourceId,
+      sessionType: _sdkSessionType(sessionType),
+    );
   }
 
   Future<ChatMessage> _resend(
     ChatMessage message, {
-    required String conversationId,
     required String sourceId,
     required ChatSessionType sessionType,
   }) async {
-    try {
-      final sent = await repository.resendMessage(
-        message: message,
-        sourceId: sourceId,
-        sessionType: _sdkSessionType(sessionType),
-      );
-      service.mergeSentMessage(conversationId, message.clientMsgId, sent);
-      return sent;
-    } catch (e) {
-      _markFailed(conversationId, message.clientMsgId);
-      rethrow;
-    }
-  }
-
-  void _markFailed(String conversationId, String clientMsgId) {
-    service.applySendStatus(
-      conversationId,
-      clientMsgId,
-      MessageSendStatus.sendFailed.value,
+    return repository.resendMessage(
+      message: message,
+      sourceId: sourceId,
+      sessionType: _sdkSessionType(sessionType),
     );
   }
 

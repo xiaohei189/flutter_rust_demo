@@ -14,6 +14,7 @@ use crate::infra::file::upload::{FileUploader, ProgressCallback};
 use crate::core::message::send::queue::MessageSendQueue;
 use crate::core::message::ContentTypeUtils;
 use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
+use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, AtInfo, CardElem, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
 use crate::core::user::service::UserService;
 use async_trait::async_trait;
@@ -166,6 +167,23 @@ pub(crate) fn can_resend(old_status: i32, old_send_time: i64, now: i64) -> bool 
     old_status == MessageSendStatus::Sending as i32 && now.saturating_sub(old_send_time) >= STALE_SENDING_RETRY_MS
 }
 
+/// 发送失败收敛：本地标记失败 + 发 `sendFailed` 事件。
+///
+/// 本地消息在发送前就已上屏（乐观），因此任何失败路径（上传失败、RPC 失败、队列失败）
+/// 都必须收敛，否则 UI 会永远停在「发送中」且无法重发。
+pub(crate) async fn mark_send_failed_impl(context: &RuntimeContext, client_msg_id: &str, error: &str) {
+    if let Err(e) = context.repositories.message_repo.update_send_status(client_msg_id, MessageSendStatus::SendFailed.into()).await {
+        warn!("更新发送失败状态失败: client_msg_id={}, err={}", client_msg_id, e);
+    }
+    MessageListenerExt::emit(
+        &*context.listeners,
+        MessageEvent::SendFailed {
+            client_msg_id: client_msg_id.to_string(),
+            error: error.to_string(),
+        },
+    );
+}
+
 /// 构造上传进度回调：进度按 clientMsgId 通过消息事件推给上层（对齐 Go SDK `OnUploadProgress`）。
 ///
 /// 上层因此可以把进度直接挂到同一条本地消息上（乐观上屏与上传共用同一 clientMsgId）。
@@ -223,8 +241,19 @@ async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str, progr
 }
 
 /// 发送前插入消息到 DB（独立函数版本）
-pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, msg: &MsgStruct, send_time: i64) -> Result<()> {
+///
+/// 返回是否为「新建」（首次上屏）——只有新建才发 `NewMessage` 本地事件，
+/// 上传后回填 URL 的二次写入不会重复上屏。
+pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, msg: &MsgStruct, send_time: i64) -> Result<bool> {
     let conversation_id = conversation_id_for_msg(msg);
+    let is_new = context
+        .repositories
+        .message_repo
+        .get_by_client_msg_id(&conversation_id, &msg.client_msg_id)
+        .await
+        .ok()
+        .flatten()
+        .is_none();
 
     let mut local_log = LocalChatLog::from(msg);
     local_log.conversation_id = conversation_id.clone();
@@ -249,7 +278,19 @@ pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, ms
         ConversationListenerExt::emit(&*context.listeners, ConversationEvent::Changed(vec![conv]));
     }
 
-    Ok(())
+    // 本地消息上屏事件：发送方自己的消息也走事件，UI 不再自己构造本地消息
+    // （对齐腾讯 IM `onNewMessage` 含自发消息的模型，Dart 侧按 clientMsgId 幂等 upsert）。
+    if is_new {
+        MessageListenerExt::emit(
+            &*context.listeners,
+            MessageEvent::NewMessage {
+                conversation_id,
+                message: MessageInfo::from(msg),
+            },
+        );
+    }
+
+    Ok(is_new)
 }
 
 /// 执行消息发送的核心逻辑（独立函数版本，供队列调用）
@@ -329,14 +370,7 @@ pub(crate) async fn do_send_message_impl(
                         }
                     }
                 }
-                context.repositories.message_repo.update_send_status(&msg.client_msg_id, MessageSendStatus::SendFailed.into()).await?;
-                MessageListenerExt::emit(
-                    &*context.listeners,
-                    MessageEvent::SendFailed {
-                        client_msg_id: msg.client_msg_id.clone(),
-                        error: format!("{}", e),
-                    },
-                );
+                mark_send_failed_impl(&context, &msg.client_msg_id, &format!("{}", e)).await;
             }
             return Err(SdkError::message_send(format!("send message via ws failed: {}", e)));
         }
@@ -358,7 +392,17 @@ pub(crate) async fn do_send_message_impl(
             debug!("删除sending_message失败: {}", e);
         }
 
-        // 对齐 Go SDK：消息发送结果仅通过返回值（Message）传递，不发布事件
+        // 发送成功事件：把同一条本地消息（status=成功 + serverMsgId/send_time）再推一次，
+        // UI 按 clientMsgId upsert 即可收敛状态，无需依赖返回值。
+        if let Ok(Some(local_msg)) = context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
+            MessageListenerExt::emit(
+                &*context.listeners,
+                MessageEvent::NewMessage {
+                    conversation_id: conversation_id.clone(),
+                    message: MessageInfo::from(&local_msg),
+                },
+            );
+        }
     }
 
     Ok(resp)
@@ -1009,13 +1053,27 @@ impl MessageSender {
                 }
                 // 失败/僵尸消息重试：允许继续发送
             }
+
+            // 本地先入库 + 上屏事件，再上传/发送：媒体上传可能持续数秒，
+            // 气泡不应等到上传结束才出现（对齐「SDK 驱动 UI」模型）。
+            insert_message_before_send_impl(&self.context, &msg, msg.send_time).await?;
         }
 
         // 发送前预处理媒体内容（上传并回填 URL），使返回值与本地缓存都携带已上传的 URL：
         // 否则两步式构造的媒体消息 URL 为空，发送方本地气泡会显示裂开。
         // 处理后会移除本地路径字段，后续 do_send_message_impl 不会再重复上传。
         // 上传进度按 clientMsgId 通过 MessageEvent::UploadProgress 推给上层（对齐 Go OnUploadProgress）。
-        msg.content = process_media_content_impl(&self.file_uploader, &msg, Some(upload_progress_callback(&self.context, &msg.client_msg_id))).await?;
+        // 上传/提交失败同样要把已上屏的那条消息收敛为失败（否则永远转圈且不可重发）。
+        let conversation_id = conversation_id_for_msg(&msg);
+        match process_media_content_impl(&self.file_uploader, &msg, Some(upload_progress_callback(&self.context, &msg.client_msg_id))).await {
+            Ok(content) => msg.content = content,
+            Err(e) => {
+                if !online_only {
+                    mark_send_failed_impl(&self.context, &msg.client_msg_id, &format!("{}", e)).await;
+                }
+                return Err(e);
+            }
+        }
 
         // 通过双 Lane 发送队列提交消息
         let context = self.context.clone();
@@ -1023,12 +1081,21 @@ impl MessageSender {
         let file_uploader = self.file_uploader.clone();
         let msg_clone = msg.clone();
 
-        let resp = self
+        let resp = match self
             .send_queue
             .submit(msg.content_type, move || {
                 Box::pin(async move { do_send_message_impl(context, connection, file_uploader, msg_clone, offline_push_info, online_only).await })
             })
-            .await?;
+            .await
+        {
+            Ok(resp) => resp,
+            Err(e) => {
+                if !online_only {
+                    mark_send_failed_impl(&self.context, &msg.client_msg_id, &format!("{}", e)).await;
+                }
+                return Err(e);
+            }
+        };
 
         // 回填服务端返回字段（对齐 Go SDK api.go sendMsg L730-732）
         msg.server_msg_id = resp.server_msg_id;
@@ -1792,5 +1859,30 @@ mod tests {
             }
             other => panic!("应收到 upload_progress 事件, 实际: {:?}", other),
         }
+    }
+
+    /// 本地消息入库时应发一次 NewMessage（UI 靠事件上屏），
+    /// 上传后回填 URL 的二次写入不应重复上屏。
+    #[tokio::test]
+    async fn test_local_insert_emits_new_message_once() {
+        let context = make_test_context().await;
+        let mut rx = context.listeners.take_message_rx().expect("应为首次订阅");
+        let msg = make_test_msg("client_msg_local_event");
+
+        let first = insert_message_before_send_impl(&context, &msg, 1_700_000_000_000).await.unwrap();
+        assert!(first, "首次写入应视为新建");
+        match rx.try_recv() {
+            Ok(MessageEvent::NewMessage { conversation_id, message }) => {
+                assert_eq!(conversation_id, "si_user_a_user_b");
+                assert_eq!(message.client_msg_id, "client_msg_local_event");
+                assert_eq!(message.status, MessageSendStatus::Sending as i32, "上屏事件应为发送中");
+                assert_eq!(message.send_id, "user_a");
+            }
+            other => panic!("应收到本地 NewMessage 事件, 实际: {:?}", other),
+        }
+
+        let second = insert_message_before_send_impl(&context, &msg, 1_700_000_000_000).await.unwrap();
+        assert!(!second, "重复写入不应视为新建");
+        assert!(rx.try_recv().is_err(), "重复写入不应再次上屏");
     }
 }

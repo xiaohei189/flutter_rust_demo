@@ -40,26 +40,6 @@ class MessageServiceReducer {
     return state.copyWith(messages: newMessages);
   }
 
-  /// 发送成功后就地合并服务端消息：保持本地 clientMsgId（回执/去重都按它匹配），
-  /// 只补齐 serverMsgId / seq / sendTime / status 等服务端字段。
-  static MessageServiceState mergeSentMessage(
-    MessageServiceState state,
-    String conversationId,
-    String clientMsgId,
-    ChatMessage sent,
-  ) {
-    final list = state.messages[conversationId];
-    if (list == null) return state;
-    final index = list.indexWhere((m) => m.clientMsgId == clientMsgId);
-    if (index < 0) return state;
-
-    final updated = List<ChatMessage>.from(list);
-    updated[index] = sent.copyWith(clientMsgId: clientMsgId);
-    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
-    newMessages[conversationId] = updated;
-    return state.copyWith(messages: newMessages);
-  }
-
   /// 僵尸「发送中」兜底：进入会话/回到前台时，把本地超过 [timeoutMs] 仍停在
   /// 发送中、且没有进行中上传的条目标记为失败。
   ///
@@ -97,23 +77,40 @@ class MessageServiceReducer {
     return state.copyWith(messages: newMessages);
   }
 
-  static MessageServiceState appendIncomingMessage(
+  /// 消息上屏统一入口（本地发送 / 服务端接收都走这里）。
+  ///
+  /// 同一 `clientMsgId` 已存在时就地覆盖：发送成功后的状态事件、服务端回显都靠它
+  /// 收敛到同一条消息上，不会产生重复气泡。
+  /// 事件可能乱序（「发送中」事件晚于成功事件到达），因此已处于终态的消息
+  /// 不会被「发送中」改回。
+  static MessageServiceState upsertIncomingMessage(
     MessageServiceState state,
     String conversationId,
     ChatMessage message,
   ) {
     final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
-    final list = newMessages.putIfAbsent(conversationId, () => []);
-    final exists = list.any((m) => m.clientMsgId == message.clientMsgId);
-    if (!exists) {
-      list.add(message);
+    final list = newMessages[conversationId] ?? const <ChatMessage>[];
+    final index = list.indexWhere((m) => m.clientMsgId == message.clientMsgId);
+
+    var incoming = message;
+    if (index >= 0 &&
+        list[index].status != MessageSendStatus.sending.value &&
+        message.status == MessageSendStatus.sending.value) {
+      incoming = message.copyWith(status: list[index].status);
     }
-    newMessages[conversationId] = List<ChatMessage>.from(list);
+
+    final updated = List<ChatMessage>.from(list);
+    if (index >= 0) {
+      updated[index] = incoming;
+    } else {
+      updated.add(incoming);
+    }
+    newMessages[conversationId] = updated;
 
     // 对方消息已到达 → 立即结束其「正在输入」状态（业界通行做法，避免提示挂住）
     final typingUsers = state.typingUsers;
     final typingUserId = typingUsers[conversationId];
-    if (typingUserId != null && typingUserId == message.sendId) {
+    if (typingUserId != null && typingUserId == incoming.sendId) {
       final nextTypingUsers = Map<String, String>.from(typingUsers)
         ..remove(conversationId);
       return state.copyWith(

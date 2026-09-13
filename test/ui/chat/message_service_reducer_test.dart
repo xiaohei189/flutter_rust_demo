@@ -33,15 +33,15 @@ ChatMessage _message(String id, {int status = 2, int sendTime = 1000}) =>
 
 void main() {
   group('MessageServiceReducer', () {
-    test('appendIncomingMessage 追加新消息并去重', () {
+    test('upsertIncomingMessage 追加新消息并按 clientMsgId 去重', () {
       final state = MessageServiceState();
 
-      final added = MessageServiceReducer.appendIncomingMessage(
+      final added = MessageServiceReducer.upsertIncomingMessage(
         state,
         'conv1',
         _message('m1'),
       );
-      final duplicated = MessageServiceReducer.appendIncomingMessage(
+      final duplicated = MessageServiceReducer.upsertIncomingMessage(
         added,
         'conv1',
         _message('m1'),
@@ -205,7 +205,7 @@ void main() {
       );
     });
 
-    test('mergeSentMessage 就地合并服务端字段且保持本地 clientMsgId', () {
+    test('upsertIncomingMessage 就地覆盖服务端字段且保持本地 clientMsgId', () {
       final state = MessageServiceState().copyWith(
         messages: {
           'conv1': [sending('m1')],
@@ -216,11 +216,10 @@ void main() {
         status: 2,
       ).copyWith(serverMsgId: 'srv1', seq: 9);
 
-      final result = MessageServiceReducer.mergeSentMessage(
+      final result = MessageServiceReducer.upsertIncomingMessage(
         state,
         'conv1',
-        'm1',
-        sent,
+        sent.copyWith(clientMsgId: 'm1'),
       );
 
       final merged = result.messages['conv1']!.single;
@@ -229,6 +228,22 @@ void main() {
       expect(merged.serverMsgId, 'srv1');
       expect(merged.seq, 9);
       expect(result.messages['conv1'], hasLength(1));
+    });
+
+    test('upsertIncomingMessage 乱序保护：终态不被「发送中」事件改回', () {
+      final state = MessageServiceState().copyWith(
+        messages: {
+          'conv1': [_message('m1', status: 2)],
+        },
+      );
+
+      final result = MessageServiceReducer.upsertIncomingMessage(
+        state,
+        'conv1',
+        sending('m1'),
+      );
+
+      expect(result.messages['conv1']!.single.status, 2);
     });
 
     test('sweepStaleSending 只把超时且无上传进度的发送中消息标失败', () {

@@ -37,9 +37,6 @@ import 'message_service_social_controller.dart';
 class MessageServiceNotifier extends Notifier<MessageServiceState> {
   final List<StreamSubscription<dynamic>> subscriptions = [];
 
-  /// 已处理的 clientMsgId 集合，防止同一消息被重复添加到列表
-  final Set<String> seenClientMsgIds = {};
-
   MessageServiceConnectionController? _connectionController;
   MessageServiceConversationController? _conversationController;
   MessageServiceSocialController? _socialController;
@@ -113,9 +110,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   List<ChatMessage> getMessages(String conversationId) =>
       historyController.getMessages(conversationId);
 
-  void upsertSentMessage(String conversationId, ChatMessage result) =>
-      historyController.upsertSentMessage(conversationId, result);
-
   /// 发送状态收敛（1=发送中/2=成功/3=失败），幂等
   void applySendStatus(String conversationId, String clientMsgId, int status) =>
       updateState(
@@ -126,20 +120,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
           status,
         ),
       );
-
-  /// 发送成功后就地合并服务端消息（保持同一 clientMsgId，不新增气泡）
-  void mergeSentMessage(
-    String conversationId,
-    String clientMsgId,
-    ChatMessage sent,
-  ) => updateState(
-    MessageServiceReducer.mergeSentMessage(
-      currentState,
-      conversationId,
-      clientMsgId,
-      sent,
-    ),
-  );
 
   /// 僵尸「发送中」兜底：进入会话 / 回到前台时调用，把长时间无回执的消息标为失败
   void sweepStaleSendingMessages(String conversationId) => updateState(
@@ -561,7 +541,6 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   /// 登出/切换账号后重置全部内存状态（对齐 Go SDK 登出后 SDK 回到初始状态）
   void resetState() {
-    seenClientMsgIds.clear();
     updateState(MessageServiceState());
   }
 

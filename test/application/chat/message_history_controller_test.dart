@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/application/chat/message_history_controller.dart';
+import 'package:flutter_rust_demo/application/chat/message_service_reducer.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_state.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
@@ -59,20 +60,24 @@ ChatMessage _message(String id, int seq, String content) => ChatMessage(
   ex: '',
 );
 
-void main() {
-  test('upsertSentMessage 写入并去重', () {
-    final service = _FakeService();
-    final controller = MessageHistoryController(
-      service,
-      ImClient.instance,
-      _FakeRepo(),
+/// 把消息写入服务状态（等价 SDK 新消息事件上屏）
+void _seed(
+  MessageServiceNotifier service,
+  String conversationId,
+  List<ChatMessage> messages,
+) {
+  var state = service.currentState;
+  for (final message in messages) {
+    state = MessageServiceReducer.upsertIncomingMessage(
+      state,
+      conversationId,
+      message,
     );
-    controller.upsertSentMessage('c1', _message('m1', 1, 'hi'));
-    expect(service.currentState.messages['c1'], hasLength(1));
-    controller.upsertSentMessage('c1', _message('m1', 1, 'hi'));
-    expect(service.currentState.messages['c1'], hasLength(1));
-  });
+  }
+  service.updateState(state);
+}
 
+void main() {
   test('removeMessage 移除指定消息', () {
     final service = _FakeService();
     final controller = MessageHistoryController(
@@ -80,8 +85,7 @@ void main() {
       ImClient.instance,
       _FakeRepo(),
     );
-    controller.upsertSentMessage('c1', _message('m1', 1, 'a'));
-    controller.upsertSentMessage('c1', _message('m2', 2, 'b'));
+    _seed(service, 'c1', [_message('m1', 1, 'a'), _message('m2', 2, 'b')]);
     controller.removeMessage('c1', 'm1');
     expect(service.currentState.messages['c1']!.map((m) => m.clientMsgId), [
       'm2',
@@ -95,7 +99,7 @@ void main() {
       ImClient.instance,
       _FakeRepo(),
     );
-    controller.upsertSentMessage('c1', _message('m1', 1, 'a'));
+    _seed(service, 'c1', [_message('m1', 1, 'a')]);
     final messages = controller.getMessages('c1');
     expect(messages, hasLength(1));
     expect(() => messages.add(_message('m2', 2, 'b')), throwsUnsupportedError);
