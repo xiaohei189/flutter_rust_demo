@@ -1,8 +1,22 @@
 # 消息发送链路重构设计（对齐 Go SDK / 业界主流）
 
-> 状态：待实施
+> 状态：Phase 1 已实施（`e1c9fb7`）；Phase 2/3 见下
 > 目标：发送消息本地先上屏（乐观），状态由 SDK 权威驱动；架构与 Go SDK 同构，可扩展、可维护。
 > 范围：`rust/src/core/message/send/**`、`lib/data/repositories/message_repository*`、`lib/application/chat/**`、`lib/ui/chat/**`
+
+## 0. 实施进度
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| Phase 1 | 两段式 create+send、`MessageSendPipeline` 乐观上屏、状态收敛、失败重发、单测 | ✅ `e1c9fb7` |
+| Phase 2 | 僵尸 sending 兜底、上传进度统一、弱网实测 | ⏳ |
+| Phase 3 | Rust 侧 emit 本地消息事件，Dart 只消费（可选最彻底形态） | ⏳ |
+
+Phase 1 实测（模拟器 x64，断开 adb reverse 模拟服务不可达）：
+
+- 断网发送 → 气泡立即出现并标为失败 + SnackBar「发送消息失败，点击消息可重发」，输入框已清空；
+- 恢复网络后点失败标记重发 → 同一条变 ✓，无重复气泡；
+- `client_msg_id` 全程一致（失败 `c507441374a2e1bb246a6774d2286bfd` → 重发成功同一 ID）。
 
 ## 1. 现状问题
 
