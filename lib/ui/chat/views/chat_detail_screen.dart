@@ -120,6 +120,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       }
       if (mounted) setState(() => _bodyReady = true);
       _restoreDraft(viewModel);
+      _sweepStaleSending();
       // 标记已读 / 订阅在线状态的 RPC 回包会改写会话、未读与在线状态，
       // 进而触发本页（以及栈里仍挂载的会话列表）重建。放到入场转场结束后再发，
       // 避免与首帧渲染抢 UI 线程；两者都不影响消息内容的首屏展示。
@@ -170,6 +171,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   void _onTextChanged() {
     _viewModel?.onTextChanged(text: _textController.text);
   }
+
+  /// 回前台时补一次僵尸发送兜底（后台期间网络中断的消息不会收到回执）
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _sweepStaleSending();
+  }
+
+  /// 把长时间停在「发送中」的消息标为失败，让用户可以直接重发
+  void _sweepStaleSending() => ref
+      .read(messageServiceProvider.notifier)
+      .sweepStaleSendingMessages(widget.conversationId);
 
   bool _focusAtMeHandled = false;
 

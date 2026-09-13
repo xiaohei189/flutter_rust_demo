@@ -25,10 +25,17 @@ extension ChatMessageMediaExt on ChatMessage {
     return '';
   }
 
+  /// 本地文件路径（构造阶段写入，上传成功后由 SDK 移除）
+  ///
+  /// 乐观上屏后、上传完成前用它直接展示本地图片，避免发送中的气泡显示「图片地址为空」。
+  String get imageLocalPath =>
+      parsedContentOf(this)['sourcePath'] as String? ?? '';
+
   String get displayImageSource {
     if (imagePath.isNotEmpty) return imagePath;
     if (snapshotPath.isNotEmpty) return snapshotPath;
-    return bigPicturePath;
+    if (bigPicturePath.isNotEmpty) return bigPicturePath;
+    return imageLocalPath;
   }
 
   int get imageWidth {

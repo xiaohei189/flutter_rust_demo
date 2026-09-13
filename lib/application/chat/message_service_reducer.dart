@@ -3,11 +3,18 @@ import 'dart:convert';
 import '../../../data/mappers/conversation_mapper.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../domain/models/message.dart' show MessageSendStatus;
 import '../../../generated/rust/event/events/message.dart' show MessageReceipt;
 import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
 import '../../../generated/rust/model/local.dart' show LocalConversation;
 
 import 'message_service_state.dart';
+
+/// 僵尸「发送中」判定阈值（与 Rust `STALE_SENDING_RETRY_MS` 保持一致）。
+///
+/// 超过该时长仍未收到发送结果、且没有进行中的上传，即认为这条消息永远不会
+/// 收到回执（进程被杀 / 网络黑洞），标记为失败让用户可以重发。
+const int kStaleSendingTimeoutMs = 30000;
 
 /// 消息与会话状态变更的纯函数集合。
 class MessageServiceReducer {
@@ -48,6 +55,43 @@ class MessageServiceReducer {
 
     final updated = List<ChatMessage>.from(list);
     updated[index] = sent.copyWith(clientMsgId: clientMsgId);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
+    newMessages[conversationId] = updated;
+    return state.copyWith(messages: newMessages);
+  }
+
+  /// 僵尸「发送中」兜底：进入会话/回到前台时，把本地超过 [timeoutMs] 仍停在
+  /// 发送中、且没有进行中上传的条目标记为失败。
+  ///
+  /// 进程被杀或网络黑洞会让一条消息永远收不到回执；不兜底的话气泡会一直转圈，
+  /// 也没有任何入口触发重发。阈值与 Rust 侧 `STALE_SENDING_RETRY_MS` 一致，
+  /// 保证「标失败 → 点重发」在 SDK 侧同样被允许。
+  static MessageServiceState sweepStaleSending(
+    MessageServiceState state,
+    String conversationId, {
+    required int now,
+    int timeoutMs = kStaleSendingTimeoutMs,
+  }) {
+    final list = state.messages[conversationId];
+    if (list == null || list.isEmpty) return state;
+
+    var changed = false;
+    final updated = <ChatMessage>[];
+    for (final message in list) {
+      final isStale =
+          message.status == MessageSendStatus.sending.value &&
+          now - message.sendTime >= timeoutMs &&
+          // 正在上传的消息（有进度）不算僵尸，等上传结束再判定
+          !state.uploadProgress.containsKey(message.clientMsgId);
+      if (isStale) changed = true;
+      updated.add(
+        isStale
+            ? message.copyWith(status: MessageSendStatus.sendFailed.value)
+            : message,
+      );
+    }
+    if (!changed) return state;
+
     final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
     newMessages[conversationId] = updated;
     return state.copyWith(messages: newMessages);

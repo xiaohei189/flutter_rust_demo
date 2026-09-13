@@ -22,7 +22,13 @@ use serde_json::{json, Value};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
+
+/// 僵尸「发送中」判定阈值：本地消息超过该时长仍为 Sending 即视为失败，允许重发。
+///
+/// 正常发送（含上传）远小于该值；进程被杀/网络黑洞后记录会一直停在 Sending，
+/// 上层（Dart 进入会话时）也会按同一阈值把它标为失败。
+pub const STALE_SENDING_RETRY_MS: i64 = 30_000;
 
 #[async_trait]
 pub trait MessageSendTransport: Send + Sync {
@@ -65,7 +71,7 @@ pub(crate) fn content_type_name(ct: i32) -> &'static str {
 /// - 语音(103)：soundPath → sourceUrl + uuid/dataSize/soundType
 /// - 视频(104)：videoPath + snapshotPath → videoUrl/snapshotUrl（含元数据）
 /// - 文件(105)：filePath → sourceUrl + uuid/fileSize/fileType
-pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg: &MsgStruct) -> std::result::Result<String, SdkError> {
+pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg: &MsgStruct, progress: Option<ProgressCallback>) -> std::result::Result<String, SdkError> {
     if !ContentTypeUtils::is_media(msg.content_type) {
         return Ok(msg.content.clone());
     }
@@ -82,7 +88,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
             let Some(source_path) = take_local_path(&mut value, "sourcePath") else {
                 return Ok(msg.content.clone());
             };
-            let Some(res) = upload_and_cleanup(file_uploader, &source_path).await? else {
+            let Some(res) = upload_and_cleanup(file_uploader, &source_path, progress.clone()).await? else {
                 return Ok(msg.content.clone());
             };
             // 只回填 url，保留 width/height/type/size/uuid（对齐 Go api.go L356-357：SourcePicture.Url = res.URL）
@@ -103,7 +109,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
             let Some(sound_path) = take_local_path(&mut value, "soundPath") else {
                 return Ok(msg.content.clone());
             };
-            let Some(res) = upload_and_cleanup(file_uploader, &sound_path).await? else {
+            let Some(res) = upload_and_cleanup(file_uploader, &sound_path, progress.clone()).await? else {
                 return Ok(msg.content.clone());
             };
             value["sourceUrl"] = json!(res.url);
@@ -115,7 +121,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
             let Some(video_path) = take_local_path(&mut value, "videoPath") else {
                 return Ok(msg.content.clone());
             };
-            let Some(v_res) = upload_and_cleanup(file_uploader, &video_path).await? else {
+            let Some(v_res) = upload_and_cleanup(file_uploader, &video_path, progress.clone()).await? else {
                 return Ok(msg.content.clone());
             };
             value["videoUrl"] = json!(v_res.url);
@@ -125,7 +131,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
 
             // 快照可选（对齐 Go api.go L428-440：快照上传失败仅告警，不阻断）
             if let Some(snapshot_path) = take_local_path(&mut value, "snapshotPath") {
-                if let Some(s_res) = upload_and_cleanup(file_uploader, &snapshot_path).await? {
+                if let Some(s_res) = upload_and_cleanup(file_uploader, &snapshot_path, progress.clone()).await? {
                     value["snapshotUrl"] = json!(s_res.url);
                     value["snapshotUuid"] = json!(s_res.file_id);
                     value["snapshotSize"] = json!(s_res.size);
@@ -137,7 +143,7 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
             let Some(file_path) = take_local_path(&mut value, "filePath") else {
                 return Ok(msg.content.clone());
             };
-            let Some(res) = upload_and_cleanup(file_uploader, &file_path).await? else {
+            let Some(res) = upload_and_cleanup(file_uploader, &file_path, progress.clone()).await? else {
                 return Ok(msg.content.clone());
             };
             value["sourceUrl"] = json!(res.url);
@@ -149,6 +155,34 @@ pub(crate) async fn process_media_content_impl(file_uploader: &FileUploader, msg
     }
 
     serde_json::to_string(&value).map_err(|e| SdkError::message_send(format!("序列化媒体内容失败: {}", e)))
+}
+
+/// 是否允许重发：只有失败消息可以重发（对齐 Go SDK `ErrMsgRepeated` 检查）；
+/// 另外把超过阈值仍停在「发送中」的僵尸消息视为失败，避免其永远无法重发。
+pub(crate) fn can_resend(old_status: i32, old_send_time: i64, now: i64) -> bool {
+    if old_status == MessageSendStatus::SendFailed as i32 {
+        return true;
+    }
+    old_status == MessageSendStatus::Sending as i32 && now.saturating_sub(old_send_time) >= STALE_SENDING_RETRY_MS
+}
+
+/// 构造上传进度回调：进度按 clientMsgId 通过消息事件推给上层（对齐 Go SDK `OnUploadProgress`）。
+///
+/// 上层因此可以把进度直接挂到同一条本地消息上（乐观上屏与上传共用同一 clientMsgId）。
+fn upload_progress_callback(context: &RuntimeContext, client_msg_id: &str) -> ProgressCallback {
+    let listeners = context.listeners.clone();
+    let client_msg_id = client_msg_id.to_string();
+    Arc::new(move |pct: u8| {
+        MessageListenerExt::emit(
+            &*listeners,
+            MessageEvent::UploadProgress {
+                client_msg_id: client_msg_id.clone(),
+                progress: pct,
+                total_size: 0,
+                uploaded_size: 0,
+            },
+        );
+    })
 }
 
 /// 读取并移除本地路径字段；字段缺失或为空返回 None
@@ -171,7 +205,7 @@ fn set_picture_url(value: &mut Value, key: &str, url: &str) {
 }
 
 /// 上传本地文件并清理临时文件；文件不存在返回 Ok(None)，上传失败返回 Err
-async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str) -> std::result::Result<Option<crate::infra::file::upload::UploadResult>, SdkError> {
+async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str, progress: Option<ProgressCallback>) -> std::result::Result<Option<crate::infra::file::upload::UploadResult>, SdkError> {
     let path = Path::new(file_path);
     if !path.exists() {
         info!("本地媒体文件不存在，跳过上传: {}", file_path);
@@ -179,7 +213,7 @@ async fn upload_and_cleanup(file_uploader: &FileUploader, file_path: &str) -> st
     }
     let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
     info!("开始上传媒体文件: path={}", file_path);
-    let res = file_uploader.upload_file(file_path, &file_name, None).await?;
+    let res = file_uploader.upload_file_with_progress(file_path, &file_name, None, progress).await?;
     // 临时文件清理（对齐 Go SDK 上传后删除本地临时文件）
     if let Err(e) = std::fs::remove_file(file_path) {
         debug!("删除临时文件失败: path={}, err={}", file_path, e);
@@ -240,7 +274,7 @@ pub(crate) async fn do_send_message_impl(
 
     let send_time = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
 
-    let content = process_media_content_impl(&file_uploader, &msg).await?;
+    let content = process_media_content_impl(&file_uploader, &msg, Some(upload_progress_callback(&context, &msg.client_msg_id))).await?;
     // 将上传后的 content 写回消息：两步式构造的媒体消息 content 里 URL 为空，
     // 若不回写，本地缓存的消息（会话列表/气泡）会因 URL 为空而显示裂开；
     // 发送 RPC 与本地缓存共用这份已回填 URL 的 content，保证二者一致。
@@ -964,17 +998,24 @@ impl MessageSender {
         if !online_only {
             let conversation_id = conversation_id_for_msg(&msg);
             if let Ok(Some(old_msg)) = self.context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
-                if old_msg.status != MessageSendStatus::SendFailed as i32 {
+                if old_msg.status == MessageSendStatus::Sending as i32 && now.saturating_sub(old_msg.send_time) >= STALE_SENDING_RETRY_MS {
+                    warn!(
+                        "[SendMsg] 重发僵尸「发送中」消息: client_msg_id={}, send_time={}, now={}",
+                        msg.client_msg_id, old_msg.send_time, now
+                    );
+                }
+                if !can_resend(old_msg.status, old_msg.send_time, now) {
                     return Err(SdkError::msg_repeated("Only failed messages can be resent"));
                 }
-                // 失败重试：允许继续发送
+                // 失败/僵尸消息重试：允许继续发送
             }
         }
 
         // 发送前预处理媒体内容（上传并回填 URL），使返回值与本地缓存都携带已上传的 URL：
         // 否则两步式构造的媒体消息 URL 为空，发送方本地气泡会显示裂开。
         // 处理后会移除本地路径字段，后续 do_send_message_impl 不会再重复上传。
-        msg.content = process_media_content_impl(&self.file_uploader, &msg).await?;
+        // 上传进度按 clientMsgId 通过 MessageEvent::UploadProgress 推给上层（对齐 Go OnUploadProgress）。
+        msg.content = process_media_content_impl(&self.file_uploader, &msg, Some(upload_progress_callback(&self.context, &msg.client_msg_id))).await?;
 
         // 通过双 Lane 发送队列提交消息
         let context = self.context.clone();
@@ -1040,7 +1081,7 @@ mod tests {
         msg.content_type = 101; // 文本消息，非媒体
         msg.content = r#"{"content":"hello"}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "非媒体消息应原样返回");
     }
 
@@ -1051,7 +1092,7 @@ mod tests {
         msg.content_type = 102; // 图片
         msg.content = "not-json".to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "非法 JSON 应原样返回");
     }
 
@@ -1062,7 +1103,7 @@ mod tests {
         msg.content_type = 102;
         msg.content = r#"{"uuid":"test","type":"jpg"}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "无 sourcePath 应原样返回");
     }
 
@@ -1073,7 +1114,7 @@ mod tests {
         msg.content_type = 102;
         msg.content = r#"{"sourcePath":""}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "空 sourcePath 应原样返回");
     }
 
@@ -1084,7 +1125,7 @@ mod tests {
         msg.content_type = 102;
         msg.content = r#"{"sourcePath":"/tmp/nonexistent_file_xyz.jpg"}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "文件不存在应原样返回");
     }
 
@@ -1095,7 +1136,7 @@ mod tests {
         msg.content_type = 103; // 语音
         msg.content = r#"{"uuid":"test","duration":5}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "语音无 sourcePath 应原样返回");
     }
 
@@ -1106,7 +1147,7 @@ mod tests {
         msg.content_type = 104; // 视频
         msg.content = r#"{"videoPath":"/tmp/nonexistent_video.mp4"}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "视频文件不存在应原样返回");
     }
 
@@ -1117,7 +1158,7 @@ mod tests {
         msg.content_type = 105; // 文件
         msg.content = r#"{"fileName":"test.pdf"}"#.to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await.unwrap();
+        let result = process_media_content_impl(&uploader, &msg, None).await.unwrap();
         assert_eq!(result, msg.content, "文件无 filePath 应原样返回");
     }
 
@@ -1137,7 +1178,7 @@ mod tests {
         msg.content_type = 102;
         msg.content = serde_json::json!({"sourcePath": path.to_string_lossy()}).to_string();
 
-        let result = process_media_content_impl(&uploader, &msg).await;
+        let result = process_media_content_impl(&uploader, &msg, None).await;
         assert!(result.is_err());
         let _ = std::fs::remove_file(&path);
     }
@@ -1714,5 +1755,42 @@ mod tests {
         // 验证 sending_messages 写入
         let sending = context.repositories.sending_message_repo.get_by_client_msg_id("si_user_a_user_b", "client_msg_insert").await.unwrap();
         assert!(sending.is_some(), "sending_message 应存在");
+    }
+
+    /// 只有失败消息、或超过阈值的僵尸「发送中」消息允许重发（对齐 Go ErrMsgRepeated）。
+    #[test]
+    fn test_can_resend_rules() {
+        let now = 1_700_000_000_000i64;
+        let failed = MessageSendStatus::SendFailed as i32;
+        let sending = MessageSendStatus::Sending as i32;
+        let success = MessageSendStatus::SendSuccess as i32;
+
+        // 失败消息：任何时间都允许重发
+        assert!(can_resend(failed, now - 1, now));
+        // 发送中但未超阈值：按 Go 语义拒绝（防止重复发送）
+        assert!(!can_resend(sending, now - 1_000, now));
+        // 发送中且超过阈值：僵尸消息，允许重发
+        assert!(can_resend(sending, now - STALE_SENDING_RETRY_MS - 1, now));
+        // 已成功/已删除：不允许重发
+        assert!(!can_resend(success, now - 60_000, now));
+        assert!(!can_resend(MessageSendStatus::HasDeleted as i32, now - 60_000, now));
+    }
+
+    /// 上传进度回调应把进度按 clientMsgId 通过 MessageEvent::UploadProgress 推给上层。
+    #[tokio::test]
+    async fn test_upload_progress_callback_emits_event() {
+        let context = make_test_context().await;
+        let mut rx = context.listeners.take_message_rx().expect("应为首次订阅");
+
+        let callback = upload_progress_callback(&context, "client_msg_progress");
+        callback(42);
+
+        match rx.try_recv() {
+            Ok(MessageEvent::UploadProgress { client_msg_id, progress, .. }) => {
+                assert_eq!(client_msg_id, "client_msg_progress");
+                assert_eq!(progress, 42);
+            }
+            other => panic!("应收到 upload_progress 事件, 实际: {:?}", other),
+        }
     }
 }

@@ -9,7 +9,7 @@
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | Phase 1 | 两段式 create+send、`MessageSendPipeline` 乐观上屏、状态收敛、失败重发、单测 | ✅ `e1c9fb7` |
-| Phase 2 | 僵尸 sending 兜底、上传进度统一、弱网实测 | ⏳ |
+| Phase 2 | 僵尸 sending 兜底、上传进度统一、弱网实测 | ✅ `Phase 2` 提交 |
 | Phase 3 | Rust 侧 emit 本地消息事件，Dart 只消费（可选最彻底形态） | ⏳ |
 
 Phase 1 实测（模拟器 x64，断开 adb reverse 模拟服务不可达）：
@@ -17,6 +17,21 @@ Phase 1 实测（模拟器 x64，断开 adb reverse 模拟服务不可达）：
 - 断网发送 → 气泡立即出现并标为失败 + SnackBar「发送消息失败，点击消息可重发」，输入框已清空；
 - 恢复网络后点失败标记重发 → 同一条变 ✓，无重复气泡；
 - `client_msg_id` 全程一致（失败 `c507441374a2e1bb246a6774d2286bfd` → 重发成功同一 ID）。
+
+Phase 2 实测（模拟器 x64，`docker pause openim-server` 模拟服务无响应/黑洞）：
+
+- **僵尸发送兜底**：服务暂停时发文本 → 气泡停在「发送中」→ 杀进程 → 恢复服务并重启 App →
+  日志 `登录时清理了 1 条sending消息`，气泡直接显示失败（不再无限转圈）→ 点重发成功；
+- **上传进度统一**：`upload_progress` 事件首次按乐观气泡的 `clientMsgId` 上报
+  （`client_msg_id=80e7cc58022a47bc4d7f9ae873e4ed13, progress=0 → 100`），进度、状态、去重同一把钥匙；
+- **媒体本地预览**：上传未完成/失败时气泡直接用本地文件渲染（原先显示「图片地址为空」）；
+- **媒体失败重发**：暂停 MinIO+服务端发图 → 本地预览 + 发送中 → 失败 → 恢复后点重发 → ✓ 且无重复气泡。
+
+### 阈值
+
+- 本地消息超过 `30s`（Dart `kStaleSendingTimeoutMs` / Rust `STALE_SENDING_RETRY_MS`）仍为
+  「发送中」且无上传进度 → 视为僵尸，标为失败并允许重发（Rust 侧 `can_resend` 同步放宽，
+  避免"UI 已标失败但 SDK 拒绝重发"）。
 
 ## 1. 现状问题
 

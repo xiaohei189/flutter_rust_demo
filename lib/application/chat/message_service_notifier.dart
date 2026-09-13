@@ -141,6 +141,15 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     ),
   );
 
+  /// 僵尸「发送中」兜底：进入会话 / 回到前台时调用，把长时间无回执的消息标为失败
+  void sweepStaleSendingMessages(String conversationId) => updateState(
+    MessageServiceReducer.sweepStaleSending(
+      currentState,
+      conversationId,
+      now: DateTime.now().millisecondsSinceEpoch,
+    ),
+  );
+
   /// 获取指定用户资料（命中缓存时）
   UserProfile? getUserProfile(String userId) => state.userProfiles[userId];
 

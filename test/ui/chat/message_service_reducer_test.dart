@@ -8,27 +8,28 @@ import 'package:flutter_rust_demo/domain/models/group_read_receipt.dart'
 import 'package:flutter_rust_demo/application/chat/message_service_reducer.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_state.dart';
 
-ChatMessage _message(String id) => ChatMessage(
-  clientMsgId: id,
-  serverMsgId: '',
-  sendId: 'u1',
-  recvId: 'u2',
-  groupId: '',
-  senderPlatformId: 0,
-  senderNickname: '我',
-  senderFaceUrl: '',
-  sessionType: 1,
-  msgFrom: 0,
-  contentType: 101,
-  content: '{"content":"你好"}',
-  seq: 1,
-  sendTime: 1000,
-  createTime: 1000,
-  status: 2,
-  isRead: false,
-  attachedInfo: '',
-  ex: '',
-);
+ChatMessage _message(String id, {int status = 2, int sendTime = 1000}) =>
+    ChatMessage(
+      clientMsgId: id,
+      serverMsgId: '',
+      sendId: 'u1',
+      recvId: 'u2',
+      groupId: '',
+      senderPlatformId: 0,
+      senderNickname: '我',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 0,
+      contentType: 101,
+      content: '{"content":"你好"}',
+      seq: 1,
+      sendTime: sendTime,
+      createTime: 1000,
+      status: status,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
 
 void main() {
   group('MessageServiceReducer', () {
@@ -166,6 +167,117 @@ void main() {
       final state = MessageServiceState();
       final result = MessageServiceReducer.applyGroupReadReceipts(state, []);
       expect(identical(result, state), isTrue);
+    });
+  });
+
+  group('发送状态机', () {
+    ChatMessage sending(String id, {int sendTime = 1000}) =>
+        _message(id, status: 1, sendTime: sendTime);
+
+    test('applySendStatus 幂等：同值不改状态，找不到消息也不报错', () {
+      final state = MessageServiceState().copyWith(
+        messages: {
+          'conv1': [sending('m1')],
+        },
+      );
+
+      final failed = MessageServiceReducer.applySendStatus(
+        state,
+        'conv1',
+        'm1',
+        3,
+      );
+      expect(failed.messages['conv1']!.single.status, 3);
+      // 重复置同一状态：返回原 state（幂等，不产生多余状态变更）
+      expect(
+        identical(
+          MessageServiceReducer.applySendStatus(failed, 'conv1', 'm1', 3),
+          failed,
+        ),
+        isTrue,
+      );
+      expect(
+        identical(
+          MessageServiceReducer.applySendStatus(state, 'conv1', 'nope', 3),
+          state,
+        ),
+        isTrue,
+      );
+    });
+
+    test('mergeSentMessage 就地合并服务端字段且保持本地 clientMsgId', () {
+      final state = MessageServiceState().copyWith(
+        messages: {
+          'conv1': [sending('m1')],
+        },
+      );
+      final sent = _message(
+        'server-generated-id',
+        status: 2,
+      ).copyWith(serverMsgId: 'srv1', seq: 9);
+
+      final result = MessageServiceReducer.mergeSentMessage(
+        state,
+        'conv1',
+        'm1',
+        sent,
+      );
+
+      final merged = result.messages['conv1']!.single;
+      expect(merged.clientMsgId, 'm1');
+      expect(merged.status, 2);
+      expect(merged.serverMsgId, 'srv1');
+      expect(merged.seq, 9);
+      expect(result.messages['conv1'], hasLength(1));
+    });
+
+    test('sweepStaleSending 只把超时且无上传进度的发送中消息标失败', () {
+      const timeout = 30000;
+      final now = 1_700_000_000_000;
+      final state = MessageServiceState().copyWith(
+        messages: {
+          'conv1': [
+            sending('stale', sendTime: now - timeout - 1),
+            sending('fresh', sendTime: now - 1000),
+            sending('uploading', sendTime: now - timeout - 1),
+            _message('done', status: 2),
+            _message('failed', status: 3),
+          ],
+        },
+        uploadProgress: {'uploading': 40},
+      );
+
+      final result = MessageServiceReducer.sweepStaleSending(
+        state,
+        'conv1',
+        now: now,
+      );
+
+      final byId = {
+        for (final m in result.messages['conv1']!) m.clientMsgId: m.status,
+      };
+      expect(byId['stale'], 3);
+      expect(byId['fresh'], 1);
+      expect(byId['uploading'], 1);
+      expect(byId['done'], 2);
+      expect(byId['failed'], 3);
+    });
+
+    test('sweepStaleSending 无僵尸时返回原 state', () {
+      final now = 1_700_000_000_000;
+      final state = MessageServiceState().copyWith(
+        messages: {
+          'conv1': [sending('fresh', sendTime: now - 100)],
+        },
+      );
+
+      expect(
+        identical(
+          MessageServiceReducer.sweepStaleSending(state, 'conv1', now: now),
+          state,
+        ),
+        isTrue,
+      );
     });
   });
 }

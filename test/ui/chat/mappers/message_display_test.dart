@@ -174,6 +174,53 @@ void main() {
     });
   });
 
+  group('ChatMessageExt.displayImageSource', () {
+    ChatMessage imageMessage(String content) => ChatMessage(
+      clientMsgId: 'm1',
+      serverMsgId: '',
+      sendId: 'u1',
+      recvId: 'u2',
+      groupId: '',
+      senderPlatformId: 0,
+      senderNickname: '',
+      senderFaceUrl: '',
+      sessionType: 1,
+      msgFrom: 100,
+      contentType: 102,
+      content: content,
+      seq: 0,
+      sendTime: 1,
+      createTime: 1,
+      status: 1,
+      isRead: false,
+      attachedInfo: '',
+      ex: '',
+    );
+
+    test('有远端地址时优先展示远端图片', () {
+      final message = imageMessage(
+        jsonEncode({
+          'sourcePath': '/tmp/a.png',
+          'sourcePicture': {'url': 'http://cdn/a.png'},
+        }),
+      );
+      expect(message.displayImageSource, 'http://cdn/a.png');
+    });
+
+    test('尚未上传完成（URL 为空）时回退本地文件路径', () {
+      final message = imageMessage(
+        jsonEncode({
+          'sourcePath': '/tmp/a.png',
+          'sourcePicture': {'url': ''},
+          'bigPicture': {'url': ''},
+          'snapshotPicture': {'url': ''},
+        }),
+      );
+      expect(message.imageLocalPath, '/tmp/a.png');
+      expect(message.displayImageSource, '/tmp/a.png');
+    });
+  });
+
   group('ChatMessageExt.sendDateTime', () {
     test('sendTime 为毫秒时间戳', () {
       final m = const ChatMessage(
