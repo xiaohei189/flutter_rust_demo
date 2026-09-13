@@ -33,6 +33,7 @@ class MessageBubble extends StatelessWidget {
   final int? uploadProgress;
   final GroupReadReceipt? groupReadReceipt;
   final void Function(String source)? onPlayAudio;
+  final void Function(ChatMessage message)? onRetrySend;
 
   const MessageBubble({
     super.key,
@@ -50,6 +51,7 @@ class MessageBubble extends StatelessWidget {
     this.uploadProgress,
     this.groupReadReceipt,
     this.onPlayAudio,
+    this.onRetrySend,
   });
 
   User _buildSenderUser() {
@@ -229,7 +231,12 @@ class MessageBubble extends StatelessWidget {
                 ),
                 if (isFromMe) ...[
                   const SizedBox(width: 4),
-                  MessageStatusIcon(message: message),
+                  MessageStatusIcon(
+                    message: message,
+                    onRetry: onRetrySend == null
+                        ? null
+                        : () => onRetrySend!(message),
+                  ),
                 ],
               ],
             ),

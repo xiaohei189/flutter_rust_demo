@@ -11,6 +11,48 @@ import 'message_service_state.dart';
 
 /// 消息与会话状态变更的纯函数集合。
 class MessageServiceReducer {
+  /// 发送状态收敛（幂等）：1=发送中 / 2=成功 / 3=失败。
+  ///
+  /// 发送中的乐观条、成功替换、失败标态（含 SDK sendFailed 事件）都走这里，
+  /// 保证同一 clientMsgId 的状态只由一个入口改写，避免多来源双写差异。
+  static MessageServiceState applySendStatus(
+    MessageServiceState state,
+    String conversationId,
+    String clientMsgId,
+    int status,
+  ) {
+    final list = state.messages[conversationId];
+    if (list == null) return state;
+    final index = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+    if (index < 0 || list[index].status == status) return state;
+
+    final updated = List<ChatMessage>.from(list);
+    updated[index] = updated[index].copyWith(status: status);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
+    newMessages[conversationId] = updated;
+    return state.copyWith(messages: newMessages);
+  }
+
+  /// 发送成功后就地合并服务端消息：保持本地 clientMsgId（回执/去重都按它匹配），
+  /// 只补齐 serverMsgId / seq / sendTime / status 等服务端字段。
+  static MessageServiceState mergeSentMessage(
+    MessageServiceState state,
+    String conversationId,
+    String clientMsgId,
+    ChatMessage sent,
+  ) {
+    final list = state.messages[conversationId];
+    if (list == null) return state;
+    final index = list.indexWhere((m) => m.clientMsgId == clientMsgId);
+    if (index < 0) return state;
+
+    final updated = List<ChatMessage>.from(list);
+    updated[index] = sent.copyWith(clientMsgId: clientMsgId);
+    final newMessages = Map<String, List<ChatMessage>>.from(state.messages);
+    newMessages[conversationId] = updated;
+    return state.copyWith(messages: newMessages);
+  }
+
   static MessageServiceState appendIncomingMessage(
     MessageServiceState state,
     String conversationId,
@@ -105,9 +147,8 @@ class MessageServiceReducer {
       }
       newMessages[entry.key] = list
           .map(
-            (m) => msgIds.contains(m.clientMsgId)
-                ? m.copyWith(isRead: true)
-                : m,
+            (m) =>
+                msgIds.contains(m.clientMsgId) ? m.copyWith(isRead: true) : m,
           )
           .toList();
       changed = true;

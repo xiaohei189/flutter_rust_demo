@@ -303,8 +303,24 @@ impl MsgStruct {
         Self::default()
     }
 
+    /// 构造「本地消息」骨架（对齐 Go SDK `CreateXxxMessage` 里的 `initBasicInfo`）。
+    ///
+    /// Go 在构造阶段就写入 `ClientMsgID`（`utils.GetMsgID`）、`CreateTime/SendTime`
+    /// 与 `MsgStatusSending`，`SendMessage` 发送的是**同一条**消息、不再重新生成 ID。
+    /// 这里保持一致：上层因此可以拿 create 的返回值先乐观上屏，再按同一
+    /// clientMsgId 收敛发送状态。
+    fn new_local() -> Self {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
+        let mut msg = Self::new();
+        msg.client_msg_id = get_msg_id("");
+        msg.create_time = now;
+        msg.send_time = now;
+        msg.status = MSG_STATUS_SENDING;
+        msg
+    }
+
     pub fn create_text_message(text: &str) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 101;
         msg.msg_from = MSG_FROM_USER;
         let elem = TextElem { content: text.to_string() };
@@ -314,7 +330,7 @@ impl MsgStruct {
     }
 
     pub fn create_image_message(source_path: &str, source: PictureBaseInfo, big: PictureBaseInfo, snapshot: PictureBaseInfo) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 102;
         msg.msg_from = MSG_FROM_USER;
         let elem = PictureElem {
@@ -329,7 +345,7 @@ impl MsgStruct {
     }
 
     pub fn create_sound_message(elem: SoundElem) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 103;
         msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
@@ -338,7 +354,7 @@ impl MsgStruct {
     }
 
     pub fn create_video_message(elem: VideoElem) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 104;
         msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
@@ -347,7 +363,7 @@ impl MsgStruct {
     }
 
     pub fn create_file_message(elem: FileElem) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 105;
         msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
@@ -356,7 +372,7 @@ impl MsgStruct {
     }
 
     pub fn create_at_text_message(text: &str, at_user_list: Vec<String>, at_users_info: Vec<AtInfo>, quote_msg: Option<Box<MsgStruct>>) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 106;
         msg.msg_from = MSG_FROM_USER;
         let mut at_msg = quote_msg.clone();
@@ -379,7 +395,7 @@ impl MsgStruct {
     }
 
     pub fn create_merger_message(messages: Vec<MsgStruct>, title: &str, summaries: Vec<String>) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 107;
         msg.msg_from = MSG_FROM_USER;
         let elem = MergeElem {
@@ -393,7 +409,7 @@ impl MsgStruct {
     }
 
     pub fn create_card_message(elem: CardElem) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 108;
         msg.msg_from = MSG_FROM_USER;
         msg.content = serde_json::to_string(&elem).unwrap();
@@ -402,7 +418,7 @@ impl MsgStruct {
     }
 
     pub fn create_location_message(description: &str, longitude: f64, latitude: f64) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 109;
         msg.msg_from = MSG_FROM_USER;
         let elem = LocationElem {
@@ -416,7 +432,7 @@ impl MsgStruct {
     }
 
     pub fn create_typing_message(msg_tips: &str) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 113; // TYPING
         msg.msg_from = MSG_FROM_USER;
         let elem = TypingElem { msg_tips: msg_tips.to_string() };
@@ -425,7 +441,7 @@ impl MsgStruct {
     }
 
     pub fn create_custom_message(data: &str, extension: &str, description: &str) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 110;
         msg.msg_from = MSG_FROM_USER;
         let elem = CustomElem {
@@ -439,7 +455,7 @@ impl MsgStruct {
     }
 
     pub fn create_quote_message(text: &str, quoted_msg: Box<MsgStruct>) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 114;
         msg.msg_from = MSG_FROM_USER;
         let mut qm = *quoted_msg.clone();
@@ -463,7 +479,7 @@ impl MsgStruct {
     /// 与 `create_quote_message` 的区别：额外支持 `message_entities` 参数，
     /// 可以为引用消息的文本添加实体（如 @提及、链接等富文本）。
     pub fn create_advanced_quote_message(text: &str, quoted_msg: Box<MsgStruct>, message_entities: Vec<MessageEntity>) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 114;
         msg.msg_from = MSG_FROM_USER;
         let mut qm = *quoted_msg.clone();
@@ -484,7 +500,7 @@ impl MsgStruct {
     }
 
     pub fn create_face_message(index: i32, data: &str) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 115;
         msg.msg_from = MSG_FROM_USER;
         let elem = FaceElem { index, data: data.to_string() };
@@ -494,7 +510,7 @@ impl MsgStruct {
     }
 
     pub fn create_advanced_text_message(text: &str, entities: Vec<MessageEntity>) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 117;
         msg.msg_from = MSG_FROM_USER;
         let elem = AdvancedTextElem {
@@ -507,7 +523,7 @@ impl MsgStruct {
     }
 
     pub fn create_markdown_message(text: &str) -> MsgStruct {
-        let mut msg = MsgStruct::new();
+        let mut msg = MsgStruct::new_local();
         msg.content_type = 118;
         msg.msg_from = MSG_FROM_USER;
         let elem = MarkdownTextElem { content: text.to_string() };
@@ -769,6 +785,23 @@ mod tests {
         let id = get_msg_id("user_1");
         assert_eq!(id.len(), 32);
         assert!(id.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    /// CreateXxxMessage 阶段就应生成 clientMsgId 并预置「发送中」状态与时间戳，
+    /// 这样上层才能在发送前乐观上屏、并用同一个 ID 收敛发送状态（对齐 Go SDK）。
+    #[test]
+    fn test_create_message_presets_client_msg_id_and_sending_status() {
+        let text = MsgStruct::create_text_message("hi");
+        assert_eq!(text.client_msg_id.len(), 32);
+        assert_eq!(text.status, MSG_STATUS_SENDING);
+        assert!(text.create_time > 0);
+        assert_eq!(text.create_time, text.send_time);
+
+        // 每条本地消息的 clientMsgId 必须唯一（乐观上屏靠它去重/对齐回执）
+        let other = MsgStruct::create_markdown_message("| a |");
+        assert_ne!(text.client_msg_id, other.client_msg_id);
+        assert_eq!(other.status, MSG_STATUS_SENDING);
+        assert_eq!(other.content_type, 118);
     }
 
     #[test]

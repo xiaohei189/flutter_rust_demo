@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../application/chat/message_service_notifier.dart';
 import '../../../application/chat/send_media_use_case.dart';
+import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/friend.dart';
 import '../../../providers/chat_aux_provider.dart';
-import '../../../providers/connection_provider.dart';
 import '../../contacts/providers/friend_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
@@ -32,63 +32,78 @@ class ChatDetailSendController {
 
   ChatDetailState get _state => readState();
 
+  /// 发送文本类消息。
+  ///
+  /// 返回「本地是否已受理」：消息先乐观上屏（气泡立刻出现，发送中转圈），
+  /// 网络结果由发送链路异步收敛——失败时气泡标红、可点重发，并写入
+  /// `MessageListState.error` 供页面提示。因此断网也能看到消息与失败状态，
+  /// 而不是「没有任何反应」。
   Future<bool> sendText(String text, MessageContentType type) async {
     if (text.trim().isEmpty) return false;
-    if (!ref.read(connectionProvider).isConnected) {
-      updateState((s) => s.copyWith(errorText: 'WebSocket 未连接，无法发送消息'));
-      return false;
-    }
     final target = readSendTarget();
     if (target == null) {
       updateState((s) => s.copyWith(errorText: '无法发送：会话缺少对方 ID，请返回会话列表重试'));
       return false;
     }
 
+    final quotedMsg = _state.quotedMessage;
+    final atUserIds = List<String>.from(_state.atUserIds);
+    final messages = ref.read(messageListProvider(conversationId).notifier);
+    final Future<bool> sent;
+    if (atUserIds.isNotEmpty) {
+      updateState((s) => s.copyWith(atUserIds: const []));
+      sent = messages.sendAtTextMessage(
+        recvId: target.recvId,
+        text: text,
+        atUserIds: atUserIds,
+        sessionType: target.sessionType,
+        groupId: target.groupId,
+      );
+    } else if (quotedMsg != null) {
+      updateState((s) => s.copyWith(clearQuotedMessage: true));
+      sent = _sendQuoted(text: text, target: target, quoted: quotedMsg);
+    } else if (type == MessageContentType.markdown) {
+      sent = messages.sendMarkdownMessage(
+        recvId: target.recvId,
+        text: text,
+        sessionType: target.sessionType,
+        groupId: target.groupId,
+      );
+    } else {
+      sent = messages.sendTextMessage(
+        recvId: target.recvId,
+        text: text,
+        sessionType: target.sessionType,
+        groupId: target.groupId,
+      );
+    }
+
+    final accepted = await sent;
+    updateState(
+      (s) => accepted
+          ? s.copyWith(clearError: true)
+          : s.copyWith(
+              errorText:
+                  ref.read(messageListProvider(conversationId)).error ??
+                  '发送消息失败',
+            ),
+    );
+    return accepted;
+  }
+
+  Future<bool> _sendQuoted({
+    required String text,
+    required ChatSendTarget target,
+    required ChatMessage quoted,
+  }) async {
     try {
-      final quotedMsg = _state.quotedMessage;
-      final atUserIds = List<String>.from(_state.atUserIds);
-      if (atUserIds.isNotEmpty) {
-        updateState((s) => s.copyWith(atUserIds: const []));
-        await ref
-            .read(messageListProvider(conversationId).notifier)
-            .sendAtTextMessage(
-              recvId: target.recvId,
-              text: text,
-              atUserIds: atUserIds,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      } else if (quotedMsg != null) {
-        updateState((s) => s.copyWith(clearQuotedMessage: true));
-        await _messageService.sendQuoteMessage(
-          text: text,
-          sourceId: target.recvId,
-          sessionType: target.sessionType,
-          quoteText: quotedMsg.content,
-          quoteClientMsgId: quotedMsg.clientMsgId,
-          quoteSendId: quotedMsg.sendId,
-          quoteSendTime: quotedMsg.sendTime.toInt(),
-        );
-      } else if (type == MessageContentType.markdown) {
-        await ref
-            .read(messageListProvider(conversationId).notifier)
-            .sendMarkdownMessage(
-              recvId: target.recvId,
-              text: text,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      } else {
-        await ref
-            .read(messageListProvider(conversationId).notifier)
-            .sendTextMessage(
-              recvId: target.recvId,
-              text: text,
-              sessionType: target.sessionType,
-              groupId: target.groupId,
-            );
-      }
-      updateState((s) => s.copyWith(clearError: true));
+      await _messageService.sendQuoteMessage(
+        text: text,
+        sourceId: target.recvId,
+        sessionType: target.sessionType,
+        quoted: quoted,
+        conversationId: conversationId,
+      );
       return true;
     } catch (e) {
       updateState((s) => s.copyWith(errorText: '发送消息失败: $e'));
@@ -190,6 +205,7 @@ class ChatDetailSendController {
         ex: '',
         sourceId: target.recvId,
         sessionType: target.sessionType,
+        conversationId: conversationId,
       );
       return true;
     } catch (e) {

@@ -27,42 +27,73 @@ abstract class MessageRepository {
     required int count,
   });
 
-  Future<ChatMessage> sendTextMessage({
-    required String text,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  /// 构造本地文本消息（对齐 Go `CreateTextMessage`）：不发网络，供上层乐观上屏
-  Future<MsgStruct> createTextMessage({required String text});
-
-  /// 构造本地 Markdown 消息（对齐 Go `CreateMarkdownMessage`）
-  Future<MsgStruct> createMarkdownMessage({required String text});
-
-  /// 构造本地 @ 消息（对齐 Go `CreateTextAtMessage`）
-  Future<MsgStruct> createAtTextMessage({
-    required String text,
-    required List<String> atUserIds,
-  });
-
-  /// 发送已构建的本地消息（对齐 Go `SendMessage`）
   Future<ChatMessage> sendPreparedMessage({
     required MsgStruct message,
     required String sourceId,
     required SessionType sessionType,
   });
 
-  Future<ChatMessage> sendMarkdownMessage({
-    required String text,
-    required String sourceId,
-    required SessionType sessionType,
-  });
+  // ---- 本地消息构造（对齐 Go SDK CreateXxxMessage）----
 
-  Future<ChatMessage> sendAtTextMessage({
+  /// 构造本地文本消息：不发网络，供上层乐观上屏
+  Future<MsgStruct> createTextMessage({required String text});
+
+  /// 构造本地 Markdown 消息
+  Future<MsgStruct> createMarkdownMessage({required String text});
+
+  /// 构造本地 @ 消息
+  Future<MsgStruct> createAtTextMessage({
     required String text,
     required List<String> atUserIds,
-    required String sourceId,
-    required SessionType sessionType,
+  });
+
+  /// 构造本地图片消息（本地文件，发送时上传 OSS）
+  Future<MsgStruct> createImageMessage({required String filePath});
+
+  /// 构造内容已上传的 URL 图片消息（GIF/表情，不走 OSS）
+  Future<MsgStruct> createImageMessageFromUrl({required String sourceUrl});
+
+  /// 构造本地视频消息
+  Future<MsgStruct> createVideoMessage({
+    required String videoPath,
+    required String snapshotPath,
+    required int duration,
+  });
+
+  /// 构造本地语音消息
+  Future<MsgStruct> createSoundMessage({
+    required String filePath,
+    required int duration,
+  });
+
+  /// 构造本地文件消息
+  Future<MsgStruct> createFileMessage({required String filePath});
+
+  /// 构造本地位置消息
+  Future<MsgStruct> createLocationMessage({
+    required String description,
+    required double latitude,
+    required double longitude,
+  });
+
+  /// 构造本地表情消息
+  Future<MsgStruct> createFaceMessage({
+    required int index,
+    required String data,
+  });
+
+  /// 构造本地名片消息
+  Future<MsgStruct> createCardMessage({
+    required String userId,
+    required String nickname,
+    required String faceUrl,
+    required String ex,
+  });
+
+  /// 构造本地引用消息
+  Future<MsgStruct> createQuoteMessage({
+    required String text,
+    required ChatMessage quoted,
   });
 
   Future<List<MessageSearchResult>> searchLocalMessages({
@@ -76,73 +107,6 @@ abstract class MessageRepository {
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendImageMessage({
-    required String filePath,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendImageMessageFromUrl({
-    required String sourceUrl,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendVideoMessage({
-    required String videoPath,
-    required String snapshotPath,
-    required String sourceId,
-    required SessionType sessionType,
-    required int duration,
-  });
-
-  Future<ChatMessage> sendSoundMessage({
-    required String filePath,
-    required String sourceId,
-    required SessionType sessionType,
-    required int duration,
-  });
-
-  Future<ChatMessage> sendFileMessage({
-    required String filePath,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendLocationMessage({
-    required String description,
-    required double latitude,
-    required double longitude,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendFaceMessage({
-    required int index,
-    required String data,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendCardMessage({
-    required String userId,
-    required String nickname,
-    required String faceUrl,
-    required String ex,
-    required String sourceId,
-    required SessionType sessionType,
-  });
-
-  Future<ChatMessage> sendQuoteMessage({
-    required String text,
-    required String sourceId,
-    required SessionType sessionType,
-    required String quoteText,
-    required String quoteClientMsgId,
-    required String quoteSendId,
-    required int quoteSendTime,
   });
 
   Future<void> sendTyping({

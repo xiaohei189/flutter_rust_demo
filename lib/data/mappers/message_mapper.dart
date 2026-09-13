@@ -69,6 +69,33 @@ ChatMessage messageFromMsgStruct(MsgStruct raw) {
     ex: '',
   );
 }
+
+/// 领域消息 → SDK 消息结构（用于引用/重发等需要把已有消息交回 SDK 的场景）。
+MsgStruct msgStructFromChatMessage(ChatMessage message) {
+  return MsgStruct(
+    clientMsgId: message.clientMsgId,
+    serverMsgId: message.serverMsgId,
+    createTime: message.createTime,
+    sendTime: message.sendTime,
+    sessionType: message.sessionType,
+    sendId: message.sendId,
+    recvId: message.recvId,
+    msgFrom: message.msgFrom,
+    contentType: message.contentType,
+    senderPlatformId: message.senderPlatformId,
+    senderNickname: message.senderNickname,
+    senderFaceUrl: message.senderFaceUrl,
+    groupId: message.groupId,
+    content: message.content,
+    seq: message.seq,
+    isRead: message.isRead,
+    status: message.status,
+    attachedInfo: message.attachedInfo,
+    ex: message.ex,
+    localEx: '',
+  );
+}
+
 MessageInfo messageInfoFromChatMessage(ChatMessage message) {
   return MessageInfo(
     clientMsgId: message.clientMsgId,
@@ -92,6 +119,7 @@ MessageInfo messageInfoFromChatMessage(ChatMessage message) {
     ex: message.ex,
   );
 }
+
 MessageSearchResult messageSearchResultFromLocalChatLog(LocalChatLog raw) {
   return MessageSearchResult(
     conversationId: raw.conversationId,

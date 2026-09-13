@@ -91,8 +91,9 @@ class ChatListViewModel extends Notifier<ChatListState> {
 
   /// 展示用未读数：本地标未读时至少显示 1。
   static int effectiveUnreadCount(Conversation conversation) =>
-      ConversationFlags.fromConversation(conversation)
-          .effectiveUnreadCount(conversation);
+      ConversationFlags.fromConversation(
+        conversation,
+      ).effectiveUnreadCount(conversation);
 
   /// 合并更新 ex 中的标记，保留其他 key。
   static String updateFlags(
@@ -393,10 +394,8 @@ class ChatListViewModel extends Notifier<ChatListState> {
             message: failed,
             sourceId: sourceId,
             sessionType: sessionType,
+            conversationId: conversationId,
           );
-      ref
-          .read(messageServiceProvider.notifier)
-          .removeMessage(conversationId, failed.clientMsgId);
       await refreshConversations();
     } catch (_) {
       // 重试失败保留失败状态，下次再试。

@@ -49,7 +49,7 @@ void main() {
     expect(repo.calls.single, contains('SessionType.singleChat'));
   });
 
-  test('客户端未初始化时发送文本抛出 StateError', () {
+  test('客户端未初始化时转发/撤回抛出 StateError', () {
     final controller = MessageSendController(
       _FakeService(),
       _FakeRepo(),
@@ -57,10 +57,9 @@ void main() {
     );
 
     expect(
-      () => controller.sendTextMessage(
-        text: 'hi',
-        recvId: 'u1',
-        conversationId: 'c1',
+      () => controller.forwardMessage(
+        clientMsgId: 'm1',
+        sourceId: 'u1',
         sessionType: ChatSessionType.singleChat,
       ),
       throwsStateError,

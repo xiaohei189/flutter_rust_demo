@@ -69,6 +69,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   bool _bodyReady = false;
   Timer? _routeTransitionTimer;
   String _lastMessageListTailId = '';
+  String? _lastReportedSendError;
   final Map<String, List<MessageReactionGroup>> _messageReactions = {};
   final Set<String> _pinnedMessageIds = {};
   ChatDetailViewModel? _viewModel;
@@ -173,6 +174,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   bool _focusAtMeHandled = false;
 
   void _onMessageListChanged() {
+    _reportSendError();
     final messages = ref.read(
       messagesByConversationProvider(widget.conversationId),
     );
@@ -191,6 +193,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       });
     }
     _maybeJumpToAtMe();
+  }
+
+  /// 发送失败是「本地先上屏、结果异步返回」，失败原因落在消息列表状态上，
+  /// 这里统一转成一次性提示（同一错误只提示一次）。
+  void _reportSendError() {
+    final error = ref.read(messageListProvider(widget.conversationId)).error;
+    if (error == null || error == _lastReportedSendError) return;
+    _lastReportedSendError = error;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showError(error);
+    });
   }
 
   /// 从「@我」筛选进入时，定位到第一条提及当前用户的消息。
@@ -484,6 +497,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           },
           messageActionsBuilder: _buildMessageActions,
           onMessageTap: _handleMessageTap,
+          // 点失败标记直接重发（对齐飞书/微信）
+          onRetrySend: _messageActions.resend,
           onPlayAudio: (source) =>
               ref.read(audioPlayerServiceProvider).play(source),
         ),

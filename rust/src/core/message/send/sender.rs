@@ -926,9 +926,18 @@ impl MessageSender {
 
         msg.send_id = send_id;
         msg.sender_platform_id = platform_id;
-        msg.client_msg_id = get_msg_id(&msg.send_id);
-        msg.create_time = now;
-        msg.send_time = now;
+        // clientMsgId / 时间戳沿用构造阶段的取值（对齐 Go SDK：CreateXxxMessage 生成
+        // ClientMsgID，SendMessage 发送同一条消息、不重新生成），只有空值才补默认值。
+        // 保留后上层乐观上屏的消息与服务端回执、消息去重天然命中同一个 ID。
+        if msg.client_msg_id.is_empty() {
+            msg.client_msg_id = get_msg_id(&msg.send_id);
+        }
+        if msg.create_time == 0 {
+            msg.create_time = now;
+        }
+        if msg.send_time == 0 {
+            msg.send_time = now;
+        }
         msg.status = MSG_STATUS_SENDING;
         msg.is_read = false;
 

@@ -47,8 +47,10 @@ class ChatMessageActions {
   String? get _errorText => readState().errorText;
 
   Future<void> sendText(String text, MessageContentType type) async {
-    final ok = await viewModel.sendText(text, type);
-    if (ok) {
+    // 返回「本地是否已受理」：受理后输入框即可清空（对齐 Go Demo：本地消息
+    // add 之后立刻 clear），网络失败由气泡状态 + 页面提示呈现。
+    final accepted = await viewModel.sendText(text, type);
+    if (accepted) {
       onClearComposer();
       if (!preLoaded) onScrollToBottom();
     } else {
@@ -70,8 +72,8 @@ class ChatMessageActions {
   }
 
   Future<void> resend(ChatMessage message) async {
-    final ok = await viewModel.resendMessage(message);
-    if (!ok) onError(_errorText ?? '消息重发失败');
+    final accepted = await viewModel.resendMessage(message);
+    if (!accepted) onError(_errorText ?? '消息重发失败');
   }
 
   void copy(ChatMessage message, BuildContext context) {

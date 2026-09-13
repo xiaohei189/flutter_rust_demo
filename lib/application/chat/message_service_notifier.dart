@@ -24,11 +24,13 @@ import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'message_event_applier.dart';
 import 'message_history_controller.dart';
+import 'message_service_reducer.dart';
 import 'message_service_connection_controller.dart';
 import 'message_user_profile_controller.dart';
 import 'message_service_conversation_controller.dart';
 
 import 'message_send_controller.dart';
+import 'message_send_pipeline.dart';
 import 'message_service_social_controller.dart';
 
 /// MessageService 的 Notifier
@@ -42,6 +44,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   MessageServiceConversationController? _conversationController;
   MessageServiceSocialController? _socialController;
   MessageSendController? _sendController;
+  MessageSendPipeline? _sendPipeline;
 
   @override
   MessageServiceState build() => MessageServiceState();
@@ -74,6 +77,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         ref.read(imClientProvider),
       );
 
+  /// 发送链路（唯一发送入口：create → 乐观上屏 → send → 状态收敛）
+  MessageSendPipeline get sendPipeline => _sendPipeline ??= MessageSendPipeline(
+    service: this,
+    repository: ref.read(messageRepositoryProvider),
+    isClientReady: () => ref.read(imClientProvider).isInitialized,
+  );
+
   MessageRepository get repository => ref.read(messageRepositoryProvider);
 
   /// 对外只读状态快照（避免外部访问 StateNotifier 的 protected state）
@@ -105,6 +115,31 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
 
   void upsertSentMessage(String conversationId, ChatMessage result) =>
       historyController.upsertSentMessage(conversationId, result);
+
+  /// 发送状态收敛（1=发送中/2=成功/3=失败），幂等
+  void applySendStatus(String conversationId, String clientMsgId, int status) =>
+      updateState(
+        MessageServiceReducer.applySendStatus(
+          currentState,
+          conversationId,
+          clientMsgId,
+          status,
+        ),
+      );
+
+  /// 发送成功后就地合并服务端消息（保持同一 clientMsgId，不新增气泡）
+  void mergeSentMessage(
+    String conversationId,
+    String clientMsgId,
+    ChatMessage sent,
+  ) => updateState(
+    MessageServiceReducer.mergeSentMessage(
+      currentState,
+      conversationId,
+      clientMsgId,
+      sent,
+    ),
+  );
 
   /// 获取指定用户资料（命中缓存时）
   UserProfile? getUserProfile(String userId) => state.userProfiles[userId];
@@ -159,50 +194,51 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     startClientMsgId: startClientMsgId,
   );
 
-  Future<ChatMessage> sendTextMessage({
+  Future<PendingSend> sendTextMessage({
     required String recvId,
     required String text,
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) => sendController.sendTextMessage(
-    recvId: recvId,
-    text: text,
-    sessionType: sessionType,
+  }) => sendPipeline.sendText(
     conversationId: conversationId,
-    groupId: groupId,
+    sourceId: _sourceId(recvId, groupId),
+    sessionType: sessionType,
+    text: text,
   );
 
+  /// 会话目标 ID：群聊取 groupId，单聊取 recvId（与 SDK sourceId 语义一致）
+  String _sourceId(String recvId, String groupId) =>
+      groupId.isNotEmpty ? groupId : recvId;
+
   /// 发送 Markdown 消息
-  Future<ChatMessage> sendMarkdownMessage({
+  Future<PendingSend> sendMarkdownMessage({
     required String recvId,
     required String text,
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) => sendController.sendMarkdownMessage(
-    recvId: recvId,
-    text: text,
-    sessionType: sessionType,
+  }) => sendPipeline.sendMarkdown(
     conversationId: conversationId,
-    groupId: groupId,
+    sourceId: _sourceId(recvId, groupId),
+    sessionType: sessionType,
+    text: text,
   );
 
   /// 发送 @ 提及消息
-  Future<ChatMessage> sendAtTextMessage({
+  Future<PendingSend> sendAtTextMessage({
     required String text,
     required List<String> atUserIds,
     required String recvId,
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
-  }) => sendController.sendAtTextMessage(
+  }) => sendPipeline.sendAtText(
+    conversationId: conversationId,
+    sourceId: _sourceId(recvId, groupId),
+    sessionType: sessionType,
     text: text,
     atUserIds: atUserIds,
-    recvId: recvId,
-    sessionType: sessionType,
-    conversationId: conversationId,
-    groupId: groupId,
   );
 
   /// 搜索当前会话的本地消息
@@ -230,35 +266,41 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送图片消息
-  Future<ChatMessage> sendImageMessage({
+  Future<PendingSend> sendImageMessage({
     required String filePath,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendImageMessage(
+    required String conversationId,
+  }) => sendPipeline.sendImage(
+    conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
   );
 
   /// 发送 URL 图片（如 GIF，内容已上传，不走 OSS）
-  Future<ChatMessage> sendImageMessageFromUrl({
+  Future<PendingSend> sendImageMessageFromUrl({
     required String sourceUrl,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendImageMessageFromUrl(
+    required String conversationId,
+  }) => sendPipeline.sendImageFromUrl(
+    conversationId: conversationId,
     sourceUrl: sourceUrl,
     sourceId: sourceId,
     sessionType: sessionType,
   );
 
   /// 发送视频消息
-  Future<ChatMessage> sendVideoMessage({
+  Future<PendingSend> sendVideoMessage({
     required String videoPath,
     required String snapshotPath,
     required String sourceId,
     required ChatSessionType sessionType,
     required int duration,
-  }) => sendController.sendVideoMessage(
+    required String conversationId,
+  }) => sendPipeline.sendVideo(
+    conversationId: conversationId,
     videoPath: videoPath,
     snapshotPath: snapshotPath,
     sourceId: sourceId,
@@ -267,12 +309,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送语音消息
-  Future<ChatMessage> sendSoundMessage({
+  Future<PendingSend> sendSoundMessage({
     required String filePath,
     required String sourceId,
     required ChatSessionType sessionType,
     required int duration,
-  }) => sendController.sendSoundMessage(
+    required String conversationId,
+  }) => sendPipeline.sendSound(
+    conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
@@ -280,24 +324,28 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送文件消息
-  Future<ChatMessage> sendFileMessage({
+  Future<PendingSend> sendFileMessage({
     required String filePath,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendFileMessage(
+    required String conversationId,
+  }) => sendPipeline.sendFile(
+    conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
   );
 
   /// 发送位置消息
-  Future<ChatMessage> sendLocationMessage({
+  Future<PendingSend> sendLocationMessage({
     required String description,
     required double latitude,
     required double longitude,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendLocationMessage(
+    required String conversationId,
+  }) => sendPipeline.sendLocation(
+    conversationId: conversationId,
     description: description,
     latitude: latitude,
     longitude: longitude,
@@ -306,12 +354,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送表情消息
-  Future<ChatMessage> sendFaceMessage({
+  Future<PendingSend> sendFaceMessage({
     required int index,
     required String data,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendFaceMessage(
+    required String conversationId,
+  }) => sendPipeline.sendFace(
+    conversationId: conversationId,
     index: index,
     data: data,
     sourceId: sourceId,
@@ -319,14 +369,16 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送名片消息
-  Future<ChatMessage> sendCardMessage({
+  Future<PendingSend> sendCardMessage({
     required String userId,
     required String nickname,
     required String faceUrl,
     required String ex,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.sendCardMessage(
+    required String conversationId,
+  }) => sendPipeline.sendCard(
+    conversationId: conversationId,
     userId: userId,
     nickname: nickname,
     faceUrl: faceUrl,
@@ -336,22 +388,18 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   );
 
   /// 发送引用消息
-  Future<ChatMessage> sendQuoteMessage({
+  Future<PendingSend> sendQuoteMessage({
     required String text,
     required String sourceId,
     required ChatSessionType sessionType,
-    required String quoteText,
-    required String quoteClientMsgId,
-    required String quoteSendId,
-    required int quoteSendTime,
-  }) => sendController.sendQuoteMessage(
+    required ChatMessage quoted,
+    required String conversationId,
+  }) => sendPipeline.sendQuote(
+    conversationId: conversationId,
     text: text,
     sourceId: sourceId,
     sessionType: sessionType,
-    quoteText: quoteText,
-    quoteClientMsgId: quoteClientMsgId,
-    quoteSendId: quoteSendId,
-    quoteSendTime: quoteSendTime,
+    quoted: quoted,
   );
 
   /// 发送正在输入状态
@@ -462,12 +510,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     );
   }
 
-  /// 重发一条发送失败的消息（Rust 侧会生成新 clientMsgId）。
-  Future<ChatMessage> resendMessage({
+  /// 重发一条发送失败的消息（沿用原 clientMsgId，不新增气泡）。
+  Future<PendingSend> resendMessage({
     required ChatMessage message,
     required String sourceId,
     required ChatSessionType sessionType,
-  }) => sendController.resendMessage(
+    required String conversationId,
+  }) => sendPipeline.resend(
+    conversationId: conversationId,
     message: message,
     sourceId: sourceId,
     sessionType: sessionType,

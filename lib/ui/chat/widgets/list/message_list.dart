@@ -41,6 +41,7 @@ class MessageList extends StatefulWidget {
     this.messageActionsBuilder,
     this.messageReactions = const {},
     this.onPlayAudio,
+    this.onRetrySend,
   });
 
   final List<ChatMessage> messages;
@@ -61,6 +62,7 @@ class MessageList extends StatefulWidget {
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final Map<String, List<MessageReactionGroup>> messageReactions;
   final void Function(String source)? onPlayAudio;
+  final void Function(ChatMessage message)? onRetrySend;
 
   @override
   State<MessageList> createState() => MessageListState();
@@ -208,6 +210,7 @@ class MessageListState extends State<MessageList> {
           uploadProgress: widget.uploadProgress,
           groupReadReceipts: widget.groupReadReceipts,
           onPlayAudio: widget.onPlayAudio,
+          onRetrySend: widget.onRetrySend,
         );
 
         return Column(
@@ -386,6 +389,7 @@ class _VisibleMessageBubble extends StatelessWidget {
     this.uploadProgress,
     this.groupReadReceipts,
     this.onPlayAudio,
+    this.onRetrySend,
   });
 
   final ChatMessage message;
@@ -403,6 +407,7 @@ class _VisibleMessageBubble extends StatelessWidget {
   final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final void Function(String source)? onPlayAudio;
+  final void Function(ChatMessage message)? onRetrySend;
 
   @override
   Widget build(BuildContext context) {
@@ -424,6 +429,7 @@ class _VisibleMessageBubble extends StatelessWidget {
             groupReadReceipts?[message.clientMsgId] ??
             groupReadReceipts?[message.serverMsgId],
         onPlayAudio: onPlayAudio,
+        onRetrySend: onRetrySend,
       );
     }
 
@@ -451,6 +457,7 @@ class _VisibleMessageBubble extends StatelessWidget {
             groupReadReceipts?[message.clientMsgId] ??
             groupReadReceipts?[message.serverMsgId],
         onPlayAudio: onPlayAudio,
+        onRetrySend: onRetrySend,
       ),
     );
   }

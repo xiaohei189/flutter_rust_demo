@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../application/chat/message_send_pipeline.dart' show PendingSend;
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../providers/message_service_provider.dart';
@@ -17,11 +20,7 @@ class MessageListState {
     this.error,
   });
 
-  MessageListState copyWith({
-    bool? isLoading,
-    bool? hasMore,
-    String? error,
-  }) {
+  MessageListState copyWith({bool? isLoading, bool? hasMore, String? error}) {
     return MessageListState(
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
@@ -32,8 +31,13 @@ class MessageListState {
 
 /// 消息列表 ViewModel（按会话）
 class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
+  bool _disposed = false;
+
   @override
-  MessageListState build(String conversationId) => const MessageListState();
+  MessageListState build(String conversationId) {
+    ref.onDispose(() => _disposed = true);
+    return const MessageListState();
+  }
 
   MessageServiceNotifier get _messageService =>
       ref.read(messageServiceProvider.notifier);
@@ -63,49 +67,42 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     }
   }
 
+  /// 发送文本消息。
+  ///
+  /// 返回「本地是否已受理」：本地消息先乐观上屏（对齐 Go Demo `messageList.add`
+  /// 后再 send），网络结果由 [PendingSend.done] 异步收敛——失败时同一条气泡
+  /// 变为失败、可点重发，且写入 [MessageListState.error] 供 UI 提示。
   Future<bool> sendTextMessage({
     required String recvId,
     required String text,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendTextMessage(
-        recvId: recvId,
-        text: text,
-        sessionType: sessionType,
-        conversationId: arg,
-        groupId: groupId ?? '',
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送消息失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送消息失败',
+    start: () => _messageService.sendTextMessage(
+      recvId: recvId,
+      text: text,
+      sessionType: sessionType,
+      conversationId: arg,
+      groupId: groupId ?? '',
+    ),
+  );
 
   Future<bool> sendMarkdownMessage({
     required String recvId,
     required String text,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendMarkdownMessage(
-        recvId: recvId,
-        text: text,
-        sessionType: sessionType,
-        conversationId: arg,
-        groupId: groupId ?? '',
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送消息失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送 Markdown 消息失败',
+    start: () => _messageService.sendMarkdownMessage(
+      recvId: recvId,
+      text: text,
+      sessionType: sessionType,
+      conversationId: arg,
+      groupId: groupId ?? '',
+    ),
+  );
 
   Future<bool> sendAtTextMessage({
     required String recvId,
@@ -113,27 +110,17 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required List<String> atUserIds,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendAtTextMessage(
-        recvId: recvId,
-        text: text,
-        atUserIds: atUserIds,
-        sessionType: sessionType,
-        conversationId: arg,
-        groupId: groupId ?? '',
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送 @ 消息失败: $e');
-      return false;
-    }
-  }
-
-  void _addSentMessage(ChatMessage result) {
-    _messageService.upsertSentMessage(arg, result);
-  }
+  }) => _dispatch(
+    failText: '发送 @ 消息失败',
+    start: () => _messageService.sendAtTextMessage(
+      recvId: recvId,
+      text: text,
+      atUserIds: atUserIds,
+      sessionType: sessionType,
+      conversationId: arg,
+      groupId: groupId ?? '',
+    ),
+  );
 
   String _sourceId(String recvId, String? groupId) =>
       (groupId != null && groupId.isNotEmpty) ? groupId : recvId;
@@ -143,20 +130,15 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String filePath,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendImageMessage(
-        filePath: filePath,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送图片失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送图片失败',
+    start: () => _messageService.sendImageMessage(
+      filePath: filePath,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      conversationId: arg,
+    ),
+  );
 
   /// 发送 URL 图片（GIF/表情，内容已上传）
   Future<bool> sendImageMessageFromUrl({
@@ -164,20 +146,15 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String sourceUrl,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendImageMessageFromUrl(
-        sourceUrl: sourceUrl,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送图片失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送图片失败',
+    start: () => _messageService.sendImageMessageFromUrl(
+      sourceUrl: sourceUrl,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      conversationId: arg,
+    ),
+  );
 
   Future<bool> sendVideoMessage({
     required String recvId,
@@ -186,22 +163,17 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required ChatSessionType sessionType,
     required int duration,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendVideoMessage(
-        videoPath: videoPath,
-        snapshotPath: snapshotPath,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-        duration: duration,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送视频失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送视频失败',
+    start: () => _messageService.sendVideoMessage(
+      videoPath: videoPath,
+      snapshotPath: snapshotPath,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      duration: duration,
+      conversationId: arg,
+    ),
+  );
 
   Future<bool> sendSoundMessage({
     required String recvId,
@@ -209,41 +181,31 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required ChatSessionType sessionType,
     required int duration,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendSoundMessage(
-        filePath: filePath,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-        duration: duration,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送语音失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送语音失败',
+    start: () => _messageService.sendSoundMessage(
+      filePath: filePath,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      duration: duration,
+      conversationId: arg,
+    ),
+  );
 
   Future<bool> sendFileMessage({
     required String recvId,
     required String filePath,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendFileMessage(
-        filePath: filePath,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送文件失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送文件失败',
+    start: () => _messageService.sendFileMessage(
+      filePath: filePath,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      conversationId: arg,
+    ),
+  );
 
   Future<bool> sendLocationMessage({
     required String recvId,
@@ -252,40 +214,56 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required double longitude,
     required ChatSessionType sessionType,
     String? groupId,
-  }) async {
-    try {
-      final result = await _messageService.sendLocationMessage(
-        description: description,
-        latitude: latitude,
-        longitude: longitude,
-        sourceId: _sourceId(recvId, groupId),
-        sessionType: sessionType,
-      );
-      _addSentMessage(result);
-      return true;
-    } catch (e) {
-      state = state.copyWith(error: '发送位置失败: $e');
-      return false;
-    }
-  }
+  }) => _dispatch(
+    failText: '发送位置失败',
+    start: () => _messageService.sendLocationMessage(
+      description: description,
+      latitude: latitude,
+      longitude: longitude,
+      sourceId: _sourceId(recvId, groupId),
+      sessionType: sessionType,
+      conversationId: arg,
+    ),
+  );
 
   Future<bool> resendMessage({
     required ChatMessage message,
     required String sourceId,
     required ChatSessionType sessionType,
+  }) => _dispatch(
+    failText: '消息重发失败',
+    start: () => _messageService.resendMessage(
+      message: message,
+      sourceId: sourceId,
+      sessionType: sessionType,
+      conversationId: arg,
+    ),
+  );
+
+  /// 发送统一编排：本地受理 → 立即返回；网络结果异步收敛。
+  Future<bool> _dispatch({
+    required String failText,
+    required Future<PendingSend> Function() start,
   }) async {
+    state = state.copyWith(error: null);
+    final PendingSend pending;
     try {
-      final result = await _messageService.resendMessage(
-        message: message,
-        sourceId: sourceId,
-        sessionType: sessionType,
-      );
-      _messageService.removeMessage(arg, message.clientMsgId);
-      _addSentMessage(result);
-      return true;
+      pending = await start();
     } catch (e) {
-      state = state.copyWith(error: '消息重发失败: $e');
+      _setError('$failText: $e');
       return false;
     }
+    unawaited(
+      pending.done.then<void>(
+        (_) {},
+        onError: (Object e) => _setError('$failText，点击消息可重发'),
+      ),
+    );
+    return true;
+  }
+
+  void _setError(String message) {
+    if (_disposed) return;
+    state = state.copyWith(error: message);
   }
 }
