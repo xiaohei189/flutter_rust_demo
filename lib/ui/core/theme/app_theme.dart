@@ -256,6 +256,17 @@ class AppTheme {
       elevation: 8,
       backgroundColor: Colors.white,
     ),
+    // 开关配色对齐飞书稿：关闭 = 浅灰轨道 + 白色拇指（无描边），开启 = 主色轨道 + 白色拇指。
+    // 不覆盖的话 M3 默认关闭态是「灰轨道 + 深灰拇指 + 深灰描边」，看起来像禁用。
+    switchTheme: SwitchThemeData(
+      thumbColor: const WidgetStatePropertyAll(Colors.white),
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? primaryColor
+            : const Color(0xFFE5E6EB),
+      ),
+      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -297,6 +308,15 @@ class AppTheme {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
       backgroundColor: AppColors.dark.surface,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: const WidgetStatePropertyAll(Colors.white),
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? AppColors.dark.primary
+            : const Color(0xFF48484A),
+      ),
+      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
