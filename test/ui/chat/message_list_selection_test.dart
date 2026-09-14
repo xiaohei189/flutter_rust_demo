@@ -75,7 +75,8 @@ void main() {
     );
 
     await tester.longPress(find.text('长按消息'));
-    await tester.pump();
+    // 底部弹层有入场动画，等它稳定后再断言/点击
+    await tester.pumpAndSettle();
 
     // 对齐飞书稿：表情行末尾是「更多表情」入口
     expect(find.byIcon(Icons.more_horiz), findsOneWidget);
@@ -85,7 +86,7 @@ void main() {
     expect(find.text('删除'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.more_horiz));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     expect(find.text('快速回复'), findsOneWidget);

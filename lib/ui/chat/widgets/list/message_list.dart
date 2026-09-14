@@ -105,12 +105,8 @@ class MessageListState extends State<MessageList> {
       widget.onMessageLongPress?.call(message);
       return;
     }
-    final renderObject = messageKey.currentContext?.findRenderObject();
-    if (renderObject is! RenderBox) return;
-    final anchor = renderObject.localToGlobal(Offset.zero) & renderObject.size;
     showMessageToolPanel(
       context: context,
-      anchor: anchor,
       message: message,
       currentUserId: widget.currentUserId ?? '',
       actions: actions,

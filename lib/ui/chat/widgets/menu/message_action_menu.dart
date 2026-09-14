@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
-import 'message_tool_panel_overlay.dart';
+import '../../../core/theme/app_theme.dart';
+import 'message_tool_panel.dart';
 
 /// 消息操作面板顶部的快捷表情（对齐飞书稿：一行 6 个 + 末尾「⋯」）
 const List<String> kMessageQuickReactions = [
@@ -40,29 +41,36 @@ class MessageActions {
   });
 }
 
-/// 长按消息弹出的消息工具面板。
+/// 长按消息弹出的消息工具面板（底部弹层，对齐飞书稿）。
 void showMessageToolPanel({
   required BuildContext context,
-  required Rect anchor,
   required ChatMessage message,
   required String currentUserId,
   required MessageActions actions,
   Set<String> reactions = const {},
 }) {
-  final overlay = Overlay.of(context);
-  late final OverlayEntry entry;
-  entry = OverlayEntry(
-    builder: (overlayContext) => MessageToolPanelOverlay(
-      anchor: anchor,
-      message: message,
-      currentUserId: currentUserId,
-      actions: actions,
-      reactions: reactions,
-      rootContext: context,
-      onClose: () {
-        if (entry.mounted) entry.remove();
-      },
+  final colors = context.appColors;
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: colors.background,
+    barrierColor: Colors.black.withValues(alpha: 0.25),
+    isScrollControlled: true,
+    useSafeArea: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    builder: (sheetContext) => ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78,
+      ),
+      child: MessageToolPanel(
+        message: message,
+        currentUserId: currentUserId,
+        actions: actions,
+        reactions: reactions,
+        rootContext: context,
+        onClose: () => Navigator.of(sheetContext).maybePop(),
+      ),
     ),
   );
-  overlay.insert(entry);
 }

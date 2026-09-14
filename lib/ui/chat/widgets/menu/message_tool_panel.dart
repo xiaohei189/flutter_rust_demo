@@ -44,25 +44,33 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return Material(
-      color: colors.surface,
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
-        child: _showQuickReplyPanel
-            ? QuickReplyPanel(
-                onBack: () => setState(() => _showQuickReplyPanel = false),
-                onQuickReply: (emoji) {
-                  widget.onClose();
-                  widget.actions.onQuickReply?.call(widget.message, emoji);
-                },
-              )
-            : _buildQuickPanel(context, colors),
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 顶部拖拽把手（对齐飞书稿）
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 2),
+          child: Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        Flexible(
+          child: _showQuickReplyPanel
+              ? QuickReplyPanel(
+                  onBack: () => setState(() => _showQuickReplyPanel = false),
+                  onQuickReply: (emoji) {
+                    widget.onClose();
+                    widget.actions.onQuickReply?.call(widget.message, emoji);
+                  },
+                )
+              : _buildQuickPanel(context, colors),
+        ),
+      ],
     );
   }
 
@@ -71,7 +79,9 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   /// ③ 撤回/多选 ④ 标记/Pin/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
   Widget _buildQuickPanel(BuildContext context, AppColors colors) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(
+        bottom: 12 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,7 +145,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Container(
         decoration: BoxDecoration(
-          color: context.appColors.surfaceMuted,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(12),
         ),
         clipBehavior: Clip.antiAlias,
@@ -382,7 +392,7 @@ class _MessageToolTile extends StatelessWidget {
         child: Container(
           height: 66,
           decoration: BoxDecoration(
-            color: colors.surfaceMuted,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
