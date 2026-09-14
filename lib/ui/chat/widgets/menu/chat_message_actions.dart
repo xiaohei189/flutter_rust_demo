@@ -58,9 +58,6 @@ class ChatMessageActions {
     }
   }
 
-  Future<void> sendQuickReply(ChatMessage message, String text) =>
-      sendText(text, MessageContentType.text);
-
   Future<void> revoke(ChatMessage message) async {
     final ok = await viewModel.revokeMessage(message);
     if (!ok) onError(_errorText ?? '撤回失败');

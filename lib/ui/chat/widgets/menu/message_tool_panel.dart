@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
-import 'message_action_menu.dart' show MessageActions, kMessageQuickReactions;
-import 'quick_reply_panel.dart';
+import 'message_action_menu.dart'
+    show MessageActions, kMessageQuickReactionPages;
 
 class MessageToolPanel extends StatefulWidget {
   const MessageToolPanel({
@@ -29,7 +29,9 @@ class MessageToolPanel extends StatefulWidget {
 }
 
 class MessageToolPanelState extends State<MessageToolPanel> {
-  bool _showQuickReplyPanel = false;
+  /// 表情行分页：点「⋯」切到下一组图形（就地替换，不跳页面）
+  int _reactionPage = 0;
+
   bool get _isFromMe => widget.message.sendId == widget.currentUserId;
 
   bool get _canRevoke =>
@@ -59,17 +61,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
             ),
           ),
         ),
-        Flexible(
-          child: _showQuickReplyPanel
-              ? QuickReplyPanel(
-                  onBack: () => setState(() => _showQuickReplyPanel = false),
-                  onQuickReply: (emoji) {
-                    widget.onClose();
-                    widget.actions.onQuickReply?.call(widget.message, emoji);
-                  },
-                )
-              : _buildQuickPanel(context, colors),
-        ),
+        Flexible(child: _buildQuickPanel(context, colors)),
       ],
     );
   }
@@ -110,13 +102,15 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     );
   }
 
-  /// 顶部快捷表情行：6 个表情 + 「⋯」（打开完整表情面板）
+  /// 顶部表情行：6 个图形 + 「⋯」（就地切换到下一组图形）
   Widget _buildReactionRow(AppColors colors) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
       child: Row(
         children: [
-          for (final emoji in kMessageQuickReactions)
+          for (final emoji
+              in kMessageQuickReactionPages[_reactionPage %
+                  kMessageQuickReactionPages.length])
             Expanded(
               child: _QuickReactionButton(
                 emoji: emoji,
@@ -130,8 +124,11 @@ class MessageToolPanelState extends State<MessageToolPanel> {
           Expanded(
             child: IconButton(
               icon: const Icon(Icons.more_horiz),
-              tooltip: '更多表情',
-              onPressed: () => setState(() => _showQuickReplyPanel = true),
+              tooltip: '更多图形',
+              onPressed: () => setState(
+                () => _reactionPage =
+                    (_reactionPage + 1) % kMessageQuickReactionPages.length,
+              ),
             ),
           ),
         ],

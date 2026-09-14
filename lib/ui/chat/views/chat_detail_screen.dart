@@ -458,7 +458,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onResend: _messageActions.resend,
       onPin: (message) => _messageActions.togglePin(message, context),
       onReaction: _messageActions.toggleReaction,
-      onQuickReply: _messageActions.sendQuickReply,
     );
   }
 

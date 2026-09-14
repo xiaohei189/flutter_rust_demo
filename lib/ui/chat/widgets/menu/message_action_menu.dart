@@ -14,6 +14,13 @@ const List<String> kMessageQuickReactions = [
   '🙏',
 ];
 
+/// 面板顶部表情的分页（「⋯」就地切换，展示更多图形，对齐飞书稿）
+const List<List<String>> kMessageQuickReactionPages = [
+  kMessageQuickReactions,
+  ['😮', '🥺', '😁', '😊', '👏', '🔥'],
+  ['🤝', '💪', '🥳', '😅', '😘', '😢'],
+];
+
 /// 消息操作回调
 class MessageActions {
   final void Function(ChatMessage message) onCopy;
@@ -25,7 +32,6 @@ class MessageActions {
   final void Function(ChatMessage message)? onResend;
   final void Function(ChatMessage message)? onPin;
   final void Function(ChatMessage message, String emoji)? onReaction;
-  final void Function(ChatMessage message, String text)? onQuickReply;
 
   const MessageActions({
     required this.onCopy,
@@ -37,7 +43,6 @@ class MessageActions {
     this.onResend,
     this.onPin,
     this.onReaction,
-    this.onQuickReply,
   });
 }
 
@@ -61,7 +66,8 @@ void showMessageToolPanel({
     ),
     builder: (sheetContext) => ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78,
+        // 对齐飞书稿：首次弹出约占屏幕一半高度，内容在弹层内滚动
+        maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.5,
       ),
       child: MessageToolPanel(
         message: message,
