@@ -56,6 +56,23 @@ Tests are layered; real-server suites are `#[ignore]`d and run only via scripts.
 - Unit tests live next to the code (`#[cfg(test)]`); integration suites use `*_tests.rs` naming.
 - Run `test-fast.ps1` before every commit; run contract tests after server/protocol changes.
 
+### 迭代节奏（强制，2026-09 起）
+
+功能迭代追求"改完立刻看到效果"，不要把时间花在重复的重建与全量测试上：
+
+- **默认走热更新**：`flutter run -d <device>` 常驻，Dart 改动按 `r` 热重载（约 1~3s）。
+  只有 Rust 改动、依赖/原生配置改动、或需要真机安装包时才 `flutter build apk` + `adb install`
+  （模拟器一次构建 50~100s，冷启动 3~4min）。
+- **UI/样式/文案改动不跑测试**：热重载看一眼真实渲染即可（比单测更可信），迭代期零测试开销。
+- **只有逻辑改动才跑相关单文件**：状态机/reducer/view_model/mapper/排序/发送链路这类
+  "看不出对错"的改动，跑 `flutter test test/<对应测试文件>.dart`（Rust 用
+  `cargo test --lib <模块名>`）。注意 `flutter test` 有约 5s 固定开销（起测试宿主 + 编译
+  测试内核），与用例条数基本无关，所以只挑真正相关的一两个文件。
+- **全量测试按需手动触发**：`flutter test test`（约 40s）与 `cargo test --lib`（约 1min）
+  只在用户要求、或改动涉及跨模块/协议/持久化等高风险面时执行；**不作为默认迭代步骤，
+  也不作为每次提交的前置条件**。提交信息里说明测试结论时，写清实际跑了哪些。
+- 静态检查同理：迭代中按目录跑（`flutter analyze lib/ui/chat`），全量 `flutter analyze lib test` 按需。
+
 ## Commit & Pull Request Guidelines
 
 - Commit messages follow `type: Chinese description` (e.g., `fix: 历史消息排序对齐 Go 策略`).

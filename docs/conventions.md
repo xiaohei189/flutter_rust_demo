@@ -385,3 +385,21 @@ strip = true          # 去除调试符号
 - [ ] 相关测试通过
 - [ ] 修改 Dart 模型后运行 `dart run build_runner build`
 - [ ] 修改 Rust API 后运行 `flutter_rust_bridge_codegen generate`
+
+## 迭代节奏（2026-09 起）
+
+功能迭代优先"改完立刻看到效果"，避免重复的构建与全量测试：
+
+| 改动类型 | 验证方式 | 耗时 |
+|---|---|---|
+| UI / 样式 / 文案 | `flutter run` 常驻 + 按 `r` 热重载，人眼看 | 1~3s |
+| 逻辑（状态机 / reducer / view_model / mapper / 排序 / 发送链路） | 只跑相关单文件 `flutter test test/<对应文件>.dart` | ~5s（固定开销，与用例数无关） |
+| Rust 逻辑 | `cargo test --lib <模块>` | 10~55s |
+| 全量 `flutter test test` / `cargo test --lib` | **按需手动触发**（用户要求，或跨模块/协议/持久化改动） | 40s~1min |
+
+要点：
+
+- 不要每次迭代都构建 APK（模拟器一次 50~100s，冷启动 3~4min）；只有 Rust 改动、
+  依赖/原生配置改动、或要出真机安装包时才 build + install。
+- 全量测试不作为默认迭代步骤，也不作为每次提交的前置条件。
+- 静态检查迭代中按目录跑，全量按需。
