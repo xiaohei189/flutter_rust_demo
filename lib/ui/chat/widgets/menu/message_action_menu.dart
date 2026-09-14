@@ -55,15 +55,9 @@ void showMessageToolPanel({
     barrierColor: Colors.black.withValues(alpha: 0.25),
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (sheetContext) => DraggableScrollableSheet(
-      // 首屏约占屏幕一半（对齐飞书稿），可往上拖到接近全屏
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.92,
-      expand: false,
-      snap: true,
-      snapSizes: const [0.5, 0.92],
-      builder: (contentContext, scrollController) => DecoratedBox(
+    // 关掉 modal 自带的下拉：弹层高度由面板自己管理（拖把手改高度、下拖到最小后关闭）
+    enableDrag: false,
+    builder: (sheetContext) => DecoratedBox(
         decoration: BoxDecoration(
           color: context.appColors.background,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
@@ -74,10 +68,8 @@ void showMessageToolPanel({
           actions: actions,
           reactions: reactions,
           rootContext: context,
-          scrollController: scrollController,
           onClose: () => Navigator.of(sheetContext).maybePop(),
         ),
-      ),
     ),
   );
 }

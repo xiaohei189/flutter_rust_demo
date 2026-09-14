@@ -14,7 +14,6 @@ class MessageToolPanel extends StatefulWidget {
     required this.actions,
     required this.reactions,
     required this.rootContext,
-    required this.scrollController,
     required this.onClose,
   });
 
@@ -23,10 +22,12 @@ class MessageToolPanel extends StatefulWidget {
   final MessageActions actions;
   final Set<String> reactions;
   final BuildContext rootContext;
-
-  /// 由 [DraggableScrollableSheet] 提供：弹层内容用同一个 controller 才能拖动改高度
-  final ScrollController scrollController;
   final VoidCallback onClose;
+
+  /// 首屏高度占比（对齐飞书稿：约占屏幕一半）
+  static const double initialHeightFactor = 0.5;
+  static const double minHeightFactor = 0.3;
+  static const double maxHeightFactor = 0.95;
 
   @override
   State<MessageToolPanel> createState() => MessageToolPanelState();
@@ -35,6 +36,9 @@ class MessageToolPanel extends StatefulWidget {
 class MessageToolPanelState extends State<MessageToolPanel> {
   /// 点「⋯」切换到的完整表情界面
   bool _emojiOpen = false;
+
+  /// 弹层高度占比：拖把手改它；切换内容（工具面板 ⇄ 表情界面）时保持不变
+  double _heightFactor = MessageToolPanel.initialHeightFactor;
 
   bool get _isFromMe => widget.message.sendId == widget.currentUserId;
 
@@ -50,58 +54,122 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return ListView(
-      controller: widget.scrollController,
-      padding: EdgeInsets.zero,
-      children: [
-        // 顶部拖拽把手（对齐飞书稿）
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 2),
-          child: Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: colors.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-        if (_emojiOpen)
-          ..._buildEmojiView(context, colors)
-        else
-          ..._buildMenuView(context, colors),
-        SizedBox(height: 12 + MediaQuery.paddingOf(context).bottom),
-      ],
-    );
-  }
-
-  /// 完整表情界面（点「⋯」进入）：返回条 + 表情面板，选中即作为表情回复
-  List<Widget> _buildEmojiView(BuildContext context, AppColors colors) {
-    return [
-      Row(
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    return SizedBox(
+      height: screenHeight * _heightFactor,
+      child: Column(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            tooltip: '返回工具面板',
-            onPressed: () => setState(() => _emojiOpen = false),
-          ),
-          Text(
-            '表情',
-            style: TextStyle(fontSize: 15, color: colors.textPrimary),
+          _buildSheetHeader(context, colors),
+          Expanded(
+            child: _emojiOpen
+                ? _buildEmojiView(context, colors)
+                : ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      ..._buildMenuView(context, colors),
+                      SizedBox(
+                        height: 12 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
-      Divider(height: 1, color: colors.divider),
-      SizedBox(
-        height: 300,
-        child: EmojiPanel(
-          onEmojiSelected: (emoji) {
-            widget.onClose();
-            widget.actions.onReaction?.call(widget.message, emoji);
-          },
-        ),
+    );
+  }
+
+  /// 顶部可拖区域：把手（+ 表情界面的标题栏）整体可拖动改弹层高度
+  Widget _buildSheetHeader(BuildContext context, AppColors colors) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: _onHandleDrag,
+      onVerticalDragEnd: _onHandleDragEnd,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 22,
+            alignment: Alignment.center,
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          if (_emojiOpen)
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: '返回工具面板',
+                  onPressed: _closeEmojiView,
+                ),
+                Text(
+                  '表情',
+                  style: TextStyle(fontSize: 15, color: colors.textPrimary),
+                ),
+              ],
+            ),
+        ],
       ),
+    );
+  }
+
+  /// 拖把手：按拖动位移改弹层高度（拖动结束吸附到近端档位）
+  void _onHandleDrag(DragUpdateDetails details) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    if (screenHeight <= 0) return;
+    setState(() {
+      _heightFactor = (_heightFactor - details.delta.dy / screenHeight).clamp(
+        MessageToolPanel.minHeightFactor,
+        MessageToolPanel.maxHeightFactor,
+      );
+    });
+  }
+
+  void _onHandleDragEnd(DragEndDetails details) {
+    // 已经拉到最小还继续往下拖 → 关闭面板
+    final draggingDown = (details.primaryVelocity ?? 0) > 0;
+    if (draggingDown &&
+        _heightFactor <= MessageToolPanel.minHeightFactor + 0.02) {
+      widget.onClose();
+      return;
+    }
+    // 吸附到最近档位：小窗 / 首屏一半 / 接近全屏
+    const stops = [
+      MessageToolPanel.minHeightFactor,
+      MessageToolPanel.initialHeightFactor,
+      MessageToolPanel.maxHeightFactor,
     ];
+    final target = stops.reduce(
+      (a, b) => (_heightFactor - a).abs() <= (_heightFactor - b).abs()
+          ? a
+          : b,
+    );
+    setState(() => _heightFactor = target);
+  }
+
+  /// 完整表情界面（点「⋯」进入）：返回条 + 撑满弹层的表情面板，选中即表情回复
+  Widget _buildEmojiView(BuildContext context, AppColors colors) {
+    return Column(
+      children: [
+        Divider(height: 1, color: colors.divider),
+        Expanded(
+          child: SizedBox(
+            width: double.infinity,
+            child: EmojiPanel(
+              onEmojiSelected: (emoji) {
+                widget.onClose();
+                widget.actions.onReaction?.call(widget.message, emoji);
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// 面板主体（对齐飞书稿）：
@@ -152,13 +220,19 @@ class MessageToolPanelState extends State<MessageToolPanel> {
             child: IconButton(
               icon: const Icon(Icons.more_horiz),
               tooltip: '更多表情',
-              onPressed: () => setState(() => _emojiOpen = true),
+              onPressed: _openEmojiView,
             ),
           ),
         ],
       ),
     );
   }
+
+  /// 切到完整表情界面（对齐飞书稿）：只换内容，弹层高度保持不变
+  void _openEmojiView() => setState(() => _emojiOpen = true);
+
+  /// 从表情界面返回工具面板：同样只换内容
+  void _closeEmojiView() => setState(() => _emojiOpen = false);
 
   /// 分组卡片：白底圆角 + 行间细分割线
   Widget _buildCard(List<_MessageToolAction> actions) {
