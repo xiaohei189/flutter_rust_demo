@@ -71,6 +71,9 @@ class MessageList extends StatefulWidget {
 class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
+
+  /// 分组时间头的时间间隔阈值（分钟）
+  static const int _timeHeaderGapMinutes = 5;
   List<String?> _cachedDateLabels = const [];
   String _cachedDateLabelHeadId = '';
   String _cachedDateLabelTailId = '';
@@ -175,6 +178,7 @@ class MessageListState extends State<MessageList> {
 
         final message = widget.messages[messageIndex];
         final dateLabel = dateLabels[messageIndex];
+        final timeHeader = _timeHeaderFor(widget.messages, messageIndex);
         final messageKey = _messageKeys.putIfAbsent(
           message.clientMsgId,
           () => GlobalKey(),
@@ -214,6 +218,7 @@ class MessageListState extends State<MessageList> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (dateLabel != null) _buildDateSeparator(context, dateLabel),
+            if (timeHeader != null) _buildTimeHeader(context, timeHeader),
             messageBody,
           ],
         );
@@ -347,19 +352,54 @@ class MessageListState extends State<MessageList> {
     final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: colors.textSecondary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          ),
-          child: Text(
-            dateText,
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.textSecondary.withValues(alpha: 0.6),
+      child: Row(
+        children: [
+          Expanded(child: _buildSeparatorLine(colors)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              dateText,
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.textSecondary.withValues(alpha: 0.7),
+              ),
             ),
+          ),
+          Expanded(child: _buildSeparatorLine(colors)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeparatorLine(AppColors colors) => Container(
+    height: 0.5,
+    color: colors.divider.withValues(alpha: 0.8),
+  );
+
+  /// 分组时间头：新的一天、或与上一条消息间隔 ≥ [_timeHeaderGapMinutes] 分钟时，
+  /// 在消息上方居中显示时间（对齐飞书稿，气泡下方只留状态图标）。
+  String? _timeHeaderFor(List<ChatMessage> messages, int index) {
+    final current = messages[index];
+    if (index > 0) {
+      final previous = messages[index - 1];
+      final sameDay = _isSameDate(current.sendDateTime, previous.sendDateTime);
+      final gapMinutes = current.sendDateTime
+          .difference(previous.sendDateTime)
+          .inMinutes;
+      if (sameDay && gapMinutes.abs() < _timeHeaderGapMinutes) return null;
+    }
+    return formatMessageTime(current.sendDateTime);
+  }
+
+  Widget _buildTimeHeader(BuildContext context, String timeText) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 6),
+      child: Center(
+        child: Text(
+          timeText,
+          style: TextStyle(
+            fontSize: 12,
+            color: context.appColors.textSecondary.withValues(alpha: 0.7),
           ),
         ),
       ),

@@ -113,7 +113,6 @@ class MessageBubble extends StatelessWidget {
     }
 
     final isFromMe = _isFromMe;
-    final timeText = formatMessageTime(message.sendDateTime);
     final senderUser = _buildSenderUser();
     final screenWidth = maxBubbleWidth ?? MediaQuery.sizeOf(context).width;
 
@@ -225,36 +224,17 @@ class MessageBubble extends StatelessWidget {
               ],
             ],
           ),
-          Padding(
-            padding: EdgeInsets.only(
-              left: isFromMe ? 0 : 44,
-              right: isFromMe ? 44 : 0,
-              top: 4,
+          // 时间统一由列表的「分组时间头」展示（对齐飞书稿），气泡下方只留状态图标
+          if (isFromMe)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: MessageStatusIcon(
+                message: message,
+                onRetry: onRetrySend == null
+                    ? null
+                    : () => onRetrySend!(message),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timeText,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.appColors.textSecondary.withValues(
-                      alpha: 0.8,
-                    ),
-                  ),
-                ),
-                if (isFromMe) ...[
-                  const SizedBox(width: 4),
-                  MessageStatusIcon(
-                    message: message,
-                    onRetry: onRetrySend == null
-                        ? null
-                        : () => onRetrySend!(message),
-                  ),
-                ],
-              ],
-            ),
-          ),
 
           if (isFromMe &&
               isGroupChat &&
