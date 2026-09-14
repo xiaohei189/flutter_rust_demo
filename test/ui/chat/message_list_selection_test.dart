@@ -78,7 +78,7 @@ void main() {
     // 底部弹层有入场动画，等它稳定后再断言/点击
     await tester.pumpAndSettle();
 
-    // 对齐飞书稿：表情行末尾是「更多图形」入口
+    // 对齐飞书稿：表情行末尾是「更多表情」入口（点开完整表情界面）
     expect(find.byIcon(Icons.more_horiz), findsOneWidget);
     expect(find.text('复制'), findsOneWidget);
     expect(find.text('回复'), findsOneWidget);
@@ -86,12 +86,13 @@ void main() {
     expect(find.text('删除'), findsOneWidget);
     expect(find.text('👍'), findsOneWidget);
 
-    // 点「⋯」就地切换到下一组图形（不再跳转快速回复页）
+    // 点「⋯」切换到完整表情界面（底部 Tab + 表情网格），可返回工具面板
     await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
 
-    expect(find.text('🔥'), findsOneWidget);
-    expect(find.text('👍'), findsNothing);
-    expect(find.text('回复'), findsOneWidget, reason: '切换表情不影响其它菜单项');
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    expect(find.text('表情'), findsWidgets);
+    expect(find.text('😀'), findsWidgets, reason: '展示默认表情网格');
+    expect(find.text('回复'), findsNothing, reason: '已切换到表情界面');
   });
 }

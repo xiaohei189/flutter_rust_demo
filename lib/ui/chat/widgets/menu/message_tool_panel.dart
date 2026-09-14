@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
-import 'message_action_menu.dart'
-    show MessageActions, kMessageQuickReactionPages;
+import '../composer/emoji_panel.dart' show EmojiPanel;
+import 'message_action_menu.dart' show MessageActions, kMessageQuickReactions;
 
 class MessageToolPanel extends StatefulWidget {
   const MessageToolPanel({
@@ -14,6 +14,7 @@ class MessageToolPanel extends StatefulWidget {
     required this.actions,
     required this.reactions,
     required this.rootContext,
+    required this.scrollController,
     required this.onClose,
   });
 
@@ -22,6 +23,9 @@ class MessageToolPanel extends StatefulWidget {
   final MessageActions actions;
   final Set<String> reactions;
   final BuildContext rootContext;
+
+  /// 由 [DraggableScrollableSheet] 提供：弹层内容用同一个 controller 才能拖动改高度
+  final ScrollController scrollController;
   final VoidCallback onClose;
 
   @override
@@ -29,8 +33,8 @@ class MessageToolPanel extends StatefulWidget {
 }
 
 class MessageToolPanelState extends State<MessageToolPanel> {
-  /// 表情行分页：点「⋯」切到下一组图形（就地替换，不跳页面）
-  int _reactionPage = 0;
+  /// 点「⋯」切换到的完整表情界面
+  bool _emojiOpen = false;
 
   bool get _isFromMe => widget.message.sendId == widget.currentUserId;
 
@@ -46,8 +50,9 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return ListView(
+      controller: widget.scrollController,
+      padding: EdgeInsets.zero,
       children: [
         // 顶部拖拽把手（对齐飞书稿）
         Padding(
@@ -61,56 +66,78 @@ class MessageToolPanelState extends State<MessageToolPanel> {
             ),
           ),
         ),
-        Flexible(child: _buildQuickPanel(context, colors)),
+        if (_emojiOpen)
+          ..._buildEmojiView(context, colors)
+        else
+          ..._buildMenuView(context, colors),
+        SizedBox(height: 12 + MediaQuery.paddingOf(context).bottom),
       ],
     );
+  }
+
+  /// 完整表情界面（点「⋯」进入）：返回条 + 表情面板，选中即作为表情回复
+  List<Widget> _buildEmojiView(BuildContext context, AppColors colors) {
+    return [
+      Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: '返回工具面板',
+            onPressed: () => setState(() => _emojiOpen = false),
+          ),
+          Text(
+            '表情',
+            style: TextStyle(fontSize: 15, color: colors.textPrimary),
+          ),
+        ],
+      ),
+      Divider(height: 1, color: colors.divider),
+      SizedBox(
+        height: 300,
+        child: EmojiPanel(
+          onEmojiSelected: (emoji) {
+            widget.onClose();
+            widget.actions.onReaction?.call(widget.message, emoji);
+          },
+        ),
+      ),
+    ];
   }
 
   /// 面板主体（对齐飞书稿）：
   /// ① 快捷表情行 ② 四宫格（回复/转发/创建话题/复制）
   /// ③ 撤回/多选 ④ 标记/Pin/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
-  Widget _buildQuickPanel(BuildContext context, AppColors colors) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: 12 + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildReactionRow(colors),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: [
-                for (final action in _primaryActions())
-                  Expanded(child: _MessageToolTile(action: action)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          _buildCard(_firstGroupActions()),
-          if (_secondGroupActions().isNotEmpty) ...[
-            const SizedBox(height: 8),
-            _buildCard(_secondGroupActions()),
+  List<Widget> _buildMenuView(BuildContext context, AppColors colors) {
+    return [
+      _buildReactionRow(colors),
+      const SizedBox(height: 10),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          children: [
+            for (final action in _primaryActions())
+              Expanded(child: _MessageToolTile(action: action)),
           ],
-          const SizedBox(height: 8),
-          _buildCard(_thirdGroupActions()),
-        ],
+        ),
       ),
-    );
+      const SizedBox(height: 10),
+      _buildCard(_firstGroupActions()),
+      if (_secondGroupActions().isNotEmpty) ...[
+        const SizedBox(height: 8),
+        _buildCard(_secondGroupActions()),
+      ],
+      const SizedBox(height: 8),
+      _buildCard(_thirdGroupActions()),
+    ];
   }
 
-  /// 顶部表情行：6 个图形 + 「⋯」（就地切换到下一组图形）
+  /// 顶部表情行：6 个图标 + 「⋯」（点开完整表情界面）
   Widget _buildReactionRow(AppColors colors) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
       child: Row(
         children: [
-          for (final emoji
-              in kMessageQuickReactionPages[_reactionPage %
-                  kMessageQuickReactionPages.length])
+          for (final emoji in kMessageQuickReactions)
             Expanded(
               child: _QuickReactionButton(
                 emoji: emoji,
@@ -124,11 +151,8 @@ class MessageToolPanelState extends State<MessageToolPanel> {
           Expanded(
             child: IconButton(
               icon: const Icon(Icons.more_horiz),
-              tooltip: '更多图形',
-              onPressed: () => setState(
-                () => _reactionPage =
-                    (_reactionPage + 1) % kMessageQuickReactionPages.length,
-              ),
+              tooltip: '更多表情',
+              onPressed: () => setState(() => _emojiOpen = true),
             ),
           ),
         ],

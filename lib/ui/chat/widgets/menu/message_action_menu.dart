@@ -14,13 +14,6 @@ const List<String> kMessageQuickReactions = [
   '🙏',
 ];
 
-/// 面板顶部表情的分页（「⋯」就地切换，展示更多图形，对齐飞书稿）
-const List<List<String>> kMessageQuickReactionPages = [
-  kMessageQuickReactions,
-  ['😮', '🥺', '😁', '😊', '👏', '🔥'],
-  ['🤝', '💪', '🥳', '😅', '😘', '😢'],
-];
-
 /// 消息操作回调
 class MessageActions {
   final void Function(ChatMessage message) onCopy;
@@ -47,6 +40,8 @@ class MessageActions {
 }
 
 /// 长按消息弹出的消息工具面板（底部弹层，对齐飞书稿）。
+///
+/// 弹层高度可用手往上拖（0.5 → 0.92 两档吸附），「⋯」切换到完整表情界面。
 void showMessageToolPanel({
   required BuildContext context,
   required ChatMessage message,
@@ -54,28 +49,34 @@ void showMessageToolPanel({
   required MessageActions actions,
   Set<String> reactions = const {},
 }) {
-  final colors = context.appColors;
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.25),
     isScrollControlled: true,
     useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-    ),
-    builder: (sheetContext) => ConstrainedBox(
-      constraints: BoxConstraints(
-        // 对齐飞书稿：首次弹出约占屏幕一半高度，内容在弹层内滚动
-        maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.5,
-      ),
-      child: MessageToolPanel(
-        message: message,
-        currentUserId: currentUserId,
-        actions: actions,
-        reactions: reactions,
-        rootContext: context,
-        onClose: () => Navigator.of(sheetContext).maybePop(),
+    builder: (sheetContext) => DraggableScrollableSheet(
+      // 首屏约占屏幕一半（对齐飞书稿），可往上拖到接近全屏
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.92,
+      expand: false,
+      snap: true,
+      snapSizes: const [0.5, 0.92],
+      builder: (contentContext, scrollController) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.appColors.background,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        child: MessageToolPanel(
+          message: message,
+          currentUserId: currentUserId,
+          actions: actions,
+          reactions: reactions,
+          rootContext: context,
+          scrollController: scrollController,
+          onClose: () => Navigator.of(sheetContext).maybePop(),
+        ),
       ),
     ),
   );
