@@ -140,11 +140,28 @@ class MessageBubble extends StatelessWidget {
           bottomRight: Radius.circular(isFromMe ? 4 : 18),
         ),
       ),
-      child: buildMessageContent(
-        message: message,
-        isFromMe: isFromMe,
-        uploadProgress: uploadProgress,
-        onPlayAudio: onPlayAudio,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: isFromMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          buildMessageContent(
+            message: message,
+            isFromMe: isFromMe,
+            uploadProgress: uploadProgress,
+            onPlayAudio: onPlayAudio,
+          ),
+          // 表情回复贴在气泡内（对齐飞书稿）
+          if (reactionGroups.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: MessageReactionBar(
+                groups: reactionGroups,
+                isFromMe: isFromMe,
+              ),
+            ),
+        ],
       ),
     );
 
@@ -190,10 +207,7 @@ class MessageBubble extends StatelessWidget {
                       crossAxisAlignment: isFromMe
                           ? CrossAxisAlignment.end
                           : CrossAxisAlignment.start,
-                      children: [
-                        quotePreview,
-                        _buildBubbleWithReactions(bubble, isFromMe),
-                      ],
+                      children: [quotePreview, bubble],
                     ),
                   ),
                 ),
@@ -262,23 +276,6 @@ class MessageBubble extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBubbleWithReactions(Widget bubble, bool isFromMe) {
-    if (reactionGroups.isEmpty) return bubble;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: isFromMe
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        bubble,
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: MessageReactionBar(groups: reactionGroups),
-        ),
-      ],
     );
   }
 

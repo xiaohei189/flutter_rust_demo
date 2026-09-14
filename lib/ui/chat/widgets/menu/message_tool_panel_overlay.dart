@@ -38,7 +38,10 @@ class MessageToolPanelOverlay extends StatelessWidget {
         ),
         Positioned.fill(
           child: CustomSingleChildLayout(
-            delegate: MessageToolPanelLayoutDelegate(anchor: anchor),
+            delegate: MessageToolPanelLayoutDelegate(
+              anchor: anchor,
+              topInset: MediaQuery.paddingOf(context).top,
+            ),
             child: MessageToolPanel(
               message: message,
               currentUserId: currentUserId,
@@ -55,9 +58,15 @@ class MessageToolPanelOverlay extends StatelessWidget {
 }
 
 class MessageToolPanelLayoutDelegate extends SingleChildLayoutDelegate {
-  const MessageToolPanelLayoutDelegate({required this.anchor});
+  const MessageToolPanelLayoutDelegate({
+    required this.anchor,
+    this.topInset = 0,
+  });
 
   final Rect anchor;
+
+  /// 状态栏高度：面板顶部不能钻到状态栏下面
+  final double topInset;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
@@ -70,6 +79,7 @@ class MessageToolPanelLayoutDelegate extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
+    final minTop = topInset + 8;
     final maxLeft = size.width - childSize.width - 12;
     final left = maxLeft < 12
         ? 12.0
@@ -78,13 +88,13 @@ class MessageToolPanelLayoutDelegate extends SingleChildLayoutDelegate {
               .toDouble();
     final above = anchor.top - childSize.height - 8;
     final below = anchor.bottom + 8;
-    final top = above < 8 || below + childSize.height > size.height
-        ? math.max(8.0, above)
+    final top = above < minTop || below + childSize.height > size.height
+        ? math.max(minTop, above)
         : below;
     return Offset(left, top);
   }
 
   @override
   bool shouldRelayout(covariant MessageToolPanelLayoutDelegate oldDelegate) =>
-      oldDelegate.anchor != anchor;
+      oldDelegate.anchor != anchor || oldDelegate.topInset != topInset;
 }

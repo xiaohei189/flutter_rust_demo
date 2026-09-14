@@ -77,13 +77,14 @@ void main() {
     await tester.longPress(find.text('长按消息'));
     await tester.pump();
 
-    expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
+    // 对齐飞书稿：表情行末尾是「更多表情」入口
+    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
     expect(find.text('复制'), findsOneWidget);
     expect(find.text('回复'), findsOneWidget);
     expect(find.text('转发'), findsOneWidget);
     expect(find.text('删除'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.swap_horiz));
+    await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pump();
 
     expect(find.byIcon(Icons.arrow_back), findsOneWidget);

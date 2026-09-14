@@ -3,7 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import 'message_tool_panel_overlay.dart';
 
-const List<String> kMessageQuickReactions = ['👍', '❤️', '😄', '🙏'];
+/// 消息操作面板顶部的快捷表情（对齐飞书稿：一行 6 个 + 末尾「⋯」）
+const List<String> kMessageQuickReactions = [
+  '👍',
+  '❤️',
+  '😄',
+  '🎉',
+  '😭',
+  '🙏',
+];
 
 /// 消息操作回调
 class MessageActions {

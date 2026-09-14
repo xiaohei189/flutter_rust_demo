@@ -66,118 +66,221 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     );
   }
 
+  /// 面板主体（对齐飞书稿）：
+  /// ① 快捷表情行 ② 四宫格（回复/转发/创建话题/复制）
+  /// ③ 撤回/多选 ④ 标记/Pin/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
   Widget _buildQuickPanel(BuildContext context, AppColors colors) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          children: [
-            for (final emoji in kMessageQuickReactions)
-              Expanded(
-                child: _QuickReactionButton(
-                  emoji: emoji,
-                  selected: widget.reactions.contains(emoji),
-                  onTap: () {
-                    widget.onClose();
-                    widget.actions.onReaction?.call(widget.message, emoji);
-                  },
-                ),
-              ),
-            IconButton(
-              icon: const Icon(Icons.swap_horiz),
-              tooltip: '切换快速回复',
-              onPressed: () => setState(() => _showQuickReplyPanel = true),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildReactionRow(colors),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                for (final action in _primaryActions())
+                  Expanded(child: _MessageToolTile(action: action)),
+              ],
             ),
+          ),
+          const SizedBox(height: 10),
+          _buildCard(_firstGroupActions()),
+          if (_secondGroupActions().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildCard(_secondGroupActions()),
           ],
-        ),
-        Divider(height: 1, color: colors.divider),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
-          child: Wrap(spacing: 8, runSpacing: 10, children: _buildActions()),
-        ),
-      ],
+          const SizedBox(height: 8),
+          _buildCard(_thirdGroupActions()),
+        ],
+      ),
     );
   }
 
-  List<Widget> _buildActions() {
-    final actions = <_MessageToolAction>[
-      _MessageToolAction(
-        icon: Icons.copy_rounded,
-        label: '复制',
-        onTap: () => _runAction(widget.actions.onCopy),
-      ),
-      _MessageToolAction(
-        icon: Icons.reply_rounded,
-        label: '回复',
-        onTap: () => _runAction(widget.actions.onQuote),
-      ),
-      _MessageToolAction(
-        icon: Icons.forward_rounded,
-        label: '转发',
-        onTap: () => _runAction(widget.actions.onForward),
-      ),
-    ];
-
-    if (widget.actions.onPin != null) {
-      actions.add(
-        _MessageToolAction(
-          icon: Icons.push_pin_outlined,
-          label: '置顶',
-          onTap: () {
-            widget.onClose();
-            widget.actions.onPin!(widget.message);
-          },
-        ),
-      );
-    }
-
-    if (widget.actions.onMultiSelect != null) {
-      actions.add(
-        _MessageToolAction(
-          icon: Icons.library_add_check_outlined,
-          label: '多选',
-          onTap: () {
-            widget.onClose();
-            widget.actions.onMultiSelect!();
-          },
-        ),
-      );
-    }
-
-    if (_canRevoke) {
-      actions.add(
-        _MessageToolAction(
-          icon: Icons.undo_rounded,
-          label: '撤回',
-          onTap: () => _runAction(widget.actions.onRevoke),
-        ),
-      );
-    }
-
-    if (_isFromMe &&
-        widget.message.status == 3 &&
-        widget.actions.onResend != null) {
-      actions.add(
-        _MessageToolAction(
-          icon: Icons.refresh_rounded,
-          label: '重发',
-          onTap: () => _runAction(widget.actions.onResend!),
-        ),
-      );
-    }
-
-    actions.add(
-      _MessageToolAction(
-        icon: Icons.delete_outline_rounded,
-        label: '删除',
-        isDestructive: true,
-        onTap: _confirmDelete,
+  /// 顶部快捷表情行：6 个表情 + 「⋯」（打开完整表情面板）
+  Widget _buildReactionRow(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 0),
+      child: Row(
+        children: [
+          for (final emoji in kMessageQuickReactions)
+            Expanded(
+              child: _QuickReactionButton(
+                emoji: emoji,
+                selected: widget.reactions.contains(emoji),
+                onTap: () {
+                  widget.onClose();
+                  widget.actions.onReaction?.call(widget.message, emoji);
+                },
+              ),
+            ),
+          Expanded(
+            child: IconButton(
+              icon: const Icon(Icons.more_horiz),
+              tooltip: '更多表情',
+              onPressed: () => setState(() => _showQuickReplyPanel = true),
+            ),
+          ),
+        ],
       ),
     );
+  }
 
-    return actions
-        .map((action) => _MessageToolTile(action: action, onTap: action.onTap))
-        .toList();
+  /// 分组卡片：白底圆角 + 行间细分割线
+  Widget _buildCard(List<_MessageToolAction> actions) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.appColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < actions.length; i++) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  indent: 14,
+                  endIndent: 14,
+                  color: context.appColors.divider.withValues(alpha: 0.6),
+                ),
+              _MessageToolRow(action: actions[i]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 四宫格：回复 / 转发 / 创建话题 / 复制（稿子里的第一组）
+  List<_MessageToolAction> _primaryActions() => [
+    _MessageToolAction(
+      icon: Icons.reply_rounded,
+      label: '回复',
+      onTap: () => _runAction(widget.actions.onQuote),
+    ),
+    _MessageToolAction(
+      icon: Icons.forward_rounded,
+      label: '转发',
+      onTap: () => _runAction(widget.actions.onForward),
+    ),
+    _MessageToolAction(
+      icon: Icons.chat_bubble_outline,
+      label: '创建话题',
+      onTap: () => _runAction((_) => _notSupported('创建话题')),
+    ),
+    _MessageToolAction(
+      icon: Icons.copy_rounded,
+      label: '复制',
+      onTap: () => _runAction(widget.actions.onCopy),
+    ),
+  ];
+
+  /// 撤回（不可撤回时置灰）+ 多选（+ 失败消息的重发）
+  List<_MessageToolAction> _firstGroupActions() => [
+    _MessageToolAction(
+      icon: Icons.undo_rounded,
+      label: '撤回',
+      enabled: _canRevoke,
+      onTap: () => _runAction(widget.actions.onRevoke),
+    ),
+    if (widget.actions.onMultiSelect != null)
+      _MessageToolAction(
+        icon: Icons.library_add_check_outlined,
+        label: '多选',
+        onTap: () {
+          widget.onClose();
+          widget.actions.onMultiSelect!();
+        },
+      ),
+    if (_isFromMe &&
+        widget.message.status == 3 &&
+        widget.actions.onResend != null)
+      _MessageToolAction(
+        icon: Icons.refresh_rounded,
+        label: '重发',
+        onTap: () => _runAction(widget.actions.onResend!),
+      ),
+  ];
+
+  /// 标记 / Pin / 置顶消息 / 复制消息链接 / 翻译 / 飞书内搜索 / 网页搜索 / 删除
+  List<_MessageToolAction> _secondGroupActions() => [
+    _MessageToolAction(
+      icon: Icons.flag_outlined,
+      label: '标记',
+      onTap: () => _runAction((_) => _notSupported('标记')),
+    ),
+    _MessageToolAction(
+      icon: Icons.push_pin_outlined,
+      label: 'Pin',
+      onTap: () => _runAction((_) => _notSupported('Pin')),
+    ),
+    if (widget.actions.onPin != null)
+      _MessageToolAction(
+        icon: Icons.vertical_align_top_rounded,
+        label: '置顶消息',
+        onTap: () {
+          widget.onClose();
+          widget.actions.onPin!(widget.message);
+        },
+      ),
+    _MessageToolAction(
+      icon: Icons.link,
+      label: '复制消息链接',
+      onTap: () => _runAction((_) => _notSupported('复制消息链接')),
+    ),
+    _MessageToolAction(
+      icon: Icons.translate,
+      label: '翻译',
+      onTap: () => _runAction((_) => _notSupported('翻译')),
+    ),
+    _MessageToolAction(
+      icon: Icons.search,
+      label: '飞书内搜索',
+      onTap: () => _runAction((_) => _notSupported('飞书内搜索')),
+    ),
+    _MessageToolAction(
+      icon: Icons.public,
+      label: '网页搜索',
+      onTap: () => _runAction((_) => _notSupported('网页搜索')),
+    ),
+    _MessageToolAction(
+      icon: Icons.delete_outline_rounded,
+      label: '删除',
+      isDestructive: true,
+      onTap: _confirmDelete,
+    ),
+  ];
+
+  /// 添加任务 / 导出到文档
+  List<_MessageToolAction> _thirdGroupActions() => [
+    _MessageToolAction(
+      icon: Icons.done_all_rounded,
+      label: '添加任务',
+      onTap: () => _runAction((_) => _notSupported('添加任务')),
+    ),
+    _MessageToolAction(
+      icon: Icons.description_outlined,
+      label: '导出到文档',
+      onTap: () => _runAction((_) => _notSupported('导出到文档')),
+    ),
+  ];
+
+  /// 未开放功能占位提示（与设置页一致）
+  void _notSupported(String label) {
+    ScaffoldMessenger.of(widget.rootContext).showSnackBar(
+      SnackBar(
+        content: Text('「$label」暂未开放'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   void _runAction(void Function(ChatMessage message) action) {
@@ -247,37 +350,83 @@ class _MessageToolAction {
   final String label;
   final VoidCallback onTap;
   final bool isDestructive;
+  final bool enabled;
 
   const _MessageToolAction({
     required this.icon,
     required this.label,
     required this.onTap,
     this.isDestructive = false,
+    this.enabled = true,
   });
 }
 
 class _MessageToolTile extends StatelessWidget {
-  const _MessageToolTile({required this.action, required this.onTap});
+  const _MessageToolTile({required this.action});
 
   final _MessageToolAction action;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final color = action.isDestructive ? colors.danger : colors.textPrimary;
-    return SizedBox(
-      width: 76,
-      height: 62,
+    final color = !action.enabled
+        ? colors.textSecondary.withValues(alpha: 0.5)
+        : action.isDestructive
+        ? colors.danger
+        : colors.textPrimary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        onTap: action.enabled ? action.onTap : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 66,
+          decoration: BoxDecoration(
+            color: colors.surfaceMuted,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(action.icon, size: 22, color: color),
+              const SizedBox(height: 6),
+              Text(
+                action.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分组卡片里的一行：图标 + 文案（左对齐，整行可点；不可用时置灰）
+class _MessageToolRow extends StatelessWidget {
+  const _MessageToolRow({required this.action});
+
+  final _MessageToolAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final color = !action.enabled
+        ? colors.textSecondary.withValues(alpha: 0.5)
+        : action.isDestructive
+        ? colors.danger
+        : colors.textPrimary;
+    return InkWell(
+      onTap: action.enabled ? action.onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(
           children: [
-            Icon(action.icon, size: 22, color: color),
-            const SizedBox(height: 5),
-            Text(action.label, style: TextStyle(fontSize: 12, color: color)),
+            Icon(action.icon, size: 20, color: color),
+            const SizedBox(width: 12),
+            Text(action.label, style: TextStyle(fontSize: 15, color: color)),
           ],
         ),
       ),
