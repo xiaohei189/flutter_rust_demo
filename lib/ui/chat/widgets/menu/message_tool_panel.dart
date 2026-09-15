@@ -57,25 +57,36 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final targetHeight = screenHeight * _heightFactor;
     if (_emojiOpen) {
-      // 表情界面：撑满当前弹层高度（网格内部自己滚动），拖动即多露几行
+      // 表情界面：撑满当前弹层高度；首屏不滚动——拖动直接升抽屉，
+      // 只有抽屉升到顶（0.95）后才允许内部滚动看更多表情。
+      final atTop =
+          _heightFactor >= MessageToolPanel.maxHeightFactor - 0.001;
       return SizedBox(
         height: targetHeight,
-        child: Column(
-          children: [
-            _buildSheetHeader(context, colors),
-            Expanded(
-              child: EmojiPanel(
-                maxHeight: double.infinity,
-                // 对齐飞书稿：长按菜单里的表情面板只留内容（无标题栏/Tab 栏）
-                showTabBar: false,
-                backgroundColor: colors.background,
-                onEmojiSelected: (emoji) {
-                  widget.onClose();
-                  widget.actions.onReaction?.call(widget.message, emoji);
-                },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragUpdate: _onHandleDrag,
+          onVerticalDragEnd: _onHandleDragEnd,
+          child: Column(
+            children: [
+              _buildSheetHeader(context, colors),
+              Expanded(
+                child: EmojiPanel(
+                  maxHeight: double.infinity,
+                  // 对齐飞书稿：长按菜单里的表情面板只留内容（无标题栏/Tab 栏）
+                  showTabBar: false,
+                  backgroundColor: colors.background,
+                  scrollPhysics: atTop
+                      ? null
+                      : const NeverScrollableScrollPhysics(),
+                  onEmojiSelected: (emoji) {
+                    widget.onClose();
+                    widget.actions.onReaction?.call(widget.message, emoji);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }

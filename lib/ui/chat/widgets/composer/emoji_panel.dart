@@ -18,6 +18,7 @@ class EmojiPanel extends StatefulWidget {
     this.maxHeight = 300,
     this.showTabBar = true,
     this.backgroundColor,
+    this.scrollPhysics,
   });
 
   final ValueChanged<String> onEmojiSelected;
@@ -34,6 +35,9 @@ class EmojiPanel extends StatefulWidget {
 
   /// 面板底色；为空时用默认的附件面板底色
   final Color? backgroundColor;
+
+  /// 内部滚动行为；长按弹层里在抽屉升到顶之前禁用内部滚动（拖动即升抽屉）
+  final ScrollPhysics? scrollPhysics;
 
   /// 默认表情列表（Unicode Emoji）
   static const List<String> defaultEmojis = [
@@ -233,6 +237,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
   }) {
     final colors = context.appColors;
     return SingleChildScrollView(
+      physics: widget.scrollPhysics,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,6 +339,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
   Widget _buildEmojiSections(BuildContext context) {
     final colors = context.appColors;
     return SingleChildScrollView(
+      physics: widget.scrollPhysics,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
