@@ -36,6 +36,9 @@ void main() {
     ex: '',
   );
 
+  /// 面板里点表情时收到的 emoji（验证「选中即表情回复」）
+  final reacted = <String>[];
+
   Widget host() => MaterialApp(
     home: Scaffold(
       body: SizedBox(
@@ -52,7 +55,7 @@ void main() {
             onDelete: (_) {},
             onForward: (_) {},
             onQuote: (_) {},
-            onReaction: (_, _) {},
+            onReaction: (_, emoji) => reacted.add(emoji),
           ),
         ),
       ),
@@ -111,15 +114,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.arrow_back), findsOneWidget, reason: '进入表情界面');
-    expect(find.text('表情'), findsWidgets);
+    // 对齐飞书稿：长按菜单里的表情面板只有内容（无标题栏/返回箭头/Tab 栏）
+    expect(find.text('默认表情'), findsOneWidget, reason: '进入表情界面');
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
     expect(panelHeight(tester), closeTo(beforeSwitch, 1), reason: '切换不改高度');
 
-    // 返回工具面板同样不改高度
-    await tester.tap(find.byIcon(Icons.arrow_back));
+    // 点表情即作为表情回复（host 注入的回调收到该 emoji），并关闭面板
+    await tester.tap(find.text('😀').first);
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.more_horiz), findsOneWidget);
-    expect(panelHeight(tester), closeTo(beforeSwitch, 1));
+    expect(reacted, contains('😀'));
   });
 
   testWidgets('高屏机型：往上拖只到内容露完为止，底部不留空白', (tester) async {

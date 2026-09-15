@@ -63,10 +63,12 @@ class MessageToolPanelState extends State<MessageToolPanel> {
         child: Column(
           children: [
             _buildSheetHeader(context, colors),
-            Divider(height: 1, color: colors.divider),
             Expanded(
               child: EmojiPanel(
                 maxHeight: double.infinity,
+                // 对齐飞书稿：长按菜单里的表情面板只留内容（无标题栏/Tab 栏）
+                showTabBar: false,
+                backgroundColor: colors.background,
                 onEmojiSelected: (emoji) {
                   widget.onClose();
                   widget.actions.onReaction?.call(widget.message, emoji);
@@ -128,20 +130,6 @@ class MessageToolPanelState extends State<MessageToolPanel> {
               ),
             ),
           ),
-          if (_emojiOpen)
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: '返回工具面板',
-                  onPressed: _closeEmojiView,
-                ),
-                Text(
-                  '表情',
-                  style: TextStyle(fontSize: 15, color: colors.textPrimary),
-                ),
-              ],
-            ),
         ],
       ),
     );
@@ -239,9 +227,6 @@ class MessageToolPanelState extends State<MessageToolPanel> {
 
   /// 切到完整表情界面（对齐飞书稿）：只换内容，弹层高度保持不变
   void _openEmojiView() => setState(() => _emojiOpen = true);
-
-  /// 从表情界面返回工具面板：同样只换内容
-  void _closeEmojiView() => setState(() => _emojiOpen = false);
 
   /// 分组卡片：白底圆角 + 行间细分割线
   Widget _buildCard(List<_MessageToolAction> actions) {

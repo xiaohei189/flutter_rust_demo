@@ -17,18 +17,22 @@ class MessageReactionGroup {
 }
 
 /// 消息反应展示（对齐飞书稿）：按「人」展开，一个小胶囊 = 表情 + 昵称，
-/// 多个胶囊自动换行；气泡内展示，底色跟随气泡深浅。
+/// 多个胶囊自动换行；胶囊底色 = 所在气泡加深/加饱和一档（非白色叠加）。
 class MessageReactionBar extends StatelessWidget {
   const MessageReactionBar({
     super.key,
     required this.groups,
     this.isFromMe = false,
+    this.bubbleColor,
   });
 
   final List<MessageReactionGroup> groups;
 
   /// 是否是自己的消息（决定胶囊底色 / 文字颜色）
   final bool isFromMe;
+
+  /// 所在气泡底色；为空时按自己/对方取默认值
+  final Color? bubbleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +52,7 @@ class MessageReactionBar extends StatelessWidget {
           emoji: group.emoji,
           name: group.count > 1 ? '+${group.count}' : null,
           isFromMe: isFromMe,
+          bubbleColor: bubbleColor,
           tooltip: '${group.count} 人',
         ),
       ];
@@ -58,6 +63,7 @@ class MessageReactionBar extends StatelessWidget {
           emoji: group.emoji,
           name: name,
           isFromMe: isFromMe,
+          bubbleColor: bubbleColor,
           tooltip: '$name 回复了 ${group.emoji}',
         ),
     ];
@@ -68,6 +74,7 @@ class _ReactionChip extends StatelessWidget {
   const _ReactionChip({
     required this.emoji,
     required this.isFromMe,
+    required this.bubbleColor,
     this.name,
     this.tooltip,
   });
@@ -75,16 +82,18 @@ class _ReactionChip extends StatelessWidget {
   final String emoji;
   final String? name;
   final bool isFromMe;
+  final Color? bubbleColor;
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    // 自己气泡是饱和主色 → 半透明白底 + 白字；对方气泡浅色 → 白底 + 深字
+    // 对齐飞书稿：胶囊 = 气泡色叠加主色（浅色气泡更蓝一档、饱和蓝气泡更深一档）
     final textColor = isFromMe ? Colors.white : colors.bubbleOtherText;
-    final chipColor = isFromMe
-        ? Colors.white.withValues(alpha: 0.22)
-        : Colors.white.withValues(alpha: 0.6);
+    final chipColor = Color.alphaBlend(
+      colors.primary.withValues(alpha: isFromMe ? 0.18 : 0.07),
+      bubbleColor ?? (isFromMe ? colors.bubbleMine : colors.bubbleOther),
+    );
     return Tooltip(
       message: tooltip ?? emoji,
       child: Container(

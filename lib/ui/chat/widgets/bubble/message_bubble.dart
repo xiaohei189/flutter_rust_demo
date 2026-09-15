@@ -121,6 +121,14 @@ class MessageBubble extends StatelessWidget {
         message.messageType == MessageType.image ||
         message.messageType == MessageType.merge;
 
+    // 对齐飞书稿：对方气泡在单聊用浅蓝、群聊用浅灰
+    final otherBubbleColor = message.sessionType == 1
+        ? context.appColors.bubbleOtherSingleChat
+        : context.appColors.bubbleOther;
+    final bubbleColor = isFromMe
+        ? context.appColors.bubbleMine
+        : otherBubbleColor;
+
     final bubble = Container(
       constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
       padding: isPlainContent
@@ -129,9 +137,7 @@ class MessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPlainContent
             ? Colors.transparent
-            : (isFromMe
-                  ? context.appColors.bubbleMine
-                  : context.appColors.bubbleOther),
+            : bubbleColor,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -158,6 +164,7 @@ class MessageBubble extends StatelessWidget {
               child: MessageReactionBar(
                 groups: reactionGroups,
                 isFromMe: isFromMe,
+                bubbleColor: bubbleColor,
               ),
             ),
         ],

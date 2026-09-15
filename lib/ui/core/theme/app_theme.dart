@@ -11,6 +11,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color primary;
   final Color bubbleMine;
   final Color bubbleOther;
+  /// 对方气泡（单聊）：对齐飞书稿的浅蓝
+  final Color bubbleOtherSingleChat;
   final Color bubbleOtherText;
   final Color danger;
   final Color warning;
@@ -32,6 +34,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.primary,
     required this.bubbleMine,
     required this.bubbleOther,
+    required this.bubbleOtherSingleChat,
     required this.bubbleOtherText,
     required this.danger,
     required this.warning,
@@ -53,7 +56,9 @@ class AppColors extends ThemeExtension<AppColors> {
     divider: Color(0xFFE5E5EA),
     primary: Color(0xFF007AFF),
     bubbleMine: Color(0xFF007AFF),
-    bubbleOther: Color(0xFFE5E5EA),
+    // 对齐飞书稿：群聊对方气泡浅灰 #F2F3F5、单聊浅蓝 #D2E3FF
+    bubbleOther: Color(0xFFF2F3F5),
+    bubbleOtherSingleChat: Color(0xFFD2E3FF),
     bubbleOtherText: Color(0xFF1A1A1A),
     danger: Color(0xFFFF3B30),
     warning: Color(0xFFFF9500),
@@ -76,6 +81,7 @@ class AppColors extends ThemeExtension<AppColors> {
     primary: Color(0xFF4C9EFF),
     bubbleMine: Color(0xFF0A84FF),
     bubbleOther: Color(0xFF2C2C2E),
+    bubbleOtherSingleChat: Color(0xFF2B3A55),
     bubbleOtherText: Color(0xFFF2F2F7),
     danger: Color(0xFFFF453A),
     warning: Color(0xFFFF9F0A),
@@ -99,6 +105,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? primary,
     Color? bubbleMine,
     Color? bubbleOther,
+    Color? bubbleOtherSingleChat,
     Color? bubbleOtherText,
     Color? danger,
     Color? warning,
@@ -120,6 +127,8 @@ class AppColors extends ThemeExtension<AppColors> {
       primary: primary ?? this.primary,
       bubbleMine: bubbleMine ?? this.bubbleMine,
       bubbleOther: bubbleOther ?? this.bubbleOther,
+      bubbleOtherSingleChat:
+          bubbleOtherSingleChat ?? this.bubbleOtherSingleChat,
       bubbleOtherText: bubbleOtherText ?? this.bubbleOtherText,
       danger: danger ?? this.danger,
       warning: warning ?? this.warning,
@@ -146,6 +155,11 @@ class AppColors extends ThemeExtension<AppColors> {
       primary: Color.lerp(primary, other.primary, t)!,
       bubbleMine: Color.lerp(bubbleMine, other.bubbleMine, t)!,
       bubbleOther: Color.lerp(bubbleOther, other.bubbleOther, t)!,
+      bubbleOtherSingleChat: Color.lerp(
+        bubbleOtherSingleChat,
+        other.bubbleOtherSingleChat,
+        t,
+      )!,
       bubbleOtherText: Color.lerp(bubbleOtherText, other.bubbleOtherText, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
       warning: Color.lerp(warning, other.warning, t)!,

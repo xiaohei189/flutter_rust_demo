@@ -16,6 +16,8 @@ class EmojiPanel extends StatefulWidget {
     this.onGifSelected,
     this.onBackspace,
     this.maxHeight = 300,
+    this.showTabBar = true,
+    this.backgroundColor,
   });
 
   final ValueChanged<String> onEmojiSelected;
@@ -26,6 +28,12 @@ class EmojiPanel extends StatefulWidget {
 
   /// 面板最大高度（默认 300；放进可拖高弹层时传更大值以撑满可用空间）
   final double maxHeight;
+
+  /// 是否显示底部 Tab 栏（表情/收藏/GIF）；长按菜单里的表情面板不显示
+  final bool showTabBar;
+
+  /// 面板底色；为空时用默认的附件面板底色
+  final Color? backgroundColor;
 
   /// 默认表情列表（Unicode Emoji）
   static const List<String> defaultEmojis = [
@@ -180,14 +188,15 @@ class _EmojiPanelState extends State<EmojiPanel> {
     return Container(
       constraints: BoxConstraints(maxHeight: widget.maxHeight),
       decoration: BoxDecoration(
-        color: colors.attachmentBackground,
+        color: widget.backgroundColor ?? colors.attachmentBackground,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(child: _buildContent(context)),
-          // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
-          _buildBottomBar(context),
+          if (widget.showTabBar)
+            // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
+            _buildBottomBar(context),
         ],
       ),
     );
