@@ -121,4 +121,26 @@ void main() {
     expect(find.byIcon(Icons.more_horiz), findsOneWidget);
     expect(panelHeight(tester), closeTo(beforeSwitch, 1));
   });
+
+  testWidgets('高屏机型：往上拖只到内容露完为止，底部不留空白', (tester) async {
+    // 模拟更高的屏幕（逻辑 600x1200）：菜单内容比最大拖拽高度矮
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    await openPanel(tester);
+    await dragHandle(tester, -600); // 尽量往上拖
+
+    final screen = screenHeight(tester);
+    final header = tester
+        .getSize(find.byKey(const ValueKey('message_tool_sheet_header')))
+        .height;
+    final content = tester
+        .getSize(find.byKey(const ValueKey('message_tool_menu_content')))
+        .height;
+
+    // 抽屉式高度：弹层 = 头部 + 内容（没有被拉伸，也就没有空白）
+    expect(panelHeight(tester), closeTo(header + content, 1));
+    expect(panelHeight(tester), lessThan(screen * 0.95));
+  });
 }

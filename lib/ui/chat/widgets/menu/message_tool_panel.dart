@@ -55,23 +55,51 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final screenHeight = MediaQuery.sizeOf(context).height;
-    return SizedBox(
-      height: screenHeight * _heightFactor,
+    final targetHeight = screenHeight * _heightFactor;
+    if (_emojiOpen) {
+      // 表情界面：撑满当前弹层高度（网格内部自己滚动），拖动即多露几行
+      return SizedBox(
+        height: targetHeight,
+        child: Column(
+          children: [
+            _buildSheetHeader(context, colors),
+            Divider(height: 1, color: colors.divider),
+            Expanded(
+              child: EmojiPanel(
+                maxHeight: double.infinity,
+                onEmojiSelected: (emoji) {
+                  widget.onClose();
+                  widget.actions.onReaction?.call(widget.message, emoji);
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 工具面板：抽屉式高度——内容多高就多高，只有内容超过目标高度时才滚动，
+    // 因此往上拖到内容刚好露完为止，底部不会留空白。
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: targetHeight),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildSheetHeader(context, colors),
-          Expanded(
-            child: _emojiOpen
-                ? _buildEmojiView(context, colors)
-                : ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      ..._buildMenuView(context, colors),
-                      SizedBox(
-                        height: 12 + MediaQuery.paddingOf(context).bottom,
-                      ),
-                    ],
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.zero,
+              child: Column(
+                key: const ValueKey('message_tool_menu_content'),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ..._buildMenuView(context, colors),
+                  SizedBox(
+                    height: 12 + MediaQuery.paddingOf(context).bottom,
                   ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -81,6 +109,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   /// 顶部可拖区域：把手（+ 表情界面的标题栏）整体可拖动改弹层高度
   Widget _buildSheetHeader(BuildContext context, AppColors colors) {
     return GestureDetector(
+      key: const ValueKey('message_tool_sheet_header'),
       behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: _onHandleDrag,
       onVerticalDragEnd: _onHandleDragEnd,
@@ -150,26 +179,6 @@ class MessageToolPanelState extends State<MessageToolPanel> {
           : b,
     );
     setState(() => _heightFactor = target);
-  }
-
-  /// 完整表情界面（点「⋯」进入）：返回条 + 撑满弹层的表情面板，选中即表情回复
-  Widget _buildEmojiView(BuildContext context, AppColors colors) {
-    return Column(
-      children: [
-        Divider(height: 1, color: colors.divider),
-        Expanded(
-          child: SizedBox(
-            width: double.infinity,
-            child: EmojiPanel(
-              onEmojiSelected: (emoji) {
-                widget.onClose();
-                widget.actions.onReaction?.call(widget.message, emoji);
-              },
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   /// 面板主体（对齐飞书稿）：

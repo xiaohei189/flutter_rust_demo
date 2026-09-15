@@ -15,6 +15,7 @@ class EmojiPanel extends StatefulWidget {
     required this.onEmojiSelected,
     this.onGifSelected,
     this.onBackspace,
+    this.maxHeight = 300,
   });
 
   final ValueChanged<String> onEmojiSelected;
@@ -22,6 +23,9 @@ class EmojiPanel extends StatefulWidget {
 
   /// 底部退格：删除输入框光标前一个字符（对齐飞书稿的 ⌫）
   final VoidCallback? onBackspace;
+
+  /// 面板最大高度（默认 300；放进可拖高弹层时传更大值以撑满可用空间）
+  final double maxHeight;
 
   /// 默认表情列表（Unicode Emoji）
   static const List<String> defaultEmojis = [
@@ -174,7 +178,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
-      constraints: const BoxConstraints(maxHeight: 300),
+      constraints: BoxConstraints(maxHeight: widget.maxHeight),
       decoration: BoxDecoration(
         color: colors.attachmentBackground,
       ),
