@@ -213,27 +213,20 @@ class _EmojiPanelState extends State<EmojiPanel> {
 
   /// 正文容器。
   ///
-  /// 有限高度（输入区的 300）用固定高 [SizedBox]，让每个 Tab 正文高度一致；
-  /// 无限高度（长按工具面板的抽屉）必须用 [Flexible] 给滚动视图**有界**约束，
-  /// 否则 `CustomScrollView` 会抛 "Vertical viewport was given unbounded height"。
-  Widget _buildBody(BuildContext context) {
-    final fixedHeight = _fixedBodyHeight;
-    if (fixedHeight == null) {
-      return Flexible(child: _buildContent(context));
-    }
-    return SizedBox(height: fixedHeight, child: _buildContent(context));
-  }
-
-  /// 底部 Tab 栏高度（与 [_buildBottomBar] 的实现保持一致）。
-  static const double _bottomBarHeight = 48;
-
-  /// 面板正文的固定高度 = 面板整体上限 - Tab 栏。
+  /// 两种情况都用 [Flexible]，差别只在 fit：
+  /// - 有限高度（输入区 300）：`FlexFit.tight` 吃满「上限 - Tab 栏」，
+  ///   于是每个 Tab 正文高度一致（切 Tab 不改变面板高度），且恰好等于上限、不会溢出；
+  /// - 无限高度（长按工具面板的抽屉）：`FlexFit.loose` 按内容自适应，
+  ///   同时给内部滚动视图**有界**约束，避免
+  ///   "Vertical viewport was given unbounded height"。
   ///
-  /// 有限上限（输入区的 300）时让每个 Tab 正文高度一致，切 Tab 不再改变面板高度；
-  /// `double.infinity`（长按工具面板的抽屉）时返回 null，保持由外层约束驱动。
-  double? get _fixedBodyHeight {
-    if (!widget.maxHeight.isFinite) return null;
-    return widget.maxHeight - (widget.showTabBar ? _bottomBarHeight : 0);
+  /// 不用「上限 - 48」这种算出来的固定高度：它与系统换算出的 Tab 栏真实高度不一定相等，
+  /// 多出的部分会直接变成 RenderFlex overflow（真机上报过 74px 溢出）。
+  Widget _buildBody(BuildContext context) {
+    return Flexible(
+      fit: widget.maxHeight.isFinite ? FlexFit.tight : FlexFit.loose,
+      child: _buildContent(context),
+    );
   }
 
   Widget _buildContent(BuildContext context) {
