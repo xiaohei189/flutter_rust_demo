@@ -106,4 +106,43 @@ void main() {
       reason: '输入行应落在面板上沿之上（不遮挡面板）',
     );
   });
+
+  // 覆盖多种键盘高度：比面板矮 / 与面板等高 / 比面板高。
+  // 断言的是「输入行永远在键盘之上」「面板永远贴屏幕底部」这两条不变量，
+  // 不依赖任何具体机型或键盘高度值 —— 实现侧也只使用注入的实测值。
+  for (final keyboardHeight in <double>[0, 200, 300, 380]) {
+    testWidgets('键盘高度 ${keyboardHeight.toInt()} 时不变量成立（多机型通用）', (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      useFixedView(tester);
+
+      await tester.pumpWidget(host(controller, keyboardHeight));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('表情'));
+      await tester.pumpAndSettle();
+
+      final keyboardTop = screenHeight - keyboardHeight;
+      final panelRect = tester.getRect(find.byType(EmojiPanel));
+      final inputRowRect = tester.getRect(find.byType(ChatInputField));
+
+      expect(
+        inputRowRect.bottom,
+        lessThanOrEqualTo(keyboardTop + 1),
+        reason: '输入行必须始终在键盘之上（kbd=$keyboardHeight）',
+      );
+      expect(
+        panelRect.bottom,
+        closeTo(screenHeight, 1),
+        reason: '面板必须始终锚定屏幕底部（kbd=$keyboardHeight）',
+      );
+      // 键盘不高于面板时，面板全部落在键盘上沿以下（被键盘覆盖）。
+      if (keyboardHeight >= 300) {
+        expect(
+          panelRect.top,
+          greaterThanOrEqualTo(keyboardTop - 1),
+          reason: '键盘不低于面板时，面板应完全落在覆盖区内（kbd=$keyboardHeight）',
+        );
+      }
+    });
+  }
 }

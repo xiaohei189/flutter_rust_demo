@@ -482,6 +482,15 @@ class _ChatInputState extends State<ChatInput> {
                 ],
               ),
             ),
+            // 键盘比面板高的差额放在「输入行」与「面板」之间：
+            // 这样差额把输入行顶到键盘上沿的同时，**面板仍贴在屏幕底部**被键盘覆盖。
+            // 若放在面板之后，差额会把面板一起顶高（键盘高于面板时可见位移）。
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: SizedBox(height: keyboardGap, width: double.infinity),
+            ),
             // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
             // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
             Flexible(
@@ -511,14 +520,6 @@ class _ChatInputState extends State<ChatInput> {
                   ],
                 ),
               ),
-            ),
-            // 键盘比面板高的差额：把输入行顶到键盘上沿，面板留在原地被覆盖。
-            // 收起键盘时归零，不占任何空间。
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: SizedBox(height: keyboardGap, width: double.infinity),
             ),
           ],
         ),
