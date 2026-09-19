@@ -153,6 +153,27 @@ void main() {
     );
   });
 
+  // 飞书实机录屏测得的关键性质：键盘从下往上升起时，**消息内容一像素都不移动**，
+  // 键盘直接盖在列表之上。这一条如果失败，说明列表还在为键盘让位。
+  testWidgets('键盘弹出时消息内容不位移（键盘盖在列表之上）', (tester) async {
+    useFixedView(tester);
+    const keyboardHeight = 300.0;
+
+    await tester.pumpWidget(host(serviceWithMessages(), 0));
+    // 等输入区实测高度回填（异步 post-frame）稳定后再取样，避免把回填过程当成位移。
+    await tester.pumpAndSettle();
+    final before = tester.getRect(find.text('第一条'));
+
+    await tester.pumpWidget(host(serviceWithMessages(), keyboardHeight));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.text('第一条')),
+      before,
+      reason: '键盘弹出不应让消息内容位移（对齐飞书：键盘盖在列表之上）',
+    );
+  });
+
   testWidgets('展开表情面板只影响底部：顶栏与消息列表顶部位置不变', (tester) async {
     useFixedView(tester);
 

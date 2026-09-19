@@ -45,9 +45,10 @@ class ChatInput extends StatefulWidget {
 
   /// 输入区高度上报（输入行 + 已展开的面板）。
   ///
-  /// 外层用它给消息列表留底部空间，并且只在**面板高度变化**时才需要重算 ——
-  /// 键盘高度变化不会改变这个值，所以键盘开合不会导致列表重新留白。
-  /// 这样键盘只影响底部输入区，不牵动 body 其余部分（对齐飞书的多机型通用做法）。
+  /// 注意：上报的是**布局占位高度**（输入行 + 面板），**不含键盘让位的那部分**。
+  /// 外层据此给消息列表留底部空间；键盘高度变化不会改变这个值，
+  /// 因此键盘开合不会让列表内容重新留白/位移 —— 对齐飞书实机录屏测得的行为：
+  /// 键盘直接盖在列表之上，列表本身不反应。
   final ValueNotifier<double>? heightNotifier;
 
   /// 键盘高度（`MediaQuery.viewInsets.bottom`），0 表示键盘收起。
@@ -89,6 +90,9 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 面板自然高度（未展开为 0），用于算「键盘比面板高出的差额」占位。
   double _panelNaturalHeight = 0;
+
+  /// 当前「键盘比面板高出的差额」，仅用于从实测总高中扣除、得到布局占位高度。
+  double _keyboardGap = 0;
 
   late FocusNode _focusNode;
   late final ChatComposerController _composer;
@@ -445,6 +449,7 @@ class _ChatInputState extends State<ChatInput> {
     final keyboardGap = widget.keyboardInset > panelExtent
         ? widget.keyboardInset - panelExtent
         : 0.0;
+    _keyboardGap = keyboardGap;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -534,7 +539,9 @@ class _ChatInputState extends State<ChatInput> {
   void _reportHeight(Size size) {
     final notifier = widget.heightNotifier;
     if (notifier == null) return;
-    final height = size.height;
+    // 扣除键盘差额，只上报「输入行 + 面板」的布局占位：
+    // 列表按这个值留白，键盘部分由键盘自己覆盖，列表内容因此不随键盘位移。
+    final height = size.height - _keyboardGap;
     if (height <= 0 || height == notifier.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) notifier.value = height;

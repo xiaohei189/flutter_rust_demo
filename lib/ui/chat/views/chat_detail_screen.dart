@@ -491,36 +491,46 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     String currentUserId,
   ) {
     return Expanded(
-      // 无需额外底部留白：输入区自身高度已包含「输入行 + 面板 + 键盘差额」，
-      // 它把列表底部顶到键盘之上，列表内容不会被键盘或面板遮住。
-      // RepaintBoundary 隔离消息列表重绘：列表视口变化时只重绘列表图层，
-      // 避免影响顶栏/输入区等其他区域。
-      child: RepaintBoundary(
-        child: ChatMessageListSection(
-          conversationId: widget.conversationId,
-          user: user,
-          currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
-          currentUserAvatar: ref
-              .read(userProfileProvider.notifier)
-              .getDisplayAvatarUrl(),
-          scrollController: _scrollController,
-          isLoading: chatDetailState.isLoading,
-          selectMode: chatDetailState.selectMode,
-          selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
-          messageReactions: _messageReactions,
-          onMessageVisible: (msg) {
-            if (!msg.isRead &&
-                msg.sendId !=
-                    (currentUserId.isNotEmpty ? currentUserId : null)) {
-              _viewModel?.markConversationMessageAsRead();
-            }
-          },
-          messageActionsBuilder: _buildMessageActions,
-          onMessageTap: _handleMessageTap,
-          // 点失败标记直接重发（对齐飞书/微信）
-          onRetrySend: _messageActions.resend,
-          onPlayAudio: (source) =>
-              ref.read(audioPlayerServiceProvider).play(source),
+      // 按「输入行 + 面板」的布局占位留底部空间（**不含键盘**）。
+      // 键盘出现时输入区作为覆盖层上升，列表留白不变 → 列表内容不位移，
+      // 与飞书实机录屏测得的行为一致（键盘盖在列表之上）。
+      child: ValueListenableBuilder<double>(
+        valueListenable: _inputAreaHeight,
+        builder: (context, inputInset, child) => AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: inputInset),
+          child: child,
+        ),
+        // RepaintBoundary 隔离消息列表重绘：列表视口变化时只重绘列表图层，
+        // 避免影响顶栏/输入区等其他区域。用 child 传入避免每次高度变化都重建列表。
+        child: RepaintBoundary(
+          child: ChatMessageListSection(
+            conversationId: widget.conversationId,
+            user: user,
+            currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
+            currentUserAvatar: ref
+                .read(userProfileProvider.notifier)
+                .getDisplayAvatarUrl(),
+            scrollController: _scrollController,
+            isLoading: chatDetailState.isLoading,
+            selectMode: chatDetailState.selectMode,
+            selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
+            messageReactions: _messageReactions,
+            onMessageVisible: (msg) {
+              if (!msg.isRead &&
+                  msg.sendId !=
+                      (currentUserId.isNotEmpty ? currentUserId : null)) {
+                _viewModel?.markConversationMessageAsRead();
+              }
+            },
+            messageActionsBuilder: _buildMessageActions,
+            onMessageTap: _handleMessageTap,
+            // 点失败标记直接重发（对齐飞书/微信）
+            onRetrySend: _messageActions.resend,
+            onPlayAudio: (source) =>
+                ref.read(audioPlayerServiceProvider).play(source),
+          ),
         ),
       ),
     );
@@ -562,37 +572,53 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
         kToolbarHeight;
     return _bodyReady
-        ? Column(
+        ? Stack(
             children: [
-              if (chatDetailState.selectMode)
-                ChatDetailSelectionTopBar(
-                  conversationId: widget.conversationId,
-                  selectedCount: chatDetailState.selectedMessages.length,
-                  onSelectAll: () => _viewModel?.toggleSelectAll(),
-                  onClose: () => _viewModel?.exitSelectMode(),
-                  onDelete: () => _messageActions.deleteSelected(context),
-                  onForwardOneByOne: () =>
-                      _messageActions.forwardSelected(context, merge: false),
-                  onMergeForward: () =>
-                      _messageActions.forwardSelected(context, merge: true),
+              Column(
+                children: [
+                  if (chatDetailState.selectMode)
+                    ChatDetailSelectionTopBar(
+                      conversationId: widget.conversationId,
+                      selectedCount: chatDetailState.selectedMessages.length,
+                      onSelectAll: () => _viewModel?.toggleSelectAll(),
+                      onClose: () => _viewModel?.exitSelectMode(),
+                      onDelete: () => _messageActions.deleteSelected(context),
+                      onForwardOneByOne: () => _messageActions.forwardSelected(
+                        context,
+                        merge: false,
+                      ),
+                      onMergeForward: () =>
+                          _messageActions.forwardSelected(context, merge: true),
+                    ),
+                  _buildMessageListSection(
+                    chatDetailState,
+                    user,
+                    currentUserId,
+                  ),
+                  if (chatDetailState.isForwarding)
+                    ForwardProgressBanner(
+                      done: chatDetailState.forwardDone,
+                      total: chatDetailState.forwardTotal,
+                      onCancel: () => _viewModel?.cancelForward(),
+                    ),
+                  if (chatDetailState.quotedMessage != null)
+                    QuotePreviewBar(
+                      message: chatDetailState.quotedMessage!,
+                      onClose: () => _viewModel?.clearQuotedMessage(),
+                    ),
+                ],
+              ),
+              // 输入区作为覆盖层贴在底部：它不占 body 的布局空间，
+              // 因此键盘升降不会牵动消息列表（列表内容不位移）。
+              // 对齐飞书实机录屏测得的行为：键盘直接盖在列表之上。
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxInputHeight),
+                  child: _buildChatInput(user),
                 ),
-              _buildMessageListSection(chatDetailState, user, currentUserId),
-              if (chatDetailState.isForwarding)
-                ForwardProgressBanner(
-                  done: chatDetailState.forwardDone,
-                  total: chatDetailState.forwardTotal,
-                  onCancel: () => _viewModel?.cancelForward(),
-                ),
-              if (chatDetailState.quotedMessage != null)
-                QuotePreviewBar(
-                  message: chatDetailState.quotedMessage!,
-                  onClose: () => _viewModel?.clearQuotedMessage(),
-                ),
-              // 键盘让位由 ChatInput 自己完成（面板下方补出键盘差额，面板原地被覆盖），
-              // 这里只给高度上限兜底，避免屏幕过矮时溢出。
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxInputHeight),
-                child: _buildChatInput(user),
               ),
             ],
           )
