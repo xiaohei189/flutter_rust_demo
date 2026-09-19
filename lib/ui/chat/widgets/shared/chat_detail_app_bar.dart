@@ -41,7 +41,7 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
         onTap: onOpenSettings,
         child: Row(
           children: [
-            UserAvatar(user: user, radius: 18),
+            UserAvatar.fromUser(user: user, radius: 18),
             const SizedBox(width: 10),
             Flexible(
               child: Column(

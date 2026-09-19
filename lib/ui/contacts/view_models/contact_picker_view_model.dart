@@ -12,6 +12,7 @@ class ContactPickerState {
   final bool multiSelect;
   final String keyword;
   final Set<String> selectedIds;
+
   final List<String> excludeIds;
 
   const ContactPickerState({
@@ -41,6 +42,20 @@ class ContactPickerState {
 
 /// 联系人选择 ViewModel：负责数据加载、搜索过滤与选中状态。
 class ContactPickerViewModel extends Notifier<ContactPickerState> {
+  /// 排除 ID 的哈希缓存：`excludeIds` 是 List，逐条 contains 是 O(n)，
+  /// 而筛选在输入关键字时每帧都会跑；只在 `excludeIds` 实例变化时重建。
+  List<String>? _excludeSetSource;
+  Set<String> _excludeIdSet = const {};
+
+  Set<String> get _excludeSet {
+    final ids = state.excludeIds;
+    if (!identical(_excludeSetSource, ids)) {
+      _excludeSetSource = ids;
+      _excludeIdSet = ids.isEmpty ? const {} : ids.toSet();
+    }
+    return _excludeIdSet;
+  }
+
   @override
   ContactPickerState build() => const ContactPickerState();
 
@@ -76,8 +91,9 @@ class ContactPickerViewModel extends Notifier<ContactPickerState> {
   }
 
   List<Friend> filteredFriends(List<Friend> friends) {
-    final excludeSet = state.excludeIds.toSet();
+    final excludeSet = _excludeSet;
     final keyword = state.keyword.toLowerCase();
+    if (keyword.isEmpty && excludeSet.isEmpty) return friends;
     return friends.where((f) {
       if (excludeSet.contains(f.userId)) return false;
       if (keyword.isEmpty) return true;
@@ -88,8 +104,9 @@ class ContactPickerViewModel extends Notifier<ContactPickerState> {
   }
 
   List<Group> filteredGroups(List<Group> groups) {
-    final excludeSet = state.excludeIds.toSet();
+    final excludeSet = _excludeSet;
     final keyword = state.keyword.toLowerCase();
+    if (keyword.isEmpty && excludeSet.isEmpty) return groups;
     return groups.where((g) {
       if (excludeSet.contains(g.groupId)) return false;
       if (keyword.isEmpty) return true;

@@ -197,13 +197,43 @@ class _EmojiPanelState extends State<EmojiPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(child: _buildContent(context)),
+          // 面板高度固定，切 Tab 只换内容不动高度。
+          //
+          // 三个 Tab 的内容高度本来不同（最常用+默认表情 / 收藏 / GIF），若让面板按内容
+          // 自适应，切 Tab 时外层 AnimatedSize 就会播一段高度动画、把输入行一起顶上顶下，
+          // 看着就是"底部菜单弹起来"。固定高度后切 Tab 高度不变，不需要任何高度动画。
+          _buildBody(context),
           if (widget.showTabBar)
             // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
             _buildBottomBar(context),
         ],
       ),
     );
+  }
+
+  /// 正文容器。
+  ///
+  /// 有限高度（输入区的 300）用固定高 [SizedBox]，让每个 Tab 正文高度一致；
+  /// 无限高度（长按工具面板的抽屉）必须用 [Flexible] 给滚动视图**有界**约束，
+  /// 否则 `CustomScrollView` 会抛 "Vertical viewport was given unbounded height"。
+  Widget _buildBody(BuildContext context) {
+    final fixedHeight = _fixedBodyHeight;
+    if (fixedHeight == null) {
+      return Flexible(child: _buildContent(context));
+    }
+    return SizedBox(height: fixedHeight, child: _buildContent(context));
+  }
+
+  /// 底部 Tab 栏高度（与 [_buildBottomBar] 的实现保持一致）。
+  static const double _bottomBarHeight = 48;
+
+  /// 面板正文的固定高度 = 面板整体上限 - Tab 栏。
+  ///
+  /// 有限上限（输入区的 300）时让每个 Tab 正文高度一致，切 Tab 不再改变面板高度；
+  /// `double.infinity`（长按工具面板的抽屉）时返回 null，保持由外层约束驱动。
+  double? get _fixedBodyHeight {
+    if (!widget.maxHeight.isFinite) return null;
+    return widget.maxHeight - (widget.showTabBar ? _bottomBarHeight : 0);
   }
 
   Widget _buildContent(BuildContext context) {
@@ -229,6 +259,11 @@ class _EmojiPanelState extends State<EmojiPanel> {
     }
   }
 
+  /// 单个可滚动网格（sliver），标题、分区间距都作为 sliver 放在同一个 CustomScrollView 里。
+  ///
+  /// 之前是 `SingleChildScrollView + Column + GridView(shrinkWrap: true)`：shrinkWrap 的网格
+  /// 必须先按无限高度布局出全部子项才能算出自身高度，外层再重排一次 —— 一次切 Tab 就是
+  /// 「全部表情 × 2 遍布局」。改成单层 sliver 后只有一次布局，且默认惰性构建。
   Widget _buildEmojiGrid(
     BuildContext context,
     List<String> emojis, {
@@ -236,22 +271,23 @@ class _EmojiPanelState extends State<EmojiPanel> {
     bool empty = false,
   }) {
     final colors = context.appColors;
-    return SingleChildScrollView(
+    return CustomScrollView(
       physics: widget.scrollPhysics,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (header != null) ...[
-            Text(
-              header,
-              style: TextStyle(fontSize: 12, color: colors.textSecondary),
-            ),
-            const SizedBox(height: 4),
-          ],
-          if (empty && emojis.isEmpty)
-            Padding(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          sliver: SliverToBoxAdapter(
+            child: header == null
+                ? const SizedBox.shrink()
+                : Text(
+                    header,
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                  ),
+          ),
+        ),
+        if (empty && emojis.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 32),
               child: Center(
                 child: Text(
@@ -259,103 +295,129 @@ class _EmojiPanelState extends State<EmojiPanel> {
                   style: TextStyle(color: colors.textSecondary, fontSize: 13),
                 ),
               ),
-            )
-          else
-            _emojiGrid(context, emojis),
-        ],
-      ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            sliver: SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                mainAxisSpacing: 2,
+                crossAxisSpacing: 2,
+              ),
+              itemCount: emojis.length,
+              itemBuilder: (_, i) => _buildEmojiCell(emojis[i]),
+            ),
+          ),
+      ],
     );
   }
 
-  /// 表情九宫格（7 列，不滚动，交给外层滚动容器）
-  Widget _emojiGrid(BuildContext context, List<String> emojis) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        mainAxisSpacing: 2,
-        crossAxisSpacing: 2,
-      ),
-      itemCount: emojis.length,
-      itemBuilder: (_, i) {
-        final emoji = emojis[i];
-        return GestureDetector(
-          onTap: () => _handleEmojiTap(emoji),
-          onLongPress: () => _handleEmojiLongPress(emoji),
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 28)),
-          ),
-        );
-      },
+  Widget _buildEmojiCell(String emoji) {
+    return GestureDetector(
+      onTap: () => _handleEmojiTap(emoji),
+      onLongPress: () => _handleEmojiLongPress(emoji),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 28))),
     );
   }
 
   Widget _buildGifGrid(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1,
-      ),
-      itemCount: EmojiPanel.gifUrls.length,
-      itemBuilder: (_, i) {
-        final url = EmojiPanel.gifUrls[i];
-        return GestureDetector(
-          onTap: () => widget.onGifSelected?.call(url),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => Container(
-                color: context.appColors.surfaceMuted,
-                child: const Center(
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-              errorWidget: (_, _, _) => Container(
-                color: context.appColors.surfaceMuted,
-                child: Icon(
-                  Icons.broken_image,
-                  color: context.appColors.textSecondary,
-                ),
-              ),
+    return CustomScrollView(
+      physics: widget.scrollPhysics,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(8),
+          sliver: SliverGrid.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1,
             ),
+            itemCount: EmojiPanel.gifUrls.length,
+            itemBuilder: (_, i) =>
+                _buildGifCell(context, EmojiPanel.gifUrls[i]),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
-  /// 「最常使用 + 默认表情」分区（同一滚动视图，对齐飞书稿）
-  Widget _buildEmojiSections(BuildContext context) {
-    final colors = context.appColors;
-    return SingleChildScrollView(
-      physics: widget.scrollPhysics,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_recent.isNotEmpty) ...[
-            _sectionHeader(colors, '最常使用'),
-            _emojiGrid(context, _recent),
-            const SizedBox(height: 12),
-          ],
-          _sectionHeader(colors, '默认表情'),
-          _emojiGrid(context, EmojiPanel.defaultEmojis),
-        ],
+  Widget _buildGifCell(BuildContext context, String url) {
+    return GestureDetector(
+      onTap: () => widget.onGifSelected?.call(url),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (_, _) => Container(
+            color: context.appColors.surfaceMuted,
+            child: const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          errorWidget: (_, _, _) => Container(
+            color: context.appColors.surfaceMuted,
+            child: Icon(
+              Icons.broken_image,
+              color: context.appColors.textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }
+
+  /// 「最常使用 + 默认表情」分区（同一滚动视图，对齐飞书稿）。
+  ///
+  /// 两个分区合并在一个 CustomScrollView 里，避免外层再套一层滚动容器（见 [_buildEmojiGrid]）。
+  Widget _buildEmojiSections(BuildContext context) {
+    final colors = context.appColors;
+    return CustomScrollView(
+      physics: widget.scrollPhysics,
+      slivers: [
+        if (_recent.isNotEmpty) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            sliver: SliverToBoxAdapter(child: _sectionHeader(colors, '最常使用')),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            sliver: SliverGrid.builder(
+              gridDelegate: _emojiGridDelegate,
+              itemCount: _recent.length,
+              itemBuilder: (_, i) => _buildEmojiCell(_recent[i]),
+            ),
+          ),
+        ],
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(12, _recent.isEmpty ? 12 : 12, 12, 8),
+          sliver: SliverToBoxAdapter(child: _sectionHeader(colors, '默认表情')),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          sliver: SliverGrid.builder(
+            gridDelegate: _emojiGridDelegate,
+            itemCount: EmojiPanel.defaultEmojis.length,
+            itemBuilder: (_, i) => _buildEmojiCell(EmojiPanel.defaultEmojis[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static const SliverGridDelegateWithFixedCrossAxisCount _emojiGridDelegate =
+      SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+      );
 
   Widget _sectionHeader(AppColors colors, String text) => Padding(
     padding: const EdgeInsets.only(bottom: 8),

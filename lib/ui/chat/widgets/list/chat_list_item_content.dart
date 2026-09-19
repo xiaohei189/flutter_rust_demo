@@ -41,7 +41,6 @@ class ChatListItemContent extends StatelessWidget {
   /// 多选管理模式：显示复选框，点击由外层处理。
   final bool isSelectionMode;
 
-
   /// 正在输入预览文案（非空时替换消息预览）。
   final String? typingText;
 
@@ -106,7 +105,6 @@ class ChatListItemContent extends StatelessWidget {
 
   static bool _isConversationIdPrefix(String s) =>
       s.startsWith('si_') || s.startsWith('sg_') || s.startsWith('sn_');
-
 
   User _getUser() {
     String userId;
@@ -254,7 +252,9 @@ class ChatListItemContent extends StatelessWidget {
           if (box != null && box.attached) {
             onLongPress(box.localToGlobal(Offset.zero) & box.size);
           } else {
-            onLongPress(Rect.fromLTWH(d.globalPosition.dx, d.globalPosition.dy, 0, 0));
+            onLongPress(
+              Rect.fromLTWH(d.globalPosition.dx, d.globalPosition.dy, 0, 0),
+            );
           }
         },
         child: InkWell(
@@ -262,100 +262,102 @@ class ChatListItemContent extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(
               vertical: 8,
-              horizontal: contentHorizontalPadding ??
-                  (isSelectionMode ? 8 : 16),
+              horizontal:
+                  contentHorizontalPadding ?? (isSelectionMode ? 8 : 16),
             ),
             child: Row(
-            children: [
-              if (isSelectionMode) ...[
-                Icon(
-                  isSelected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  size: 22,
-                  color: isSelected ? colors.primary : colors.textSecondary,
-                ),
-                const SizedBox(width: 6),
-              ],
-              // 头像（单聊用用户头像、群聊用群头像）；在线状态不在列表展示
-              // （对齐飞书稿：presence 只在会话详情头部显示）
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  if (_isGroup)
-                    _GroupAvatar(
-                      conversation: conversation,
-                      radius: kConversationAvatarRadius,
-                    )
-                  else
-                    UserAvatar(user: user, radius: kConversationAvatarRadius),
+              children: [
+                if (isSelectionMode) ...[
+                  Icon(
+                    isSelected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    size: 22,
+                    color: isSelected ? colors.primary : colors.textSecondary,
+                  ),
+                  const SizedBox(width: 6),
                 ],
-              ),
-              const SizedBox(width: 12),
-              // 内容区
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // 头像（单聊用用户头像、群聊用群头像）；在线状态不在列表展示
+                // （对齐飞书稿：presence 只在会话详情头部显示）
+                Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    // 第一行：名称 + 标签（紧跟标题） + 时间（固定最右）
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  user.name,
-                                  style: TextStyle(
-                                    color: colors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              ..._buildTags(context),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // 时间：自然宽度，位于行最右
-                        Text(
-                          timeText ?? _formatTime(_displayTime),
-                          style: TextStyle(
-                            fontSize: 12,
-                            // 飞书式：有未读时时间用主色蓝（免打扰仍为灰）
-                            color: _hasUnread && !_isMuted
-                                ? colors.primary
-                                : colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    // 第二行：消息预览 + 未读角标（飞书式，行右下角）
-                    Row(
-                      children: [
-                        Expanded(child: _buildPreviewLine(context)),
-                        if (_hasUnread) ...[
-                          const SizedBox(width: 8),
-                          _buildUnreadBadge(context),
-                        ],
-                      ],
-                    ),
+                    if (_isGroup)
+                      _GroupAvatar(
+                        conversation: conversation,
+                        radius: kConversationAvatarRadius,
+                      )
+                    else
+                      UserAvatar.fromUser(
+                        user: user,
+                        radius: kConversationAvatarRadius,
+                      ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                // 内容区
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 第一行：名称 + 标签（紧跟标题） + 时间（固定最右）
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    user.name,
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                ..._buildTags(context),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // 时间：自然宽度，位于行最右
+                          Text(
+                            timeText ?? _formatTime(_displayTime),
+                            style: TextStyle(
+                              fontSize: 12,
+                              // 飞书式：有未读时时间用主色蓝（免打扰仍为灰）
+                              color: _hasUnread && !_isMuted
+                                  ? colors.primary
+                                  : colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // 第二行：消息预览 + 未读角标（飞书式，行右下角）
+                      Row(
+                        children: [
+                          Expanded(child: _buildPreviewLine(context)),
+                          if (_hasUnread) ...[
+                            const SizedBox(width: 8),
+                            _buildUnreadBadge(context),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      ),
     );
   }
-
 
   /// 未读角标（飞书式）：普通会话为蓝色数字胶囊（超 99 显示 99+），
   /// 免打扰会话只显示一个灰点，不暴露具体数字。
@@ -496,7 +498,10 @@ class _GroupAvatar extends StatelessWidget {
     final url = conversation.faceUrl;
     if (url.isNotEmpty) {
       return UserAvatar(
-        user: User(id: conversation.groupId, name: '', avatar: url),
+        avatarUrl: url,
+        cacheKey: conversation.groupId,
+        // 群头像没有名字，加载失败时保持中性占位（不要落到会话名首字）。
+        fallbackName: '',
         radius: radius,
       );
     }

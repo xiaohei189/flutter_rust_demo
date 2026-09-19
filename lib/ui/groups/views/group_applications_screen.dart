@@ -130,7 +130,7 @@ class _GroupApplicationsScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          UserAvatar(
+          UserAvatar.fromUser(
             user: User(
               id: apply.userId,
               name: name,
@@ -210,7 +210,7 @@ class _GroupApplicationsScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          UserAvatar(
+          UserAvatar.fromUser(
             user: User(
               id: apply.userId,
               name: name,

@@ -75,7 +75,7 @@ class ConversationTitleBar extends StatelessWidget
                     clipBehavior: Clip.none,
                     children: [
                       // 复用列表同款 UserAvatar：实色底 + 全名，图片/回退一致，底色统一。
-                      UserAvatar(
+                      UserAvatar.fromUser(
                         user: User(
                           id: currentUserId,
                           name: _displayName,

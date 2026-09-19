@@ -12,24 +12,54 @@ const Color kNameAvatarBackground = Color(0xFF4A84FF);
 
 /// 用户头像组件 - 支持网络图片、本地图片、颜色图标
 class UserAvatar extends StatelessWidget {
-  final User user;
+  /// 头像地址（网络 URL / 本地路径 / asset）。为空时回退到名字首字头像。
+  final String? avatarUrl;
+
+  /// 缓存去重键（通常为用户 ID）。仅在不使用 [UserAvatar.fromUser] 时必填。
+  final String? cacheKey;
+
+  /// 无头像时的回退展示名。
+  final String fallbackName;
+
   final double radius;
 
-  const UserAvatar({super.key, required this.user, this.radius = 20});
+  /// [avatarUrl] 与 [cacheKey] 直接给定，避免为了画一个头像去构造 [User] 对象。
+  const UserAvatar({
+    super.key,
+    required this.avatarUrl,
+    this.cacheKey,
+    this.fallbackName = '',
+    this.radius = 20,
+  });
+
+  /// 从 [User] 构建（语义化命名，避免所有调用点都改成传 [avatarUrl]）。
+  UserAvatar.fromUser({super.key, required User user, this.radius = 20})
+    : avatarUrl = user.avatar,
+      cacheKey = user.id,
+      fallbackName = user.name;
+
+  /// Windows 绝对路径（`C:\...`）。提升为静态常量，避免每帧重新编译正则
+  /// （会话列表/联系人列表里每个头像都会调用 [_isLocalPath]）。
+  static final RegExp _windowsPathPattern = RegExp(r'^[a-zA-Z]:[\\/]');
+
+  static bool _isRemoteUrl(String path) =>
+      path.startsWith('http://') ||
+      path.startsWith('https://') ||
+      path.startsWith('ftp://');
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = user.avatar;
     final colors = context.appColors;
+    final source = avatarUrl;
 
     // 如果是本地文件路径
-    if (avatarUrl != null && _isLocalPath(avatarUrl)) {
+    if (source != null && _isLocalPath(source)) {
       return CircleAvatar(
         radius: radius,
         backgroundColor: colors.surfaceMuted,
         child: ClipOval(
           child: AppImage(
-            source: avatarUrl,
+            source: source,
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,
@@ -41,8 +71,8 @@ class UserAvatar extends StatelessWidget {
     }
 
     // 如果有网络图片且可用
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      final urlWithCache = _buildCacheBustedUrl(avatarUrl);
+    if (source != null && source.isNotEmpty) {
+      final urlWithCache = _buildCacheBustedUrl(source);
       return CircleAvatar(
         radius: radius,
         backgroundColor: colors.surfaceMuted,
@@ -66,7 +96,7 @@ class UserAvatar extends StatelessWidget {
   /// 构建默认头像：全名（自适应缩放）+ 统一品牌底色，保证底色一致。
   Widget _buildFallbackAvatar(BuildContext context) {
     final colors = context.appColors;
-    final label = _labelOf(user.name);
+    final label = _labelOf(fallbackName);
     return CircleAvatar(
       radius: radius,
       backgroundColor: kNameAvatarBackground,
@@ -102,16 +132,14 @@ class UserAvatar extends StatelessWidget {
   }
 
   /// 判断是否为本地文件路径
-  bool _isLocalPath(String path) {
+  static bool _isLocalPath(String path) {
     // 先检查是否是网络协议（http://, https://, ftp:// 等）
-    if (path.startsWith('http://') ||
-        path.startsWith('https://') ||
-        path.startsWith('ftp://')) {
+    if (_isRemoteUrl(path)) {
       return false;
     }
 
     // Windows 路径（如 C:\Users\... 或 D:/...）
-    if (RegExp(r'^[a-zA-Z]:\\').hasMatch(path)) {
+    if (_windowsPathPattern.hasMatch(path)) {
       return true;
     }
 
@@ -129,7 +157,7 @@ class UserAvatar extends StatelessWidget {
       return url;
     }
     final separator = url.contains('?') ? '&' : '?';
-    return '$url${separator}_cb=${user.id}';
+    return '$url${separator}_cb=${cacheKey ?? ''}';
   }
 }
 
@@ -142,11 +170,11 @@ Widget userAvatarDefaultPreview() {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        UserAvatar(user: User.mockUsers[0], radius: 20),
+        UserAvatar.fromUser(user: User.mockUsers[0], radius: 20),
         const SizedBox(width: 12),
-        UserAvatar(user: User.mockUsers[1], radius: 28),
+        UserAvatar.fromUser(user: User.mockUsers[1], radius: 28),
         const SizedBox(width: 12),
-        UserAvatar(user: User.mockUsers[2], radius: 36),
+        UserAvatar.fromUser(user: User.mockUsers[2], radius: 36),
       ],
     ),
   );

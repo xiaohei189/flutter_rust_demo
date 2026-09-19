@@ -238,7 +238,7 @@ class ChatMediaActions {
             itemBuilder: (_, index) {
               final friend = friends[index];
               return ListTile(
-                leading: UserAvatar(
+                leading: UserAvatar.fromUser(
                   user: User(
                     id: friend.userId,
                     name: friend.nickname,

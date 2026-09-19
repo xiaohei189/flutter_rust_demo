@@ -135,7 +135,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
       child: Row(
         children: [
           // 头像
-          UserAvatar(
+          UserAvatar.fromUser(
             user: User(
               id: item.userId,
               name: item.nickname,

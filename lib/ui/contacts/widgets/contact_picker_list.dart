@@ -45,18 +45,33 @@ class ContactPickerList extends StatelessWidget {
       );
     }
 
-    return ListView(
-      children: [
-        if (hasFriends) ...[
-          _buildSectionHeader(context, '我的好友', friends.length),
-          ...friends.map((f) => _buildFriendItem(context, f)),
-        ],
-        if (hasGroups) ...[
-          _buildSectionHeader(context, '我的群组', groups.length),
-          ...groups.map((g) => _buildGroupItem(context, g)),
-        ],
-        const SizedBox(height: 80),
+    // 好友/群组数量可能上千，且输入关键字时会随每次筛选重建：
+    // 用 ListView.builder + 摊平条目，保证每帧只构建可视区域内的行。
+    final items = <_ContactPickerRow>[
+      if (hasFriends) ...[
+        _ContactPickerSection('我的好友', friends.length),
+        for (final friend in friends) _ContactPickerFriend(friend),
       ],
+      if (hasGroups) ...[
+        _ContactPickerSection('我的群组', groups.length),
+        for (final group in groups) _ContactPickerGroup(group),
+      ],
+    ];
+
+    return ListView.builder(
+      itemCount: items.length + 1,
+      itemBuilder: (context, index) {
+        if (index == items.length) return const SizedBox(height: 80);
+        return switch (items[index]) {
+          _ContactPickerSection(:final title, :final count) =>
+            _buildSectionHeader(context, title, count),
+          _ContactPickerFriend(:final friend) => _buildFriendItem(
+            context,
+            friend,
+          ),
+          _ContactPickerGroup(:final group) => _buildGroupItem(context, group),
+        };
+      },
     );
   }
 
@@ -107,7 +122,7 @@ class ContactPickerList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            UserAvatar(
+            UserAvatar.fromUser(
               user: User(
                 id: id,
                 name: displayName,
@@ -180,7 +195,7 @@ class ContactPickerList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            UserAvatar(
+            UserAvatar.fromUser(
               user: User(
                 id: id,
                 name: group.groupName,
@@ -234,6 +249,30 @@ class ContactPickerList extends StatelessWidget {
 }
 
 // ==================== 预览 ====================
+
+/// 联系人选择器的惰性构建条目（分区标题 / 好友 / 群组）。
+sealed class _ContactPickerRow {
+  const _ContactPickerRow();
+}
+
+class _ContactPickerSection extends _ContactPickerRow {
+  const _ContactPickerSection(this.title, this.count);
+
+  final String title;
+  final int count;
+}
+
+class _ContactPickerFriend extends _ContactPickerRow {
+  const _ContactPickerFriend(this.friend);
+
+  final Friend friend;
+}
+
+class _ContactPickerGroup extends _ContactPickerRow {
+  const _ContactPickerGroup(this.group);
+
+  final Group group;
+}
 
 @AppThemePreview(name: '联系人选择列表（多选）', group: 'ContactPickerList')
 Widget contactPickerListPreview() {

@@ -75,7 +75,7 @@ class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
               itemBuilder: (_, i) {
                 final user = state.users[i];
                 return ListTile(
-                  leading: UserAvatar(
+                  leading: UserAvatar.fromUser(
                     user: User(
                       id: user.userId,
                       name: user.nickname,

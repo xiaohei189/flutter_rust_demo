@@ -139,7 +139,7 @@ Future<void> showGroupOwnerAdminSheet(
           const Divider(height: 1),
           ...members.map(
             (m) => ListTile(
-              leading: UserAvatar(
+              leading: UserAvatar.fromUser(
                 user: User(
                   id: m.userId,
                   name: m.nickname,

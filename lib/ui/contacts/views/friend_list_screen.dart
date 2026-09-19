@@ -88,7 +88,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
         final displayName = friend.displayName;
 
         return ListTile(
-          leading: UserAvatar(user: _friendToUser(friend), radius: 22),
+          leading: UserAvatar.fromUser(user: _friendToUser(friend), radius: 22),
           title: Text(
             displayName,
             maxLines: 1,

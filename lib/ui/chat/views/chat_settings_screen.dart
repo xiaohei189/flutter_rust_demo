@@ -394,7 +394,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           children: [
             _buildMemberTile(
               name: _viewModel.displayName,
-              avatar: UserAvatar(user: _viewModel.chatUser, radius: 26),
+              avatar: UserAvatar.fromUser(user: _viewModel.chatUser, radius: 26),
               onTap: () {
                 if (conversation != null && conversation.userId.isNotEmpty) {
                   AppRouter.goToUserProfile(
@@ -477,7 +477,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           },
           child: Row(
             children: [
-              UserAvatar(user: _viewModel.chatUser, radius: 28),
+              UserAvatar.fromUser(user: _viewModel.chatUser, radius: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

@@ -123,7 +123,7 @@ class _CreateGroupMemberSheetState
                         );
 
                         return ListTile(
-                          leading: UserAvatar(
+                          leading: UserAvatar.fromUser(
                             user: User(
                               id: friend.userId,
                               name: friend.nickname,

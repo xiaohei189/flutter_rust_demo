@@ -143,7 +143,7 @@ class RealMemberAvatar extends StatelessWidget {
 
     return Column(
       children: [
-        UserAvatar(user: user, radius: 20),
+        UserAvatar.fromUser(user: user, radius: 20),
         const SizedBox(height: 4),
         SizedBox(
           width: 48,

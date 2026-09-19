@@ -173,7 +173,7 @@ class _MemberRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            UserAvatar(
+            UserAvatar.fromUser(
               user: User(
                 id: member.userId,
                 name: name,

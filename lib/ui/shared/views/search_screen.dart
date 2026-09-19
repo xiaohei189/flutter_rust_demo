@@ -252,7 +252,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildMessageItem(MessageSearchResult log) {
     return ListTile(
-      leading: UserAvatar(
+      leading: UserAvatar.fromUser(
         user: User(
           id: log.sendId,
           name: log.senderNickName,
@@ -310,7 +310,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildFriendItem(FriendSearchResult item) {
     final name = item.nickname.isNotEmpty ? item.nickname : item.userId;
     return ListTile(
-      leading: UserAvatar(
+      leading: UserAvatar.fromUser(
         user: User(
           id: item.userId,
           name: name,
@@ -337,7 +337,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildGroupItem(Group group) {
     return ListTile(
-      leading: UserAvatar(
+      leading: UserAvatar.fromUser(
         user: User(
           id: group.groupId,
           name: group.groupName,

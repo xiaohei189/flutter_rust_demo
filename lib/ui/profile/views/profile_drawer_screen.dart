@@ -150,7 +150,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [UserAvatar(user: currentUser, radius: 32)],
+                        children: [UserAvatar.fromUser(user: currentUser, radius: 32)],
                       ),
                     ),
                     // 名字 + 二维码 + 箭头（点击进入个人信息）

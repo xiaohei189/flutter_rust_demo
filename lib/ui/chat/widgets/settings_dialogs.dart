@@ -168,7 +168,7 @@ Future<void> showInviteMemberSheet(
                                   );
 
                                   return ListTile(
-                                    leading: UserAvatar(
+                                    leading: UserAvatar.fromUser(
                                       user: User(
                                         id: friend.userId,
                                         name: friend.nickname,

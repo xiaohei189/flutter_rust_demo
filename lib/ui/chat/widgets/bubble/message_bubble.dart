@@ -194,7 +194,7 @@ class MessageBubble extends StatelessWidget {
                 ],
                 GestureDetector(
                   onTap: () => _navigateToProfile(context, senderUser, false),
-                  child: UserAvatar(user: senderUser, radius: 18),
+                  child: UserAvatar.fromUser(user: senderUser, radius: 18),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -222,7 +222,7 @@ class MessageBubble extends StatelessWidget {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () => _navigateToProfile(context, senderUser, true),
-                  child: UserAvatar(user: senderUser, radius: 18),
+                  child: UserAvatar.fromUser(user: senderUser, radius: 18),
                 ),
                 if (selectionIndicator != null) ...[
                   const SizedBox(width: 8),

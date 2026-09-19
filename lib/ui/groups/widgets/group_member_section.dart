@@ -92,7 +92,7 @@ class GroupMemberSection extends StatelessWidget {
             (m) => ListTile(
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              leading: UserAvatar(
+              leading: UserAvatar.fromUser(
                 user: User(
                   id: m.userId,
                   name: m.nickname,

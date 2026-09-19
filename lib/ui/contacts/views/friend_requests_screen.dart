@@ -108,7 +108,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
       child: Row(
         children: [
           // 头像
-          UserAvatar(
+          UserAvatar.fromUser(
             user: User(
               id: apply.userId,
               name: apply.nickname,
@@ -205,7 +205,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
       child: Row(
         children: [
           // 头像
-          UserAvatar(
+          UserAvatar.fromUser(
             user: User(
               id: apply.userId,
               name: apply.nickname,

@@ -63,11 +63,26 @@ Tests are layered; real-server suites are `#[ignore]`d and run only via scripts.
 - **默认走热更新**：`flutter run -d <device>` 常驻，Dart 改动按 `r` 热重载（约 1~3s）。
   只有 Rust 改动、依赖/原生配置改动、或需要真机安装包时才 `flutter build apk` + `adb install`
   （模拟器一次构建 50~100s，冷启动 3~4min）。
-- **UI/样式/文案改动不跑测试**：热重载看一眼真实渲染即可（比单测更可信），迭代期零测试开销。
+- **Flutter UI 改动优先走 Flutter MCP（连接已启动的程序，直接热更新）**：Agent 不必让用户
+  手动按 `r`，也不要靠"改完就假设渲染正确"。标准流程：
+  1. `dtd` 的 `listDtdUris` 找到运行中 App 的 DTD URI，再 `connect`；
+     用 `listConnectedApps` 确认已连接（多 App 时后续工具传 `appUri`）。
+  2. 改代码 → `hot_reload`（保留应用状态）。改了全局 `const`、顶层初始化或
+     `initState` 逻辑时用 `hot_restart`（重置状态）。
+  3. **验证**：`widget_inspector` 的 `get_widget_tree`（配 `summaryOnly`）确认组件结构，
+     `flutter_driver_command` 的 `tap` / `scroll` / `get_offset` 驱动交互并读取真实
+     布局坐标，`screenshot` 看实际渲染；`get_runtime_errors` 抓热重载后的报错。
+  4. 验证不通过就继续改 + 再热重载，**不要**把没在真机渲染过的 UI 改动当作完成。
+
+  这条路径尤其适合「布局/几何/动画」类改动（例如键盘与表情面板的覆盖关系）：先确认
+  widget 树，再用 `get_offset` 量坐标，比推断靠谱得多。
+- **UI/样式/文案改动不跑测试**：走上面的 Flutter MCP 热重载 + 真机渲染验证即可
+  （比单测更可信），迭代期零测试开销。只有确实无法连上运行中 App 时，才退回让用户手动按 `r`。
 - **只有逻辑改动才跑相关单文件**：状态机/reducer/view_model/mapper/排序/发送链路这类
   "看不出对错"的改动，跑 `flutter test test/<对应测试文件>.dart`（Rust 用
   `cargo test --lib <模块名>`）。注意 `flutter test` 有约 5s 固定开销（起测试宿主 + 编译
   测试内核），与用例条数基本无关，所以只挑真正相关的一两个文件。
+  MCP 热重载只替代"看渲染"，**不替代逻辑验证**：逻辑改动仍然按这条跑对应测试。
 - **全量测试按需手动触发**：`flutter test test`（约 40s）与 `cargo test --lib`（约 1min）
   只在用户要求、或改动涉及跨模块/协议/持久化等高风险面时执行；**不作为默认迭代步骤，
   也不作为每次提交的前置条件**。提交信息里说明测试结论时，写清实际跑了哪些。

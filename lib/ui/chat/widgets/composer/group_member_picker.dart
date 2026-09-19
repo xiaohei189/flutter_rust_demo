@@ -34,7 +34,7 @@ Future<GroupMember?> showGroupMemberPicker(
               itemBuilder: (_, i) {
                 final member = members[i];
                 return ListTile(
-                  leading: UserAvatar(
+                  leading: UserAvatar.fromUser(
                     user: User(
                       id: member.userId,
                       name: member.nickname,

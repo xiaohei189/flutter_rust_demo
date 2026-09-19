@@ -169,7 +169,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           // 头像
                           ListRow(
                             label: '头像',
-                            trailing: UserAvatar(user: currentUser, radius: 20),
+                            trailing: UserAvatar.fromUser(user: currentUser, radius: 20),
                             onTap: _pickImage,
                           ),
                           const ListDivider(),

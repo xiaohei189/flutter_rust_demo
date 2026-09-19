@@ -174,7 +174,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                         ),
                       )
                     else
-                      UserAvatar(user: _groupUser, radius: 22),
+                      UserAvatar.fromUser(user: _groupUser, radius: 22),
                     const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_ios,

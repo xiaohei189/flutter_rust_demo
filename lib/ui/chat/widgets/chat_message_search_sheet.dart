@@ -146,7 +146,7 @@ class _ChatMessageSearchSheetState
           rawTime > 0 && rawTime < 946684800000 ? rawTime * 1000 : rawTime,
         ).toLocal();
         return ListTile(
-          leading: UserAvatar(
+          leading: UserAvatar.fromUser(
             user: User(
               id: log.sendId,
               name: log.senderNickName,

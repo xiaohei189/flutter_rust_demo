@@ -27,7 +27,7 @@ class ProfileHeaderCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          UserAvatar(user: user, radius: 44),
+          UserAvatar.fromUser(user: user, radius: 44),
           const SizedBox(height: 16),
           Text(
             user.name,

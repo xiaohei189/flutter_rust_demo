@@ -73,7 +73,6 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     if (mounted) _exitSelectionMode();
   }
 
-
   void _openGroupFilterPanel() {
     final conversationState = ref.read(conversationListProvider);
     final activeFilter = ref.read(chatListViewModelProvider).activeFilter;
@@ -139,6 +138,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final activeFilter = listState.activeFilter;
     final typingByConversation = conversationState.typingByConversation;
     final failedConversationIds = conversationState.failedConversationIds;
+    // 当前用户本地头像路径在整屏内是常量：提前读一次，避免下面按行重复 ref.read。
+    final currentUserLocalAvatarPath = ref
+        .read(userProfileViewProvider)
+        .localAvatarPath;
 
     final conversations = _viewModel.filteredConversations(
       conversationState.conversations,
@@ -198,6 +201,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 activeFilter: activeFilter,
                 cachedUserProfiles: cachedUserProfiles,
                 currentUserId: currentUserId,
+                currentUserLocalAvatarPath: currentUserLocalAvatarPath,
                 typingByConversation: typingByConversation,
                 failedConversationIds: failedConversationIds,
               ),
@@ -217,6 +221,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required GroupFilter activeFilter,
     required Map<String, UserProfile> cachedUserProfiles,
     required String currentUserId,
+    required String? currentUserLocalAvatarPath,
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
   }) {
@@ -242,68 +247,69 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       );
     }
 
-    final items = <Widget>[];
-    if (activeFilter == GroupFilter.all && !_selectionMode) {
-      final pinned = conversations.where((c) => c.isPinned).toList();
-      final unpinned = conversations.where((c) => !c.isPinned).toList();
-      if (pinned.isNotEmpty) {
-        items.add(_buildSectionHeader(context, '置顶聊天'));
-        items.addAll(
-          pinned.map(
-            (c) => _buildListItem(
-              context,
-              conversation: c,
-              cachedUserProfiles: cachedUserProfiles,
-              currentUserId: currentUserId,
-              typingByConversation: typingByConversation,
-              failedConversationIds: failedConversationIds,
-              focusAtMe: activeFilter == GroupFilter.atMe,
-              conversationState: conversationState,
-            ),
-          ),
-        );
-      }
-      if (unpinned.isNotEmpty) {
-        if (pinned.isNotEmpty) {
-          items.add(_buildSectionHeader(context, '聊天'));
-        }
-        items.addAll(
-          unpinned.map(
-            (c) => _buildListItem(
-              context,
-              conversation: c,
-              cachedUserProfiles: cachedUserProfiles,
-              currentUserId: currentUserId,
-              typingByConversation: typingByConversation,
-              failedConversationIds: failedConversationIds,
-              focusAtMe: activeFilter == GroupFilter.atMe,
-              conversationState: conversationState,
-            ),
-          ),
-        );
-      }
-    } else {
-      items.addAll(
-        conversations.map(
-          (c) => _buildListItem(
-            context,
-            conversation: c,
-            cachedUserProfiles: cachedUserProfiles,
-            currentUserId: currentUserId,
-            typingByConversation: typingByConversation,
-            failedConversationIds: failedConversationIds,
-            focusAtMe: activeFilter == GroupFilter.atMe,
-            conversationState: conversationState,
-          ),
-        ),
-      );
-    }
-    return ListView(
+    // 只把「行数据」摊平成一个轻量列表，真正的行 Widget 交给 ListView.builder 惰性构建。
+    // 之前用 `ListView(children: items)` 会在每次会话列表重建时一次性构造全部会话行
+    // （含头像、滑动层、菜单回调），几百个会话 + 高频打字/连接状态更新时会明显掉帧；
+    // 现在无论会话多少，每帧只构建视口内的行。
+    final items = _buildListItems(
+      conversations: conversations,
+      activeFilter: activeFilter,
+    );
+    final focusAtMe = activeFilter == GroupFilter.atMe;
+
+    return ListView.builder(
       key: const PageStorageKey<String>('conversation_list'),
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      children: items,
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return switch (item) {
+          _SectionHeaderItem(:final title) => _buildSectionHeader(
+            context,
+            title,
+          ),
+          _ConversationRowItem(:final conversation) => _buildListItem(
+            context,
+            conversation: conversation,
+            cachedUserProfiles: cachedUserProfiles,
+            currentUserId: currentUserId,
+            currentUserLocalAvatarPath: currentUserLocalAvatarPath,
+            typingByConversation: typingByConversation,
+            failedConversationIds: failedConversationIds,
+            focusAtMe: focusAtMe,
+            conversationState: conversationState,
+          ),
+        };
+      },
     );
+  }
+
+  /// 摊平会话列表结构（置顶分区 + 普通分区），供 ListView.builder 惰性消费。
+  List<_ConversationListItem> _buildListItems({
+    required List<Conversation> conversations,
+    required GroupFilter activeFilter,
+  }) {
+    if (activeFilter != GroupFilter.all || _selectionMode) {
+      return [
+        for (final conversation in conversations)
+          _ConversationRowItem(conversation),
+      ];
+    }
+
+    final pinned = conversations.where((c) => c.isPinned).toList();
+    final unpinned = conversations.where((c) => !c.isPinned).toList();
+    if (pinned.isEmpty) {
+      return [
+        for (final conversation in unpinned) _ConversationRowItem(conversation),
+      ];
+    }
+    return [
+      const _SectionHeaderItem('置顶聊天'),
+      for (final conversation in pinned) _ConversationRowItem(conversation),
+      if (unpinned.isNotEmpty) const _SectionHeaderItem('聊天'),
+      for (final conversation in unpinned) _ConversationRowItem(conversation),
+    ];
   }
 
   Widget _buildListItem(
@@ -311,6 +317,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required Conversation conversation,
     required Map<String, UserProfile> cachedUserProfiles,
     required String currentUserId,
+    required String? currentUserLocalAvatarPath,
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
     required bool focusAtMe,
@@ -338,9 +345,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       key: ValueKey<String>(conversation.conversationId),
       conversation: conversation,
       cachedUserProfile: otherUserProfile,
-      currentUserLocalAvatarPath: ref
-          .read(userProfileViewProvider)
-          .localAvatarPath,
+      currentUserLocalAvatarPath: currentUserLocalAvatarPath,
       previewText: conversationState.previews[conversation.conversationId],
       timeText: conversationState.timeTexts[conversation.conversationId],
       currentUserId: currentUserId,
@@ -613,4 +618,23 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       ),
     );
   }
+}
+
+/// 会话列表的惰性构建条目：分区标题或一行会话。
+///
+/// 结构在 `build` 里摊平成 [List]（很轻），行 Widget 只在滚动到可视区域时创建。
+sealed class _ConversationListItem {
+  const _ConversationListItem();
+}
+
+class _SectionHeaderItem extends _ConversationListItem {
+  const _SectionHeaderItem(this.title);
+
+  final String title;
+}
+
+class _ConversationRowItem extends _ConversationListItem {
+  const _ConversationRowItem(this.conversation);
+
+  final Conversation conversation;
 }
