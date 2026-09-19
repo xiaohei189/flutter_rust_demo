@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -42,6 +43,13 @@ class ChatInput extends StatefulWidget {
   /// 展开编辑抽屉的占位文案（如「发送给 张三」）
   final String? sendToLabel;
 
+  /// 输入区高度上报（输入行 + 已展开的面板）。
+  ///
+  /// 外层用它给消息列表留底部空间，并且只在**面板高度变化**时才需要重算 ——
+  /// 键盘高度变化不会改变这个值，所以键盘开合不会导致列表重新留白。
+  /// 这样键盘只影响底部输入区，不牵动 body 其余部分（对齐飞书的多机型通用做法）。
+  final ValueNotifier<double>? heightNotifier;
+
   const ChatInput({
     super.key,
     required this.controller,
@@ -60,6 +68,7 @@ class ChatInput extends StatefulWidget {
     this.onAtMemberSelected,
     this.isGroupChat = false,
     this.sendToLabel,
+    this.heightNotifier,
   });
 
   @override
@@ -410,66 +419,83 @@ class _ChatInputState extends State<ChatInput> {
     return SafeArea(
       top: false,
       bottom: true,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_voiceRecorder.isRecording)
-            RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
-          Container(
-            color: context.appColors.inputBackground,
-            padding: const EdgeInsets.only(top: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              // 子项撑满宽度，避免工具栏/面板被默认居中
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // @ 成员候选：贴在胶囊上方
-                if (_composer.atKeyword != null) _buildAtMemberList(),
-                // 输入胶囊：白底圆角，右侧内嵌「展开编辑」
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: _buildInputRow(),
-                ),
-                const SizedBox(height: 4),
-                // Markdown 模式用格式栏替换操作行（避免出现两个发送按钮）
-                if (_composer.isMarkdownMode)
-                  _buildFormatBar()
-                else
-                  // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
-                  _buildActionRow(emojiActive, moreActive),
-                const SizedBox(height: 6),
-              ],
-            ),
-          ),
-          // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
-          // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
-          Flexible(
-            fit: FlexFit.loose,
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
+      child: _MeasureSize(
+        onChange: _reportHeight,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_voiceRecorder.isRecording)
+              RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
+            Container(
+              color: context.appColors.inputBackground,
+              padding: const EdgeInsets.only(top: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                // 子项撑满宽度，避免工具栏/面板被默认居中
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_emojiPanelOpened)
-                    Offstage(
-                      offstage: _composer.activePanel != ComposerPanel.emoji,
-                      child: _emojiPanel,
-                    ),
-                  if (_attachmentPanelOpened)
-                    Offstage(
-                      offstage:
-                          _composer.activePanel != ComposerPanel.attachment,
-                      child: _attachmentPanel,
-                    ),
+                  // @ 成员候选：贴在胶囊上方
+                  if (_composer.atKeyword != null) _buildAtMemberList(),
+                  // 输入胶囊：白底圆角，右侧内嵌「展开编辑」
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _buildInputRow(),
+                  ),
+                  const SizedBox(height: 4),
+                  // Markdown 模式用格式栏替换操作行（避免出现两个发送按钮）
+                  if (_composer.isMarkdownMode)
+                    _buildFormatBar()
+                  else
+                    // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
+                    _buildActionRow(emojiActive, moreActive),
+                  const SizedBox(height: 6),
                 ],
               ),
             ),
-          ),
-        ],
+            // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
+            // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
+            Flexible(
+              fit: FlexFit.loose,
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_emojiPanelOpened)
+                      Offstage(
+                        offstage: _composer.activePanel != ComposerPanel.emoji,
+                        child: _emojiPanel,
+                      ),
+                    if (_attachmentPanelOpened)
+                      Offstage(
+                        offstage:
+                            _composer.activePanel != ComposerPanel.attachment,
+                        child: _attachmentPanel,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  /// 上报「输入行 + 已展开面板」的总高度。
+  ///
+  /// 外层据此给消息列表留底部空间；键盘高度变化不会改变这个值，
+  /// 所以键盘开合不会让列表重新留白（多机型通用，不依赖具体键盘高度）。
+  void _reportHeight(Size size) {
+    final notifier = widget.heightNotifier;
+    if (notifier == null) return;
+    final height = size.height;
+    if (height <= 0 || height == notifier.value) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) notifier.value = height;
+    });
   }
 
   /// 第二层：输入框行（全宽圆角、自适应高度）
@@ -627,4 +653,40 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   // ==================== 辅助 ====================
+}
+
+/// 布局结束后回调子树实际尺寸（回调发生在布局阶段，调用方需把写值推迟到帧末）。
+class _MeasureSize extends SingleChildRenderObjectWidget {
+  const _MeasureSize({required Widget super.child, this.onChange});
+
+  final ValueChanged<Size>? onChange;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderMeasureSize(onChange);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderMeasureSize renderObject,
+  ) {
+    renderObject.onChange = onChange;
+  }
+}
+
+class _RenderMeasureSize extends RenderProxyBox {
+  _RenderMeasureSize(this.onChange);
+
+  ValueChanged<Size>? onChange;
+
+  Size? _lastSize;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final newSize = size;
+    if (newSize == _lastSize) return;
+    _lastSize = newSize;
+    onChange?.call(newSize);
+  }
 }
