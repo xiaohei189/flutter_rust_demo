@@ -491,55 +491,36 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     String currentUserId,
   ) {
     return Expanded(
-      // 按输入区高度预留底部空间：面板展开时抬升列表内容，收起时还回去。
-      // 这里只依赖 ChatInput 上报的实测高度（与键盘无关），所以键盘开合不会
-      // 让列表重新留白 —— 键盘只影响底部输入区，不牵动列表（多机型通用）。
-      child: ValueListenableBuilder<double>(
-        valueListenable: _inputAreaHeight,
-        builder: (context, inputAreaHeight, child) {
-          // 输入区变高多少，列表内容就要同样上推多少，最新消息才不会被输入区/键盘挡住。
-          // 输入区因为键盘而增高的部分恰好等于「键盘高度 − 面板高度（未展开为 0）」，
-          // 所以这里用 min(键盘高度, 输入区高度) 表达，键盘收起时为 0。
-          final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-          final lifted = keyboardInset < inputAreaHeight
-              ? keyboardInset
-              : inputAreaHeight;
-          return AnimatedPadding(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.only(bottom: lifted),
-            child: child,
-          );
-        },
-        // RepaintBoundary 隔离消息列表重绘：列表视口变化时只重绘列表图层，
-        // 避免影响顶栏/输入区等其他区域。用 child 传入避免每次高度变化都重建列表。
-        child: RepaintBoundary(
-          child: ChatMessageListSection(
-            conversationId: widget.conversationId,
-            user: user,
-            currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
-            currentUserAvatar: ref
-                .read(userProfileProvider.notifier)
-                .getDisplayAvatarUrl(),
-            scrollController: _scrollController,
-            isLoading: chatDetailState.isLoading,
-            selectMode: chatDetailState.selectMode,
-            selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
-            messageReactions: _messageReactions,
-            onMessageVisible: (msg) {
-              if (!msg.isRead &&
-                  msg.sendId !=
-                      (currentUserId.isNotEmpty ? currentUserId : null)) {
-                _viewModel?.markConversationMessageAsRead();
-              }
-            },
-            messageActionsBuilder: _buildMessageActions,
-            onMessageTap: _handleMessageTap,
-            // 点失败标记直接重发（对齐飞书/微信）
-            onRetrySend: _messageActions.resend,
-            onPlayAudio: (source) =>
-                ref.read(audioPlayerServiceProvider).play(source),
-          ),
+      // 无需额外底部留白：输入区自身高度已包含「输入行 + 面板 + 键盘差额」，
+      // 它把列表底部顶到键盘之上，列表内容不会被键盘或面板遮住。
+      // RepaintBoundary 隔离消息列表重绘：列表视口变化时只重绘列表图层，
+      // 避免影响顶栏/输入区等其他区域。
+      child: RepaintBoundary(
+        child: ChatMessageListSection(
+          conversationId: widget.conversationId,
+          user: user,
+          currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
+          currentUserAvatar: ref
+              .read(userProfileProvider.notifier)
+              .getDisplayAvatarUrl(),
+          scrollController: _scrollController,
+          isLoading: chatDetailState.isLoading,
+          selectMode: chatDetailState.selectMode,
+          selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
+          messageReactions: _messageReactions,
+          onMessageVisible: (msg) {
+            if (!msg.isRead &&
+                msg.sendId !=
+                    (currentUserId.isNotEmpty ? currentUserId : null)) {
+              _viewModel?.markConversationMessageAsRead();
+            }
+          },
+          messageActionsBuilder: _buildMessageActions,
+          onMessageTap: _handleMessageTap,
+          // 点失败标记直接重发（对齐飞书/微信）
+          onRetrySend: _messageActions.resend,
+          onPlayAudio: (source) =>
+              ref.read(audioPlayerServiceProvider).play(source),
         ),
       ),
     );
@@ -607,36 +588,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   message: chatDetailState.quotedMessage!,
                   onClose: () => _viewModel?.clearQuotedMessage(),
                 ),
-              // 键盘让位：输入行要浮在「键盘」与「面板」中较高者的上沿。
-              //
-              // 目标高度 = 输入行 + max(面板高度, 键盘高度)：
-              // 键盘在底部占住的位置与面板相同（互斥），取较高者即可保证输入行既不被
-              // 键盘压住、也不被面板盖住。输入行高度由 ChatInput 实测上报（面板高度 =
-              // 总高度 − 输入行高度，收起面板时总高度就是输入行高度）。
-              //
-              // 全部用实测值，不写死具体键盘/面板高度，因此换机型同样成立。
-              ValueListenableBuilder<double>(
-                valueListenable: _inputAreaHeight,
-                builder: (context, inputAreaHeight, _) {
-                  final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-                  final targetHeight = keyboardInset > inputAreaHeight
-                      ? keyboardInset
-                      : inputAreaHeight;
-                  // padding = 目标高度 − 内容自然高度；两者相等时 padding 为 0
-                  // （面板打开但键盘收起的情况）。
-                  final gap = targetHeight > inputAreaHeight
-                      ? targetHeight - inputAreaHeight
-                      : 0.0;
-                  return AnimatedPadding(
-                    duration: const Duration(milliseconds: 150),
-                    curve: Curves.easeOut,
-                    padding: EdgeInsets.only(bottom: gap),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: maxInputHeight),
-                      child: _buildChatInput(user),
-                    ),
-                  );
-                },
+              // 键盘让位由 ChatInput 自己完成（面板下方补出键盘差额，面板原地被覆盖），
+              // 这里只给高度上限兜底，避免屏幕过矮时溢出。
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxInputHeight),
+                child: _buildChatInput(user),
               ),
             ],
           )

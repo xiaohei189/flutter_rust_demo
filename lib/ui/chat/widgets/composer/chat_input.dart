@@ -50,6 +50,13 @@ class ChatInput extends StatefulWidget {
   /// 这样键盘只影响底部输入区，不牵动 body 其余部分（对齐飞书的多机型通用做法）。
   final ValueNotifier<double>? heightNotifier;
 
+  /// 键盘高度（`MediaQuery.viewInsets.bottom`），0 表示键盘收起。
+  ///
+  /// 由外层传入：外层已设 resizeToAvoidBottomInset: false，键盘高度是布局的**输入**
+  /// 而非结果，显式传入可避免重复依赖 MediaQuery。取实际值而非写死，
+  /// 因此不同机型的键盘高度都成立。
+  final double keyboardInset;
+
   const ChatInput({
     super.key,
     required this.controller,
@@ -69,6 +76,7 @@ class ChatInput extends StatefulWidget {
     this.isGroupChat = false,
     this.sendToLabel,
     this.heightNotifier,
+    this.keyboardInset = 0,
   });
 
   @override
@@ -76,6 +84,12 @@ class ChatInput extends StatefulWidget {
 }
 
 class _ChatInputState extends State<ChatInput> {
+  /// 面板自然高度未量到时的兜底值（与表情面板上限一致），仅用于首次展开的那一帧。
+  static const double _panelFallbackHeight = 300;
+
+  /// 面板自然高度（未展开为 0），用于算「键盘比面板高出的差额」占位。
+  double _panelNaturalHeight = 0;
+
   late FocusNode _focusNode;
   late final ChatComposerController _composer;
 
@@ -415,6 +429,22 @@ class _ChatInputState extends State<ChatInput> {
   Widget build(BuildContext context) {
     final emojiActive = _composer.activePanel == ComposerPanel.emoji;
     final moreActive = _composer.activePanel == ComposerPanel.attachment;
+    // 键盘让位：在面板下方补一条「键盘比面板高出的差额」。
+    //
+    // 结构是「输入行 → 面板 → 差额占位」，这样：
+    // - 面板展开、键盘收起：输入行在面板之上（占位为 0）；
+    // - 键盘弹出：差额把输入行顶到键盘上沿，而**面板仍贴在屏幕底部、被键盘覆盖**，
+    //   面板自身不发生位移 —— 这就是飞书那种「只有底部键盘在动」的观感；
+    // - 键盘比面板矮时差额为 0，输入行落在面板上沿，多出的面板部分同样被键盘盖住。
+    //
+    // 键盘高度取自外层传入的实测 viewInsets，面板高度取实测值，两者都不写死，
+    // 因此不同机型/不同键盘高度都成立。
+    final panelExtent = _composer.hasActivePanel
+        ? (_panelNaturalHeight > 0 ? _panelNaturalHeight : _panelFallbackHeight)
+        : 0.0;
+    final keyboardGap = widget.keyboardInset > panelExtent
+        ? widget.keyboardInset - panelExtent
+        : 0.0;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -466,7 +496,11 @@ class _ChatInputState extends State<ChatInput> {
                     if (_emojiPanelOpened)
                       Offstage(
                         offstage: _composer.activePanel != ComposerPanel.emoji,
-                        child: _emojiPanel,
+                        // 量出面板自然高度：用于算键盘差额占位（面板自身不位移）。
+                        child: _MeasureSize(
+                          onChange: _onPanelSized,
+                          child: _emojiPanel,
+                        ),
                       ),
                     if (_attachmentPanelOpened)
                       Offstage(
@@ -477,6 +511,14 @@ class _ChatInputState extends State<ChatInput> {
                   ],
                 ),
               ),
+            ),
+            // 键盘比面板高的差额：把输入行顶到键盘上沿，面板留在原地被覆盖。
+            // 收起键盘时归零，不占任何空间。
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: SizedBox(height: keyboardGap, width: double.infinity),
             ),
           ],
         ),
@@ -495,6 +537,15 @@ class _ChatInputState extends State<ChatInput> {
     if (height <= 0 || height == notifier.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) notifier.value = height;
+    });
+  }
+
+  /// 面板自然高度回报：只需重算「键盘差额占位」，不改变面板自身位置。
+  void _onPanelSized(Size size) {
+    final height = size.height;
+    if (height <= 0 || height == _panelNaturalHeight) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _panelNaturalHeight = height);
     });
   }
 
