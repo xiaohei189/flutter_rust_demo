@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flutter_rust_demo/ui/chat/widgets/composer/attachment_panel.dart';
 import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input.dart';
 import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input_field.dart';
 import 'package:flutter_rust_demo/ui/chat/widgets/composer/emoji_panel.dart';
@@ -294,4 +295,48 @@ void main() {
     );
     expect(inputRowRect.top, greaterThanOrEqualTo(0), reason: '输入框不能被挤出屏幕顶部');
   });
+
+  // 附件面板（「+」）的上限高度与表情面板不同（320 vs 300），
+  // 若没有单独测量，键盘差额会按兜底值算错，输入行落不到键盘上沿。
+  for (final keyboardHeight in <double>[0, 300, 400]) {
+    testWidgets('附件面板：键盘高度 ${keyboardHeight.toInt()} 时不变量成立', (tester) async {
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
+      useFixedView(tester);
+
+      await tester.pumpWidget(host(controller, keyboardHeight));
+      await tester.pumpAndSettle();
+      // 「更多」按钮展开附件面板
+      await tester.tap(find.byTooltip('更多'));
+      await tester.pumpAndSettle();
+
+      final keyboardTop = screenHeight - keyboardHeight;
+      final inputRowRect = tester.getRect(find.byType(ChatInputField));
+      final attachmentRect = tester.getRect(find.byType(AttachmentPanel));
+
+      expect(
+        inputRowRect.bottom,
+        lessThanOrEqualTo(keyboardTop + 1),
+        reason: '附件面板态下输入行仍必须在键盘之上（kbd=$keyboardHeight）',
+      );
+      expect(
+        attachmentRect.bottom,
+        closeTo(screenHeight, 1),
+        reason: '附件面板必须锚定屏幕底部（kbd=$keyboardHeight）',
+      );
+      // 键盘不低于面板时，输入行下沿应**正好贴住键盘上沿**：
+      // 这条能抓住「面板高度用错（兜底值 ≠ 实测值）导致差额算错」的问题，
+      // 只断言「在键盘之上」是抓不住的（错 20px 也仍在之上）。
+      if (keyboardHeight >= 320) {
+        final rowArea = tester.getRect(
+          find.byKey(const ValueKey('chat_input_row_area')),
+        );
+        expect(
+          rowArea.bottom,
+          closeTo(keyboardTop, 2),
+          reason: '输入行下沿应贴住键盘上沿（kbd=$keyboardHeight）',
+        );
+      }
+    });
+  }
 }

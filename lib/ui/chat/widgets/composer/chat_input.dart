@@ -484,6 +484,8 @@ class _ChatInputState extends State<ChatInput> {
                 _MeasureSize(
                   onChange: _onInputRowSized,
                   child: Container(
+                    // 供测试精确测量输入行区域（下沿应贴住键盘上沿）。
+                    key: const ValueKey('chat_input_row_area'),
                     color: context.appColors.inputBackground,
                     padding: const EdgeInsets.only(top: 8),
                     child: Column(
@@ -548,7 +550,12 @@ class _ChatInputState extends State<ChatInput> {
                             offstage:
                                 _composer.activePanel !=
                                 ComposerPanel.attachment,
-                            child: _attachmentPanel,
+                            // 附件面板同样要量高度：它的上限（320）与表情面板（300）不同，
+                            // 不量的话键盘差额会按兜底值算错，输入行落不到键盘上沿。
+                            child: _MeasureSize(
+                              onChange: _onPanelSized,
+                              child: _attachmentPanel,
+                            ),
                           ),
                         ),
                     ],
