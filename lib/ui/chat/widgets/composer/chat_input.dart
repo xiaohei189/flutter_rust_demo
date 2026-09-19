@@ -91,6 +91,9 @@ class _ChatInputState extends State<ChatInput> {
   /// 面板自然高度（未展开为 0），用于算「键盘比面板高出的差额」占位。
   double _panelNaturalHeight = 0;
 
+  /// 输入行高度（实测）。用于把差额占位限制在可用空间内，避免小屏溢出。
+  double _inputRowHeight = 0;
+
   /// 当前「键盘比面板高出的差额」，仅用于从实测总高中扣除、得到布局占位高度。
   double _keyboardGap = 0;
 
@@ -446,88 +449,115 @@ class _ChatInputState extends State<ChatInput> {
     final panelExtent = _composer.hasActivePanel
         ? (_panelNaturalHeight > 0 ? _panelNaturalHeight : _panelFallbackHeight)
         : 0.0;
-    final keyboardGap = widget.keyboardInset > panelExtent
+    // 差额只是「期望值」：实际可用空间可能不够（小屏 + 高键盘，或大字体），
+    // 此时按可用空间收敛，宁可输入行离键盘上沿差几像素，也不能溢出。
+    final desiredGap = widget.keyboardInset > panelExtent
         ? widget.keyboardInset - panelExtent
         : 0.0;
-    _keyboardGap = keyboardGap;
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
       bottom: true,
-      child: _MeasureSize(
-        onChange: _reportHeight,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_voiceRecorder.isRecording)
-              RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
-            Container(
-              color: context.appColors.inputBackground,
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                // 子项撑满宽度，避免工具栏/面板被默认居中
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // @ 成员候选：贴在胶囊上方
-                  if (_composer.atKeyword != null) _buildAtMemberList(),
-                  // 输入胶囊：白底圆角，右侧内嵌「展开编辑」
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: _buildInputRow(),
-                  ),
-                  const SizedBox(height: 4),
-                  // Markdown 模式用格式栏替换操作行（避免出现两个发送按钮）
-                  if (_composer.isMarkdownMode)
-                    _buildFormatBar()
-                  else
-                    // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
-                    _buildActionRow(emojiActive, moreActive),
-                  const SizedBox(height: 6),
-                ],
-              ),
-            ),
-            // 键盘比面板高的差额放在「输入行」与「面板」之间：
-            // 这样差额把输入行顶到键盘上沿的同时，**面板仍贴在屏幕底部**被键盘覆盖。
-            // 若放在面板之后，差额会把面板一起顶高（键盘高于面板时可见位移）。
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: SizedBox(height: keyboardGap, width: double.infinity),
-            ),
-            // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
-            // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
-            Flexible(
-              fit: FlexFit.loose,
-              child: AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                alignment: Alignment.topCenter,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_emojiPanelOpened)
-                      Offstage(
-                        offstage: _composer.activePanel != ComposerPanel.emoji,
-                        // 量出面板自然高度：用于算键盘差额占位（面板自身不位移）。
-                        child: _MeasureSize(
-                          onChange: _onPanelSized,
-                          child: _emojiPanel,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 输入行高度尚未实测到时先用 0 差额：首帧必然放得下（最紧凑布局），
+          // 量到之后再滑到目标位置，不会出现首帧溢出。
+          //
+          // 父级高度无界时不钳制（没有可用空间上限可言）：必须用期望差额，
+          // 否则输入行不会浮到键盘之上。
+          double keyboardGap = _inputRowHeight > 0 ? desiredGap : 0.0;
+          if (_inputRowHeight > 0 && constraints.maxHeight.isFinite) {
+            final roomForGap =
+                constraints.maxHeight - _inputRowHeight - panelExtent;
+            if (keyboardGap > roomForGap) {
+              keyboardGap = roomForGap < 0 ? 0.0 : roomForGap;
+            }
+          }
+          _keyboardGap = keyboardGap;
+          return _MeasureSize(
+            onChange: _reportHeight,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_voiceRecorder.isRecording)
+                  RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
+                _MeasureSize(
+                  onChange: _onInputRowSized,
+                  child: Container(
+                    color: context.appColors.inputBackground,
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      // 子项撑满宽度，避免工具栏/面板被默认居中
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // @ 成员候选：贴在胶囊上方
+                        if (_composer.atKeyword != null) _buildAtMemberList(),
+                        // 输入胶囊：白底圆角，右侧内嵌「展开编辑」
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: _buildInputRow(),
                         ),
-                      ),
-                    if (_attachmentPanelOpened)
-                      Offstage(
-                        offstage:
-                            _composer.activePanel != ComposerPanel.attachment,
-                        child: _attachmentPanel,
-                      ),
-                  ],
+                        const SizedBox(height: 4),
+                        // Markdown 模式用格式栏替换操作行（避免出现两个发送按钮）
+                        if (_composer.isMarkdownMode)
+                          _buildFormatBar()
+                        else
+                          // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
+                          _buildActionRow(emojiActive, moreActive),
+                        const SizedBox(height: 6),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                // 键盘比面板高的差额放在「输入行」与「面板」之间：
+                // 这样差额把输入行顶到键盘上沿的同时，**面板仍贴在屏幕底部**被键盘覆盖。
+                // 若放在面板之后，差额会把面板一起顶高（键盘高于面板时可见位移）。
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(height: keyboardGap, width: double.infinity),
+                ),
+                // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
+                // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_emojiPanelOpened)
+                        // 面板必须是 Flexible 子项：Column 给非 flex 子项的主轴约束是**无界**的，
+                        // 那样面板会永远按自身 300 高度布局、不随可用空间收缩，
+                        // 小屏（或大字体/高键盘）时就会 RenderFlex overflow。
+                        // 作为 flex 子项后它拿到有界约束，空间不足时自动收缩（面板内部可滚动）。
+                        Flexible(
+                          child: Offstage(
+                            offstage:
+                                _composer.activePanel != ComposerPanel.emoji,
+                            // 量出面板自然高度：用于算键盘差额占位（面板自身不位移）。
+                            child: _MeasureSize(
+                              onChange: _onPanelSized,
+                              child: _emojiPanel,
+                            ),
+                          ),
+                        ),
+                      if (_attachmentPanelOpened)
+                        Flexible(
+                          child: Offstage(
+                            offstage:
+                                _composer.activePanel !=
+                                ComposerPanel.attachment,
+                            child: _attachmentPanel,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -554,6 +584,15 @@ class _ChatInputState extends State<ChatInput> {
     if (height <= 0 || height == _panelNaturalHeight) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => _panelNaturalHeight = height);
+    });
+  }
+
+  /// 输入行高度回报：用于把差额占位限制在可用空间内。
+  void _onInputRowSized(Size size) {
+    final height = size.height;
+    if (height <= 0 || height == _inputRowHeight) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _inputRowHeight = height);
     });
   }
 

@@ -145,4 +145,71 @@ void main() {
       }
     });
   }
+
+  // 小屏 + 高键盘的边界：输入区总高会超过可用高度，此时面板应自行收缩，
+  // 既不能溢出（RenderFlex overflowed），也必须保持「输入行在键盘之上」。
+  // 这条覆盖小屏手机 / 大字体 / 巨屏输入法等机型差异。
+  testWidgets('小屏 + 高键盘：面板收缩且不溢出，输入行仍在键盘之上', (tester) async {
+    const smallWidth = 320.0;
+    const smallHeight = 480.0;
+    const keyboardHeight = 320.0;
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    tester.view.physicalSize = const Size(smallWidth * 2, smallHeight * 2);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(smallWidth, smallHeight),
+            viewInsets: EdgeInsets.only(bottom: keyboardHeight),
+          ),
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: Column(
+              children: [
+                const Expanded(child: SizedBox.expand()),
+                // 与真实会话页一致的高度上限兜底。
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: smallHeight - kToolbarHeight,
+                  ),
+                  child: ChatInput(
+                    controller: controller,
+                    onSend: (_, _) {},
+                    onAtMention: () {},
+                    keyboardInset: keyboardHeight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+
+    // 无异常即代表没有 RenderFlex overflow（Flutter 会把它报成测试失败）。
+    final keyboardTop = smallHeight - keyboardHeight;
+    final inputRowRect = tester.getRect(find.byType(ChatInputField));
+
+    // 这个尺寸下「输入行区 + 键盘」已超过可用高度，物理上放不下整块，
+    // 因此只要求最关键的一点：**输入框胶囊本身完整可见**（在键盘之上，能正常打字）。
+    expect(
+      inputRowRect.bottom,
+      lessThanOrEqualTo(keyboardTop + 1),
+      reason: '小屏高键盘时输入框必须完整可见（在键盘之上）',
+    );
+    expect(inputRowRect.top, greaterThanOrEqualTo(0), reason: '输入行不能被挤出屏幕顶部');
+    expect(
+      inputRowRect.bottom,
+      lessThanOrEqualTo(smallHeight),
+      reason: '输入行不能超出屏幕底部',
+    );
+  });
 }
