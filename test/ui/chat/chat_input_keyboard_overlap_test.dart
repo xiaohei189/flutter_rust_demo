@@ -339,4 +339,39 @@ void main() {
       }
     });
   }
+
+  // 键盘弹出状态下在「表情 ↔ 附件」面板之间切换：
+  // 两个面板高度不同（300 vs 320），差额必须实时跟上，输入行不能跳走或落到键盘之下。
+  testWidgets('键盘弹出时切换面板：输入行始终贴住键盘上沿', (tester) async {
+    const keyboardHeight = 400.0;
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    useFixedView(tester);
+
+    await tester.pumpWidget(host(controller, keyboardHeight));
+    await tester.pumpAndSettle();
+    final keyboardTop = screenHeight - keyboardHeight;
+
+    // 表情面板 → 附件面板
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(const ValueKey('chat_input_row_area'))).bottom,
+      closeTo(keyboardTop, 2),
+      reason: '表情面板态下输入行应贴住键盘上沿',
+    );
+
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(find.byKey(const ValueKey('chat_input_row_area'))).bottom,
+      closeTo(keyboardTop, 2),
+      reason: '切到附件面板后输入行仍应贴住键盘上沿（高度不同需重算差额）',
+    );
+    expect(
+      tester.getRect(find.byType(AttachmentPanel)).bottom,
+      closeTo(screenHeight, 1),
+      reason: '附件面板应锚定屏幕底部',
+    );
+  });
 }
