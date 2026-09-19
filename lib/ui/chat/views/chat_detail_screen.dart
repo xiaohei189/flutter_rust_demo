@@ -578,9 +578,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                   message: chatDetailState.quotedMessage!,
                   onClose: () => _viewModel?.clearQuotedMessage(),
                 ),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxInputHeight),
-                child: _buildChatInput(user),
+              // 键盘让位只在输入区外侧补出键盘高度：输入区整体上移、输入行落在键盘之上，
+              // 列表分到的空间随之减少 —— 与 resizeToAvoidBottomInset: true 的最终结果一致，
+              // 但重排只发生在这个 Padding 上，body 本身尺寸不变。
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxInputHeight),
+                  child: _buildChatInput(user),
+                ),
               ),
             ],
           )
@@ -629,8 +639,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       },
       child: Scaffold(
         backgroundColor: context.appColors.background,
-        // 键盘处理使用 Flutter 标准配置（resizeToAvoidBottomInset: true + adjustResize），
-        // 由 Scaffold 统一按 viewInsets 缩小 body，避免手动键盘占位与系统 IME 配合导致键盘收起再弹出。
+        // 键盘不让 Scaffold 缩放 body：
+        // resizeToAvoidBottomInset: true 时键盘出现会让整个 body 变矮，消息列表跟着重排；
+        // 点表情（收键盘 + 开面板 同一帧）时两次重排叠加，就是真机上的「全局抖动」。
+        // 改成 false 后键盘只影响底部输入区（见 _buildBody 里的 AnimatedPadding）。
+        resizeToAvoidBottomInset: false,
         appBar: ChatDetailAppBar(
           user: user,
           isTyping: isTyping,
