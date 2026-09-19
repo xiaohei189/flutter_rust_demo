@@ -27,12 +27,18 @@ void main() {
     addTearDown(tester.view.reset);
   }
 
-  Widget host(TextEditingController controller, double keyboardHeight) {
+  Widget host(
+    TextEditingController controller,
+    double keyboardHeight, {
+    Size size = const Size(screenWidth, screenHeight),
+    TextScaler textScaler = TextScaler.noScaling,
+  }) {
     return MaterialApp(
       home: MediaQuery(
         data: MediaQueryData(
-          size: const Size(screenWidth, screenHeight),
+          size: size,
           viewInsets: EdgeInsets.only(bottom: keyboardHeight),
+          textScaler: textScaler,
         ),
         child: Scaffold(
           // 与真实会话页同构：body 不随键盘缩放，键盘高度由输入区自己处理。
@@ -40,11 +46,18 @@ void main() {
           body: Column(
             children: [
               const Expanded(child: SizedBox.expand()),
-              ChatInput(
-                controller: controller,
-                onSend: (_, _) {},
-                onAtMention: () {},
-                keyboardInset: keyboardHeight,
+              // 与真实页面一致的高度上限兜底：屏幕矮时由这里限制输入区，
+              // 面板在内部按可用空间收缩（否则脚手架自身就会溢出）。
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: size.height - kToolbarHeight,
+                ),
+                child: ChatInput(
+                  controller: controller,
+                  onSend: (_, _) {},
+                  onAtMention: () {},
+                  keyboardInset: keyboardHeight,
+                ),
               ),
             ],
           ),
@@ -211,5 +224,74 @@ void main() {
       lessThanOrEqualTo(smallHeight),
       reason: '输入行不能超出屏幕底部',
     );
+  });
+
+  // 横屏：聊天页可用高度骤减（屏高约 392），键盘占掉一半以上。
+  // 面板会按剩余空间收缩，但输入框必须仍然完整可见。
+  testWidgets('横屏 + 键盘：面板收缩、输入框仍完整可见', (tester) async {
+    const landscapeWidth = 851.0;
+    const landscapeHeight = 392.0;
+    const keyboardHeight = 200.0;
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    tester.view.physicalSize = const Size(
+      landscapeWidth * 2,
+      landscapeHeight * 2,
+    );
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      host(
+        controller,
+        keyboardHeight,
+        size: const Size(landscapeWidth, landscapeHeight),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+
+    final keyboardTop = landscapeHeight - keyboardHeight;
+    final inputRowRect = tester.getRect(find.byType(ChatInputField));
+    expect(
+      inputRowRect.bottom,
+      lessThanOrEqualTo(keyboardTop + 1),
+      reason: '横屏下输入框必须完整可见（在键盘之上）',
+    );
+    expect(
+      inputRowRect.top,
+      greaterThanOrEqualTo(0),
+      reason: '横屏下输入框不能被挤出屏幕顶部',
+    );
+  });
+
+  // 无障碍大字体（1.8x）：输入行变高，输入区更容易超出可用高度。
+  testWidgets('大字体（1.8x）+ 键盘：不溢出且输入框完整可见', (tester) async {
+    const keyboardHeight = 300.0;
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    useFixedView(tester);
+
+    await tester.pumpWidget(
+      host(
+        controller,
+        keyboardHeight,
+        textScaler: const TextScaler.linear(1.8),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+
+    final keyboardTop = screenHeight - keyboardHeight;
+    final inputRowRect = tester.getRect(find.byType(ChatInputField));
+    expect(
+      inputRowRect.bottom,
+      lessThanOrEqualTo(keyboardTop + 1),
+      reason: '大字体下输入框必须完整可见（在键盘之上）',
+    );
+    expect(inputRowRect.top, greaterThanOrEqualTo(0), reason: '输入框不能被挤出屏幕顶部');
   });
 }

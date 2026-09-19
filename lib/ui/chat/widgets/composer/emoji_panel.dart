@@ -5,6 +5,9 @@ import '../../../previews/app_theme_preview.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../../data/services/emoji_store.dart';
 
+/// 底部 Tab 栏的设计高度（可用空间不足时会按可用高度收敛）。
+const double kTabBarHeight = 48;
+
 /// 表情面板 Tab
 enum EmojiTab { recent, emoji, favorite, gif }
 
@@ -194,19 +197,30 @@ class _EmojiPanelState extends State<EmojiPanel> {
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? colors.attachmentBackground,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 面板高度固定，切 Tab 只换内容不动高度。
-          //
-          // 三个 Tab 的内容高度本来不同（最常用+默认表情 / 收藏 / GIF），若让面板按内容
-          // 自适应，切 Tab 时外层 AnimatedSize 就会播一段高度动画、把输入行一起顶上顶下，
-          // 看着就是"底部菜单弹起来"。固定高度后切 Tab 高度不变，不需要任何高度动画。
-          _buildBody(context),
-          if (widget.showTabBar)
-            // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
-            _buildBottomBar(context),
-        ],
+      // 用 LayoutBuilder 拿到**外层真正给的**可用高度：小屏/横屏/大字体下它可能小于
+      // 「正文最小高度 + Tab 栏高度」，此时把 Tab 栏也按可用高度收敛，
+      // 使「正文 + Tab 栏 = 可用高度」恒成立，从结构上消除 RenderFlex 溢出。
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxHeight = constraints.maxHeight;
+          final tabBarHeight = maxHeight.isFinite && maxHeight < kTabBarHeight
+              ? maxHeight
+              : kTabBarHeight;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 面板高度固定，切 Tab 只换内容不动高度。
+              //
+              // 三个 Tab 的内容高度本来不同（最常用+默认表情 / 收藏 / GIF），若让面板按内容
+              // 自适应，切 Tab 时外层 AnimatedSize 就会播一段高度动画、把输入行一起顶上顶下，
+              // 看着就是"底部菜单弹起来"。固定高度后切 Tab 高度不变，不需要任何高度动画。
+              _buildBody(context),
+              if (widget.showTabBar)
+                // 底部 Tab 栏（飞书稿：左侧新建、中间表情/收藏/GIF、右侧退格）
+                SizedBox(height: tabBarHeight, child: _buildBottomBar(context)),
+            ],
+          );
+        },
       ),
     );
   }
