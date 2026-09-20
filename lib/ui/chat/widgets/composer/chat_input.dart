@@ -500,11 +500,12 @@ class _ChatInputState extends State<ChatInput> {
     // 峰值抬高一次，之后不再变化。
     //
     // 无面板时用当前 inset：键盘把列表顶起来，最新消息不会被键盘盖住。
+    // 面板态只用「记忆的键盘高度」，**不掺当前逐帧 inset**：键盘收起动画期间
+    // 逐帧 inset 会一路衰减到 0，掺进来会让占位块先塌到面板高度、动画结束再被
+    // 记忆值顶回去 —— 真机逐帧量到输入行会先掉 60px 再弹回来（就是"上下动一下"）。
+    // 键盘高度在 initState（进页面时键盘已弹起）和 didUpdateWidget（弹出峰值）里学习。
     final sheetExtent = _composer.hasActivePanel
-        ? math.max(
-            panelPreferred,
-            math.max(_lastKeyboardHeight, widget.keyboardInset),
-          )
+        ? math.max(panelPreferred, _lastKeyboardHeight)
         : widget.keyboardInset;
     _sheetExtent = sheetExtent;
     // 占位块的目标高度（从输入行下沿到屏幕底部，扣掉手势条）。
