@@ -77,7 +77,9 @@ class ChatInput extends StatefulWidget {
     this.isGroupChat = false,
     this.sendToLabel,
     this.heightNotifier,
-    this.keyboardInset = 0,
+    // 必传：漏传会让输入行停在屏幕底部被键盘挡住（真机出过这个事故）。
+    // 做成必传参数后，「忘记接线」会在编译期直接失败，而不是运行时静默失效。
+    required this.keyboardInset,
   });
 
   @override

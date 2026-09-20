@@ -37,6 +37,7 @@ class _ChatInputPreviewHostState extends State<ChatInputPreviewHost> {
           onCameraPick: () {},
           onFilePick: () {},
           onLocationPick: () {},
+          keyboardInset: 0,
         ),
       ),
     );

@@ -12,7 +12,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) => sent++),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) => sent++,
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
@@ -40,7 +44,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) {}),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) {},
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
@@ -63,7 +71,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) => sent++),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) => sent++,
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
@@ -82,7 +94,11 @@ void main() {
     final toggle = find.byIcon(Icons.swap_vert);
     expect(toggle, findsOneWidget, reason: 'Markdown 模式应显示上下切换箭头');
     expect(find.text('B'), findsOneWidget, reason: 'Markdown 格式按钮应保留');
-    expect(find.byTooltip('发送'), findsOneWidget, reason: 'Markdown 模式右侧应保留发送按钮');
+    expect(
+      find.byTooltip('发送'),
+      findsOneWidget,
+      reason: 'Markdown 模式右侧应保留发送按钮',
+    );
     expect(
       tester.getTopLeft(toggle).dx,
       lessThan(tester.getTopLeft(find.text('B')).dx),
@@ -100,7 +116,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) {}),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) {},
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
@@ -144,7 +164,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) {}),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) {},
+            keyboardInset: 0,
+          ),
         ),
       ),
     );

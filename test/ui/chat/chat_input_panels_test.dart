@@ -20,6 +20,7 @@ void main() {
           controller: controller,
           onSend: (_, _) {},
           onAtMention: () {},
+          keyboardInset: 0,
         ),
       ),
     ),

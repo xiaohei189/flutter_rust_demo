@@ -9,7 +9,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) {}),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) {},
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
@@ -39,7 +43,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ChatInput(controller: controller, onSend: (_, _) {}),
+          body: ChatInput(
+            controller: controller,
+            onSend: (_, _) {},
+            keyboardInset: 0,
+          ),
         ),
       ),
     );
