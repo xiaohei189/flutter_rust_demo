@@ -40,7 +40,7 @@ void main() {
       )
       .offstage;
 
-  testWidgets('表情面板可打开、父级重建后保持打开、可关闭', (tester) async {
+  testWidgets('表情面板可打开、父级重建后保持打开、可切换/收起', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
 
@@ -66,10 +66,26 @@ void main() {
       reason: '父级重建后不应重新布局（面板顶边不变）',
     );
 
-    // 再点一次表情按钮收起面板（面板内 Tab 也叫「表情」，取输入行那个）
+    // 聚焦输入框（真机上键盘会盖上来）：飞书式语义 —— 面板不关闭、不重建
+    await tester.tap(find.byType(TextField).first);
+    await tester.pumpAndSettle();
+    expect(panelCollapsed(tester), isFalse, reason: '键盘弹起只是盖在面板上，不应关闭面板');
+    expect(tester.getTopLeft(panelInTree).dy, openedTop, reason: '键盘弹起不应让面板位移');
+
+    // 键盘盖着面板时，表情按钮回到未激活态（点击含义＝收键盘露出面板）
+    expect(
+      find.byTooltip('表情'),
+      findsWidgets,
+      reason: '键盘态下面板按钮应提示「表情」而不是「键盘」',
+    );
     await tester.tap(find.byTooltip('表情').first);
     await tester.pumpAndSettle();
+    expect(panelCollapsed(tester), isFalse, reason: '收键盘后面板应露出来（仍在原地）');
+
+    // 切到附件面板：表情面板收起但常驻树中保留状态
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
     expect(panelInTree, findsOneWidget, reason: '收起后仍常驻树中保留状态');
-    expect(panelCollapsed(tester), isTrue, reason: '再点一次应收起');
+    expect(panelCollapsed(tester), isTrue, reason: '切到附件面板后表情面板应收起');
   });
 }

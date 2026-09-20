@@ -147,11 +147,10 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _onFocusChanged() {
-    // 微信式互斥：面板展开时点击输入框 → 收面板、弹键盘；
-    // 失焦（如点击消息区）只收键盘，面板保持展开。
-    if (_focusNode.hasFocus && _composer.hasActivePanel) {
-      _composer.closePanels();
-    }
+    // 飞书式：键盘与面板不是互斥销毁关系，面板始终留在底部，
+    // 键盘弹起只是盖在面板之上（面板不关闭、不位移）。
+    // 因此聚焦/失焦都不动面板状态，只刷新下面两种布局的切换
+    // （默认一行 / 聚焦态完整工具栏）。
     // 焦点变化会切换“默认一行（声音+输入框+表情+更多）”与
     // “聚焦态（输入行+底部完整工具栏）”两种布局，刷新 build
     if (mounted) setState(() {});
@@ -317,17 +316,26 @@ class _ChatInputState extends State<ChatInput> {
 
   // ==================== 面板管理 ====================
 
-  /// 面板与键盘互斥切换（微信式）：
-  /// - 键盘态点面板按钮 → 收键盘、展开面板
-  /// - 面板态再点同一按钮 → 收面板、弹键盘
+  /// 面板按钮：切换「底部露出的是谁」。
+  ///
+  /// - 点到另一个面板 / 从无面板点开 → 展开该面板并收键盘（面板直接顶上来）
+  /// - 面板被键盘盖着时再点同一按钮 → 只收键盘，面板留在原地露出来
+  /// - 面板可见、键盘未弹时再点同一按钮 → 收起面板（既有交互）
+  ///
+  /// 注意：键盘弹起本身（点输入框）不会关闭面板，见 [_onFocusChanged]。
   void _togglePanel(ComposerPanel panel) {
-    final opening = _composer.activePanel != panel;
-    _composer.togglePanel(panel);
-    if (opening) {
+    final samePanel = _composer.activePanel == panel;
+    if (!samePanel) {
+      _composer.togglePanel(panel);
       FocusScope.of(context).unfocus();
-    } else {
-      _focusNode.requestFocus();
+      return;
     }
+    if (_focusNode.hasFocus) {
+      // 键盘正盖着面板：收键盘即可，面板不需要重建/关闭。
+      FocusScope.of(context).unfocus();
+      return;
+    }
+    _composer.closePanels();
   }
 
   void _closeAllPanels() {
@@ -436,8 +444,13 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
-    final emojiActive = _composer.activePanel == ComposerPanel.emoji;
-    final moreActive = _composer.activePanel == ComposerPanel.attachment;
+    // 按钮高亮表示「现在露出的是这个面板」。键盘盖在面板上时露出的是键盘，
+    // 按钮回到未激活态，点击含义变成「收键盘、露出面板」（对齐飞书）。
+    final keyboardOnTop = _focusNode.hasFocus || widget.keyboardInset > 0;
+    final emojiActive =
+        _composer.activePanel == ComposerPanel.emoji && !keyboardOnTop;
+    final moreActive =
+        _composer.activePanel == ComposerPanel.attachment && !keyboardOnTop;
     // 键盘让位：在面板下方补一条「键盘比面板高出的差额」。
     //
     // 结构是「输入行 → 面板 → 差额占位」，这样：
