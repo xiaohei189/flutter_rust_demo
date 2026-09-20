@@ -464,6 +464,9 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
+    // 手势条高度（键盘弹起时系统会把它置 0）。必须在 SafeArea 之外取：
+    // 进了 SafeArea 之后 MediaQuery.padding.bottom 已被清零。
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
     // 按钮高亮表示「现在露出的是这个面板」。键盘盖在面板上时露出的是键盘，
     // 按钮回到未激活态，点击含义变成「收键盘、露出面板」（对齐飞书）。
     final keyboardOnTop = _focusNode.hasFocus || widget.keyboardInset > 0;
@@ -498,9 +501,11 @@ class _ChatInputState extends State<ChatInput> {
     _sheetExtent = sheetExtent;
     // 差额只是「期望值」：实际可用空间可能不够（小屏 + 高键盘，或大字体），
     // 此时按可用空间收敛，宁可输入行离键盘上沿差几像素，也不能溢出。
-    final desiredGap = widget.keyboardInset > panelExtent
-        ? widget.keyboardInset - panelExtent
-        : 0.0;
+    //
+    // 用 sheetExtent（而不是当前键盘高度）算差额，并扣掉手势条：
+    // 面板态与键盘态下输入行都停在「屏幕底部 − sheetExtent」，
+    // 否则面板态会因面板比键盘矮 + 手势条占位而整体下沉 20 多像素。
+    final desiredGap = math.max(0.0, sheetExtent - safeBottom - panelExtent);
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
@@ -565,7 +570,14 @@ class _ChatInputState extends State<ChatInput> {
                 //
                 // 不做自绘高度动画：键盘 inset 在 Android 11+ 是逐帧下发的系统动画，
                 // 直接跟随即可；再叠一层 AnimatedSize 就会与系统动画错拍（观感上的抖动）。
-                SizedBox(height: keyboardGap, width: double.infinity),
+                // 差额区填成面板同色：键盘收起时它露在输入行与面板之间，
+                // 同色后视觉上等于「面板顶到输入行」，不会出现一条异色缝。
+                ColoredBox(
+                  color: _composer.hasActivePanel
+                      ? context.appColors.attachmentBackground
+                      : context.appColors.inputBackground,
+                  child: SizedBox(height: keyboardGap, width: double.infinity),
+                ),
                 // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
                 // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
                 Flexible(

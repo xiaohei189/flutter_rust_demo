@@ -91,7 +91,11 @@ void useFixedView(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-Widget host(MessageServiceNotifier service, double keyboardHeight) {
+Widget host(
+  MessageServiceNotifier service,
+  double keyboardHeight, {
+  EdgeInsets padding = EdgeInsets.zero,
+}) {
   return ProviderScope(
     overrides: [
       messageServiceProvider.overrideWith(() => service),
@@ -101,9 +105,10 @@ Widget host(MessageServiceNotifier service, double keyboardHeight) {
       home: const ChatDetailScreen(conversationId: _convId),
       // 注入键盘高度：必须放在 MaterialApp 的 builder 里，否则会被上层 MediaQuery 覆盖。
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboardHeight)),
+        data: MediaQuery.of(context).copyWith(
+          viewInsets: EdgeInsets.only(bottom: keyboardHeight),
+          padding: padding,
+        ),
         child: child!,
       ),
     ),
@@ -239,6 +244,60 @@ void main() {
       tester.getBottomLeft(find.byType(ChatMessageListSection)).dy,
       lessThan(listBottomBefore),
       reason: '面板展开应占用底部空间，列表底部随之让位',
+    );
+  });
+
+  // 业界模型的最后一块拼图：面板高度未必等于键盘高度，且键盘收起时手势条会回来，
+  // 因此面板必须按「记忆的键盘高度 − 手势条」占位，否则面板态与键盘态之间
+  // 输入行（连同消息内容）会整体下沉/上浮十几到二十几像素，看起来就是抖一下。
+  testWidgets('面板态与键盘态输入行位置一致（含手势条安全区）', (tester) async {
+    useFixedView(tester);
+    const keyboardHeight = 322.0;
+    const gestureBar = 24.0;
+
+    // 面板展开态（键盘收起，手势条占位）
+    await tester.pumpWidget(
+      host(
+        serviceWithMessages(),
+        0,
+        padding: const EdgeInsets.only(bottom: gestureBar),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+    final rowWithPanel = tester.getRect(
+      find.byKey(const ValueKey('chat_input_row_area')),
+    );
+    final messageWithPanel = tester.getRect(find.text('第一条'));
+
+    // 同一面板状态下弹起键盘（面板不关闭，被键盘盖住）
+    await tester.pumpWidget(
+      host(
+        serviceWithMessages(),
+        keyboardHeight,
+        padding: const EdgeInsets.only(bottom: gestureBar),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final rowWithKeyboard = tester.getRect(
+      find.byKey(const ValueKey('chat_input_row_area')),
+    );
+
+    expect(
+      rowWithKeyboard.bottom,
+      closeTo(rowWithPanel.bottom, 2),
+      reason: '面板态与键盘态的输入行位置必须一致（否则切换时会整体位移）',
+    );
+    expect(
+      tester.getRect(find.text('第一条')),
+      messageWithPanel,
+      reason: '面板 ↔ 键盘切换时消息内容不得位移',
+    );
+    expect(
+      rowWithKeyboard.bottom,
+      closeTo(_screenHeight - keyboardHeight, 2),
+      reason: '输入行下沿仍应贴住键盘上沿',
     );
   });
 }
