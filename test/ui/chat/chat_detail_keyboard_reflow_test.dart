@@ -15,10 +15,12 @@ import 'package:flutter_rust_demo/ui/chat/widgets/shared/chat_detail_app_bar.dar
 import 'package:flutter_rust_demo/ui/profile/providers/user_profile_provider.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
 
-/// 键盘/面板变化时「只有底部在动」（对齐飞书实机录屏测得的观感）：
+/// 底部占位模型（业界推荐）：列表留白 = 输入行 + max(面板, 键盘)。
 ///
-/// 顶栏与消息列表**顶部**位置必须完全不变，只有列表底部与输入区在动。
-/// 这是用户反馈的「全局抖动」的直接对立面，也与具体机型无关（断言的是相对位置）。
+/// - 顶栏与消息列表**顶部**位置必须完全不变（body 不随键盘重排）；
+/// - 键盘/面板占多少，列表就让多少，最新消息始终露在输入行上方；
+/// - 面板与键盘等高时（面板按记忆的键盘高度对齐占位）互相切换零位移。
+/// 断言的都是相对位置，与具体机型/键盘高度无关。
 const _convId = 'si_user_a_user_b';
 
 Conversation _conversation() => const Conversation(
@@ -166,9 +168,9 @@ void main() {
     );
   });
 
-  // 飞书实机录屏测得的关键性质：键盘从下往上升起时，**消息内容一像素都不移动**，
-  // 键盘直接盖在列表之上。这一条如果失败，说明列表还在为键盘让位。
-  testWidgets('键盘弹出时消息内容不位移（键盘盖在列表之上）', (tester) async {
+  // 业界模型：键盘弹起时列表让位（内容上移），最新消息必须露在输入行上方。
+  // 如果失败，说明列表没让位，最新消息会被键盘盖住。
+  testWidgets('键盘弹出时列表让位：最新消息露在输入行上方', (tester) async {
     useFixedView(tester);
     const keyboardHeight = 300.0;
 
@@ -180,10 +182,27 @@ void main() {
     await tester.pumpWidget(host(serviceWithMessages(), keyboardHeight));
     await tester.pumpAndSettle();
 
+    final after = tester.getRect(find.text('第一条'));
     expect(
-      tester.getRect(find.text('第一条')),
-      before,
-      reason: '键盘弹出不应让消息内容位移（对齐飞书：键盘盖在列表之上）',
+      after.top,
+      lessThan(before.top),
+      reason: '键盘弹出时列表应让位（内容上移），而不是被键盘盖住',
+    );
+
+    // 让位量 = 键盘高度 - 输入区原本占用的空间（对齐框架 resizeToAvoidBottomInset 的语义）
+    final rowArea = tester.getRect(
+      find.byKey(const ValueKey('chat_input_row_area')),
+    );
+    final lastMessageBottom = tester.getRect(find.text('第二条')).bottom;
+    expect(
+      lastMessageBottom,
+      lessThanOrEqualTo(rowArea.top + 2),
+      reason: '最新一条消息必须完全露在输入行上方（不被输入区/键盘遮挡）',
+    );
+    expect(
+      rowArea.bottom,
+      closeTo(_screenHeight - keyboardHeight, 2),
+      reason: '输入行下沿仍应贴住键盘上沿',
     );
   });
 

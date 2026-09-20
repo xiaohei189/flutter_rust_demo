@@ -3,8 +3,9 @@
 // 「消息内容是否为键盘让位」。
 //
 // 这三张图是几何断言的补充证据（断言只给数字，图能一眼看出布局是否合理）：
-//   goldens/chat_kbd300_panel.png   键盘 + 面板：输入行在键盘上，面板被键盘覆盖
-//   goldens/chat_kbd300_nopanel.png 键盘：消息内容延伸进键盘区（列表不为键盘让位）
+//   goldens/chat_kbd300_panel.png   键盘 + 面板：输入行在键盘上、面板被键盘覆盖，
+//                                   消息位置与「只有键盘」那张完全一致（切换零位移）
+//   goldens/chat_kbd300_nopanel.png 键盘：消息为键盘让位，停在输入行上方（业界模型）
 //   goldens/chat_nokbd_panel.png    面板：面板贴底、输入行在其上沿
 //
 // 注意：仓库 .gitignore 忽略 *.png，这三张基准图**不入库**。

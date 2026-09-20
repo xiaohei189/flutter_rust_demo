@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -98,6 +100,15 @@ class _ChatInputState extends State<ChatInput> {
 
   /// 当前「键盘比面板高出的差额」，仅用于从实测总高中扣除、得到布局占位高度。
   double _keyboardGap = 0;
+
+  /// 本次会话里实测到的键盘高度（键盘收起后仍保留）。
+  ///
+  /// 面板与键盘是「同一块底部空间」的两种形态，面板按记忆的键盘高度对齐占位，
+  /// 两者互相切换时占位高度不变 → 列表零位移（业界 IM 的通行做法）。
+  double _lastKeyboardHeight = 0;
+
+  /// 本次 build 算出的「底部占位块」高度 = max(面板高度, 键盘高度)，供上报列表留白。
+  double _sheetExtent = 0;
 
   late FocusNode _focusNode;
   late final ChatComposerController _composer;
@@ -284,6 +295,15 @@ class _ChatInputState extends State<ChatInput> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant ChatInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 键盘高度实测值逐帧下发，这里记住它，键盘收起后仍按这个高度给面板占位。
+    if (widget.keyboardInset > 0) {
+      _lastKeyboardHeight = widget.keyboardInset;
+    }
+  }
+
   void _onTextChanged() {
     _composer.updateText(
       widget.controller.text,
@@ -464,6 +484,18 @@ class _ChatInputState extends State<ChatInput> {
     final panelExtent = _composer.hasActivePanel
         ? (_panelNaturalHeight > 0 ? _panelNaturalHeight : _panelFallbackHeight)
         : 0.0;
+    // 底部占位块（业界模型）：面板与键盘争同一块空间，取两者较大者。
+    //
+    // - 有面板：取 max(面板, 记忆的键盘高度, 当前键盘高度)。因为面板按键盘高度对齐占位，
+    //   面板 ↔ 键盘互相切换时占位不变，列表一个像素都不位移（飞书实机录屏即如此）。
+    // - 无面板：就是当前键盘高度。键盘把列表顶起来，最新消息不会被键盘盖住。
+    final sheetExtent = panelExtent > 0
+        ? math.max(
+            panelExtent,
+            math.max(_lastKeyboardHeight, widget.keyboardInset),
+          )
+        : widget.keyboardInset;
+    _sheetExtent = sheetExtent;
     // 差额只是「期望值」：实际可用空间可能不够（小屏 + 高键盘，或大字体），
     // 此时按可用空间收敛，宁可输入行离键盘上沿差几像素，也不能溢出。
     final desiredGap = widget.keyboardInset > panelExtent
@@ -530,12 +562,10 @@ class _ChatInputState extends State<ChatInput> {
                 // 键盘比面板高的差额放在「输入行」与「面板」之间：
                 // 这样差额把输入行顶到键盘上沿的同时，**面板仍贴在屏幕底部**被键盘覆盖。
                 // 若放在面板之后，差额会把面板一起顶高（键盘高于面板时可见位移）。
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  alignment: Alignment.topCenter,
-                  child: SizedBox(height: keyboardGap, width: double.infinity),
-                ),
+                //
+                // 不做自绘高度动画：键盘 inset 在 Android 11+ 是逐帧下发的系统动画，
+                // 直接跟随即可；再叠一层 AnimatedSize 就会与系统动画错拍（观感上的抖动）。
+                SizedBox(height: keyboardGap, width: double.infinity),
                 // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
                 // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
                 Flexible(
@@ -584,16 +614,21 @@ class _ChatInputState extends State<ChatInput> {
     );
   }
 
-  /// 上报「输入行 + 已展开面板」的总高度。
+  /// 上报「输入行 + 底部占位块」的总高度（业界公式：`输入行 + max(面板, 键盘)`）。
   ///
-  /// 外层据此给消息列表留底部空间；键盘高度变化不会改变这个值，
-  /// 所以键盘开合不会让列表重新留白（多机型通用，不依赖具体键盘高度）。
+  /// 外层据此给消息列表留底部空间：占位块多高，列表就让多少，
+  /// 最新消息始终停在输入行上方。面板与键盘等高时该值恒定，
+  /// 因此两者互相切换不会让列表重新留白（不依赖具体机型/键盘高度）。
   void _reportHeight(Size size) {
     final notifier = widget.heightNotifier;
     if (notifier == null) return;
-    // 扣除键盘差额，只上报「输入行 + 面板」的布局占位：
-    // 列表按这个值留白，键盘部分由键盘自己覆盖，列表内容因此不随键盘位移。
-    final height = size.height - _keyboardGap;
+    // 实测总高扣掉键盘差额 = 「输入行 + 面板」实际渲染高度；
+    // 再与让位公式取较大者，保证列表留白既不小于实际渲染高度（不遮挡），
+    // 也不小于占位块高度（面板与键盘切换零位移）。
+    final height = math.max(
+      size.height - _keyboardGap,
+      _inputRowHeight + _sheetExtent,
+    );
     if (height <= 0 || height == notifier.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) notifier.value = height;

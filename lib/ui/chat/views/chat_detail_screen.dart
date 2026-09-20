@@ -491,14 +491,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     String currentUserId,
   ) {
     return Expanded(
-      // 按「输入行 + 面板」的布局占位留底部空间（**不含键盘**）。
-      // 键盘出现时输入区作为覆盖层上升，列表留白不变 → 列表内容不位移，
-      // 与飞书实机录屏测得的行为一致（键盘盖在列表之上）。
+      // 业界模型：列表留白 = 「输入行 + 底部占位块」，占位块 = max(面板, 键盘)。
+      // 键盘占多少就让多少，最新消息始终停在输入行上方；面板与键盘等高时
+      // 留白恒定，两者互相切换时列表零位移。
+      // 直接跟随 inset 逐帧变化（不做自绘补间），避免与系统键盘动画错拍。
       child: ValueListenableBuilder<double>(
         valueListenable: _inputAreaHeight,
-        builder: (context, inputInset, child) => AnimatedPadding(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
+        builder: (context, inputInset, child) => Padding(
           padding: EdgeInsets.only(bottom: inputInset),
           child: child,
         ),
@@ -673,7 +672,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         // 键盘不让 Scaffold 缩放 body：
         // resizeToAvoidBottomInset: true 时键盘出现会让整个 body 变矮，消息列表跟着重排；
         // 点表情（收键盘 + 开面板 同一帧）时两次重排叠加，就是真机上的「全局抖动」。
-        // 改成 false 后键盘只影响底部输入区（见 _buildBody 里的 AnimatedPadding）。
+        // 改成 false 后，底部让位由输入区自己按 max(面板, 键盘) 计算并上报
+        // （见 _buildMessageListSection 的 bottom padding），只影响列表底部留白。
         resizeToAvoidBottomInset: false,
         appBar: ChatDetailAppBar(
           user: user,
