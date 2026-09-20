@@ -8,6 +8,9 @@ import '../../../../data/services/emoji_store.dart';
 /// 底部 Tab 栏的设计高度（可用空间不足时会按可用高度收敛）。
 const double kTabBarHeight = 48;
 
+/// 表情面板的设计高度：输入区按它（与键盘高度取较大者）给面板占位。
+const double kEmojiPanelHeight = 300;
+
 /// 表情面板 Tab
 enum EmojiTab { recent, emoji, favorite, gif }
 
@@ -18,7 +21,7 @@ class EmojiPanel extends StatefulWidget {
     required this.onEmojiSelected,
     this.onGifSelected,
     this.onBackspace,
-    this.maxHeight = 300,
+    this.maxHeight = kEmojiPanelHeight,
     this.showTabBar = true,
     this.backgroundColor,
     this.scrollPhysics,

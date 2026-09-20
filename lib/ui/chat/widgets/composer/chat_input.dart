@@ -89,17 +89,8 @@ class ChatInput extends StatefulWidget {
 }
 
 class _ChatInputState extends State<ChatInput> {
-  /// 面板自然高度未量到时的兜底值（与表情面板上限一致），仅用于首次展开的那一帧。
-  static const double _panelFallbackHeight = 300;
-
-  /// 面板自然高度（未展开为 0），用于算「键盘比面板高出的差额」占位。
-  double _panelNaturalHeight = 0;
-
   /// 输入行高度（实测）。用于把差额占位限制在可用空间内，避免小屏溢出。
   double _inputRowHeight = 0;
-
-  /// 当前「键盘比面板高出的差额」，仅用于从实测总高中扣除、得到布局占位高度。
-  double _keyboardGap = 0;
 
   /// 上一次实测到的键盘高度（进程内跨会话页共享）。
   ///
@@ -144,6 +135,12 @@ class _ChatInputState extends State<ChatInput> {
   @override
   void initState() {
     super.initState();
+    // 页面可能在键盘已经弹起时才被创建（切会话、热更新）：先把当前高度收进记忆，
+    // 否则面板占位会按设计高度算，输入行落到键盘下面。
+    if (widget.keyboardInset > 0) {
+      _lastKeyboardHeight = widget.keyboardInset;
+      _keyboardSessionPeak = widget.keyboardInset;
+    }
     _focusNode = FocusNode();
     _focusNode.onKeyEvent = _handleKeyEvent;
     _focusNode.addListener(_onFocusChanged);
@@ -488,60 +485,44 @@ class _ChatInputState extends State<ChatInput> {
         _composer.activePanel == ComposerPanel.emoji && !keyboardOnTop;
     final moreActive =
         _composer.activePanel == ComposerPanel.attachment && !keyboardOnTop;
-    // 键盘让位：在面板下方补一条「键盘比面板高出的差额」。
+    // 面板的「设计高度」：占位块的下限（表情 300 / 附件 320）。
+    // 面板渲染时会被撑到占位块高度，所以这里用设计常量即可，不必等实测。
+    final panelPreferred = switch (_composer.activePanel) {
+      ComposerPanel.emoji => kEmojiPanelHeight,
+      ComposerPanel.attachment => kAttachmentPanelHeight,
+      ComposerPanel.none => 0.0,
+    };
+    // 底部占位块 = max(面板设计高度, 键盘高度)：面板与键盘争的是同一块空间。
     //
-    // 结构是「输入行 → 面板 → 差额占位」，这样：
-    // - 面板展开、键盘收起：输入行在面板之上（占位为 0）；
-    // - 键盘弹出：差额把输入行顶到键盘上沿，而**面板仍贴在屏幕底部、被键盘覆盖**，
-    //   面板自身不发生位移 —— 这就是飞书那种「只有底部键盘在动」的观感；
-    // - 键盘比面板矮时差额为 0，输入行落在面板上沿，多出的面板部分同样被键盘盖住。
+    // 面板开着时**只用记忆的键盘高度**、不掺逐帧变化的当前 inset：
+    // 这样键盘升降动画期间占位恒定 → 输入行一动不动，键盘只是滑上来盖住面板，
+    // 就是飞书那种「底部在换、其它不动」的观感。首次遇到更高的键盘时会随
+    // 峰值抬高一次，之后不再变化。
     //
-    // 键盘高度取自外层传入的实测 viewInsets，面板高度取实测值，两者都不写死，
-    // 因此不同机型/不同键盘高度都成立。
-    final panelExtent = _composer.hasActivePanel
-        ? (_panelNaturalHeight > 0 ? _panelNaturalHeight : _panelFallbackHeight)
-        : 0.0;
-    // 底部占位块（业界模型）：面板与键盘争同一块空间，取两者较大者。
-    //
-    // - 有面板：取 max(面板, 记忆的键盘高度, 当前键盘高度)。因为面板按键盘高度对齐占位，
-    //   面板 ↔ 键盘互相切换时占位不变，列表一个像素都不位移（飞书实机录屏即如此）。
-    // - 无面板：就是当前键盘高度。键盘把列表顶起来，最新消息不会被键盘盖住。
-    // 键盘在屏幕上时以实测值为准（切到矮键盘/数字键盘时输入行要贴住它），
-    // 键盘收起后才用「记忆的键盘高度」给面板占位。
-    final keyboardExtent = widget.keyboardInset > 0
-        ? widget.keyboardInset
-        : _lastKeyboardHeight;
-    final sheetExtent = panelExtent > 0
-        ? math.max(panelExtent, keyboardExtent)
+    // 无面板时用当前 inset：键盘把列表顶起来，最新消息不会被键盘盖住。
+    final sheetExtent = _composer.hasActivePanel
+        ? math.max(
+            panelPreferred,
+            math.max(_lastKeyboardHeight, widget.keyboardInset),
+          )
         : widget.keyboardInset;
     _sheetExtent = sheetExtent;
-    // 差额只是「期望值」：实际可用空间可能不够（小屏 + 高键盘，或大字体），
-    // 此时按可用空间收敛，宁可输入行离键盘上沿差几像素，也不能溢出。
-    //
-    // 用 sheetExtent（而不是当前键盘高度）算差额，并扣掉手势条：
-    // 面板态与键盘态下输入行都停在「屏幕底部 − sheetExtent」，
-    // 否则面板态会因面板比键盘矮 + 手势条占位而整体下沉 20 多像素。
-    final desiredGap = math.max(0.0, sheetExtent - safeBottom - panelExtent);
+    // 占位块的目标高度（从输入行下沿到屏幕底部，扣掉手势条）。
+    // 无面板时它就是键盘高度（把输入行顶到键盘上沿）；
+    // 有面板时面板撑满它，面板顶边正好接住输入行。
+    final desiredBlock = math.max(0.0, sheetExtent - safeBottom);
     // SafeArea 只在外层与屏幕边缘之间留间隙，内部组件无缝紧贴
     return SafeArea(
       top: false,
       bottom: true,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // 输入行高度尚未实测到时先用 0 差额：首帧必然放得下（最紧凑布局），
-          // 量到之后再滑到目标位置，不会出现首帧溢出。
-          //
-          // 父级高度无界时不钳制（没有可用空间上限可言）：必须用期望差额，
-          // 否则输入行不会浮到键盘之上。
-          double keyboardGap = _inputRowHeight > 0 ? desiredGap : 0.0;
-          if (_inputRowHeight > 0 && constraints.maxHeight.isFinite) {
-            final roomForGap =
-                constraints.maxHeight - _inputRowHeight - panelExtent;
-            if (keyboardGap > roomForGap) {
-              keyboardGap = roomForGap < 0 ? 0.0 : roomForGap;
-            }
-          }
-          _keyboardGap = keyboardGap;
+          // 可用空间不足（小屏/横屏/大字体/高键盘）时收敛面板占位：优先保证
+          // 输入行完整可见，收敛掉的部分转到「输入行与面板之间」的差额里，
+          // 占位块高度：目标值由外层 Flexible 自动收敛到可用空间（Column 布局时
+          // 先量非 flex 的输入行，再给 Flexible 剩余空间），因此这里直接给目标值即可，
+          // 不会出现 RenderFlex 溢出，也不必依赖尚未来得及实测的输入行高度。
+          final block = desiredBlock;
           return _MeasureSize(
             onChange: _reportHeight,
             child: Column(
@@ -580,58 +561,51 @@ class _ChatInputState extends State<ChatInput> {
                     ),
                   ),
                 ),
-                // 键盘比面板高的差额放在「输入行」与「面板」之间：
-                // 这样差额把输入行顶到键盘上沿的同时，**面板仍贴在屏幕底部**被键盘覆盖。
-                // 若放在面板之后，差额会把面板一起顶高（键盘高于面板时可见位移）。
-                //
-                // 不做自绘高度动画：键盘 inset 在 Android 11+ 是逐帧下发的系统动画，
-                // 直接跟随即可；再叠一层 AnimatedSize 就会与系统动画错拍（观感上的抖动）。
-                // 差额区填成面板同色：键盘收起时它露在输入行与面板之间，
-                // 同色后视觉上等于「面板顶到输入行」，不会出现一条异色缝。
-                ColoredBox(
-                  color: _composer.hasActivePanel
-                      ? context.appColors.attachmentBackground
-                      : context.appColors.inputBackground,
-                  child: SizedBox(height: keyboardGap, width: double.infinity),
-                ),
-                // 两个面板常驻树中（Offstage 保状态），切换只动画高度，不重建不重读磁盘。
-                // Flexible 让面板在输入区高度受限（多行输入 + 面板超出可用高度）时自动收缩，避免 RenderFlex 溢出。
+                // 底部占位块：高度 = max(面板设计高度, 记忆的键盘高度) − 手势条，
+                // **与键盘动画无关**（面板态下不掺当前 inset），所以键盘滑上来时
+                // 面板与输入行都不位移，只有键盘盖在面板上 —— 飞书那种观感。
+                // 面板贴在块底部，块内剩余部分填面板同色，视觉上等于面板顶到输入行；
+                // 没有面板时整块就是让位空间（被键盘盖住，看不到）。
+                // 两个面板常驻树中（Offstage 保状态），切换不重建、不重读磁盘。
                 Flexible(
                   fit: FlexFit.loose,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_emojiPanelOpened)
-                        // 面板必须是 Flexible 子项：Column 给非 flex 子项的主轴约束是**无界**的，
-                        // 那样面板会永远按自身 300 高度布局、不随可用空间收缩，
-                        // 小屏（或大字体/高键盘）时就会 RenderFlex overflow。
-                        // 作为 flex 子项后它拿到有界约束，空间不足时自动收缩（面板内部可滚动）。
-                        Flexible(
-                          child: Offstage(
-                            offstage:
-                                _composer.activePanel != ComposerPanel.emoji,
-                            // 量出面板自然高度：用于算键盘差额占位（面板自身不位移）。
-                            child: _MeasureSize(
-                              onChange: _onPanelSized,
-                              child: _emojiPanel,
-                            ),
-                          ),
+                  child: SizedBox(
+                    height: block,
+                    width: double.infinity,
+                    child: ColoredBox(
+                      color: _composer.hasActivePanel
+                          ? context.appColors.attachmentBackground
+                          : context.appColors.inputBackground,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 面板必须包在 Flexible 里：Column 给非 flex 子项的
+                            // 主轴约束是**无界**的，面板会按自身（内容 + 内边距）
+                            // 高度铺开并溢出占位块（真机上报过面板下沿超出屏幕 36px）。
+                            if (_emojiPanelOpened)
+                              Flexible(
+                                child: Offstage(
+                                  offstage:
+                                      _composer.activePanel !=
+                                      ComposerPanel.emoji,
+                                  child: _emojiPanel,
+                                ),
+                              ),
+                            if (_attachmentPanelOpened)
+                              Flexible(
+                                child: Offstage(
+                                  offstage:
+                                      _composer.activePanel !=
+                                      ComposerPanel.attachment,
+                                  child: _attachmentPanel,
+                                ),
+                              ),
+                          ],
                         ),
-                      if (_attachmentPanelOpened)
-                        Flexible(
-                          child: Offstage(
-                            offstage:
-                                _composer.activePanel !=
-                                ComposerPanel.attachment,
-                            // 附件面板同样要量高度：它的上限（320）与表情面板（300）不同，
-                            // 不量的话键盘差额会按兜底值算错，输入行落不到键盘上沿。
-                            child: _MeasureSize(
-                              onChange: _onPanelSized,
-                              child: _attachmentPanel,
-                            ),
-                          ),
-                        ),
-                    ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -650,25 +624,12 @@ class _ChatInputState extends State<ChatInput> {
   void _reportHeight(Size size) {
     final notifier = widget.heightNotifier;
     if (notifier == null) return;
-    // 实测总高扣掉键盘差额 = 「输入行 + 面板」实际渲染高度；
-    // 再与让位公式取较大者，保证列表留白既不小于实际渲染高度（不遮挡），
-    // 也不小于占位块高度（面板与键盘切换零位移）。
-    final height = math.max(
-      size.height - _keyboardGap,
-      _inputRowHeight + _sheetExtent,
-    );
+    // 实测总高（输入行 + 占位块）与让位公式取较大者：既保证列表留白不小于
+    // 实际渲染高度（不遮挡），也不小于占位块高度（面板与键盘切换零位移）。
+    final height = math.max(size.height, _inputRowHeight + _sheetExtent);
     if (height <= 0 || height == notifier.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) notifier.value = height;
-    });
-  }
-
-  /// 面板自然高度回报：只需重算「键盘差额占位」，不改变面板自身位置。
-  void _onPanelSized(Size size) {
-    final height = size.height;
-    if (height <= 0 || height == _panelNaturalHeight) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _panelNaturalHeight = height);
     });
   }
 

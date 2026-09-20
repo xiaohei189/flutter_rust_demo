@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../previews/app_theme_preview.dart';
 import '../../../core/theme/app_theme.dart';
 
+/// 附件面板的设计高度：输入区按它（与键盘高度取较大者）给面板占位。
+const double kAttachmentPanelHeight = 320;
+
 /// 附件面板项定义
 class AttachmentItem {
   final IconData icon;
@@ -32,12 +35,10 @@ class AttachmentPanel extends StatelessWidget {
     final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 20),
-      decoration: BoxDecoration(
-        color: colors.attachmentBackground,
-      ),
+      decoration: BoxDecoration(color: colors.attachmentBackground),
       // 高度受限时（小屏 / 键盘弹出）可滚动，避免 RenderFlex 溢出
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 320),
+        constraints: const BoxConstraints(maxHeight: kAttachmentPanelHeight),
         child: SingleChildScrollView(
           child: GridView.builder(
             shrinkWrap: true,

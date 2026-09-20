@@ -255,23 +255,8 @@ void main() {
     const keyboardHeight = 322.0;
     const gestureBar = 24.0;
 
-    // 面板展开态（键盘收起，手势条占位）
-    await tester.pumpWidget(
-      host(
-        serviceWithMessages(),
-        0,
-        padding: const EdgeInsets.only(bottom: gestureBar),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('表情'));
-    await tester.pumpAndSettle();
-    final rowWithPanel = tester.getRect(
-      find.byKey(const ValueKey('chat_input_row_area')),
-    );
-    final messageWithPanel = tester.getRect(find.text('第一条'));
-
-    // 同一面板状态下弹起键盘（面板不关闭，被键盘盖住）
+    // 真机上的顺序通常是「先打字、再点表情」：键盘先弹起一次，app 就记住了
+    // 这台机器的键盘高度；之后面板按这个高度占位，两者切换零位移。
     await tester.pumpWidget(
       host(
         serviceWithMessages(),
@@ -283,15 +268,20 @@ void main() {
     final rowWithKeyboard = tester.getRect(
       find.byKey(const ValueKey('chat_input_row_area')),
     );
+    final messageWithKeyboard = tester.getRect(find.text('第一条'));
+
+    // 打开表情面板 → 键盘收起、面板顶上来，输入行与消息内容都不该动
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
 
     expect(
-      rowWithKeyboard.bottom,
-      closeTo(rowWithPanel.bottom, 2),
+      tester.getRect(find.byKey(const ValueKey('chat_input_row_area'))).bottom,
+      closeTo(rowWithKeyboard.bottom, 2),
       reason: '面板态与键盘态的输入行位置必须一致（否则切换时会整体位移）',
     );
     expect(
       tester.getRect(find.text('第一条')),
-      messageWithPanel,
+      messageWithKeyboard,
       reason: '面板 ↔ 键盘切换时消息内容不得位移',
     );
     expect(
