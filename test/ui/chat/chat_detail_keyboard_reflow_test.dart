@@ -151,6 +151,19 @@ void main() {
       listTopBefore,
       reason: '键盘弹出不应移动消息列表顶部（body 不随键盘重排）',
     );
+
+    // 屏幕级集成断言：会话页必须把键盘高度**真正传给** ChatInput，
+    // 否则输入行不会浮到键盘之上（曾在真机上出现：漏传 keyboardInset → 输入行被键盘挡住）。
+    // 只测 ChatInput 自身是抓不到这个问题的，必须在这一层验证。
+    final keyboardTop = _screenHeight - keyboardHeight;
+    final rowArea = tester.getRect(
+      find.byKey(const ValueKey('chat_input_row_area')),
+    );
+    expect(
+      rowArea.bottom,
+      closeTo(keyboardTop, 2),
+      reason: '会话页应把键盘高度传给 ChatInput，使输入行下沿贴住键盘上沿',
+    );
   });
 
   // 飞书实机录屏测得的关键性质：键盘从下往上升起时，**消息内容一像素都不移动**，

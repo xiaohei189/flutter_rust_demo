@@ -555,6 +555,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       isGroupChat: _isGroup,
       sendToLabel: '发送给 ${user.name}',
       heightNotifier: _inputAreaHeight,
+      // 必须传：ChatInput 靠它把输入行浮到键盘之上、并把面板留在原位被键盘覆盖。
+      // 漏传会退回默认值 0，输入行会一直停在屏幕底部被键盘挡住。
+      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
     );
   }
 
