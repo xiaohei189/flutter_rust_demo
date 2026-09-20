@@ -300,4 +300,34 @@ void main() {
       reason: '输入行下沿仍应贴住键盘上沿',
     );
   });
+
+  // 真机上暴露过的坑：键盘收起动画会先经过一串中间值（最后还剩一个导航栏高度的
+  // 尾巴 24），若直接记「最后一个非零 inset」，记住的键盘高度就变成 24，
+  // 面板占位随之缩水，切回面板时输入行又掉下去一截。
+  testWidgets('键盘收起动画的中间值不会污染记忆的键盘高度', (tester) async {
+    useFixedView(tester);
+    const keyboardHeight = 322.0;
+
+    await tester.pumpWidget(host(serviceWithMessages(), 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('表情'));
+    await tester.pumpAndSettle();
+
+    // 键盘弹起（面板被盖住），再按真实收起的轨迹回落：322 → 24 → 0
+    await tester.pumpWidget(host(serviceWithMessages(), keyboardHeight));
+    await tester.pumpAndSettle();
+    final rowWithKeyboard = tester.getRect(
+      find.byKey(const ValueKey('chat_input_row_area')),
+    );
+    await tester.pumpWidget(host(serviceWithMessages(), 24));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(host(serviceWithMessages(), 0));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byKey(const ValueKey('chat_input_row_area'))),
+      rowWithKeyboard,
+      reason: '键盘完全收起后面板应收住输入行，位置与键盘态一致（记忆高度取峰值，不取尾巴）',
+    );
+  });
 }

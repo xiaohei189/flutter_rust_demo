@@ -101,14 +101,20 @@ class _ChatInputState extends State<ChatInput> {
   /// 当前「键盘比面板高出的差额」，仅用于从实测总高中扣除、得到布局占位高度。
   double _keyboardGap = 0;
 
-  /// 本次会话里实测到的键盘高度（键盘收起后仍保留）。
+  /// 上一次实测到的键盘高度（进程内跨会话页共享）。
   ///
   /// 面板与键盘是「同一块底部空间」的两种形态，面板按记忆的键盘高度对齐占位，
   /// 两者互相切换时占位高度不变 → 列表零位移（业界 IM 的通行做法）。
-  double _lastKeyboardHeight = 0;
+  ///
+  /// 用 static：同一台设备键盘高度稳定，换一个会话/重进页面也能立刻按已知高度
+  /// 给面板占位；否则新页面第一次开面板会低二十几像素，之后弹一次键盘才对齐。
+  static double _lastKeyboardHeight = 0;
 
   /// 本次 build 算出的「底部占位块」高度 = max(面板高度, 键盘高度)，供上报列表留白。
   double _sheetExtent = 0;
+
+  /// 本次键盘弹出期间见过的最大 inset：用于剔除键盘收起动画里的中间值与尾巴。
+  double _keyboardSessionPeak = 0;
 
   late FocusNode _focusNode;
   late final ChatComposerController _composer;
@@ -298,9 +304,17 @@ class _ChatInputState extends State<ChatInput> {
   @override
   void didUpdateWidget(covariant ChatInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 键盘高度实测值逐帧下发，这里记住它，键盘收起后仍按这个高度给面板占位。
-    if (widget.keyboardInset > 0) {
-      _lastKeyboardHeight = widget.keyboardInset;
+    final inset = widget.keyboardInset;
+    if (inset <= 0) {
+      // 键盘完全收起：本次会话结束，下次弹出重新取峰值。
+      _keyboardSessionPeak = 0;
+      return;
+    }
+    // 只往「更高」更新：键盘收起动画会先经过一串中间值，最后还会留一个
+    // 手势条/导航栏高度的尾巴，直接取最后一个非零值会把真实键盘高度记错。
+    if (inset > _keyboardSessionPeak) {
+      _keyboardSessionPeak = inset;
+      _lastKeyboardHeight = inset;
     }
   }
 
@@ -492,11 +506,13 @@ class _ChatInputState extends State<ChatInput> {
     // - 有面板：取 max(面板, 记忆的键盘高度, 当前键盘高度)。因为面板按键盘高度对齐占位，
     //   面板 ↔ 键盘互相切换时占位不变，列表一个像素都不位移（飞书实机录屏即如此）。
     // - 无面板：就是当前键盘高度。键盘把列表顶起来，最新消息不会被键盘盖住。
+    // 键盘在屏幕上时以实测值为准（切到矮键盘/数字键盘时输入行要贴住它），
+    // 键盘收起后才用「记忆的键盘高度」给面板占位。
+    final keyboardExtent = widget.keyboardInset > 0
+        ? widget.keyboardInset
+        : _lastKeyboardHeight;
     final sheetExtent = panelExtent > 0
-        ? math.max(
-            panelExtent,
-            math.max(_lastKeyboardHeight, widget.keyboardInset),
-          )
+        ? math.max(panelExtent, keyboardExtent)
         : widget.keyboardInset;
     _sheetExtent = sheetExtent;
     // 差额只是「期望值」：实际可用空间可能不够（小屏 + 高键盘，或大字体），
