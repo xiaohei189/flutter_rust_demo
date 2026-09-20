@@ -6,7 +6,13 @@
 //   goldens/chat_kbd300_panel.png   键盘 + 面板：输入行在键盘上，面板被键盘覆盖
 //   goldens/chat_kbd300_nopanel.png 键盘：消息内容延伸进键盘区（列表不为键盘让位）
 //   goldens/chat_nokbd_panel.png    面板：面板贴底、输入行在其上沿
-// 布局有意变更后用 `flutter test --update-goldens` 重新生成。
+//
+// 注意：仓库 .gitignore 忽略 *.png，这三张基准图**不入库**。
+// 本地缺少基准图时用例自动跳过（不打扰他人与 CI）；需要时用
+// `flutter test test/ui/chat/chat_keyboard_visual_capture_test.dart --update-goldens`
+// 生成，之后本用例即可校验布局是否漂移。
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -161,6 +167,13 @@ void main() {
     tester.view.physicalSize = const Size(_width * 2, _height * 2);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
+
+    // 基准图不入库（.gitignore 忽略 *.png）：本地没有就跳过，避免他人跑测试时失败。
+    final golden = File('test/ui/chat/goldens/$name.png');
+    if (!golden.existsSync()) {
+      markTestSkipped('缺少基准图 $name.png，跳过（用 --update-goldens 生成）');
+      return;
+    }
 
     await tester.pumpWidget(host(service(), keyboardHeight));
     await tester.pumpAndSettle();
