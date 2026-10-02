@@ -24,7 +24,10 @@ class ImClient {
 
   /// 全局单例实例
   static ImClient get instance => _instance;
-  
+
+  /// 断开 Rust 客户端的超时：Rust 端半死时不能让外层一直 awaiting。
+  static const Duration _disconnectTimeout = Duration(seconds: 5);
+
   OpenImBridgeClient? _client;
   bool _isInitializing = false;
   
@@ -109,14 +112,27 @@ class ImClient {
     }
   }
   
-  /// 关闭客户端
+  /// 关闭客户端（尽力而为，绝不把半成品单例留给下一次登录）
+  ///
+  /// Rust 端断开可能卡住或抛错。无论哪种情况都要先摘掉 `_client` 引用：
+  /// 否则下一次登录会认为"已有客户端"，又走一遍关不掉的关闭流程而卡死。
   Future<void> close() async {
-    if (_client != null) {
-      appLog.i('[ImClient] 关闭客户端');
-      await _client!.disconnect();
-      _client = null;
-    }
+    final client = _client;
+    _client = null;
     _isInitializing = false;
+    if (client == null) return;
+    appLog.i('[ImClient] 关闭客户端');
+    try {
+      await client
+          .disconnect()
+          .timeout(
+            _disconnectTimeout,
+            onTimeout: () =>
+                appLog.w('[ImClient] 关闭客户端超时，放弃等待 Rust 端断开'),
+          );
+    } catch (e) {
+      appLog.w('[ImClient] 关闭客户端失败: $e');
+    }
   }
 
   /// 调用 SDK 退出登录（不关闭本地客户端）

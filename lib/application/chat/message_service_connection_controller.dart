@@ -32,6 +32,15 @@ class MessageServiceConnectionController {
   /// 网关"接了连接但不回认证帧"时，不能让外层一直 awaiting。
   static const Duration _clientCreateTimeout = Duration(seconds: 25);
 
+  /// 取消事件流订阅的超时。
+  ///
+  /// frb 的事件流底层是 ReceivePort：Rust 侧静默（登出后不再推事件）且未关闭 port 时，
+  /// `StreamSubscription.cancel()` 返回的 future 不会完成——只有再来一条事件或 port 被
+  /// 关闭才会返回。登出后正好是这个状态，所以必须限时等待，否则登出清理会永久挂起，
+  /// 下一个账号登录时又卡在"关闭已有客户端"这同一处。
+  /// 回归用例见 test/application/chat/message_service_connection_controller_test.dart。
+  static const Duration _subscriptionCancelTimeout = Duration(milliseconds: 300);
+
   /// 进行中的初始化：并发调用复用同一次结果，避免拿到"假成功"。
   Future<void>? _initializeInFlight;
 
@@ -83,10 +92,7 @@ class MessageServiceConnectionController {
     try {
       if (imClient.isInitialized) {
         appLog.i('[MessageService] 关闭已有客户端，重新初始化');
-        for (final s in service.subscriptions) {
-          await s.cancel();
-        }
-        service.subscriptions.clear();
+        await _cancelSubscriptions();
         try {
           await imClient.close();
         } catch (e) {
@@ -202,13 +208,35 @@ class MessageServiceConnectionController {
   }
 
   Future<void> disconnect() async {
-    for (final s in service.subscriptions) {
-      await s.cancel();
-    }
-    service.subscriptions.clear();
+    await _cancelSubscriptions();
     await imClient.close();
     onlineStatusService.setClient(null);
     connectionService.updateStatus(ConnectionStatus.disconnected);
     service.resetState();
+  }
+
+  /// 取消全部事件流订阅（先摘引用，再限时等待，超时即放弃）。
+  ///
+  /// 详见 `_subscriptionCancelTimeout`：绝不能直接 `await s.cancel()`，
+  /// 静默的 frb 事件流会让它永不返回，进而拖死登出与重登。
+  Future<void> _cancelSubscriptions() async {
+    final pending = List<StreamSubscription<dynamic>>.of(
+      service.subscriptions,
+    );
+    service.subscriptions.clear();
+    if (pending.isEmpty) return;
+    await Future.wait(
+      pending.map(_cancelSubscriptionSafely),
+    ).timeout(_subscriptionCancelTimeout, onTimeout: () => const <void>[]);
+  }
+
+  Future<void> _cancelSubscriptionSafely(
+    StreamSubscription<dynamic> subscription,
+  ) async {
+    try {
+      await subscription.cancel();
+    } catch (e) {
+      appLog.w('[MessageService] 取消事件流订阅失败: $e');
+    }
   }
 }
