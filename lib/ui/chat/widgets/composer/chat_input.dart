@@ -99,12 +99,18 @@ class _ChatInputState extends State<ChatInput> {
   ///
   /// 用 static：同一台设备键盘高度稳定，换一个会话/重进页面也能立刻按已知高度
   /// 给面板占位；否则新页面第一次开面板会低二十几像素，之后弹一次键盘才对齐。
+  ///
+  /// 只在键盘「稳定弹出后完全收起」时提交（见 [_learnKeyboardHeight]），
+  /// 弹出/收起动画途中的中间值一律不写入，免得面板占位跟着动画忽大忽小。
   static double _lastKeyboardHeight = 0;
 
   /// 本次 build 算出的「底部占位块」高度 = max(面板高度, 键盘高度)，供上报列表留白。
   double _sheetExtent = 0;
 
-  /// 本次键盘弹出期间见过的最大 inset：用于剔除键盘收起动画里的中间值与尾巴。
+  /// 本次键盘弹出期间见过的最大 inset（键盘完全收起时清 0 并提交为长期记忆）。
+  ///
+  /// 用途：剔除键盘收起动画里的中间值与尾巴，同时让「记忆键盘高度」只在键盘
+  /// 稳定弹出结束后才更新，见 [_learnKeyboardHeight]。
   double _keyboardSessionPeak = 0;
 
   late FocusNode _focusNode;
@@ -301,17 +307,28 @@ class _ChatInputState extends State<ChatInput> {
   @override
   void didUpdateWidget(covariant ChatInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final inset = widget.keyboardInset;
+    _learnKeyboardHeight(widget.keyboardInset);
+  }
+
+  /// 学习键盘高度：会话期间只记峰值，键盘完全收起时才提交为长期记忆。
+  ///
+  /// 绝不能在键盘升起途中用中间值改写 `_lastKeyboardHeight`：面板开着时占位块取
+  /// `max(面板高度, 键盘高度)`，记忆值一旦被 62.5 这种中间值改小，占位块会在
+  /// 键盘升到一半时先塌下去、再被顶回来 —— 真机逐帧量到输入行与整个消息列表
+  /// 上下抖一次（inset 0→62.5→237.8→312.7→321.8 时占位 321.8→300→300→312.7→321.8）。
+  ///
+  /// 收起动画同理：inset 会一路衰减并留一个手势条高度的尾巴，所以只在
+  /// `inset <= 0` 时才把本次峰值提交为记忆值。
+  void _learnKeyboardHeight(double inset) {
     if (inset <= 0) {
-      // 键盘完全收起：本次会话结束，下次弹出重新取峰值。
+      if (_keyboardSessionPeak > 0) {
+        _lastKeyboardHeight = _keyboardSessionPeak;
+      }
       _keyboardSessionPeak = 0;
       return;
     }
-    // 只往「更高」更新：键盘收起动画会先经过一串中间值，最后还会留一个
-    // 手势条/导航栏高度的尾巴，直接取最后一个非零值会把真实键盘高度记错。
     if (inset > _keyboardSessionPeak) {
       _keyboardSessionPeak = inset;
-      _lastKeyboardHeight = inset;
     }
   }
 
@@ -504,8 +521,16 @@ class _ChatInputState extends State<ChatInput> {
     // 逐帧 inset 会一路衰减到 0，掺进来会让占位块先塌到面板高度、动画结束再被
     // 记忆值顶回去 —— 真机逐帧量到输入行会先掉 60px 再弹回来（就是"上下动一下"）。
     // 键盘高度在 initState（进页面时键盘已弹起）和 didUpdateWidget（弹出峰值）里学习。
+    //
+    // 取「长期记忆」与「本次会话峰值」的较大者：两者都只增不减，因此键盘升到
+    // 一半时占位块也不会被压小 —— 否则真机逐帧量到占位先塌 22px 再顶回来
+    // （面板态点输入框带出键盘时，输入行和整个消息列表会抖一下）。
+    final panelKeyboardHeight = math.max(
+      _lastKeyboardHeight,
+      _keyboardSessionPeak,
+    );
     final sheetExtent = _composer.hasActivePanel
-        ? math.max(panelPreferred, _lastKeyboardHeight)
+        ? math.max(panelPreferred, panelKeyboardHeight)
         : widget.keyboardInset;
     _sheetExtent = sheetExtent;
     // 占位块的目标高度（从输入行下沿到屏幕底部，扣掉手势条）。
