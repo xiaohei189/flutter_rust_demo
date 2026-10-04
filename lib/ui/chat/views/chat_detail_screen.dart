@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -535,7 +536,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
-  Widget _buildChatInput(User user) {
+  Widget _buildChatInput(User user, double keyboardInset) {
     return ChatInput(
       controller: _textController,
       onSend: _sendMessage,
@@ -556,7 +557,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       heightNotifier: _inputAreaHeight,
       // 必须传：ChatInput 靠它把输入行浮到键盘之上、并把面板留在原位被键盘覆盖。
       // 漏传会退回默认值 0，输入行会一直停在屏幕底部被键盘挡住。
-      keyboardInset: MediaQuery.viewInsetsOf(context).bottom,
+      keyboardInset: keyboardInset,
     );
   }
 
@@ -569,10 +570,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     // 用屏幕可用高度近似，面板内部 Flexible 会在受限时自动收缩兜底。
     // 这里按 aspect 取值（height/padding）：键盘动画期间 viewInsets 逐帧变化不会
     // 触发本页重建；若改用 MediaQuery.maybeOf 会注册无条件依赖，键盘每帧都重建整页。
+    // 下限钳到 0：可用高度不足时（小窗/横屏/大字体）BoxConstraints 不接受负数上限。
     final maxInputHeight =
-        (MediaQuery.maybeHeightOf(context) ?? 0) -
-        (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
-        kToolbarHeight;
+        math.max(
+          0.0,
+          (MediaQuery.maybeHeightOf(context) ?? 0) -
+              (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
+              kToolbarHeight,
+        );
     return _bodyReady
         ? Stack(
             children: [
@@ -619,7 +624,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 bottom: 0,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxInputHeight),
-                  child: _buildChatInput(user),
+                  // 键盘高度只在这个 Builder 的 element 上注册依赖：键盘升降期间
+                  // 只重建输入区，不再每帧重建整页（AppBar、消息区骨架、用户对象构造）。
+                  child: Builder(
+                    builder: (context) => _buildChatInput(
+                      user,
+                      MediaQuery.viewInsetsOf(context).bottom,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -641,9 +653,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final otherUserId = conversation?.conversationType == 1
         ? conversation!.userId
         : '';
-    final online = otherUserId.isNotEmpty
-        ? ref.watch(userOnlineStatusProvider(otherUserId))
-        : null;
     final currentUserId =
         _viewModel?.currentUserId ?? userProfileState.profile?.userId ?? '';
     final typingUserId = ref.watch(
@@ -675,11 +684,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         // 改成 false 后，底部让位由输入区自己按 max(面板, 键盘) 计算并上报
         // （见 _buildMessageListSection 的 bottom padding），只影响列表底部留白。
         resizeToAvoidBottomInset: false,
-        appBar: ChatDetailAppBar(
+        appBar: _ChatDetailAppBarHost(
           user: user,
           isTyping: isTyping,
           isGroup: _isGroup,
-          online: online,
+          otherUserId: otherUserId,
           onBack: () {
             _onUserGoBack();
             Navigator.of(context).pop();
@@ -691,6 +700,55 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ),
         body: _buildBody(chatDetailState, user, currentUserId),
       ),
+    );
+  }
+}
+
+/// 顶栏宿主：把「对方在线状态」的订阅限制在顶栏自身。
+///
+/// 原先会话详情页在 build 里 `ref.watch(userOnlineStatusProvider(...))`，
+/// presence 每次变化都会重建整页（真机实测：`user_status_changed` 回调后紧接
+/// 一次整页 build）。下沉到这里后只有顶栏重建，[ChatDetailAppBar] 的接口和
+/// 单测都保持不变。
+class _ChatDetailAppBarHost extends ConsumerWidget
+    implements PreferredSizeWidget {
+  const _ChatDetailAppBarHost({
+    required this.user,
+    required this.isTyping,
+    required this.isGroup,
+    required this.otherUserId,
+    required this.onBack,
+    required this.onOpenSettings,
+    required this.onSearch,
+  });
+
+  final User user;
+  final bool isTyping;
+  final bool isGroup;
+
+  /// 需要展示在线状态的对方 userId；群聊或空值时传空串，表示不订阅。
+  final String otherUserId;
+
+  final VoidCallback onBack;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onSearch;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final online = otherUserId.isEmpty
+        ? null
+        : ref.watch(userOnlineStatusProvider(otherUserId));
+    return ChatDetailAppBar(
+      user: user,
+      isTyping: isTyping,
+      isGroup: isGroup,
+      online: online,
+      onBack: onBack,
+      onOpenSettings: onOpenSettings,
+      onSearch: onSearch,
     );
   }
 }

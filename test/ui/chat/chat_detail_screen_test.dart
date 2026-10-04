@@ -9,6 +9,8 @@ import 'package:flutter_rust_demo/domain/models/conversation.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'package:flutter_rust_demo/ui/profile/providers/user_profile_provider.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/composer/chat_input.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/shared/chat_detail_app_bar.dart';
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
@@ -292,5 +294,98 @@ void main() {
       findsOneWidget,
       reason: '聚焦后应显示发送按钮（飞书稿为常驻纸飞机图标）',
     );
+  });
+
+  testWidgets('键盘高度逐帧变化只重建输入区，不重建整页', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+        messages: {
+          _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
+        },
+      ),
+    );
+
+    Widget hostWith(double keyboardInset) => ProviderScope(
+      overrides: [
+        messageServiceProvider.overrideWith(() => service),
+        userProfileProvider.overrideWith(() => UserProfileNotifier()),
+      ],
+      child: MaterialApp(
+        home: Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboardInset)),
+            child: const ChatDetailScreen(conversationId: _convId),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(hostWith(0));
+    await tester.pumpAndSettle();
+
+    final appBarBefore = tester.widget<ChatDetailAppBar>(
+      find.byType(ChatDetailAppBar),
+    );
+
+    // 真机实测的键盘逐帧 inset 序列
+    for (final inset in <double>[62.54545454545455, 312.72727272727275, 321.8181818181818]) {
+      await tester.pumpWidget(hostWith(inset));
+      await tester.pump();
+
+      expect(
+        tester.widget<ChatInput>(find.byType(ChatInput)).keyboardInset,
+        inset,
+        reason: '输入区必须拿到最新键盘高度（inset=$inset）',
+      );
+      expect(
+        identical(
+          appBarBefore,
+          tester.widget<ChatDetailAppBar>(find.byType(ChatDetailAppBar)),
+        ),
+        isTrue,
+        reason: '键盘高度变化不应重建整页：顶栏实例被换掉说明整页重建了（inset=$inset）',
+      );
+    }
+  });
+
+  testWidgets('在线状态变化只重建顶栏，不重建整页', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final service = TestMessageServiceNotifier(
+      MessageServiceState(
+        currentUserId: 'user_a',
+        conversations: [_makeConversation()],
+        messages: {
+          _convId: [_makeMessage('m1', '你好', 1, 1000, 'user_b')],
+        },
+      ),
+    );
+    final onlineStatusService = OnlineStatusService.forTesting();
+
+    await tester.pumpWidget(_buildHostWithOnline(service, onlineStatusService));
+    await tester.pumpAndSettle();
+    expect(find.text('未知'), findsOneWidget);
+
+    final inputBefore = tester.widget<ChatInput>(find.byType(ChatInput));
+
+    onlineStatusService.applyUserStatusChanged(
+      userId: 'user_b',
+      status: 1,
+      platformIds: const [1],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('在线'), findsOneWidget, reason: '顶栏应随在线状态更新');
+    expect(
+      identical(inputBefore, tester.widget<ChatInput>(find.byType(ChatInput))),
+      isTrue,
+      reason: '在线状态变化不应重建整页：输入区实例被换掉说明整页重建了',
+    );
+
+    onlineStatusService.dispose();
   });
 }
