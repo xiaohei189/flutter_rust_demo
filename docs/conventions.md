@@ -158,12 +158,18 @@ Future<void> refreshConversations() async {
 
 ### 主题/颜色
 
-所有颜色从 `AppTheme` 静态常量获取，不硬编码：
+页面与组件里的颜色一律从语义 token `context.appColors.*` 获取（随 light/dark 自动切换），**不硬编码**：
 
 ```dart
-color: AppTheme.primaryColor
-backgroundColor: AppTheme.backgroundColor
+final colors = context.appColors;
+color: colors.primary
+backgroundColor: colors.background
 ```
+
+- `AppTheme.*` 上的静态色常量（`primaryColor` / `backgroundColor` / `textSecondaryColor` …）是历史遗留，**已无人使用，不要再用**；新增语义色请加进 `AppColors`（`lib/ui/core/theme/app_theme.dart`），并同时补 light / dark 两套取值。
+- 禁止新增 `Color(0x…)` 字面量与 `Colors.white/black/grey/red` 等裸色；`lib/ui/core/theme/` 之外只允许用 token。**装饰性**的多色图标（附件面板、工作台功能入口）统一取 `AttachmentIconColors`，不要在各文件里各写一遍色值。
+- 门禁：`powershell -ExecutionPolicy Bypass -File scripts\check-design-tokens.ps1`（棘轮式，只拦新增；基线 `scripts/design-token-baseline.json` 随迁移逐步清空）。
+- 圆角 / 间距 / 字号用已有 token，不要写字面量：`AppTheme.radiusSm/Md/Lg`（4/8/12）、`spacingXs…Xl`（4/8/12/16/20）、`fontSizeCaption…Headline`（11/13/15/17/20）。
 
 ### 日志
 
