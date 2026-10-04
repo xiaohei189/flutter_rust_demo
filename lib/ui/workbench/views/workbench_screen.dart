@@ -34,7 +34,10 @@ class WorkbenchScreen extends ConsumerWidget {
         children: [
           _buildAppGrid(context, ref),
           const SizedBox(height: 12),
-          Container(
+          // 用 Material 而不是 Container(color:)：ListTile 的背景与点击波纹画在
+          // 最近的 Material 上，夹一层带色 Container 会把波纹盖住（框架会报
+          // "ListTile background color or ink splashes may be invisible"）。
+          Material(
             color: colors.surface,
             child: SwitchListTile(
               secondary: Icon(
@@ -57,7 +60,7 @@ class WorkbenchScreen extends ConsumerWidget {
     final apps = <({IconData icon, Color color, String label, VoidCallback onTap})>[
       (
         icon: Icons.group_add_outlined,
-        color: const Color(0xFF3370FF),
+        color: colors.primary,
         label: '发起群聊',
         onTap: () => AppRouter.goToCreateGroup(context),
       ),

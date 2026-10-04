@@ -35,8 +35,8 @@ class SegmentedToggle extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        // 对齐飞书分段控件：轨道为更明显的浅灰（默认 surfaceMuted 偏白，分段不突出）。
-        color: const Color(0xFFF0F1F4),
+        // 对齐飞书分段控件：轨道用比 surfaceMuted 更明显的灰，随 light/dark 切换。
+        color: colors.segmentTrack,
         borderRadius: BorderRadius.circular(height / 2),
       ),
       padding: const EdgeInsets.all(2),

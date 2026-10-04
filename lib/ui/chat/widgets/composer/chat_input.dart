@@ -178,10 +178,11 @@ class _ChatInputState extends State<ChatInput> {
 
   void _initAttachmentItems() {
     // 严格对齐飞书稿：文件 / 云文档 / 日程 / 位置 / 个人名片 / 定时消息 / 任务 / 开启边写边译 / 更多
-    const blue = Color(0xFF3370FF);
-    const orange = Color(0xFFFF8A00);
-    const purple = Color(0xFF7F3BF5);
-    const green = Color(0xFF00B42A);
+    // 图标色板集中在 AttachmentIconColors（装饰色，不随主题切换）
+    const blue = AttachmentIconColors.blue;
+    const orange = AttachmentIconColors.orange;
+    const purple = AttachmentIconColors.purple;
+    const green = AttachmentIconColors.green;
     void notSupported(String label) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -22,6 +22,11 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color inputBackground;
   final Color attachmentBackground;
   final Color formatBarBackground;
+  /// 分段控件（SegmentedToggle）的轨道底色。
+  ///
+  /// 单独成 token 的原因：`surfaceMuted` 偏白，做轨道时分段不够突出，
+  /// 历史上这里被写死成 `Color(0xFFF0F1F4)`，导致暗色模式下轨道仍是浅色。
+  final Color segmentTrack;
   final Color shadow;
 
   const AppColors({
@@ -44,6 +49,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.inputBackground,
     required this.attachmentBackground,
     required this.formatBarBackground,
+    required this.segmentTrack,
     required this.shadow,
   });
 
@@ -68,6 +74,7 @@ class AppColors extends ThemeExtension<AppColors> {
     inputBackground: Color(0xFFF5F5F7),
     attachmentBackground: Color(0xFFF8F8F8),
     formatBarBackground: Color(0xFFF0F0F5),
+    segmentTrack: Color(0xFFF0F1F4),
     shadow: Color(0x14000000),
   );
 
@@ -91,6 +98,7 @@ class AppColors extends ThemeExtension<AppColors> {
     inputBackground: Color(0xFF232326),
     attachmentBackground: Color(0xFF1C1D1F),
     formatBarBackground: Color(0xFF26282B),
+    segmentTrack: Color(0xFF26282B),
     shadow: Color(0x52000000),
   );
 
@@ -115,6 +123,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? inputBackground,
     Color? attachmentBackground,
     Color? formatBarBackground,
+    Color? segmentTrack,
     Color? shadow,
   }) {
     return AppColors(
@@ -138,6 +147,7 @@ class AppColors extends ThemeExtension<AppColors> {
       inputBackground: inputBackground ?? this.inputBackground,
       attachmentBackground: attachmentBackground ?? this.attachmentBackground,
       formatBarBackground: formatBarBackground ?? this.formatBarBackground,
+      segmentTrack: segmentTrack ?? this.segmentTrack,
       shadow: shadow ?? this.shadow,
     );
   }
@@ -177,6 +187,7 @@ class AppColors extends ThemeExtension<AppColors> {
         other.formatBarBackground,
         t,
       )!,
+      segmentTrack: Color.lerp(segmentTrack, other.segmentTrack, t)!,
       shadow: Color.lerp(shadow, other.shadow, t)!,
     );
   }

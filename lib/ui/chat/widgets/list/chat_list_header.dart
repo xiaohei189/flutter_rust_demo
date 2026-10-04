@@ -58,7 +58,7 @@ class ChatListHeader extends StatelessWidget {
                 flex: 3,
                 child: SegmentedToggle(
                   height: 44,
-                  activeColor: const Color(0xFF3370FF),
+                  activeColor: colors.primary,
                   segments: [
                     '消息',
                     totalUnreadCount > 0 ? '未读 $totalUnreadCount' : '未读',
