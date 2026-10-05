@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../ui/core/theme/app_icon_colors.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../chat/providers/chat_list_provider.dart';
 import '../../chat/providers/message_service_provider.dart';
@@ -66,25 +67,25 @@ class WorkbenchScreen extends ConsumerWidget {
       ),
       (
         icon: Icons.person_add_alt_1,
-        color: const Color(0xFF07C160),
+        color: AppIconColors.green,
         label: '添加好友',
         onTap: () => AppRouter.goToAddContact(context),
       ),
       (
         icon: Icons.group_outlined,
-        color: const Color(0xFF9B5DE5),
+        color: AppIconColors.purple,
         label: '加群',
         onTap: () => AppRouter.goToSearch(context),
       ),
       (
         icon: Icons.qr_code_scanner_outlined,
-        color: const Color(0xFFFF8F1F),
+        color: AppIconColors.orange,
         label: '扫一扫',
         onTap: () => _handleScan(context, ref),
       ),
       (
         icon: Icons.inventory_2_outlined,
-        color: const Color(0xFF00B8A9),
+        color: AppIconColors.teal,
         label: '全部归档',
         onTap: () => _handleArchiveAll(context, ref),
       ),

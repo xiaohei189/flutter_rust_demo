@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../domain/models/group_member.dart';
+import '../../../core/theme/app_icon_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../message_content_type.dart';
 import 'at_member_suggestions.dart';
@@ -178,11 +179,11 @@ class _ChatInputState extends State<ChatInput> {
 
   void _initAttachmentItems() {
     // 严格对齐飞书稿：文件 / 云文档 / 日程 / 位置 / 个人名片 / 定时消息 / 任务 / 开启边写边译 / 更多
-    // 图标色板集中在 AttachmentIconColors（装饰色，不随主题切换）
-    const blue = AttachmentIconColors.blue;
-    const orange = AttachmentIconColors.orange;
-    const purple = AttachmentIconColors.purple;
-    const green = AttachmentIconColors.green;
+    // 图标色板集中在共享装饰色板 AppIconColors（不随主题切换）
+    const blue = AppIconColors.blue;
+    const orange = AppIconColors.orange;
+    const purple = AppIconColors.purple;
+    const green = AppIconColors.green;
     void notSupported(String label) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
