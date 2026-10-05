@@ -159,7 +159,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         isConnected: connectionState.isConnected,
         syncProgress: conversationState.syncProgress,
         onAvatarTap: () {
-          Navigator.of(context).push(
+          // 必须走 root navigator：抽屉要盖住底部 Tab 栏、遮罩铺满整屏。
+          // 用当前 context（tab 分支路由）推的话，抽屉只占 body 区域，
+          // 底部导航栏会露在外面且不被遮罩。
+          Navigator.of(context, rootNavigator: true).push(
             LeftSlideRoute(
               child: ProfileDrawerScreen(
                 onOpenMyProfile: () {
