@@ -8,6 +8,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
 import '../../../../router/app_router.dart';
 import '../../../../providers/current_user_provider.dart';
+import '../../../../ui/core/theme/app_icon_colors.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/state_views.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
@@ -81,6 +82,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
       return const EmptyState(icon: Icons.person_off_outlined, title: '暂无好友');
     }
 
+    // 与「消息」列表一致：整幅列表不加分割线（飞书模式），靠行距与首字分组分层。
     return ListView.builder(
       itemCount: friendState.friends.length,
       itemBuilder: (context, index) {
@@ -99,9 +101,9 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
                   friend.nickname,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF8E8E93),
+                    color: context.appColors.textSecondary,
                   ),
                 )
               : null,
@@ -138,7 +140,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(Icons.person, color: Color(0xFF007AFF)),
+              leading: Icon(Icons.person, color: context.appColors.primary),
               title: const Text('查看资料'),
               onTap: () {
                 Navigator.pop(context);
@@ -149,7 +151,7 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.message, color: Color(0xFF07C160)),
+              leading: const Icon(Icons.message, color: AppIconColors.green),
               title: const Text('发消息'),
               onTap: () {
                 Navigator.pop(context);
@@ -160,8 +162,14 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('删除好友', style: TextStyle(color: Colors.red)),
+              leading: Icon(
+                Icons.delete_outline,
+                color: context.appColors.danger,
+              ),
+              title: Text(
+                '删除好友',
+                style: TextStyle(color: context.appColors.danger),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDeleteFriend(friend);
@@ -199,7 +207,10 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
                 _onFriendDeleteFailed();
               }
             },
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+            child: Text(
+              '删除',
+              style: TextStyle(color: context.appColors.danger),
+            ),
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../../router/app_paths.dart';
+import '../../../../ui/core/theme/app_icon_colors.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../groups/providers/group_provider.dart';
 import '../providers/friend_provider.dart';
@@ -21,6 +22,8 @@ class ContactsScreen extends ConsumerWidget {
     final groupApplyState = ref.watch(groupApplicationProvider);
 
     return Scaffold(
+      // 与「消息」列表同一套语汇：整幅白底直接铺行，不用卡片、不加分割线。
+      backgroundColor: context.appColors.surface,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.contactsTitle ?? '通讯录'),
         actions: [
@@ -33,45 +36,35 @@ class ContactsScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                ContactItem(
-                  icon: Icons.person_add_outlined,
-                  iconColor: const Color(0xFF07C160),
-                  title: '新朋友',
-                  badgeCount: applyState.unhandledCount,
-                  onTap: () => context.push(AppPaths.friendRequests),
-                ),
-                const Divider(height: 1, indent: 56),
-                ContactItem(
-                  icon: Icons.group_outlined,
-                  iconColor: const Color(0xFF007AFF),
-                  title: '我的好友',
-                  trailingText: '${friendState.friendCount}',
-                  onTap: () => context.push(AppPaths.friendList),
-                ),
-                const Divider(height: 1, indent: 56),
-                ContactItem(
-                  icon: Icons.groups_outlined,
-                  iconColor: context.appColors.warning,
-                  title: '我的群组',
-                  trailingText: '${groupState.groups.length}',
-                  onTap: () => context.push(AppPaths.groupList),
-                ),
-                const Divider(height: 1, indent: 56),
-                ContactItem(
-                  icon: Icons.group_add_outlined,
-                  iconColor: context.appColors.success,
-                  title: '群申请',
-                  badgeCount: groupApplyState.unhandledCount,
-                  onTap: () => context.push(AppPaths.groupApplications),
-                ),
-              ],
-            ),
+          ContactItem(
+            icon: Icons.person_add_outlined,
+            iconColor: AppIconColors.blue,
+            title: '新朋友',
+            badgeCount: applyState.unhandledCount,
+            onTap: () => context.push(AppPaths.friendRequests),
+          ),
+          ContactItem(
+            icon: Icons.group_outlined,
+            iconColor: AppIconColors.green,
+            title: '我的好友',
+            trailingText: '${friendState.friendCount}',
+            onTap: () => context.push(AppPaths.friendList),
+          ),
+          ContactItem(
+            icon: Icons.groups_outlined,
+            iconColor: AppIconColors.purple,
+            title: '我的群组',
+            trailingText: '${groupState.groups.length}',
+            onTap: () => context.push(AppPaths.groupList),
+          ),
+          ContactItem(
+            icon: Icons.group_add_outlined,
+            iconColor: AppIconColors.orange,
+            title: '群申请',
+            badgeCount: groupApplyState.unhandledCount,
+            onTap: () => context.push(AppPaths.groupApplications),
           ),
         ],
       ),

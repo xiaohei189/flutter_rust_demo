@@ -39,7 +39,8 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     final globalMute = profile?.globalRecvMsgOpt == 1;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      // 与「消息」列表同一套语汇：白底铺行、不用卡片、不加分割线，分组靠留白。
+      backgroundColor: colors.surface,
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)?.accountSettingsTitle ?? '账号设置',
@@ -50,90 +51,58 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
         ),
       ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          _buildSection(
-            context,
-            children: [
-              SwitchListTile(
-                title: const Text('全局消息免打扰'),
-                subtitle: const Text('开启后不再接收任何新消息提醒'),
-                value: globalMute,
-                onChanged: _setGlobalMute,
-              ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              SwitchListTile(
-                title: const Text('新消息本地通知'),
-                subtitle: const Text('后台收到新消息时显示系统通知'),
-                value: settings.notificationsEnabled,
-                onChanged: _setNotificationsEnabled,
-              ),
-            ],
+          SwitchListTile(
+            title: const Text('全局消息免打扰'),
+            subtitle: const Text('开启后不再接收任何新消息提醒'),
+            value: globalMute,
+            onChanged: _setGlobalMute,
           ),
-          _buildSection(
-            context,
-            children: [
-              SwitchListTile(
-                title: const Text('应用锁'),
-                subtitle: const Text('重新打开应用时输入 PIN 解锁'),
-                value: settings.appLockEnabled,
-                onChanged: _toggleAppLock,
-              ),
-              if (settings.appLockEnabled) ...[
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                SwitchListTile(
-                  title: const Text('生物识别解锁'),
-                  subtitle: const Text('使用指纹或面容 ID 解锁'),
-                  value: settings.biometricEnabled,
-                  onChanged: _toggleBiometric,
-                ),
-              ],
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              ListTile(
-                title: const Text('修改密码'),
-                subtitle: const Text('当前服务暂未开放修改密码'),
-                trailing: const Icon(Icons.chevron_right, size: 20),
-                onTap: _showPasswordUnavailable,
-              ),
-            ],
+          SwitchListTile(
+            title: const Text('新消息本地通知'),
+            subtitle: const Text('后台收到新消息时显示系统通知'),
+            value: settings.notificationsEnabled,
+            onChanged: _setNotificationsEnabled,
           ),
-          _buildSection(
-            context,
-            children: [
-              ListTile(
-                title: const Text('语言'),
-                trailing: Text(
-                  settings.localeCode == 'en' ? 'English' : '简体中文',
-                  style: TextStyle(color: colors.textSecondary),
-                ),
-                onTap: _changeLanguage,
-              ),
-            ],
+          const SizedBox(height: 20),
+          SwitchListTile(
+            title: const Text('应用锁'),
+            subtitle: const Text('重新打开应用时输入 PIN 解锁'),
+            value: settings.appLockEnabled,
+            onChanged: _toggleAppLock,
           ),
-          _buildSection(
-            context,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('关于我们'),
-                trailing: const Icon(Icons.chevron_right, size: 20),
-                onTap: _showAbout,
-              ),
-            ],
+          if (settings.appLockEnabled)
+            SwitchListTile(
+              title: const Text('生物识别解锁'),
+              subtitle: const Text('使用指纹或面容 ID 解锁'),
+              value: settings.biometricEnabled,
+              onChanged: _toggleBiometric,
+            ),
+          ListTile(
+            title: const Text('修改密码'),
+            subtitle: const Text('当前服务暂未开放修改密码'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: _showPasswordUnavailable,
+          ),
+          const SizedBox(height: 20),
+          ListTile(
+            title: const Text('语言'),
+            trailing: Text(
+              settings.localeCode == 'en' ? 'English' : '简体中文',
+              style: TextStyle(color: colors.textSecondary),
+            ),
+            onTap: _changeLanguage,
+          ),
+          const SizedBox(height: 20),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('关于我们'),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: _showAbout,
           ),
           const SizedBox(height: 24),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSection(BuildContext context, {required List<Widget> children}) {
-    final colors = context.appColors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      child: Material(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(children: children),
       ),
     );
   }

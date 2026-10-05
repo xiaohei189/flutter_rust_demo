@@ -141,7 +141,16 @@ class ProfileDrawerScreen extends ConsumerWidget {
             child: Container(
               width: panelWidth,
               height: double.infinity,
-              color: colors.surface,
+              // 面板右侧圆角 + 轻投影，与 app 内卡片（radius 8–12）同一套语汇；
+              // clipBehavior 保证圆角处的子元素与点击墨迹不越界。
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(12),
+                ),
+                boxShadow: colors.cardShadow,
+              ),
+              clipBehavior: Clip.antiAlias,
               child: SafeArea(
                 child: Column(
                   children: [
@@ -238,10 +247,9 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             label: '我的个人名片',
                             onTap: () => _openMyProfile(context),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Divider(height: 24),
-                          ),
+                              // 与「消息」列表一致：整幅面板不给菜单行加分割线，
+                              // 分组只用 8px 间隔表达。
+                              const SizedBox(height: 8),
                           DrawerMenuItem(
                             icon: Icons.block_outlined,
                             label: '黑名单',
