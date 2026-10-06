@@ -272,7 +272,7 @@ class CustomMessageContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: isFromMe
             ? context.appColors.onPrimary.withValues(alpha: 0.15)
-            : Colors.grey.withValues(alpha: 0.15),
+            : context.appColors.bubbleOtherText.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

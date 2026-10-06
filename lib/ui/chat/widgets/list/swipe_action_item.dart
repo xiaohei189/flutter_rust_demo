@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 /// 单条左滑操作（右侧起排列）。
 class SwipeAction {
   const SwipeAction({
@@ -104,15 +106,15 @@ class _SwipeActionItemState extends State<SwipeActionItem> {
                               if (action.icon != null) ...[
                                 Icon(
                                   action.icon,
-                                  color: Colors.white,
+                                  color: context.appColors.onPrimary,
                                   size: 20,
                                 ),
                                 const SizedBox(height: 4),
                               ],
                               Text(
                                 action.label,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: context.appColors.onPrimary,
                                   fontSize: 12,
                                 ),
                               ),

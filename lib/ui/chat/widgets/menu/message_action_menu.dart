@@ -52,7 +52,8 @@ void showMessageToolPanel({
   showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.25),
+    // 长按菜单遮罩需要比 mediaScrim 更轻，且此处无 context 取色板
+    barrierColor: Colors.black.withValues(alpha: 0.25), // design-token-ignore: 菜单遮罩偏轻
     isScrollControlled: true,
     useSafeArea: true,
     // 关掉 modal 自带的下拉：弹层高度由面板自己管理（拖把手改高度、下拖到最小后关闭）

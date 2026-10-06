@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../domain/models/group.dart';
 import '../../../../router/app_paths.dart';
+import '../../core/theme/app_icon_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_views.dart';
 
@@ -73,17 +74,7 @@ class GroupTab extends StatelessWidget {
   }
 
   Color _avatarColor(String name) {
-    if (name.isEmpty) return const Color(0xFF007AFF);
-    final colors = [
-      const Color(0xFF007AFF),
-      const Color(0xFF07C160),
-      const Color(0xFFFF9500),
-      const Color(0xFFFF3B30),
-      const Color(0xFFAF52DE),
-      const Color(0xFF5AC8FA),
-      const Color(0xFFFF6482),
-      const Color(0xFF34C759),
-    ];
-    return colors[name.hashCode.abs() % colors.length];
+    if (name.isEmpty) return AppIconColors.blue;
+    return AppIconColors.rotate[name.hashCode.abs() % AppIconColors.rotate.length];
   }
 }

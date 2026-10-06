@@ -294,11 +294,11 @@ class GroupFilterPanel extends StatelessWidget {
 class LeftSlideRoute extends PageRouteBuilder<void> {
   final Widget child;
 
-  LeftSlideRoute({required this.child})
+  /// 遮罩色由调用方按主题传入（路由类拿不到 context，不能取 token）。
+  LeftSlideRoute({required this.child, super.barrierColor})
     : super(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black54,
         transitionDuration: const Duration(milliseconds: 350),
         reverseTransitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (context, animation, secondaryAnimation) => child,

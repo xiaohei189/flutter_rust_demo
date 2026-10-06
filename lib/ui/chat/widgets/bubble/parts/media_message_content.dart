@@ -144,7 +144,8 @@ class VideoMessageContent extends StatelessWidget {
               width: 150,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.3),
+                // 视频封面未就绪时的占位底：取媒体遮罩 token 的浅色档
+                color: context.appColors.mediaScrim.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -160,7 +161,7 @@ class VideoMessageContent extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: context.appColors.mediaScrim,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
 
@@ -14,11 +16,11 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appColors.mediaBackground,
       appBar: AppBar(
         title: const Text('扫一扫'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: context.appColors.mediaBackground,
+        foregroundColor: context.appColors.onPrimary,
       ),
       body: MobileScanner(
         onDetect: (capture) {
@@ -35,3 +37,4 @@ class _ScanScreenState extends State<ScanScreen> {
     );
   }
 }
+

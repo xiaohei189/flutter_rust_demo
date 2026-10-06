@@ -89,7 +89,7 @@ class _ReactionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     // 对齐飞书稿：胶囊 = 气泡色叠加主色（浅色气泡更蓝一档、饱和蓝气泡更深一档）
-    final textColor = isFromMe ? Colors.white : colors.bubbleOtherText;
+    final textColor = isFromMe ? colors.onPrimary : colors.bubbleOtherText;
     final chipColor = Color.alphaBlend(
       colors.primary.withValues(alpha: isFromMe ? 0.18 : 0.07),
       bubbleColor ?? (isFromMe ? colors.bubbleMine : colors.bubbleOther),

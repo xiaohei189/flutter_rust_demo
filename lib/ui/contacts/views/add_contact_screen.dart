@@ -106,7 +106,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+          Divider(height: 1, color: context.appColors.divider),
           // 搜索结果
           Expanded(
             child: state.isLoading
@@ -180,11 +180,11 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
             onPressed: isSelf ? null : () => _showAddFriendDialog(item),
             style: TextButton.styleFrom(
               backgroundColor: isSelf
-                  ? Colors.grey.shade200
+                  ? context.appColors.surfaceMuted
                   : context.appColors.primary,
               foregroundColor: isSelf
                   ? context.appColors.textSecondary
-                  : Colors.white,
+                  : context.appColors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               minimumSize: Size.zero,
               shape: RoundedRectangleBorder(

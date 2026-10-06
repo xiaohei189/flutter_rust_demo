@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../router/app_router.dart';
+import '../../../../ui/core/theme/app_icon_colors.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../ui/core/widgets/list_row.dart';
@@ -127,20 +128,20 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                     _buildAppIcon(
                       Icons.task_alt,
                       '任务',
-                      const Color(0xFF7F3BF5),
+                      AppIconColors.purple,
                       onTap: () => _notSupported('任务'),
                     ),
                     _buildAppIcon(
                       Icons.push_pin_outlined,
                       'Pin',
-                      const Color(0xFF00B42A),
+                      AppIconColors.green,
                       onTap: () => _notSupported('Pin'),
                     ),
                     if (isGroup)
                       _buildAppIcon(
                         Icons.calendar_month_outlined,
                         '群成员日历',
-                        const Color(0xFFFF8A00),
+                        AppIconColors.orange,
                         onTap: () => _notSupported('群成员日历'),
                       )
                     else ...[

@@ -70,7 +70,7 @@ class MarkdownMessageContent extends StatelessWidget {
         : context.appColors.primary;
     final codeBgColor = isFromMe
         ? context.appColors.onPrimary.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.06);
+        : context.appColors.bubbleOtherText.withValues(alpha: 0.06);
 
     return MarkdownBody(
       data: message.displayText,

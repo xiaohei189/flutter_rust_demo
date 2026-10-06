@@ -19,6 +19,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color success;
   final Color onPrimary;
   final Color mediaScrim;
+  /// 全屏媒体页（看图/视频/扫码）的底色：两种主题下都固定黑。
+  final Color mediaBackground;
   final Color inputBackground;
   final Color attachmentBackground;
   final Color formatBarBackground;
@@ -46,6 +48,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.success,
     required this.onPrimary,
     required this.mediaScrim,
+    required this.mediaBackground,
     required this.inputBackground,
     required this.attachmentBackground,
     required this.formatBarBackground,
@@ -71,6 +74,7 @@ class AppColors extends ThemeExtension<AppColors> {
     success: Color(0xFF34C759),
     onPrimary: Colors.white,
     mediaScrim: Color(0x99000000),
+    mediaBackground: Color(0xFF000000),
     inputBackground: Color(0xFFF5F5F7),
     attachmentBackground: Color(0xFFF8F8F8),
     formatBarBackground: Color(0xFFF0F0F5),
@@ -95,6 +99,7 @@ class AppColors extends ThemeExtension<AppColors> {
     success: Color(0xFF30D158),
     onPrimary: Colors.white,
     mediaScrim: Color(0xB3000000),
+    mediaBackground: Color(0xFF000000),
     inputBackground: Color(0xFF232326),
     attachmentBackground: Color(0xFF1C1D1F),
     formatBarBackground: Color(0xFF26282B),
@@ -120,6 +125,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? success,
     Color? onPrimary,
     Color? mediaScrim,
+    Color? mediaBackground,
     Color? inputBackground,
     Color? attachmentBackground,
     Color? formatBarBackground,
@@ -144,6 +150,7 @@ class AppColors extends ThemeExtension<AppColors> {
       success: success ?? this.success,
       onPrimary: onPrimary ?? this.onPrimary,
       mediaScrim: mediaScrim ?? this.mediaScrim,
+      mediaBackground: mediaBackground ?? this.mediaBackground,
       inputBackground: inputBackground ?? this.inputBackground,
       attachmentBackground: attachmentBackground ?? this.attachmentBackground,
       formatBarBackground: formatBarBackground ?? this.formatBarBackground,
@@ -176,6 +183,7 @@ class AppColors extends ThemeExtension<AppColors> {
       success: Color.lerp(success, other.success, t)!,
       onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
       mediaScrim: Color.lerp(mediaScrim, other.mediaScrim, t)!,
+      mediaBackground: Color.lerp(mediaBackground, other.mediaBackground, t)!,
       inputBackground: Color.lerp(inputBackground, other.inputBackground, t)!,
       attachmentBackground: Color.lerp(
         attachmentBackground,

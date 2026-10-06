@@ -15,6 +15,28 @@ abstract final class AppIconColors {
   static const orange = Color(0xFFFF8A00);
   static const purple = Color(0xFF9B5DE5);
   static const teal = Color(0xFF00B8A9);
+  static const yellow = Color(0xFFFF9500);
+  static const red = Color(0xFFFF3B30);
+  static const crimson = Color(0xFFFF6482);
+  static const sky = Color(0xFF5AC8FA);
+  static const violet = Color(0xFFAF52DE);
+  /// 中性灰（飞书稿里「更多」这类次要入口的图标色）。
+  static const grey = Color(0xFF646A73);
+
+  /// 名字占位头像的底色（取自飞书参考图 RGB ≈ 74,132,255）。
+  static const avatarFallback = Color(0xFF4A84FF);
+
+  /// 群/会话头像按名字 hash 取色的轮转色板。
+  static const rotate = <Color>[
+    blue,
+    green,
+    yellow,
+    red,
+    violet,
+    sky,
+    crimson,
+    teal,
+  ];
 
   /// 图标色块底：同色 10% 透明（飞书通讯录/工作台的图标底座）。
   static Color tint(Color color) => color.withValues(alpha: 0.1);

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../domain/models/user.dart';
 import '../../previews/app_theme_preview.dart';
+import '../theme/app_icon_colors.dart';
 import '../theme/app_theme.dart';
 import 'app_image.dart';
 
 /// 会话列表/顶部栏统一使用的头像半径，保证名字大小与字体一致。
 const double kConversationAvatarRadius = 26;
 
-/// 名字占位头像的统一底色：取自飞书参考图（RGB ≈ 74,132,255）。
-const Color kNameAvatarBackground = Color(0xFF4A84FF);
+/// 名字占位头像的统一底色（取自飞书参考图 RGB ≈ 74,132,255）。
+/// 色值集中在装饰色板，页面里不要再写死。
+const Color kNameAvatarBackground = AppIconColors.avatarFallback;
 
 /// 用户头像组件 - 支持网络图片、本地图片、颜色图标
 class UserAvatar extends StatelessWidget {

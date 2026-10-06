@@ -59,7 +59,7 @@ class SegmentedToggle extends StatelessWidget {
                     borderRadius: BorderRadius.circular((height - 4) / 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: colors.shadow,
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),

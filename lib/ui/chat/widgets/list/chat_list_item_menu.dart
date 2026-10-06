@@ -75,7 +75,10 @@ Future<void> showChatListItemMenu(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: close,
-              child: const ColoredBox(color: Color(0x66000000)),
+              // 就地菜单遮罩：比 mediaScrim 更轻，避免盖住被高亮的会话行
+              child: ColoredBox(
+                color: colors.mediaScrim.withValues(alpha: 0.4),
+              ),
             ),
           ),
           // ① 就地高亮的选中行（白色圆角卡片）。
@@ -89,7 +92,7 @@ Future<void> showChatListItemMenu(
               color: colors.surface,
               borderRadius: BorderRadius.circular(10),
               elevation: 6,
-              shadowColor: const Color(0x33000000),
+              shadowColor: colors.shadow,
               clipBehavior: Clip.antiAlias,
               child: ChatListItemContent(
                 conversation: conversation,
@@ -110,7 +113,7 @@ Future<void> showChatListItemMenu(
               color: colors.surface,
               borderRadius: BorderRadius.circular(12),
               elevation: 6,
-              shadowColor: const Color(0x33000000),
+              shadowColor: colors.shadow,
               clipBehavior: Clip.antiAlias,
               child: Column(
                 mainAxisSize: MainAxisSize.min,

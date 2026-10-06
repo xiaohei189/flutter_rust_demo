@@ -245,7 +245,7 @@ class _ChatInputState extends State<ChatInput> {
       AttachmentItem(
         icon: Icons.more_horiz,
         label: '更多',
-        color: const Color(0xFF646A73),
+        color: AppIconColors.grey,
         onTap: () => notSupported('更多'),
       ),
     ];

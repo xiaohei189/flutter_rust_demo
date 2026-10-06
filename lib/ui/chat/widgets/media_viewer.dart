@@ -100,9 +100,9 @@ class ImagePreviewScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appColors.mediaBackground,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: context.appColors.mediaBackground,
         foregroundColor: context.appColors.onPrimary,
         title: const Text('图片预览'),
         actions: [
@@ -181,9 +181,9 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.appColors.mediaBackground,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: context.appColors.mediaBackground,
         foregroundColor: context.appColors.onPrimary,
         title: const Text('视频播放'),
       ),
@@ -249,3 +249,4 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
     );
   }
 }
+

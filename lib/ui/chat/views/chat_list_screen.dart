@@ -164,6 +164,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           // 底部导航栏会露在外面且不被遮罩。
           Navigator.of(context, rootNavigator: true).push(
             LeftSlideRoute(
+              barrierColor: context.appColors.mediaScrim,
               child: ProfileDrawerScreen(
                 onOpenMyProfile: () {
                   AppRouter.goToMyProfile(context);

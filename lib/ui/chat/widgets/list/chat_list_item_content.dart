@@ -5,6 +5,7 @@ import '../../../../domain/models/conversation.dart';
 import '../../../../domain/models/conversation_draft.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../domain/models/user_profile.dart' show UserProfile;
+import '../../../core/theme/app_icon_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../utils/conversation_display.dart';
@@ -217,10 +218,10 @@ class ChatListItemContent extends StatelessWidget {
   static const List<String> _placeholderTagNames = ['外部', '智能体', '机器人'];
 
   static const Map<String, Color> _placeholderTagColors = {
-    // 从飞书参考图采样（略取饱和值）。
-    '外部': Color(0xFF2D6BE0),
-    '智能体': Color(0xFF7A3BE8),
-    '机器人': Color(0xFFE8960C),
+    // 从飞书参考图采样，色值统一取装饰色板。
+    '外部': AppIconColors.blue,
+    '智能体': AppIconColors.purple,
+    '机器人': AppIconColors.orange,
   };
 
   String? _placeholderTagName() {

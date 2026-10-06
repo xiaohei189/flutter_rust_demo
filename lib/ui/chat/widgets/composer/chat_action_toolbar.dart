@@ -288,8 +288,8 @@ class SendButton extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: enabled
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.85),
+                  ? colors.onPrimary
+                  : colors.onPrimary.withValues(alpha: 0.85),
             ),
           ),
         ),
