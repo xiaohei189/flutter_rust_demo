@@ -76,7 +76,8 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: context.appColors.background,
+      // 与「消息」列表同一套语汇：白底铺行，分组靠留白
+      backgroundColor: context.appColors.surface,
       appBar: AppBar(
         centerTitle: true,
         title: Text(l10n?.chatSettingsTitle ?? '设置'),
@@ -97,12 +98,11 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           const SizedBox(height: 8),
 
           // ---- 顶部：成员区域 ----
-          SettingsCard(
+          SettingsGroup(
             children: [
               if (isGroup) ...[
                 // 群信息 + 群成员同卡（对齐飞书稿）
                 ..._buildGroupHeader(),
-                const Divider(height: 1, indent: 16, endIndent: 16),
                 ..._buildGroupMembers(),
               ] else
                 ..._buildSingleHeader(),
@@ -111,7 +111,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           // ---- 应用（对齐飞书稿：任务 / Pin；群聊另有群公告、群成员日历）----
           const SizedBox(height: 8),
-          SettingsCard(
+          SettingsGroup(
             children: [
               const SettingsSectionTitle(title: '应用'),
               Padding(
@@ -155,7 +155,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           ),
           const SizedBox(height: 8),
           // ---- 搜索会话内容（对齐飞书稿） ----
-          SettingsCard(
+          SettingsGroup(
             children: [
               ListRow(
                 label: '搜索会话内容',
@@ -166,7 +166,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 ),
                 onTap: _showMessageSearch,
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
                 child: Row(
@@ -207,7 +206,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          SettingsCard(
+          SettingsGroup(
             children: [
               SettingsNavRow(
                 title: '添加标签页',
@@ -219,7 +218,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 群机器人（仅群聊，占位） ----
           if (isGroup) ...[
             const SizedBox(height: 8),
-            SettingsCard(
+            SettingsGroup(
               children: [
                 SettingsNavRow(
                   title: '群机器人',
@@ -231,43 +230,37 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           // ---- 开关组（对齐飞书稿：免打扰 / 置顶会话 / 标签 / 添加到标记） ----
           const SizedBox(height: 8),
-          SettingsCard(
+          SettingsGroup(
             children: [
               if (isGroup) ...[
                 SettingsNavRow(
                   title: l10n?.groupNickname ?? '群昵称',
                   onTap: _editGroupNickname,
                 ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
               ],
               SettingsSwitchRow(
                 title: l10n?.muteNotification ?? '消息免打扰',
                 value: settings.muteNotification,
                 onChanged: _setMuteNotification,
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
               if (isGroup) ...[
                 SettingsSwitchRow(
                   title: '@所有人的消息不提示',
                   value: false,
                   onChanged: (_) => _notSupported('@所有人的消息不提示'),
                 ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
               ],
               SettingsSwitchRow(
                 title: l10n?.pinChat ?? '置顶会话',
                 value: settings.pinChat,
                 onChanged: _setPinChat,
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
               SettingsNavRow(title: '标签', onTap: () => _notSupported('标签')),
-              const Divider(height: 1, indent: 16, endIndent: 16),
               SettingsSwitchRow(
                 title: '添加到标记',
                 value: false,
                 onChanged: (_) => _notSupported('添加到标记'),
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
               SettingsSwitchRow(
                 title: l10n?.privateChat ?? '私聊（阅后即焚）',
                 value: settings.privateChat,
@@ -278,7 +271,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           // ---- 翻译助手（对齐飞书稿，占位） ----
           const SizedBox(height: 8),
-          SettingsCard(
+          SettingsGroup(
             children: [
               SettingsNavRow(title: '翻译助手', onTap: () => _notSupported('翻译助手')),
             ],
@@ -286,7 +279,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           // ---- 清空聊天记录 ----
           const SizedBox(height: 8),
-          SettingsCard(
+          SettingsGroup(
             children: [
               SettingsNavRow(
                 title: l10n?.clearHistory ?? '清空聊天记录',
@@ -298,7 +291,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           // ---- 退出群组（仅群聊） ----
           if (isGroup) ...[
             const SizedBox(height: 8),
-            SettingsCard(
+            SettingsGroup(
               children: [
                 InkWell(
                   onTap: () => _handleQuitGroup(),
@@ -778,3 +771,4 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     }
   }
 }
+

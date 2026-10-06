@@ -8,24 +8,18 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 
 /// 聊天设置分区卡片。
-class SettingsCard extends StatelessWidget {
-  const SettingsCard({super.key, required this.children});
+/// 设置页的「分组」：无卡片外壳，整幅白底直接铺行，分组之间用留白分层
+/// （与会话列表同一套语汇，见 docs/conventions.md「主题/颜色」）。
+class SettingsGroup extends StatelessWidget {
+  const SettingsGroup({super.key, required this.children});
 
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      color: context.appColors.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
     );
   }
 }
@@ -208,7 +202,7 @@ class AddMemberButton extends StatelessWidget {
 Widget settingsCardPreview() {
   return const Padding(
     padding: EdgeInsets.all(16),
-    child: SettingsCard(
+    child: SettingsGroup(
       children: [
         SettingsSectionTitle(title: '通用设置'),
         SettingsNavRow(title: '聊天背景'),
@@ -239,3 +233,4 @@ Widget settingsMemberAvatarPreview() {
 }
 
 void _noopBool(bool value) {}
+

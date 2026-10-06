@@ -65,13 +65,9 @@ class _BlacklistScreenState extends ConsumerState<BlacklistScreen> {
           ? const Center(child: CircularProgressIndicator())
           : state.users.isEmpty
           ? const EmptyState(icon: Icons.block_outlined, title: '黑名单为空')
-          : ListView.separated(
+          // 与「消息」列表一致：整幅列表不加分割线（飞书模式）
+          : ListView.builder(
               itemCount: state.users.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                indent: 64,
-                color: context.appColors.divider,
-              ),
               itemBuilder: (_, i) {
                 final user = state.users[i];
                 return ListTile(
