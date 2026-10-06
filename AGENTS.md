@@ -26,6 +26,10 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 - 提交前必须运行边界检查（或直接执行 `scripts/check-architecture.ps1`）：
   - `rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。
   - `rg -n "from '\.\./ui/|from '\.\./providers/|ui/core/utils/app_logger" lib/data lib/domain` 结果必须为空。
+- 提交前必须运行设计 token 检查（`scripts/check-design-tokens.ps1`）：`lib/ui` 内不得硬编码颜色
+  （`Color(0x…)` / 裸 `Colors.*`），统一取 `context.appColors.*` 或装饰色板 `AppIconColors`；
+  基线已归零，新增一处即失败。确属功能性的例外在行尾标注 `// design-token-ignore: 原因`。
+  详见 `docs/conventions.md` 的「主题/颜色」。
 
 ## Build, Test, and Development Commands
 
