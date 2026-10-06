@@ -147,7 +147,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final currentUser = _buildCurrentUser(state);
 
     return Scaffold(
-      backgroundColor: colors.background,
+      // 与「消息」列表同一套语汇：白底铺行，分组靠留白
+      backgroundColor: colors.surface,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.myProfileTitle ?? '个人信息'),
         leading: IconButton(
@@ -172,7 +173,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                             trailing: UserAvatar.fromUser(user: currentUser, radius: 20),
                             onTap: _pickImage,
                           ),
-                          const ListDivider(),
                           // 姓名
                           ListRow(
                             label: '姓名',
@@ -186,7 +186,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                                   .updateNickname(value),
                             ),
                           ),
-                          const ListDivider(),
                           // 手机号
                           ListRow(
                             label: '手机号',
@@ -196,7 +195,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                             valueColor: colors.textSecondary,
                             onTap: null,
                           ),
-                          const ListDivider(),
                           // User ID
                           ListRow(
                             label: 'User ID',
@@ -204,7 +202,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                             valueColor: colors.textSecondary,
                             onTap: null,
                           ),
-                          const ListDivider(),
                           // 我的二维码
                           ListRow(
                             label: '我的二维码',
@@ -224,7 +221,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                               );
                             },
                           ),
-                          const ListDivider(),
                           // 个性签名
                           ListRow(
                             label: '个性签名',
@@ -347,3 +343,4 @@ class _ProfileFieldEditScreenState extends State<ProfileFieldEditScreen> {
     );
   }
 }
+

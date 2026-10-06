@@ -73,7 +73,6 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ),
               onTap: () => _memberActions.showGroupManageSheet(context),
             ),
-            const ListDivider(),
             ListRow(
               label: l10n?.transferOwner ?? '转让群主',
               trailing: Icon(
@@ -83,7 +82,6 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               ),
               onTap: () => _memberActions.transferOwner(context),
             ),
-            const ListDivider(),
             DangerActionRow(
               title: l10n?.dismissGroup ?? '解散群组',
               onTap: () => _memberActions.dismissGroup(context),
@@ -145,7 +143,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     final isOwner = currentMember?.roleLevel == 3;
 
     return Scaffold(
-      backgroundColor: context.appColors.background,
+      // 与「消息」列表同一套语汇：白底铺行，分组靠留白
+      backgroundColor: context.appColors.surface,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.groupInfoTitle ?? '群信息'),
         leading: IconButton(
@@ -187,7 +186,6 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 ),
                 onTap: _changeGroupAvatar,
               ),
-              const ListDivider(),
               TwoLineListRow(
                 label: l10n?.groupName ?? '群名称',
                 value: groupInfo.groupName,
@@ -197,7 +195,6 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                   onSave: _saveGroupName,
                 ),
               ),
-              const ListDivider(),
               TwoLineListRow(
                 label: l10n?.groupDescription ?? '群描述',
                 value: groupInfo.groupDescription,
@@ -448,3 +445,4 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     }
   }
 }
+

@@ -3,38 +3,24 @@ import 'package:flutter/material.dart';
 import '../../previews/app_theme_preview.dart';
 import '../theme/app_theme.dart';
 
-/// 卡片布局组件：提供统一的卡片样式、圆角与边距。
+/// 设置类页面的「分组」：**无卡片外壳**，整幅白底直接铺行，分组之间用留白分层
+/// （与会话列表同一套语汇，见 docs/conventions.md「主题/颜色」）。
+///
+/// 命名沿用历史（原为带圆角的卡片）；现在只剩分组语义，不要再加 margin/圆角/底色。
 class CardLayout extends StatelessWidget {
   const CardLayout({
     super.key,
     required this.children,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
-    this.padding,
-    this.backgroundColor,
-    this.borderRadius,
   });
 
   final List<Widget> children;
-  final EdgeInsetsGeometry margin;
-  final EdgeInsetsGeometry? padding;
-  final Color? backgroundColor;
-  final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      margin: margin,
-      padding: padding,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? colors.surface,
-        borderRadius: BorderRadius.circular(borderRadius ?? AppTheme.radiusMd),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
     );
   }
 }
@@ -45,24 +31,15 @@ class CardLayoutWithTitle extends StatelessWidget {
     super.key,
     required this.title,
     required this.children,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16),
-    this.backgroundColor,
-    this.borderRadius,
   });
 
   final String title;
   final List<Widget> children;
-  final EdgeInsetsGeometry margin;
-  final Color? backgroundColor;
-  final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return CardLayout(
-      margin: margin,
-      backgroundColor: backgroundColor,
-      borderRadius: borderRadius,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -84,7 +61,6 @@ class CardLayoutWithTitle extends StatelessWidget {
 @AppThemePreview(name: '基础卡片', group: 'CardLayout')
 Widget cardLayoutPreview() {
   return const CardLayout(
-    padding: EdgeInsets.all(12),
     children: [Text('第一行内容'), SizedBox(height: 8), Text('第二行内容')],
   );
 }

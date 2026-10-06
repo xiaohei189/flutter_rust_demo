@@ -58,7 +58,6 @@ class GroupMemberSection extends StatelessWidget {
             ),
           ),
         ),
-        const ListDivider(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
           child: TextField(
@@ -76,7 +75,6 @@ class GroupMemberSection extends StatelessWidget {
             ),
           ),
         ),
-        const ListDivider(),
         if (isLoading)
           const Padding(
             padding: EdgeInsets.all(20),
@@ -117,7 +115,6 @@ class GroupMemberSection extends StatelessWidget {
               onTap: () => onMemberTap(m),
             ),
           ),
-        const ListDivider(),
         ListRow(
           label: l10n?.ownerAdmin ?? '群主和管理员',
           trailing: Text(
@@ -129,7 +126,6 @@ class GroupMemberSection extends StatelessWidget {
           ),
           onTap: onOwnerAdminTap,
         ),
-        const ListDivider(),
         ListRow(
           label: l10n?.joinTimeFilter ?? '按加入时间筛选',
           trailing: Text(
@@ -165,3 +161,4 @@ Widget groupMemberSectionPreview() {
     ),
   );
 }
+
