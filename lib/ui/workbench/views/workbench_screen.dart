@@ -110,11 +110,15 @@ class WorkbenchScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 图标去掉底色块，纯彩色图标，与飞书风格一致。
-                  SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: Icon(app.icon, size: 28, color: app.color),
+                  // 色块底 + 彩色图标，与通讯录的入口图标同一套语言
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppIconColors.tint(app.color),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(app.icon, size: 26, color: app.color),
                   ),
                   const SizedBox(height: 8),
                   Text(
