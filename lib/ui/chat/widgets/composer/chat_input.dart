@@ -108,6 +108,13 @@ class _ChatInputState extends State<ChatInput> {
   /// 本次 build 算出的「底部占位块」高度 = max(面板高度, 键盘高度)，供上报列表留白。
   double _sheetExtent = 0;
 
+  /// 本次 build 取到的底部安全区（手势条高度）。
+  ///
+  /// 上报给列表的占位必须算上它：`_MeasureSize` 量的是 SafeArea **内部**的高度，
+  /// 而输入区实际占用 = 内部高度 + 安全区。漏算会让列表底部留白少一个手势条高度，
+  /// 最后一条消息的头像/气泡被输入区压住。
+  double _safeBottom = 0;
+
   /// 本次键盘弹出期间见过的最大 inset（键盘完全收起时清 0 并提交为长期记忆）。
   ///
   /// 用途：剔除键盘收起动画里的中间值与尾巴，同时让「记忆键盘高度」只在键盘
@@ -497,6 +504,7 @@ class _ChatInputState extends State<ChatInput> {
     // 手势条高度（键盘弹起时系统会把它置 0）。必须在 SafeArea 之外取：
     // 进了 SafeArea 之后 MediaQuery.padding.bottom 已被清零。
     final safeBottom = MediaQuery.paddingOf(context).bottom;
+    _safeBottom = safeBottom;
     // 按钮高亮表示「现在露出的是这个面板」。键盘盖在面板上时露出的是键盘，
     // 按钮回到未激活态，点击含义变成「收键盘、露出面板」（对齐飞书）。
     final keyboardOnTop = _focusNode.hasFocus || widget.keyboardInset > 0;
@@ -654,7 +662,10 @@ class _ChatInputState extends State<ChatInput> {
     if (notifier == null) return;
     // 实测总高（输入行 + 占位块）与让位公式取较大者：既保证列表留白不小于
     // 实际渲染高度（不遮挡），也不小于占位块高度（面板与键盘切换零位移）。
-    final height = math.max(size.height, _inputRowHeight + _sheetExtent);
+    // 再加上 SafeArea 的底部安全区：_MeasureSize 只量到 SafeArea 内部，
+    // 漏算会让最后一条消息被输入区压住（真机/模拟器实测漏 24px）。
+    final height =
+        math.max(size.height, _inputRowHeight + _sheetExtent) + _safeBottom;
     if (height <= 0 || height == notifier.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) notifier.value = height;
