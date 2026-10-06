@@ -123,7 +123,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     final colors = context.appColors;
     return Scaffold(
-      backgroundColor: colors.background,
+      // 与「消息」列表同一套语汇：白底铺行，分组靠留白
+      backgroundColor: colors.surface,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.userProfileTitle ?? '个人信息'),
         leading: IconButton(
@@ -160,88 +161,63 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
                 // 高级信息列表
                 if (displayProfile != null)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildInfoRow(
-                          context,
-                          '消息接收设置',
-                          _formatRecvMsgOpt(displayProfile.globalRecvMsgOpt),
-                        ),
-                      ],
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoRow(
+                        context,
+                        '消息接收设置',
+                        _formatRecvMsgOpt(displayProfile.globalRecvMsgOpt),
+                      ),
+                    ],
                   ),
                 const SizedBox(height: 12),
                 // 操作按钮
                 if (_isSelf)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildActionRow(
-                          context,
-                          Icons.edit_outlined,
-                          '编辑资料',
-                          () => ref.read(navigationServiceProvider).goBack(),
-                        ),
-                      ],
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildActionRow(
+                        context,
+                        Icons.edit_outlined,
+                        '编辑资料',
+                        () => ref.read(navigationServiceProvider).goBack(),
+                      ),
+                    ],
                   )
                 else if (_isFriend)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildActionRow(
-                          context,
-                          Icons.chat_bubble_outline,
-                          '发消息',
-                          () => ref.read(navigationServiceProvider).goBack(),
-                        ),
-                        _buildDivider(),
-                        _buildActionRow(
-                          context,
-                          Icons.settings_outlined,
-                          '好友设置',
-                          () {
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildActionRow(
+                        context,
+                        Icons.chat_bubble_outline,
+                        '发消息',
+                        () => ref.read(navigationServiceProvider).goBack(),
+                      ),
+                      _buildActionRow(
+                        context,
+                        Icons.settings_outlined,
+                        '好友设置',
+                        () {
                             context.push(
                               AppPaths.friendSetupOf(widget.user.id),
                             );
-                          },
-                        ),
-                      ],
-                    ),
+                        },
+                      ),
+                    ],
                   )
                 else
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildActionRow(
-                          context,
-                          Icons.person_add_outlined,
-                          '添加好友',
-                          () => _showAddFriendDialog(),
-                        ),
-                      ],
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildActionRow(
+                        context,
+                        Icons.person_add_outlined,
+                        '添加好友',
+                        () => _showAddFriendDialog(),
+                      ),
+                    ],
                   ),
                 const SizedBox(height: 24),
               ],
@@ -314,10 +290,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildDivider() {
-    return const Divider(height: 1, indent: 16, endIndent: 16);
   }
 
   void _showAddFriendDialog() {
