@@ -168,9 +168,11 @@ backgroundColor: colors.background
 
 - `AppTheme.*` 上的静态色常量（`primaryColor` / `backgroundColor` / `textSecondaryColor` …）是历史遗留，**已无人使用，不要再用**；新增语义色请加进 `AppColors`（`lib/ui/core/theme/app_theme.dart`），并同时补 light / dark 两套取值。
 - 禁止新增 `Color(0x…)` 字面量与 `Colors.white/black/grey/red` 等裸色；`lib/ui/core/theme/` 之外只允许用 token。**装饰性**的多色图标（附件面板、通讯录、工作台功能入口）统一取 `AppIconColors`（`lib/ui/core/theme/app_icon_colors.dart`），不要在各文件里各写一遍色值。
-- 列表语汇以 `lib/ui/chat/views/chat_list_screen.dart`（会话列表，对齐飞书）为基准：**整幅白底直接铺行，不用卡片、不加分割线**，分层靠行距与分组间隔（如左侧抽屉的 8px 分组间隔、会话列表的日期分组头）。只有「卡片内分组」（如账号设置页）才在卡片里用分割线，缩进与卡片内边距对齐（`indent: 16, endIndent: 16`）。
+- 全屏媒体页（看图/视频/扫码）用 `colors.mediaBackground`（两种主题下固定黑）；媒体上的遮罩用 `colors.mediaScrim` 派生，不要写 `Colors.black.withValues(...)`。
+- 列表语汇以 `lib/ui/chat/views/chat_list_screen.dart`（会话列表，对齐飞书）为基准：**整幅白底直接铺行，不用卡片、不加分割线**，分层靠行距与分组间隔（如左侧抽屉的 8px 分组间隔、会话列表的日期分组头）。只有「卡片内分组」（如聊天设置页的 `SettingsCard`）才在卡片里用分割线，缩进与卡片内边距对齐（`indent: 16, endIndent: 16`）。
 - 左侧抽屉这类全局面板要从 **root navigator** 推出，保证遮罩盖住底部 Tab 栏。
-- 门禁：`powershell -ExecutionPolicy Bypass -File scripts\check-design-tokens.ps1`（棘轮式，只拦新增；基线 `scripts/design-token-baseline.json` 随迁移逐步清空）。
+- 门禁：`powershell -ExecutionPolicy Bypass -File scripts\check-design-tokens.ps1`。**`lib/ui` 内硬编码色已归零，基线 `scripts/design-token-baseline.json` 为空 = 这是硬规则，新增一处即失败**；`Colors.transparent`（"无色"）内置忽略。
+  - 确属功能性的例外（例如长按菜单需要比 `mediaScrim` 更轻的遮罩）在**行尾**标注 `// design-token-ignore: 原因`，必须写清原因便于 review；不要为了绕过门禁而标注。
 - 圆角 / 间距 / 字号用已有 token，不要写字面量：`AppTheme.radiusSm/Md/Lg`（4/8/12）、`spacingXs…Xl`（4/8/12/16/20）、`fontSizeCaption…Headline`（11/13/15/17/20）。
 
 ### 日志

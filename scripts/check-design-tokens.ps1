@@ -17,8 +17,10 @@ Push-Location $root
 try {
   $baselinePath = Join-Path $PSScriptRoot 'design-token-baseline.json'
 
-  # 违规形态：8 位十六进制字面量 / Material 裸色（appColors.* 不会被匹配）
-  $pattern = 'Color\(0x[0-9A-Fa-f]{8}\)|(?<![a-zA-Z])Colors\.[a-zA-Z]+'
+  # 违规形态：8 位十六进制字面量 / Material 裸色。
+  # 不匹配 appColors.*（带前缀），也内置忽略 Colors.transparent（"无色"不是配色决定）。
+  # 单行豁免：在行尾加 `// design-token-ignore: 原因`。
+  $pattern = 'Color\(0x[0-9A-Fa-f]{8}\)|(?<![a-zA-Z])Colors\.(?!transparent\b)[a-zA-Z]+'
   $raw = & rg -n --pcre2 $pattern lib/ui --glob '!lib/ui/core/theme/**' 2>$null
   if ($LASTEXITCODE -gt 1) { throw 'rg 执行失败，请确认已安装 ripgrep' }
 
@@ -28,6 +30,8 @@ try {
     if ($parts.Count -lt 2) { continue }
     # 整行注释里的提及（例如 token 文档）不算违规
     if ($parts.Count -ge 3 -and $parts[2].TrimStart().StartsWith('//')) { continue }
+    # 显式豁免（必须带原因，便于 review）
+    if ($parts.Count -ge 3 -and $parts[2] -match 'design-token-ignore') { continue }
     $path = $parts[0].Replace('\', '/')
     $current = if ($counts.ContainsKey($path)) { $counts[$path] } else { 0 }
     $counts[$path] = $current + 1
