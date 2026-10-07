@@ -74,7 +74,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// 「消息列表底部预留」两处，不必重建整页。
   final ValueNotifier<double> _inputAreaHeight = ValueNotifier<double>(0);
   bool _bodyReady = false;
-  Timer? _routeTransitionTimer;
+
+  /// 入场转场结束后要执行的副作用（见 [_afterRouteTransition]）。
+  VoidCallback? _pendingAfterTransition;
+  Animation<double>? _routeTransitionAnimation;
   String _lastMessageListTailId = '';
   String? _lastReportedSendError;
   final Map<String, List<MessageReactionGroup>> _messageReactions = {};
@@ -138,26 +141,51 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     });
   }
 
-  /// 入场转场（约 300ms）结束后执行，避免转场期间触发额外重建。
+  /// 入场转场结束后执行，避免转场期间触发额外重建。
+  ///
+  /// 早先这里用「等 400ms」猜转场时长：猜短了会撞上转场、猜长了白等。
+  /// 现在直接监听本页路由的转场动画，转场一结束就执行（没有转场则立即执行）。
   void _afterRouteTransition(VoidCallback action) {
-    // 用可取消的 Timer：页面提前销毁时不留悬挂回调（也避免 widget 测试残留 pending timer）
-    _routeTransitionTimer?.cancel();
-    _routeTransitionTimer = Timer(const Duration(milliseconds: 400), () {
-      if (!mounted) return;
-      action();
-    });
+    _pendingAfterTransition = action;
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null || animation.isCompleted) {
+      _runAfterTransition();
+      return;
+    }
+    // 用可移除的状态回调：页面提前销毁时不留悬挂回调（也避免 widget 测试残留 pending timer）
+    _routeTransitionAnimation?.removeStatusListener(_onRouteTransitionStatus);
+    _routeTransitionAnimation = animation
+      ..addStatusListener(_onRouteTransitionStatus);
+  }
+
+  void _onRouteTransitionStatus(AnimationStatus status) {
+    // 只认「转场结束」：转场中途退出（status 变 dismissed）不该再发 RPC
+    if (status == AnimationStatus.completed) _runAfterTransition();
+  }
+
+  void _runAfterTransition() {
+    final action = _pendingAfterTransition;
+    _pendingAfterTransition = null;
+    _routeTransitionAnimation?.removeStatusListener(_onRouteTransitionStatus);
+    _routeTransitionAnimation = null;
+    if (action == null || !mounted) return;
+    action();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _routeTransitionTimer?.cancel();
+    _routeTransitionAnimation?.removeStatusListener(_onRouteTransitionStatus);
+    _routeTransitionAnimation = null;
+    _pendingAfterTransition = null;
     final viewModel = _viewModel;
     if (viewModel != null) {
       // 退出会话：结束「正在输入」，避免对端提示挂住
       viewModel.stopTyping();
       unawaited(viewModel.unsubscribeOnlineStatus());
       unawaited(viewModel.saveDraft(_textController.text));
+      // 退出会话补一次已读：系统返回键不再被 PopScope 拦截，退出路径统一收口到 dispose
+      unawaited(viewModel.markConversationMessageAsRead());
     }
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
@@ -571,13 +599,12 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     // 这里按 aspect 取值（height/padding）：键盘动画期间 viewInsets 逐帧变化不会
     // 触发本页重建；若改用 MediaQuery.maybeOf 会注册无条件依赖，键盘每帧都重建整页。
     // 下限钳到 0：可用高度不足时（小窗/横屏/大字体）BoxConstraints 不接受负数上限。
-    final maxInputHeight =
-        math.max(
-          0.0,
-          (MediaQuery.maybeHeightOf(context) ?? 0) -
-              (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
-              kToolbarHeight,
-        );
+    final maxInputHeight = math.max(
+      0.0,
+      (MediaQuery.maybeHeightOf(context) ?? 0) -
+          (MediaQuery.maybePaddingOf(context)?.top ?? 0) -
+          kToolbarHeight,
+    );
     return _bodyReady
         ? Stack(
             children: [
@@ -669,37 +696,32 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       return _buildMissingConversation();
     }
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _onUserGoBack();
-        Navigator.of(context).pop();
-      },
-      child: Scaffold(
-        backgroundColor: context.appColors.background,
-        // 键盘不让 Scaffold 缩放 body：
-        // resizeToAvoidBottomInset: true 时键盘出现会让整个 body 变矮，消息列表跟着重排；
-        // 点表情（收键盘 + 开面板 同一帧）时两次重排叠加，就是真机上的「全局抖动」。
-        // 改成 false 后，底部让位由输入区自己按 max(面板, 键盘) 计算并上报
-        // （见 _buildMessageListSection 的 bottom padding），只影响列表底部留白。
-        resizeToAvoidBottomInset: false,
-        appBar: _ChatDetailAppBarHost(
-          user: user,
-          isTyping: isTyping,
-          isGroup: _isGroup,
-          otherUserId: otherUserId,
-          onBack: () {
-            _onUserGoBack();
-            Navigator.of(context).pop();
-          },
-          onOpenSettings: () {
-            AppRouter.goToChatSettings(context, conversation);
-          },
-          onSearch: _showMessageSearch,
-        ),
-        body: _buildBody(chatDetailState, user, currentUserId),
+    // 不包 PopScope：早先 `canPop: false` + 手动 pop 会让 Android 14 的
+    // 预测性返回（返回手势预览上一页）失效。退出时的收尾（存草稿、结束输入、
+    // 补一次已读）统一放在 dispose 里，返回手势/返回键/顶栏返回三条路径行为一致。
+    return Scaffold(
+      backgroundColor: context.appColors.background,
+      // 键盘不让 Scaffold 缩放 body：
+      // resizeToAvoidBottomInset: true 时键盘出现会让整个 body 变矮，消息列表跟着重排；
+      // 点表情（收键盘 + 开面板 同一帧）时两次重排叠加，就是真机上的「全局抖动」。
+      // 改成 false 后，底部让位由输入区自己按 max(面板, 键盘) 计算并上报
+      // （见 _buildMessageListSection 的 bottom padding），只影响列表底部留白。
+      resizeToAvoidBottomInset: false,
+      appBar: _ChatDetailAppBarHost(
+        user: user,
+        isTyping: isTyping,
+        isGroup: _isGroup,
+        otherUserId: otherUserId,
+        onBack: () {
+          _onUserGoBack();
+          Navigator.of(context).pop();
+        },
+        onOpenSettings: () {
+          AppRouter.goToChatSettings(context, conversation);
+        },
+        onSearch: _showMessageSearch,
       ),
+      body: _buildBody(chatDetailState, user, currentUserId),
     );
   }
 }
