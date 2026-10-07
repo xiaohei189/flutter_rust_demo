@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/domain/models/user.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
@@ -10,16 +11,19 @@ import 'package:flutter_rust_demo/ui/previews/fake_data.dart';
 void main() {
   Future<void> pumpMessage(WidgetTester tester, ChatMessage message) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 600,
-            child: MessageList(
-              messages: [message],
-              otherUser: const User(id: 'user_2', name: '李四'),
-              currentUserId: kPreviewMyUserId,
-              scrollController: ScrollController(),
+      // 气泡内部订阅上传进度（messageServiceProvider），需要 ProviderScope
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 800,
+              height: 600,
+              child: MessageList(
+                messages: [message],
+                otherUser: const User(id: 'user_2', name: '李四'),
+                currentUserId: kPreviewMyUserId,
+                scrollController: ScrollController(),
+              ),
             ),
           ),
         ),
@@ -66,38 +70,40 @@ void main() {
 
   testWidgets('空当前用户 ID 时不把空 sendId 消息判为自己发送', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 200,
-            child: MessageList(
-              messages: const [
-                ChatMessage(
-                  clientMsgId: 'empty-send-id',
-                  serverMsgId: '',
-                  sendId: '',
-                  recvId: 'user_2',
-                  groupId: '',
-                  senderPlatformId: 0,
-                  senderNickname: '李四',
-                  senderFaceUrl: '',
-                  sessionType: 1,
-                  msgFrom: 0,
-                  contentType: 101,
-                  content: '{"content":"你好"}',
-                  seq: 0,
-                  sendTime: 1000,
-                  createTime: 1000,
-                  status: 2,
-                  isRead: false,
-                  attachedInfo: '',
-                  ex: '',
-                ),
-              ],
-              otherUser: const User(id: 'user_2', name: '李四'),
-              currentUserId: '',
-              scrollController: ScrollController(),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 800,
+              height: 200,
+              child: MessageList(
+                messages: const [
+                  ChatMessage(
+                    clientMsgId: 'empty-send-id',
+                    serverMsgId: '',
+                    sendId: '',
+                    recvId: 'user_2',
+                    groupId: '',
+                    senderPlatformId: 0,
+                    senderNickname: '李四',
+                    senderFaceUrl: '',
+                    sessionType: 1,
+                    msgFrom: 0,
+                    contentType: 101,
+                    content: '{"content":"你好"}',
+                    seq: 0,
+                    sendTime: 1000,
+                    createTime: 1000,
+                    status: 2,
+                    isRead: false,
+                    attachedInfo: '',
+                    ex: '',
+                  ),
+                ],
+                otherUser: const User(id: 'user_2', name: '李四'),
+                currentUserId: '',
+                scrollController: ScrollController(),
+              ),
             ),
           ),
         ),

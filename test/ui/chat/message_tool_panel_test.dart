@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
@@ -39,23 +40,26 @@ void main() {
   /// 面板里点表情时收到的 emoji（验证「选中即表情回复」）
   final reacted = <String>[];
 
-  Widget host() => MaterialApp(
-    home: Scaffold(
-      body: SizedBox(
-        width: 400,
-        height: 800,
-        child: MessageList(
-          messages: [message()],
-          otherUser: const User(id: 'other', name: '对方'),
-          currentUserId: kPreviewMyUserId,
-          scrollController: ScrollController(),
-          messageActionsBuilder: (_) => MessageActions(
-            onCopy: (_) {},
-            onRevoke: (_) {},
-            onDelete: (_) {},
-            onForward: (_) {},
-            onQuote: (_) {},
-            onReaction: (_, emoji) => reacted.add(emoji),
+  // 气泡内部订阅上传进度（messageServiceProvider），需要 ProviderScope
+  Widget host() => ProviderScope(
+    child: MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 400,
+          height: 800,
+          child: MessageList(
+            messages: [message()],
+            otherUser: const User(id: 'other', name: '对方'),
+            currentUserId: kPreviewMyUserId,
+            scrollController: ScrollController(),
+            messageActionsBuilder: (_) => MessageActions(
+              onCopy: (_) {},
+              onRevoke: (_) {},
+              onDelete: (_) {},
+              onForward: (_) {},
+              onQuote: (_) {},
+              onReaction: (_, emoji) => reacted.add(emoji),
+            ),
           ),
         ),
       ),
@@ -78,10 +82,7 @@ void main() {
   /// 从面板顶部把手往下/上拖
   Future<void> dragHandle(WidgetTester tester, double dy) async {
     final top = tester.getTopLeft(find.byType(MessageToolPanel));
-    await tester.dragFrom(
-      Offset(top.dx + 120, top.dy + 10),
-      Offset(0, dy),
-    );
+    await tester.dragFrom(Offset(top.dx + 120, top.dy + 10), Offset(0, dy));
     await tester.pumpAndSettle();
   }
 

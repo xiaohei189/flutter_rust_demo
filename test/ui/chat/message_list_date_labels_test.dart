@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
@@ -36,17 +37,20 @@ void main() {
   }
 
   Widget host(List<ChatMessage> messages, ScrollController controller) {
-    return MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 400,
-          // 视口足够高，保证所有日期分隔符都被渲染出来
-          height: 3000,
-          child: MessageList(
-            messages: messages,
-            otherUser: const User(id: 'other', name: '对方'),
-            currentUserId: 'me',
-            scrollController: controller,
+    // 气泡内部订阅上传进度（messageServiceProvider），需要 ProviderScope
+    return ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 400,
+            // 视口足够高，保证所有日期分隔符都被渲染出来
+            height: 3000,
+            child: MessageList(
+              messages: messages,
+              otherUser: const User(id: 'other', name: '对方'),
+              currentUserId: 'me',
+              scrollController: controller,
+            ),
           ),
         ),
       ),
