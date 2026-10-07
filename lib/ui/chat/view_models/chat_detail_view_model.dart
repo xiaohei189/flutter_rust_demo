@@ -36,6 +36,11 @@ class ChatDetailState {
   final ChatMessage? quotedMessage;
   final bool selectMode;
   final List<ChatMessage> selectedMessages;
+  /// [selectedMessages] 的派生集合（clientMsgId），用于 O(1) 命中。
+  ///
+  /// 由 [copyWith] 统一维护：选中列表没变时直接复用上一个集合，变了才重建，
+  /// 避免每次页面 build 都 `map().toSet()` 重新分配。
+  final Set<String> selectedClientMsgIds;
   final List<String> atUserIds;
   final String? errorText;
   final bool isForwarding;
@@ -48,6 +53,7 @@ class ChatDetailState {
     this.quotedMessage,
     this.selectMode = false,
     this.selectedMessages = const [],
+    this.selectedClientMsgIds = const {},
     this.atUserIds = const [],
     this.errorText,
     this.isForwarding = false,
@@ -69,6 +75,7 @@ class ChatDetailState {
     int? forwardDone,
     int? forwardTotal,
   }) {
+    final nextSelectedMessages = selectedMessages ?? this.selectedMessages;
     return ChatDetailState(
       isLoading: isLoading ?? this.isLoading,
       hasMoreHistory: hasMoreHistory ?? this.hasMoreHistory,
@@ -76,7 +83,10 @@ class ChatDetailState {
           ? null
           : (quotedMessage ?? this.quotedMessage),
       selectMode: selectMode ?? this.selectMode,
-      selectedMessages: selectedMessages ?? this.selectedMessages,
+      selectedMessages: nextSelectedMessages,
+      selectedClientMsgIds: identical(nextSelectedMessages, this.selectedMessages)
+          ? selectedClientMsgIds
+          : nextSelectedMessages.map((m) => m.clientMsgId).toSet(),
       atUserIds: atUserIds ?? this.atUserIds,
       errorText: clearError ? null : (errorText ?? this.errorText),
       isForwarding: isForwarding ?? this.isForwarding,
@@ -84,9 +94,6 @@ class ChatDetailState {
       forwardTotal: forwardTotal ?? this.forwardTotal,
     );
   }
-
-  Set<String> get selectedClientMsgIds =>
-      selectedMessages.map((m) => m.clientMsgId).toSet();
 }
 
 /// 聊天详情页 ViewModel：负责消息加载、发送、草稿、已读、引用、多选、转发、搜索等业务。

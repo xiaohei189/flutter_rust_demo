@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/domain/models/user.dart';
 import 'package:flutter_rust_demo/ui/chat/widgets/menu/message_action_menu.dart';
@@ -13,17 +14,19 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 600,
-            child: MessageList(
-              messages: messages,
-              otherUser: const User(id: 'user_2', name: '李四'),
-              currentUserId: kPreviewMyUserId,
-              scrollController: ScrollController(),
-              selectMode: true,
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 800,
+              height: 600,
+              child: MessageList(
+                messages: messages,
+                otherUser: const User(id: 'user_2', name: '李四'),
+                currentUserId: kPreviewMyUserId,
+                scrollController: ScrollController(),
+                selectMode: true,
+              ),
             ),
           ),
         ),
@@ -51,22 +54,24 @@ void main() {
     final messages = [fakeTextMessage(text: '长按消息')];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 800,
-            height: 600,
-            child: MessageList(
-              messages: messages,
-              otherUser: const User(id: 'user_2', name: '李四'),
-              currentUserId: kPreviewMyUserId,
-              scrollController: ScrollController(),
-              messageActionsBuilder: (message) => MessageActions(
-                onCopy: (_) {},
-                onRevoke: (_) {},
-                onDelete: (_) {},
-                onForward: (_) {},
-                onQuote: (_) {},
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 800,
+              height: 600,
+              child: MessageList(
+                messages: messages,
+                otherUser: const User(id: 'user_2', name: '李四'),
+                currentUserId: kPreviewMyUserId,
+                scrollController: ScrollController(),
+                messageActionsBuilder: (message) => MessageActions(
+                  onCopy: (_) {},
+                  onRevoke: (_) {},
+                  onDelete: (_) {},
+                  onForward: (_) {},
+                  onQuote: (_) {},
+                ),
               ),
             ),
           ),

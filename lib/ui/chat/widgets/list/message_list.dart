@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -17,6 +18,7 @@ import '../menu/message_action_menu.dart'
 import '../bubble/message_bubble.dart';
 import '../menu/message_hover_toolbar.dart' show MessageReactionGroup;
 import 'message_skeleton.dart';
+import '../../providers/message_service_provider.dart';
 
 /// 消息列表组件
 /// 显示聊天消息列表，支持加载更多、空状态、加载状态与消息定位。
@@ -36,7 +38,6 @@ class MessageList extends StatefulWidget {
     this.onMessageTap,
     this.selectMode = false,
     this.selectedClientMsgIds = const {},
-    this.uploadProgress,
     this.groupReadReceipts,
     this.messageActionsBuilder,
     this.messageReactions = const {},
@@ -57,7 +58,6 @@ class MessageList extends StatefulWidget {
   final void Function(ChatMessage message)? onMessageTap;
   final bool selectMode;
   final Set<String> selectedClientMsgIds;
-  final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final Map<String, List<MessageReactionGroup>> messageReactions;
@@ -78,6 +78,31 @@ class MessageListState extends State<MessageList> {
   String _cachedDateLabelHeadId = '';
   String _cachedDateLabelTailId = '';
   int _cachedDateLabelCount = -1;
+
+  /// 「是否需要对每条消息做可见性检测」的记忆化缓存。
+  ///
+  /// 该判断是整表扫描（历史已读的会话要扫完全部消息才能得出 false），
+  /// 而列表会因新消息、已读回执等频繁重建；只在消息列表或当前用户变化时重算。
+  bool _cachedNeedsVisibilityTracking = false;
+  List<ChatMessage>? _cachedTrackingMessages;
+  String? _cachedTrackingUserId;
+
+  bool _needsVisibilityTracking(
+    List<ChatMessage> messages,
+    String? currentUserId,
+  ) {
+    final userId = currentUserId ?? '';
+    if (identical(_cachedTrackingMessages, messages) &&
+        _cachedTrackingUserId == userId) {
+      return _cachedNeedsVisibilityTracking;
+    }
+    _cachedTrackingMessages = messages;
+    _cachedTrackingUserId = userId;
+    _cachedNeedsVisibilityTracking = messages.any(
+      (m) => !m.isRead && (userId.isEmpty || m.sendId != userId),
+    );
+    return _cachedNeedsVisibilityTracking;
+  }
 
   void _pruneMessageKeys(List<ChatMessage> messages) {
     if (_messageKeys.length <= _maxMessageKeys) return;
@@ -152,6 +177,11 @@ class MessageListState extends State<MessageList> {
     const useReverse = true;
     final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
     final dateLabels = _dateLabelsFor(widget.messages);
+    // 只有列表里还存在「对方发来的未读消息」时才逐项挂可见性检测（记忆化，见
+    // _needsVisibilityTracking）：历史已读的会话不再为每条消息付订阅与逐帧计算。
+    final trackVisibility =
+        widget.onMessageVisible != null &&
+        _needsVisibilityTracking(widget.messages, widget.currentUserId);
     // 只依赖 size.width 这一个 aspect：键盘动画期间 viewInsets 逐帧变化不会让列表
     // 每帧重建（MediaQuery.maybeOf 会注册无条件依赖，任何字段变化都会重建）。
     final maxBubbleWidth = (MediaQuery.maybeWidthOf(context) ?? 0) * 0.65;
@@ -196,7 +226,7 @@ class MessageListState extends State<MessageList> {
           cachedSenderProfile: widget.cachedSenderProfiles?[message.sendId],
           cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
           onLongPress: (msg) => _openMessageToolPanel(msg, messageKey),
-          onVisible: widget.onMessageVisible,
+          onVisible: trackVisibility ? widget.onMessageVisible : null,
           onTap: widget.onMessageTap,
           selectionIndicator:
               widget.selectMode && message.messageType != MessageType.system
@@ -207,7 +237,6 @@ class MessageListState extends State<MessageList> {
               : null,
           reactionGroups:
               widget.messageReactions[message.clientMsgId] ?? const [],
-          uploadProgress: widget.uploadProgress,
           groupReadReceipts: widget.groupReadReceipts,
           onPlayAudio: widget.onPlayAudio,
           onRetrySend: widget.onRetrySend,
@@ -408,7 +437,11 @@ class MessageListState extends State<MessageList> {
 }
 
 /// 带可见性检测的消息气泡
-class _VisibleMessageBubble extends StatelessWidget {
+/// 单条消息气泡（带可见性检测）。
+///
+/// 上传进度**在这里订阅**（只订阅本条消息的进度）：进度每 tick 都会产生一张新 Map，
+/// 若在上层订阅会让整段列表跟着重建；下沉后只有正在上传的那条气泡重建。
+class _VisibleMessageBubble extends ConsumerWidget {
   const _VisibleMessageBubble({
     required this.message,
     required this.otherUser,
@@ -422,7 +455,6 @@ class _VisibleMessageBubble extends StatelessWidget {
     this.onTap,
     this.selectionIndicator,
     this.reactionGroups = const [],
-    this.uploadProgress,
     this.groupReadReceipts,
     this.onPlayAudio,
     this.onRetrySend,
@@ -440,13 +472,20 @@ class _VisibleMessageBubble extends StatelessWidget {
   final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;
   final List<MessageReactionGroup> reactionGroups;
-  final Map<String, int>? uploadProgress;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uploadProgress = ref.watch(
+      messageServiceProvider.select(
+        (s) => s.uploadProgress[message.clientMsgId],
+      ),
+    );
+    final groupReadReceipt =
+        groupReadReceipts?[message.clientMsgId] ??
+        groupReadReceipts?[message.serverMsgId];
     if (onVisible == null) {
       return MessageBubble(
         message: message,
@@ -460,10 +499,8 @@ class _VisibleMessageBubble extends StatelessWidget {
         onTap: onTap,
         selectionIndicator: selectionIndicator,
         reactionGroups: reactionGroups,
-        uploadProgress: uploadProgress?[message.clientMsgId],
-        groupReadReceipt:
-            groupReadReceipts?[message.clientMsgId] ??
-            groupReadReceipts?[message.serverMsgId],
+        uploadProgress: uploadProgress,
+        groupReadReceipt: groupReadReceipt,
         onPlayAudio: onPlayAudio,
         onRetrySend: onRetrySend,
       );
@@ -488,10 +525,8 @@ class _VisibleMessageBubble extends StatelessWidget {
         onTap: onTap,
         selectionIndicator: selectionIndicator,
         reactionGroups: reactionGroups,
-        uploadProgress: uploadProgress?[message.clientMsgId],
-        groupReadReceipt:
-            groupReadReceipts?[message.clientMsgId] ??
-            groupReadReceipts?[message.serverMsgId],
+        uploadProgress: uploadProgress,
+        groupReadReceipt: groupReadReceipt,
         onPlayAudio: onPlayAudio,
         onRetrySend: onRetrySend,
       ),
@@ -534,15 +569,18 @@ class _SelectionCheckbox extends StatelessWidget {
 
 @AppThemePreview(name: '消息列表（混合内容）', group: 'MessageList')
 Widget messageListPreview() {
-  return Padding(
-    padding: const EdgeInsets.all(16),
-    child: SizedBox(
-      height: 480,
-      child: MessageList(
-        messages: fakeMessageList(),
-        otherUser: User.mockUsers[1],
-        currentUserId: kPreviewMyUserId,
-        scrollController: ScrollController(),
+  // 气泡内部订阅上传进度，预览需要 ProviderScope
+  return ProviderScope(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        height: 480,
+        child: MessageList(
+          messages: fakeMessageList(),
+          otherUser: User.mockUsers[1],
+          currentUserId: kPreviewMyUserId,
+          scrollController: ScrollController(),
+        ),
       ),
     ),
   );

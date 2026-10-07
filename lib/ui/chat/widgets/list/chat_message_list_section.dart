@@ -47,23 +47,12 @@ class ChatMessageListSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messages = ref.watch(messagesByConversationProvider(conversationId));
-    final uploadProgress = ref.watch(
-      messageServiceProvider.select((s) => s.uploadProgress),
-    );
     final groupReadReceipts = ref.watch(
       messageServiceProvider.select((s) => s.groupReadReceipts),
     );
     final cachedCurrentUserProfile = ref.watch(
       messageServiceProvider.select((s) => s.loginUserProfile),
     );
-    // 只有列表里还存在「对方发来的未读消息」时才需要逐项可见性检测：
-    // 历史消息已读的会话（重进会话的常见情况）不再挂 VisibilityDetector，
-    // 省掉每个可见项的订阅与逐帧可见性计算。
-    final currentId = currentUserId ?? '';
-    final needsVisibilityTracking = messages.any(
-      (m) => !m.isRead && (currentId.isEmpty || m.sendId != currentId),
-    );
-
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => FocusScope.of(context).unfocus(),
@@ -76,10 +65,11 @@ class ChatMessageListSection extends ConsumerWidget {
         isLoading: isLoading,
         selectMode: selectMode,
         selectedClientMsgIds: selectedClientMsgIds,
-        uploadProgress: uploadProgress,
         groupReadReceipts: groupReadReceipts,
         cachedCurrentUserProfile: cachedCurrentUserProfile,
-        onMessageVisible: needsVisibilityTracking ? onMessageVisible : null,
+        // 「是否需要逐项挂可见性检测」由 MessageList 记忆化判断
+        // （见 _needsVisibilityTracking），避免每次重建都整表扫描。
+        onMessageVisible: onMessageVisible,
         messageActionsBuilder: messageActionsBuilder,
         messageReactions: messageReactions,
         onMessageTap: onMessageTap,
