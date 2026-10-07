@@ -2,11 +2,11 @@
 
 use crate::core::context::Repositories;
 use crate::core::conversation::enrich::batch_add_face_url_and_name;
-use crate::domain::error::Result;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
-use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
+use crate::domain::error::Result;
 use crate::domain::model::local::LocalConversation;
 use crate::domain::model::UserId;
+use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
 
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -63,6 +63,8 @@ impl ConversationService {
                 }
             }
         }
+
+        self.normalize_empty_draft_times(&mut local_convs).await;
 
         Ok(local_convs)
     }
@@ -161,9 +163,17 @@ impl ConversationService {
     }
 
     pub async fn set_draft(&self, conversation_id: &str, draft_text: &str) -> Result<()> {
-        let draft_time = chrono::Utc::now().timestamp_millis();
+        // 空草稿 = 清空草稿，草稿时间必须归零。
+        // 会话列表按 MAX(latest_msg_send_time, draft_text_time) 排序并显示行内时间，
+        // 清空时若也盖「当前时间」，就会出现「进过会话但没写草稿 → 会话被顶到最前、
+        // 行内时间变成刚才」。
+        let draft_time = if draft_text.is_empty() { 0 } else { chrono::Utc::now().timestamp_millis() };
         self.repositories.conversation_repo.set_draft(conversation_id, draft_text, draft_time).await?;
-        debug!("会话 {} 草稿已设置", conversation_id);
+        if draft_text.is_empty() {
+            debug!("会话 {} 草稿已清空", conversation_id);
+        } else {
+            debug!("会话 {} 草稿已设置", conversation_id);
+        }
         Ok(())
     }
 
@@ -179,14 +189,32 @@ impl ConversationService {
         self.repositories.conversation_repo.count().await
     }
 
-    /// 获取全部会话（纯读，不含 latest_msg 回填）
+    /// 获取全部会话（不含 latest_msg 回填）
     pub async fn get_all(&self) -> Result<Vec<LocalConversation>> {
-        self.repositories.conversation_repo.get_all().await
+        let mut conversations = self.repositories.conversation_repo.get_all().await?;
+        self.normalize_empty_draft_times(&mut conversations).await;
+        Ok(conversations)
     }
 
     /// 分页获取会话（置顶优先、按时间倒序）
     pub async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> {
-        self.repositories.conversation_repo.get_split(offset, count).await
+        let mut conversations = self.repositories.conversation_repo.get_split(offset, count).await?;
+        self.normalize_empty_draft_times(&mut conversations).await;
+        Ok(conversations)
+    }
+
+    /// 兼容历史脏数据：草稿已清空却残留 draft_text_time。
+    ///
+    /// 会话列表按 `MAX(latest_msg_send_time, draft_text_time)` 排序并显示行内时间，
+    /// 早先 `clear_draft` 会盖上「当前时间」，于是「进过会话但没写草稿」的会话会被顶到
+    /// 最前、行内时间显示成刚才。这里把存量脏数据归零并落库，只在首次读取时写一次。
+    async fn normalize_empty_draft_times(&self, conversations: &mut [LocalConversation]) {
+        for conv in conversations.iter_mut() {
+            if conv.draft_text.is_empty() && conv.draft_text_time != 0 {
+                conv.draft_text_time = 0;
+                let _ = self.repositories.conversation_repo.set_draft(&conv.conversation_id, "", 0).await;
+            }
+        }
     }
 
     /// 按 ID 列表批量获取会话
@@ -296,18 +324,12 @@ impl ConversationService {
         let login_user_id = user_id.get().await;
         let mut conversations = self.repositories.conversation_repo.get_all().await?;
         // 记录补全前的值，用于比较是否变化
-        let before: Vec<(String, String, String)> = conversations
-            .iter()
-            .map(|c| (c.conversation_id.clone(), c.show_name.clone(), c.face_url.clone()))
-            .collect();
+        let before: Vec<(String, String, String)> = conversations.iter().map(|c| (c.conversation_id.clone(), c.show_name.clone(), c.face_url.clone())).collect();
         batch_add_face_url_and_name(&self.repositories, &login_user_id, &mut conversations).await?;
         let mut changed = Vec::new();
         for (conv, (id, old_name, old_face)) in conversations.into_iter().zip(before) {
             if conv.show_name != old_name || conv.face_url != old_face {
-                self.repositories
-                    .conversation_repo
-                    .update_face_url_and_name(&id, &conv.show_name, &conv.face_url)
-                    .await?;
+                self.repositories.conversation_repo.update_face_url_and_name(&id, &conv.show_name, &conv.face_url).await?;
                 changed.push(conv);
             }
         }
@@ -431,9 +453,35 @@ mod tests {
         manager.set_draft("conv_1", "test draft").await.unwrap();
         let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.draft_text, "test draft");
+        assert!(conv.draft_text_time > 0, "有内容的草稿要留时间给会话列表排序");
         manager.clear_draft("conv_1").await.unwrap();
         let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
         assert_eq!(conv.draft_text, "");
+        assert_eq!(conv.draft_text_time, 0, "清空草稿必须同时清掉草稿时间，否则会话会被顶到最前");
+    }
+
+    #[tokio::test]
+    async fn test_get_all_clears_stale_empty_draft_time() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let mut conv = create_test_conversation("conv_1");
+        // 模拟历史脏数据：草稿已清空，却残留草稿时间
+        conv.latest_msg = "hi".to_string();
+        conv.latest_msg_send_time = 1000;
+        conv.draft_text = String::new();
+        conv.draft_text_time = 8888;
+        manager.upsert_conversation(conv).await.unwrap();
+
+        // App 的会话列表走 get_all（纯读路径），这里必须自愈
+        let list = manager.get_all().await.unwrap();
+        assert_eq!(list[0].draft_text_time, 0, "空草稿的草稿时间应归零");
+        // 分页路径同样自愈
+        let page = manager.get_split(0, 10).await.unwrap();
+        assert_eq!(page[0].draft_text_time, 0);
+
+        // 并且落库，避免每次读会话列表都要重新清理
+        let stored = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(stored.draft_text_time, 0);
     }
 
     // ========================================================================
