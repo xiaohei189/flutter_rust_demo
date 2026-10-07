@@ -152,7 +152,8 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('张三'), findsOneWidget);
+    // 顶栏出现两次会话名：标题行 + 头像回退态（无头像时用名字占位）
+    expect(find.text('张三'), findsNWidgets(2));
     expect(find.text('你好'), findsOneWidget);
   });
 
@@ -333,7 +334,11 @@ void main() {
     );
 
     // 真机实测的键盘逐帧 inset 序列
-    for (final inset in <double>[62.54545454545455, 312.72727272727275, 321.8181818181818]) {
+    for (final inset in <double>[
+      62.54545454545455,
+      312.72727272727275,
+      321.8181818181818,
+    ]) {
       await tester.pumpWidget(hostWith(inset));
       await tester.pump();
 

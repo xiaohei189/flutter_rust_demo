@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_rust_demo/domain/models/chat_message.dart' show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/chat_message.dart'
+    show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/views/merge_message_detail_screen.dart';
 import 'package:flutter_rust_demo/ui/chat/widgets/bubble/parts/media_message_content.dart'
     show ImageMessageContent;
@@ -100,7 +101,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('明天开会'), findsOneWidget);
-    expect(find.text('张三'), findsOneWidget);
+    // 子消息渲染两处发送者名：昵称行 + 头像回退态（无头像时用名字占位）
+    expect(find.text('张三'), findsNWidgets(2));
     expect(find.text('暂无消息内容'), findsNothing);
   });
 
@@ -228,5 +230,4 @@ void main() {
     final closeRect = tester.getRect(find.byIcon(Icons.close));
     expect(titleRect.center.dx, lessThan(closeRect.center.dx));
   });
-
 }

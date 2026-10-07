@@ -24,7 +24,8 @@ void main() {
       ),
     );
 
-    expect(find.text('张三'), findsOneWidget);
+    // 顶栏出现两次会话名：标题行 + 头像回退态（无头像时用名字占位）
+    expect(find.text('张三'), findsNWidgets(2));
     expect(find.text('在线'), findsOneWidget);
     expect(find.byIcon(Icons.search), findsOneWidget);
 
@@ -50,7 +51,8 @@ void main() {
       ),
     );
 
-    expect(find.text('技术群'), findsOneWidget);
+    // 同上：标题行 + 头像回退态
+    expect(find.text('技术群'), findsNWidgets(2));
     expect(find.text('群聊'), findsOneWidget);
   });
 }

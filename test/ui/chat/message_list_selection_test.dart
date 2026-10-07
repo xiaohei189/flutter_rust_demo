@@ -91,12 +91,12 @@ void main() {
     expect(find.text('删除'), findsOneWidget);
     expect(find.text('👍'), findsOneWidget);
 
-    // 点「⋯」切换到完整表情界面（底部 Tab + 表情网格），可返回工具面板
+    // 点「⋯」切换到完整表情界面。对齐飞书稿：长按菜单里的表情面板只留表情网格，
+    // 没有标题栏/Tab 栏，因此也没有返回箭头（关掉面板靠点表情或下滑）。
     await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
-    expect(find.text('表情'), findsWidgets);
+    expect(find.text('默认表情'), findsOneWidget);
     expect(find.text('😀'), findsWidgets, reason: '展示默认表情网格');
     expect(find.text('回复'), findsNothing, reason: '已切换到表情界面');
   });
