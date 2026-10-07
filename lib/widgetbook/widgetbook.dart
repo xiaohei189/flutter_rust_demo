@@ -1,22 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 
-import '../ui/chat/widgets/composer/attachment_panel.dart';
-import '../ui/chat/widgets/composer/at_member_suggestions.dart';
-import '../ui/chat/widgets/composer/chat_input_preview.dart';
-import '../ui/chat/widgets/composer/recording_overlay.dart';
-import '../ui/chat/widgets/list/chat_list_item.dart';
-import '../ui/chat/widgets/composer/emoji_panel.dart';
-import '../ui/chat/widgets/composer/format_toolbar.dart';
-import '../ui/chat/widgets/composer/markdown_format_bar.dart';
-import '../ui/chat/widgets/bubble/message_bubble.dart';
-import '../ui/chat/widgets/list/message_list.dart';
-import '../ui/chat/widgets/menu/message_selection_bar.dart';
-import '../ui/chat/widgets/list/message_skeleton.dart';
-import '../ui/chat/widgets/shared/message_status_indicator.dart';
-import '../ui/chat/widgets/composer/quote_preview_bar.dart';
-import '../ui/chat/widgets/shared/chat_detail_app_bar.dart';
-import '../ui/chat/widgets/settings_components.dart';
 import '../ui/chat/widgets/list/unread_count_view.dart';
 import '../ui/contacts/widgets/contact_picker_list.dart';
 import '../ui/core/theme/app_theme.dart';
@@ -35,17 +19,15 @@ import '../ui/groups/widgets/group_member_section.dart';
 /// ```
 ///
 /// 左侧组件树选择组件，右侧实时渲染，顶部可切换明/暗主题。
+///
+/// 聊天类组件已迁到 `@AppThemePreview`（`package:flutter/widget_previews.dart`）
+/// 的新预览体系，在 IDE 里即可预览，不再重复注册到这里。
 void main() {
   runApp(
     Widgetbook.material(
       lightTheme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       directories: [
-        WidgetbookCategory(
-          name: '消息',
-          children: [
-        ],
-        ),
         WidgetbookCategory(
           name: '通用组件',
           children: [
@@ -160,4 +142,3 @@ void main() {
     ),
   );
 }
-
