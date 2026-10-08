@@ -376,34 +376,25 @@ class MessageListState extends State<MessageList> {
     return DateFormat('yyyy年MM月dd日').format(dateTime);
   }
 
-  /// 构建日期分隔符
+  /// 构建日期分隔标签。
+  ///
+  /// 对齐飞书态：只有居中的日期文字，不画两侧横线（会话列表/设置页同样是
+  /// 「靠留白分组、不靠分割线」，见 docs/conventions.md 的列表语汇）。
   Widget _buildDateSeparator(BuildContext context, String dateText) {
     final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Expanded(child: _buildSeparatorLine(colors)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              dateText,
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.textSecondary.withValues(alpha: 0.7),
-              ),
-            ),
+      child: Center(
+        child: Text(
+          dateText,
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.textSecondary.withValues(alpha: 0.7),
           ),
-          Expanded(child: _buildSeparatorLine(colors)),
-        ],
+        ),
       ),
     );
   }
-
-  Widget _buildSeparatorLine(AppColors colors) => Container(
-    height: 0.5,
-    color: colors.divider.withValues(alpha: 0.8),
-  );
 
   /// 分组时间头：新的一天、或与上一条消息间隔 ≥ [_timeHeaderGapMinutes] 分钟时，
   /// 在消息上方居中显示时间（对齐飞书稿，气泡下方只留状态图标）。
