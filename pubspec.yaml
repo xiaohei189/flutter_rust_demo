@@ -72,6 +72,7 @@ dependencies:
   mime: ^2.0.0
   widgetbook: ^3.25.0
   widgetbook_annotation: ^3.11.0
+  lpinyin: ^2.0.3
 
 dev_dependencies:
   flutter_test:
