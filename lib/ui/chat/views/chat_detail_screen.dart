@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
+import '../../../domain/models/user_profile.dart';
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
@@ -18,11 +19,12 @@ import '../../contacts/views/contact_picker_screen.dart';
 import '../../contacts/widgets/contact_pick_item.dart';
 import '../../groups/providers/group_provider.dart';
 import '../../profile/providers/user_profile_provider.dart';
-import '../../profile/view_models/user_profile_view_model.dart';
 import '../providers/chat_detail_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
+import '../providers/message_revision_provider.dart'
+    show loginUserProfileProvider;
 import '../view_models/chat_detail_view_model.dart';
 import '../widgets/composer/chat_input.dart' show ChatInput;
 import '../widgets/message_content_type.dart' show MessageContentType;
@@ -344,8 +346,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _viewModel?.addAtUserId(userId);
   }
 
-  User _getUser(UserProfileState userProfileState) {
-    final conversation = _conversation;
+  /// 顶栏/输入区展示的会话对象。
+  ///
+  /// [cached]（对方资料）由调用方 watch 后传入：资料缓存是单一来源，
+  /// 这里不再在 build 里 ref.read，避免每次重建都重新查一次。
+  User _getUser(Conversation? conversation, UserProfile? cached) {
     if (conversation == null) {
       return User(
         id: widget.conversationId,
@@ -361,11 +366,6 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final userName = conversation.showName.isNotEmpty
         ? conversation.showName
         : conversation.conversationId;
-    final cached = conversation.userId.isNotEmpty
-        ? ref
-              .read(userProfileProvider.notifier)
-              .getUserProfile(conversation.userId)
-        : null;
 
     return User(
       id: userId,
@@ -433,7 +433,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       isScrollControlled: true,
       backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
       ),
       builder: (_) => ChatMessageSearchSheet(
         conversationId: widget.conversationId,
@@ -518,6 +520,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     ChatDetailState chatDetailState,
     User user,
     String currentUserId,
+    String? currentUserAvatar,
   ) {
     return Expanded(
       // 业界模型：列表留白 = 「输入行 + 底部占位块」，占位块 = max(面板, 键盘)。
@@ -537,9 +540,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             conversationId: widget.conversationId,
             user: user,
             currentUserId: currentUserId.isNotEmpty ? currentUserId : null,
-            currentUserAvatar: ref
-                .read(userProfileProvider.notifier)
-                .getDisplayAvatarUrl(),
+            currentUserAvatar: currentUserAvatar,
             scrollController: _scrollController,
             isLoading: chatDetailState.isLoading,
             selectMode: chatDetailState.selectMode,
@@ -593,6 +594,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     ChatDetailState chatDetailState,
     User user,
     String currentUserId,
+    String? currentUserAvatar,
   ) {
     // 输入区高度上限：多行输入 + 表情/附件面板可能超出可用高度。
     // 用屏幕可用高度近似，面板内部 Flexible 会在受限时自动收缩兜底。
@@ -628,6 +630,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                     chatDetailState,
                     user,
                     currentUserId,
+                    currentUserAvatar,
                   ),
                   if (chatDetailState.isForwarding)
                     ForwardProgressBanner(
@@ -674,14 +677,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     final chatDetailState = ref.watch(
       chatDetailViewModelProvider(widget.conversationId),
     );
-    final userProfileState = ref.watch(userProfileViewProvider);
-    final user = _getUser(userProfileState);
     final conversation = _conversation;
     final otherUserId = conversation?.conversationType == 1
         ? conversation!.userId
         : '';
+
+    // 只订阅「对方资料」这一个字段：他的资料变了才重建本页。
+    // 早先这里 watch 整个 userProfileViewProvider，自己的昵称/签名一改也整页重建。
+    final otherUserProfile = otherUserId.isEmpty
+        ? null
+        : ref.watch(
+            messageServiceProvider.select((s) => s.userProfiles[otherUserId]),
+          );
+    final user = _getUser(conversation, otherUserProfile);
     final currentUserId =
-        _viewModel?.currentUserId ?? userProfileState.profile?.userId ?? '';
+        _viewModel?.currentUserId ??
+        ref.watch(loginUserProfileProvider.select((p) => p?.userId)) ??
+        '';
+    // 自发头像同理：只在展示头像变化时重建
+    final currentUserAvatar = ref.watch(currentUserDisplayAvatarProvider);
     final typingUserId = ref.watch(
       messageServiceProvider.select(
         (s) => s.typingUsers[widget.conversationId],
@@ -721,7 +735,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         },
         onSearch: _showMessageSearch,
       ),
-      body: _buildBody(chatDetailState, user, currentUserId),
+      body: _buildBody(chatDetailState, user, currentUserId, currentUserAvatar),
     );
   }
 }

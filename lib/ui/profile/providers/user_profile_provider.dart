@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/services.dart';
+import '../../../providers/im_providers.dart';
 import '../../../domain/models/user_profile.dart';
 import '../../chat/providers/message_revision_provider.dart';
 import '../view_models/user_profile_view_model.dart';
@@ -22,7 +23,9 @@ final loginUserProvider = Provider<UserProfile?>((ref) {
 });
 
 /// 用户资料缓存流 Provider
-final userProfilesStreamProvider = StreamProvider<Map<String, UserProfile>>((ref) {
+final userProfilesStreamProvider = StreamProvider<Map<String, UserProfile>>((
+  ref,
+) {
   final service = ref.watch(userServiceProvider);
   return service.profilesStream;
 });
@@ -67,6 +70,23 @@ final userProfileViewProvider = Provider<UserProfileState>((ref) {
 /// 当前用户资料 Provider（仅返回 profile）
 final currentUserProfileProvider = Provider<UserProfile?>((ref) {
   return ref.watch(userProfileViewProvider).profile;
+});
+
+/// 当前登录用户的展示头像 URL（本地覆盖 > 服务端头像）。
+///
+/// [userProfileViewProvider] 在昵称/签名/别名等任一字段变化时都会产出新状态；
+/// 只关心头像的界面（会话详情顶栏、消息列表里的自发头像）订阅这个 Provider，
+/// 避免因为别的资料字段变化把整页重建一遍。
+final currentUserDisplayAvatarProvider = Provider<String?>((ref) {
+  final local = ref.watch(userProfileProvider);
+  return ref
+      .watch(userAvatarStoreProvider)
+      .resolveDisplayUrl(
+        localAvatarPath: local.localAvatarPath,
+        faceUrl:
+            local.localAvatarUrl ??
+            ref.watch(loginUserProfileProvider)?.faceUrl,
+      );
 });
 
 /// 当前用户昵称 Provider
