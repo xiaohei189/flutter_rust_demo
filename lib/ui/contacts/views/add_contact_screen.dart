@@ -106,7 +106,6 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               ],
             ),
           ),
-          Divider(height: 1, color: context.appColors.divider),
           // 搜索结果
           Expanded(
             child: state.isLoading

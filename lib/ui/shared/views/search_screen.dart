@@ -150,7 +150,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ],
               ),
             ),
-            Divider(height: 1, color: context.appColors.divider),
             // 内容区
             Expanded(
               child: state.query.isEmpty
@@ -228,26 +227,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     switch (state.category) {
       case SearchCategory.message:
         if (state.messageResults.isEmpty) return _buildNoResults(state);
-        return ListView.separated(
+        return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: state.messageResults.length,
-          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
           itemBuilder: (_, i) => _buildMessageItem(state.messageResults[i]),
         );
       case SearchCategory.contacts:
         if (state.friendResults.isEmpty) return _buildNoResults(state);
-        return ListView.separated(
+        return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: state.friendResults.length,
-          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
           itemBuilder: (_, i) => _buildFriendItem(state.friendResults[i]),
         );
       case SearchCategory.groups:
         if (state.groupResults.isEmpty) return _buildNoResults(state);
-        return ListView.separated(
+        return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: state.groupResults.length,
-          separatorBuilder: (_, __) => const Divider(height: 1, indent: 64),
           itemBuilder: (_, i) => _buildGroupItem(state.groupResults[i]),
         );
     }

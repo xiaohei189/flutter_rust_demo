@@ -242,7 +242,6 @@ class ProfileDrawerScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const Divider(height: 1),
                     // 功能菜单
                     Expanded(
                       child: ListView(
@@ -280,7 +279,6 @@ class ProfileDrawerScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const Divider(height: 1),
                     // 退出登录（固定在底部）
                     DrawerMenuItem(
                       icon: Icons.logout,
