@@ -173,7 +173,8 @@ backgroundColor: colors.background
 - 左侧抽屉这类全局面板要从 **root navigator** 推出，保证遮罩盖住底部 Tab 栏。
 - 门禁：`powershell -ExecutionPolicy Bypass -File scripts\check-design-tokens.ps1`。**`lib/ui` 内硬编码色已归零，基线 `scripts/design-token-baseline.json` 为空 = 这是硬规则，新增一处即失败**；`Colors.transparent`（"无色"）内置忽略。
   - 确属功能性的例外（例如长按菜单需要比 `mediaScrim` 更轻的遮罩）在**行尾**标注 `// design-token-ignore: 原因`，必须写清原因便于 review；不要为了绕过门禁而标注。
-- 圆角 / 间距 / 字号用已有 token，不要写字面量：`AppTheme.radiusSm/Md/Lg`（4/8/12）、`spacingXs…Xl`（4/8/12/16/20）、`fontSizeCaption…Headline`（11/13/15/17/20）。
+- 圆角只用四档 + 胶囊，不要写字面量（**门禁强制**）：`AppTheme.radiusSm`(4) 小控件/缩略图/骨架、`radiusMd`(8) 默认卡片/图片/输入框、`radiusLg`(12) 浮层/菜单/次级容器、`radiusSheet`(16) 大面板（底部弹层、气泡容器）、`radiusPill`(999) 胶囊（按钮/徽标/把手/进度条，`RRect` 会按短边自动收敛）。圆角已一次性收敛为 0 处裸数字，没有基线；确属例外在行尾 `// design-token-ignore: 原因`。
+- 间距 / 字号优先用 `spacingXs…Xl`（4/8/12/16/20）与 `fontSizeCaption…Headline`（11/13/15/17/20）；这两项目前只做约定，门禁尚未强制（布局里按视觉微调的字面量还比较多）。
 
 ### 日志
 
