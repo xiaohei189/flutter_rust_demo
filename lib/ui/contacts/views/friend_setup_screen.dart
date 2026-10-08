@@ -171,11 +171,11 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: context.appColors.onPrimary,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Center(
@@ -215,7 +215,9 @@ class _FriendSetupScreenState extends ConsumerState<FriendSetupScreen> {
               color: context.appColors.textSecondary,
               fontSize: 14,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 10,

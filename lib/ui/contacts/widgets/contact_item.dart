@@ -30,7 +30,7 @@ class ContactItem extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           color: iconColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         ),
         child: Icon(icon, color: iconColor, size: 22),
       ),
@@ -43,7 +43,7 @@ class ContactItem extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: colors.danger,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: Text(
                 '$badgeCount',

@@ -6,7 +6,8 @@ import '../../../domain/models/friend_search_result.dart';
 import '../../../domain/models/group.dart';
 import '../../../domain/models/user.dart';
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
-import '../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../domain/models/message_search_result.dart'
+    show MessageSearchResult;
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
@@ -91,7 +92,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         filled: true,
                         fillColor: context.appColors.background,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusMd,
+                          ),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -260,7 +263,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
         radius: 20,
       ),
-      title: Text(log.displayText, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        log.displayText,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       subtitle: Text(
         log.senderNickName.isNotEmpty ? log.senderNickName : log.sendId,
         style: const TextStyle(fontSize: 12),

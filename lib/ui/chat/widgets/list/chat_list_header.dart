@@ -98,7 +98,7 @@ class ChatListHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                     child: LinearProgressIndicator(
                       value: syncProgress / 100,
                       minHeight: 3,

@@ -76,7 +76,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
   Future<void> _pickImage() async {
     appLog.i('[MyProfile] 开始选择图片...');
-    final image = await ref.read(imagePickerServiceProvider).pickImageFromGallery();
+    final image = await ref
+        .read(imagePickerServiceProvider)
+        .pickImageFromGallery();
 
     if (image == null) {
       appLog.i('[MyProfile] 用户取消选择图片');
@@ -170,7 +172,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           // 头像
                           ListRow(
                             label: '头像',
-                            trailing: UserAvatar.fromUser(user: currentUser, radius: 20),
+                            trailing: UserAvatar.fromUser(
+                              user: currentUser,
+                              radius: 20,
+                            ),
                             onTap: _pickImage,
                           ),
                           // 姓名
@@ -334,7 +339,7 @@ class _ProfileFieldEditScreenState extends State<ProfileFieldEditScreen> {
             filled: true,
             fillColor: colors.surface,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               borderSide: BorderSide.none,
             ),
           ),
@@ -343,4 +348,3 @@ class _ProfileFieldEditScreenState extends State<ProfileFieldEditScreen> {
     );
   }
 }
-

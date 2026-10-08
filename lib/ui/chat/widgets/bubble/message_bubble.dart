@@ -135,14 +135,16 @@ class MessageBubble extends StatelessWidget {
           ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isPlainContent
-            ? Colors.transparent
-            : bubbleColor,
+        color: isPlainContent ? Colors.transparent : bubbleColor,
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: Radius.circular(isFromMe ? 18 : 4),
-          bottomRight: Radius.circular(isFromMe ? 4 : 18),
+          topLeft: const Radius.circular(AppTheme.radiusSheet),
+          topRight: const Radius.circular(AppTheme.radiusSheet),
+          bottomLeft: Radius.circular(
+            isFromMe ? AppTheme.radiusSheet : AppTheme.radiusSm,
+          ),
+          bottomRight: Radius.circular(
+            isFromMe ? AppTheme.radiusSm : AppTheme.radiusSheet,
+          ),
         ),
       ),
       child: Column(

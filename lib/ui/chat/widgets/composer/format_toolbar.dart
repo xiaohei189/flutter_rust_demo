@@ -96,7 +96,7 @@ class FormatToolbar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onFormat(format),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           child: Container(
             width: 36,
             height: AppTheme.formatBarHeight,

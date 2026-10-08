@@ -62,7 +62,7 @@ class ImageMessageContent extends StatelessWidget {
       isFromMe: isFromMe,
       progress: uploadProgress,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: AppImage(
           source: source,
           width: 150,
@@ -89,13 +89,17 @@ class _ImageMessagePlaceholder extends StatelessWidget {
       height: 150,
       decoration: BoxDecoration(
         color: colors.surfaceMuted,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.image_not_supported_outlined, size: 40, color: colors.textSecondary),
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 40,
+            color: colors.textSecondary,
+          ),
           const SizedBox(height: 8),
           Text(
             text,
@@ -130,7 +134,7 @@ class VideoMessageContent extends StatelessWidget {
         children: [
           if (snap.isNotEmpty)
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               child: AppImage(
                 source: snap,
                 width: 150,
@@ -146,7 +150,7 @@ class VideoMessageContent extends StatelessWidget {
               decoration: BoxDecoration(
                 // 视频封面未就绪时的占位底：取媒体遮罩 token 的浅色档
                 color: context.appColors.mediaScrim.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
             ),
           Icon(
@@ -162,7 +166,7 @@ class VideoMessageContent extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: context.appColors.mediaScrim,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
                 child: Text(
                   message.videoDurationString,

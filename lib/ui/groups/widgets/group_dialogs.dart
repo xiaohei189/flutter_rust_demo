@@ -15,7 +15,9 @@ Future<String?> showGroupMemberActionsSheet(
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -70,7 +72,9 @@ Future<String?> showGroupManageSheet(BuildContext context) {
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -123,7 +127,9 @@ Future<void> showGroupOwnerAdminSheet(
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (sheetContext) => SafeArea(
       child: Column(
@@ -170,7 +176,9 @@ Future<int?> showGroupMuteDurationSheet(BuildContext context) {
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -204,7 +212,9 @@ Future<GroupMember?> showGroupOwnerPickerSheet(
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -277,7 +287,9 @@ Future<String?> showGroupAvatarPickerSheet(BuildContext context) {
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -358,7 +370,7 @@ Future<void> showEditGroupFieldDialog(
           filled: true,
           fillColor: context.appColors.background,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             borderSide: BorderSide.none,
           ),
         ),

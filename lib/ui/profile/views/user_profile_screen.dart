@@ -146,13 +146,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   rows: [
                     ('用户名称', displayProfile?.nickname ?? displayUser.name),
                     ('用户 ID', displayUser.id),
-                    if (_remark.alias.isNotEmpty)
-                      ('别名', _remark.alias),
+                    if (_remark.alias.isNotEmpty) ('别名', _remark.alias),
                     if (_remark.signature.isNotEmpty)
                       ('个性签名', _remark.signature),
                     if (displayProfile != null &&
                         displayProfile.remark.isNotEmpty &&
-                        _remark.alias.isEmpty && _remark.signature.isEmpty)
+                        _remark.alias.isEmpty &&
+                        _remark.signature.isEmpty)
                       ('备注信息', displayProfile.remark),
                     if (displayUser.avatar != null &&
                         displayUser.avatar!.isNotEmpty)
@@ -200,9 +200,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         Icons.settings_outlined,
                         '好友设置',
                         () {
-                            context.push(
-                              AppPaths.friendSetupOf(widget.user.id),
-                            );
+                          context.push(AppPaths.friendSetupOf(widget.user.id));
                         },
                       ),
                     ],
@@ -272,7 +270,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final colors = context.appColors;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(

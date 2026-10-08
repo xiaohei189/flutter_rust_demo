@@ -103,7 +103,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
                     filled: true,
                     fillColor: colors.surface,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                       borderSide: BorderSide.none,
                     ),
                   ),

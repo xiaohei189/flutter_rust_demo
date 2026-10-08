@@ -13,7 +13,9 @@ Future<GroupMember?> showGroupMemberPicker(
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (ctx) => SafeArea(
       child: Column(
@@ -43,7 +45,9 @@ Future<GroupMember?> showGroupMemberPicker(
                     radius: 18,
                   ),
                   title: Text(
-                    member.nickname.isNotEmpty ? member.nickname : member.userId,
+                    member.nickname.isNotEmpty
+                        ? member.nickname
+                        : member.userId,
                   ),
                   onTap: () => Navigator.of(ctx).pop(member),
                 );

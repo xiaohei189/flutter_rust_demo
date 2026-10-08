@@ -108,10 +108,7 @@ class SettingsSwitchRow extends StatelessWidget {
               color: context.appColors.textPrimary,
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-          ),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );
@@ -174,7 +171,7 @@ class AddMemberButton extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               border: Border.all(color: context.appColors.divider),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
             ),
             child: Icon(
               Icons.add,
@@ -233,4 +230,3 @@ Widget settingsMemberAvatarPreview() {
 }
 
 void _noopBool(bool value) {}
-

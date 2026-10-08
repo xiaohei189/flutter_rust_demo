@@ -151,7 +151,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
                 )
               : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             borderSide: BorderSide.none,
           ),
           filled: true,
@@ -210,7 +210,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
               ),
             ),
             child: const Text(

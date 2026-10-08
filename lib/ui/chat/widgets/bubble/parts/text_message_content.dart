@@ -118,7 +118,7 @@ class MarkdownMessageContent extends StatelessWidget {
         ),
         codeblockDecoration: BoxDecoration(
           color: codeBgColor,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         ),
         codeblockPadding: const EdgeInsets.all(8),
         blockquoteDecoration: BoxDecoration(
@@ -165,7 +165,7 @@ class SystemMessageContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: context.appColors.textSecondary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       ),
       child: Text(
         message.displayText,

@@ -39,7 +39,7 @@ class QrCodeScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: colors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                   boxShadow: colors.cardShadow,
                 ),
                 child: QrImageView(

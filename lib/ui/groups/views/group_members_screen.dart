@@ -104,10 +104,7 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
               onChanged: (value) => setState(() => _keyword = value),
               decoration: InputDecoration(
                 hintText: '搜索群成员',
-                hintStyle: TextStyle(
-                  fontSize: 15,
-                  color: colors.textSecondary,
-                ),
+                hintStyle: TextStyle(fontSize: 15, color: colors.textSecondary),
                 prefixIcon: Icon(
                   Icons.search,
                   size: 20,
@@ -118,7 +115,7 @@ class _GroupMembersScreenState extends ConsumerState<GroupMembersScreen> {
                 fillColor: colors.background,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -220,12 +217,9 @@ class _RoleTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: colors.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 11, color: colors.primary),
-      ),
+      child: Text(text, style: TextStyle(fontSize: 11, color: colors.primary)),
     );
   }
 }

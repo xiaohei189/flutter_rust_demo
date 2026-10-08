@@ -49,10 +49,14 @@ class SkeletonBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.surfaceMuted,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(alignRight ? 18 : 4),
-            bottomRight: Radius.circular(alignRight ? 4 : 18),
+            topLeft: const Radius.circular(AppTheme.radiusSheet),
+            topRight: const Radius.circular(AppTheme.radiusSheet),
+            bottomLeft: Radius.circular(
+              alignRight ? AppTheme.radiusSheet : AppTheme.radiusSm,
+            ),
+            bottomRight: Radius.circular(
+              alignRight ? AppTheme.radiusSm : AppTheme.radiusSheet,
+            ),
           ),
         ),
       ),

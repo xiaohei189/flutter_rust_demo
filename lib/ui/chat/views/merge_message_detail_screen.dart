@@ -194,7 +194,7 @@ class MergeMessageDetailScreen extends ConsumerWidget {
           const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
         );
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(

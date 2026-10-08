@@ -53,24 +53,28 @@ void showMessageToolPanel({
     context: context,
     backgroundColor: Colors.transparent,
     // 长按菜单遮罩需要比 mediaScrim 更轻，且此处无 context 取色板
-    barrierColor: Colors.black.withValues(alpha: 0.25), // design-token-ignore: 菜单遮罩偏轻
+    barrierColor: Colors.black.withValues(
+      alpha: 0.25,
+    ), // design-token-ignore: 菜单遮罩偏轻
     isScrollControlled: true,
     useSafeArea: true,
     // 关掉 modal 自带的下拉：弹层高度由面板自己管理（拖把手改高度、下拖到最小后关闭）
     enableDrag: false,
     builder: (sheetContext) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: context.appColors.background,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+      decoration: BoxDecoration(
+        color: context.appColors.background,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
         ),
-        child: MessageToolPanel(
-          message: message,
-          currentUserId: currentUserId,
-          actions: actions,
-          reactions: reactions,
-          rootContext: context,
-          onClose: () => Navigator.of(sheetContext).maybePop(),
-        ),
+      ),
+      child: MessageToolPanel(
+        message: message,
+        currentUserId: currentUserId,
+        actions: actions,
+        reactions: reactions,
+        rootContext: context,
+        onClose: () => Navigator.of(sheetContext).maybePop(),
+      ),
     ),
   );
 }

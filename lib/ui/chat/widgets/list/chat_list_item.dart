@@ -102,6 +102,7 @@ class ChatListItem extends StatelessWidget {
           onDoneToggle: onDoneToggle,
           onArchive: onArchive,
           onUnarchive: onUnarchive,
+          onMoveToFolder: onMoveToFolder,
           onDelete: onDelete,
         );
       },

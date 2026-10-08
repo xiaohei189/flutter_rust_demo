@@ -37,7 +37,12 @@ class MarkdownFormatBar extends StatelessWidget {
               physics: const BouncingScrollPhysics(),
               child: Row(
                 children: [
-                  _formatBtn(context, 'B', '粗体', () => onFormat(MarkdownFormat.bold)),
+                  _formatBtn(
+                    context,
+                    'B',
+                    '粗体',
+                    () => onFormat(MarkdownFormat.bold),
+                  ),
                   _formatBtn(
                     context,
                     'I',
@@ -65,14 +70,24 @@ class MarkdownFormatBar extends StatelessWidget {
                     () => onFormat(MarkdownFormat.inlineCode),
                     mono: true,
                   ),
-                  _formatBtn(context, '"', '引用', () => onFormat(MarkdownFormat.quote)),
+                  _formatBtn(
+                    context,
+                    '"',
+                    '引用',
+                    () => onFormat(MarkdownFormat.quote),
+                  ),
                   _formatBtn(
                     context,
                     '•',
                     '列表',
                     () => onFormat(MarkdownFormat.bulletList),
                   ),
-                  _formatBtn(context, '🔗', '链接', () => onFormat(MarkdownFormat.link)),
+                  _formatBtn(
+                    context,
+                    '🔗',
+                    '链接',
+                    () => onFormat(MarkdownFormat.link),
+                  ),
                 ],
               ),
             ),
@@ -98,7 +113,7 @@ class MarkdownFormatBar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           child: SizedBox(
             width: 36,
             height: 44,

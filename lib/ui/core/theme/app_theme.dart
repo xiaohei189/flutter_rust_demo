@@ -11,6 +11,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color primary;
   final Color bubbleMine;
   final Color bubbleOther;
+
   /// 对方气泡（单聊）：对齐飞书稿的浅蓝
   final Color bubbleOtherSingleChat;
   final Color bubbleOtherText;
@@ -19,11 +20,13 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color success;
   final Color onPrimary;
   final Color mediaScrim;
+
   /// 全屏媒体页（看图/视频/扫码）的底色：两种主题下都固定黑。
   final Color mediaBackground;
   final Color inputBackground;
   final Color attachmentBackground;
   final Color formatBarBackground;
+
   /// 分段控件（SegmentedToggle）的轨道底色。
   ///
   /// 单独成 token 的原因：`surfaceMuted` 偏白，做轨道时分段不够突出，
@@ -244,10 +247,21 @@ class AppTheme {
   static const Color attachmentPanelBg = Color(0xFFF8F8F8);
   static const Color formatBarBg = Color(0xFFF0F0F5);
 
-  /// 圆角与间距 token
+  /// 圆角 token：只保留三档 + 胶囊，别再往页面里写裸数字。
+  ///
+  /// - [radiusSm] 小控件：缩略图、骨架条、标签
+  /// - [radiusMd] 默认：卡片、图片、输入框、次级容器
+  /// - [radiusLg] 浮层：面板、气泡容器、菜单
+  /// - [radiusSheet] 大面板：底部弹层、气泡容器（整块大面）
+  /// - [radiusPill] 胶囊：按钮、徽标、把手、进度条（圆角取高度的一半，
+  ///   这里给一个足够大的值，`RRect` 会按短边自动收敛）
   static const double radiusSm = 4;
   static const double radiusMd = 8;
   static const double radiusLg = 12;
+  static const double radiusSheet = 16;
+  static const double radiusPill = 999;
+
+  /// 间距 token
   static const double spacingXs = 4;
   static const double spacingSm = 8;
   static const double spacingMd = 12;
@@ -302,7 +316,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         borderSide: BorderSide.none,
       ),
       filled: true,
@@ -353,7 +367,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         borderSide: BorderSide.none,
       ),
       filled: true,

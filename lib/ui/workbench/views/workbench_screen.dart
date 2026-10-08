@@ -58,38 +58,39 @@ class WorkbenchScreen extends ConsumerWidget {
 
   Widget _buildAppGrid(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
-    final apps = <({IconData icon, Color color, String label, VoidCallback onTap})>[
-      (
-        icon: Icons.group_add_outlined,
-        color: colors.primary,
-        label: '发起群聊',
-        onTap: () => AppRouter.goToCreateGroup(context),
-      ),
-      (
-        icon: Icons.person_add_alt_1,
-        color: AppIconColors.green,
-        label: '添加好友',
-        onTap: () => AppRouter.goToAddContact(context),
-      ),
-      (
-        icon: Icons.group_outlined,
-        color: AppIconColors.purple,
-        label: '加群',
-        onTap: () => AppRouter.goToSearch(context),
-      ),
-      (
-        icon: Icons.qr_code_scanner_outlined,
-        color: AppIconColors.orange,
-        label: '扫一扫',
-        onTap: () => _handleScan(context, ref),
-      ),
-      (
-        icon: Icons.inventory_2_outlined,
-        color: AppIconColors.teal,
-        label: '全部归档',
-        onTap: () => _handleArchiveAll(context, ref),
-      ),
-    ];
+    final apps =
+        <({IconData icon, Color color, String label, VoidCallback onTap})>[
+          (
+            icon: Icons.group_add_outlined,
+            color: colors.primary,
+            label: '发起群聊',
+            onTap: () => AppRouter.goToCreateGroup(context),
+          ),
+          (
+            icon: Icons.person_add_alt_1,
+            color: AppIconColors.green,
+            label: '添加好友',
+            onTap: () => AppRouter.goToAddContact(context),
+          ),
+          (
+            icon: Icons.group_outlined,
+            color: AppIconColors.purple,
+            label: '加群',
+            onTap: () => AppRouter.goToSearch(context),
+          ),
+          (
+            icon: Icons.qr_code_scanner_outlined,
+            color: AppIconColors.orange,
+            label: '扫一扫',
+            onTap: () => _handleScan(context, ref),
+          ),
+          (
+            icon: Icons.inventory_2_outlined,
+            color: AppIconColors.teal,
+            label: '全部归档',
+            onTap: () => _handleArchiveAll(context, ref),
+          ),
+        ];
 
     return Container(
       color: colors.surface,
@@ -106,7 +107,7 @@ class WorkbenchScreen extends ConsumerWidget {
           for (final app in apps)
             InkWell(
               onTap: app.onTap,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -116,7 +117,7 @@ class WorkbenchScreen extends ConsumerWidget {
                     height: 48,
                     decoration: BoxDecoration(
                       color: AppIconColors.tint(app.color),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                     ),
                     child: Icon(app.icon, size: 26, color: app.color),
                   ),
@@ -147,9 +148,9 @@ class WorkbenchScreen extends ConsumerWidget {
   }
 
   ChatListDialogs _dialogs(WidgetRef ref) => ChatListDialogs(
-        ref: ref,
-        viewModel: ref.read(chatListViewModelProvider.notifier),
-      );
+    ref: ref,
+    viewModel: ref.read(chatListViewModelProvider.notifier),
+  );
 
   Future<void> _toggleGlobalMute(
     BuildContext context,

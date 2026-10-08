@@ -84,7 +84,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: context.appColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
               ),
               child: Text(
                 '$count',
@@ -168,7 +168,7 @@ class _FriendRequestsScreenState extends ConsumerState<FriendRequestsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             minimumSize: Size.zero,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(AppTheme.radiusPill),
             ),
           ),
           child: const Text('处理', style: TextStyle(fontSize: 13)),

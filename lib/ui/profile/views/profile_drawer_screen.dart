@@ -146,7 +146,7 @@ class ProfileDrawerScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(12),
+                  right: Radius.circular(AppTheme.radiusLg),
                 ),
                 boxShadow: colors.cardShadow,
               ),
@@ -159,7 +159,9 @@ class ProfileDrawerScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [UserAvatar.fromUser(user: currentUser, radius: 32)],
+                        children: [
+                          UserAvatar.fromUser(user: currentUser, radius: 32),
+                        ],
                       ),
                     ),
                     // 名字 + 二维码 + 箭头（点击进入个人信息）
@@ -187,9 +189,13 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             // QR 码独立热区
                             Material(
                               color: colors.surfaceMuted,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMd,
+                              ),
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusMd,
+                                ),
                                 onTap: () {
                                   if (currentUser.id.isNotEmpty) {
                                     AppRouter.goToQrCode(
@@ -247,9 +253,9 @@ class ProfileDrawerScreen extends ConsumerWidget {
                             label: '我的个人名片',
                             onTap: () => _openMyProfile(context),
                           ),
-                              // 与「消息」列表一致：整幅面板不给菜单行加分割线，
-                              // 分组只用 8px 间隔表达。
-                              const SizedBox(height: 8),
+                          // 与「消息」列表一致：整幅面板不给菜单行加分割线，
+                          // 分组只用 8px 间隔表达。
+                          const SizedBox(height: 8),
                           DrawerMenuItem(
                             icon: Icons.block_outlined,
                             label: '黑名单',

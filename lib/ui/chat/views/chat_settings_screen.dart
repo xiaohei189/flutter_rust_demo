@@ -388,7 +388,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           children: [
             _buildMemberTile(
               name: _viewModel.displayName,
-              avatar: UserAvatar.fromUser(user: _viewModel.chatUser, radius: 26),
+              avatar: UserAvatar.fromUser(
+                user: _viewModel.chatUser,
+                radius: 26,
+              ),
               onTap: () {
                 if (conversation != null && conversation.userId.isNotEmpty) {
                   AppRouter.goToUserProfile(
@@ -414,7 +417,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -443,7 +446,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     final colors = context.appColors;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
       child: Container(
         width: 52,
         height: 52,
@@ -463,7 +466,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       Padding(
         padding: const EdgeInsets.all(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           onTap: () {
             if (conversation != null) {
               AppRouter.goToGroupInfo(context, conversation);
@@ -584,7 +587,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         child: Column(
           children: [
             Container(
@@ -592,7 +595,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
               ),
               child: Icon(icon, color: color, size: 22),
             ),
@@ -643,7 +646,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       isScrollControlled: true,
       backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
       ),
       builder: (_) => ChatMessageSearchSheet(
         conversationId: widget.conversationId,
@@ -771,4 +776,3 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     }
   }
 }
-

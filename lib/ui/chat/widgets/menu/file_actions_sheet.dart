@@ -7,7 +7,9 @@ Future<String?> showFileActionsSheet(BuildContext context) {
     context: context,
     backgroundColor: context.appColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (sheetContext) => SafeArea(
       child: Column(

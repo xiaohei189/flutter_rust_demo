@@ -386,7 +386,7 @@ class ChatListItemContent extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: colors.primary,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
       ),
       child: Text(
         text,
@@ -527,7 +527,7 @@ class _TagLabel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Text(
         text,

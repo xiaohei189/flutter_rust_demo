@@ -69,7 +69,7 @@ class GroupMemberSection extends StatelessWidget {
               filled: true,
               fillColor: context.appColors.background,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -161,4 +161,3 @@ Widget groupMemberSectionPreview() {
     ),
   );
 }
-

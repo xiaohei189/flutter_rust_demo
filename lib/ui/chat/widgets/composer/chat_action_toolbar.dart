@@ -273,14 +273,14 @@ class SendButton extends StatelessWidget {
       label: '发送',
       child: InkWell(
         onTap: enabled ? onSend : null,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
         child: Container(
           height: 36,
           padding: const EdgeInsets.symmetric(horizontal: 18),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
           ),
           child: Text(
             '发送',

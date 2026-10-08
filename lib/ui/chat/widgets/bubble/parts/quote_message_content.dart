@@ -26,7 +26,7 @@ class QuoteMessagePreview extends StatelessWidget {
         color: isFromMe
             ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : context.appColors.bubbleOtherText.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

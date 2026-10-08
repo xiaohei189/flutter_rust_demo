@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../ui/chat/mappers/message_display.dart';
 import '../../../../domain/models/user.dart';
-import '../../../../domain/models/message_search_result.dart' show MessageSearchResult;
+import '../../../../domain/models/message_search_result.dart'
+    show MessageSearchResult;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../providers/chat_detail_provider.dart';
@@ -106,7 +107,7 @@ class _ChatMessageSearchSheetState
                   filled: true,
                   fillColor: colors.background,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     borderSide: BorderSide.none,
                   ),
                 ),

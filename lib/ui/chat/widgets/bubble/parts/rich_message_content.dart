@@ -23,7 +23,7 @@ class CardMessageContent extends StatelessWidget {
         color: isFromMe
             ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : context.appColors.onPrimary,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -122,7 +122,7 @@ class MergeMessageContent extends StatelessWidget {
         color: isFromMe
             ? context.appColors.bubbleMine
             : context.appColors.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +203,7 @@ class LocationMessageContent extends StatelessWidget {
         color: isFromMe
             ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : context.appColors.onPrimary,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,7 +273,7 @@ class CustomMessageContent extends StatelessWidget {
         color: isFromMe
             ? context.appColors.onPrimary.withValues(alpha: 0.15)
             : context.appColors.bubbleOtherText.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Text(
         message.displayText.isNotEmpty ? message.displayText : '[自定义消息]',

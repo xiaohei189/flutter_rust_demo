@@ -85,7 +85,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                       filled: true,
                       fillColor: context.appColors.background,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -188,7 +188,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               minimumSize: Size.zero,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
             ),
             child: Text(
@@ -251,7 +251,7 @@ class _AddContactScreenState extends ConsumerState<AddContactScreen> {
                   fontSize: 14,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,

@@ -72,7 +72,7 @@ class AttachmentPanel extends StatelessWidget {
               onItemTap?.call();
             }
           : null,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -81,7 +81,7 @@ class AttachmentPanel extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: colors.surface,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
               ),
               child: Icon(item.icon, size: 30, color: iconColor),
             ),

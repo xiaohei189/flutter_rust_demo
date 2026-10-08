@@ -358,7 +358,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
     return GestureDetector(
       onTap: () => widget.onGifSelected?.call(url),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: CachedNetworkImage(
           imageUrl: url,
           fit: BoxFit.cover,
@@ -461,7 +461,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
               height: 32,
               decoration: BoxDecoration(
                 color: selected ? colors.surface : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: Icon(
                 t.$2,
@@ -506,7 +506,7 @@ class _EmojiPanelState extends State<EmojiPanel> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.attachmentBackground,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     ),
                     child: Icon(
                       Icons.backspace_outlined,

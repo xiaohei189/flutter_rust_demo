@@ -59,8 +59,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     if (_emojiOpen) {
       // 表情界面：撑满当前弹层高度；首屏不滚动——拖动直接升抽屉，
       // 只有抽屉升到顶（0.95）后才允许内部滚动看更多表情。
-      final atTop =
-          _heightFactor >= MessageToolPanel.maxHeightFactor - 0.001;
+      final atTop = _heightFactor >= MessageToolPanel.maxHeightFactor - 0.001;
       return SizedBox(
         height: targetHeight,
         child: GestureDetector(
@@ -107,9 +106,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ..._buildMenuView(context, colors),
-                  SizedBox(
-                    height: 12 + MediaQuery.paddingOf(context).bottom,
-                  ),
+                  SizedBox(height: 12 + MediaQuery.paddingOf(context).bottom),
                 ],
               ),
             ),
@@ -137,7 +134,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
               height: 4,
               decoration: BoxDecoration(
                 color: colors.divider,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
               ),
             ),
           ),
@@ -173,9 +170,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       MessageToolPanel.maxHeightFactor,
     ];
     final target = stops.reduce(
-      (a, b) => (_heightFactor - a).abs() <= (_heightFactor - b).abs()
-          ? a
-          : b,
+      (a, b) => (_heightFactor - a).abs() <= (_heightFactor - b).abs() ? a : b,
     );
     setState(() => _heightFactor = target);
   }
@@ -246,7 +241,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       child: Container(
         decoration: BoxDecoration(
           color: context.appColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -488,12 +483,12 @@ class _MessageToolTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: InkWell(
         onTap: action.enabled ? action.onTap : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         child: Container(
           height: 66,
           decoration: BoxDecoration(
             color: colors.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -193,7 +193,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                     backgroundColor: context.appColors.primary,
                     foregroundColor: context.appColors.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                     ),
                     disabledBackgroundColor: context.appColors.primary
                         .withValues(alpha: 0.5),
@@ -227,7 +227,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      ),
       color: context.appColors.surface,
       child: child,
     );

@@ -106,7 +106,7 @@ class _GroupApplicationsScreenState
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: context.appColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
               ),
               child: Text(
                 '$count',

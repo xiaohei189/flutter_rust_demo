@@ -13,7 +13,9 @@ Future<void> showCreateGroupMemberSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppTheme.radiusSheet),
+      ),
     ),
     builder: (_) => const CreateGroupMemberSheet(),
   );
@@ -80,7 +82,7 @@ class _CreateGroupMemberSheetState
                   hintText: '搜索好友',
                   prefixIcon: const Icon(Icons.search, size: 20),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
@@ -207,7 +209,7 @@ class _CreateGroupMemberSheetState
             backgroundColor: context.appColors.primary,
             foregroundColor: context.appColors.onPrimary,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             ),
           ),
           child: const Text('添加'),

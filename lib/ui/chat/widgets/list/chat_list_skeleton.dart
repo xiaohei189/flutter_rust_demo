@@ -55,7 +55,7 @@ class _ChatListSkeletonState extends State<ChatListSkeleton>
                   width: 120,
                   decoration: BoxDecoration(
                     color: colors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -64,7 +64,7 @@ class _ChatListSkeletonState extends State<ChatListSkeleton>
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: colors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                   ),
                 ),
               ],

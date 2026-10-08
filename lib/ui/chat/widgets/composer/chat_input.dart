@@ -437,7 +437,9 @@ class _ChatInputState extends State<ChatInput> {
       // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
       backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
       ),
       builder: (_) => MessageComposerSheet(
         controller: widget.controller,
