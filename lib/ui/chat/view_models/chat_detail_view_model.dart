@@ -10,12 +10,14 @@ import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../domain/models/message_extras.dart' show MessageExtras;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/current_user_provider.dart';
 import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
+import '../providers/message_extras_provider.dart';
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../../../application/chat/message_service_notifier.dart';
 import '../../../application/chat/search_messages_use_case.dart';
@@ -363,6 +365,29 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
 
   void clearAtUserIds() {
     state = state.copyWith(atUserIds: const []);
+  }
+
+  /// 本条消息的本地扩展（表情回复 / 置顶标记）。
+  MessageExtras extrasOf(ChatMessage message) => ref
+      .read(messageExtrasProvider.notifier)
+      .extrasOf(arg, message.clientMsgId);
+
+  /// 加/取消表情回复；返回操作后是否处于「已加」状态。
+  Future<bool> toggleReaction(ChatMessage message, String emoji) async {
+    final notifier = ref.read(messageExtrasProvider.notifier);
+    final had = notifier.extrasOf(arg, message.clientMsgId).reactions.contains(
+      emoji,
+    );
+    await notifier.toggleReaction(arg, message.clientMsgId, emoji);
+    return !had;
+  }
+
+  /// 置顶/取消置顶；返回操作后是否处于「已置顶」状态。
+  Future<bool> togglePin(ChatMessage message) async {
+    final notifier = ref.read(messageExtrasProvider.notifier);
+    final pinned = notifier.extrasOf(arg, message.clientMsgId).pinned;
+    await notifier.setPinned(arg, message.clientMsgId, !pinned);
+    return !pinned;
   }
 
   Future<bool> revokeMessage(ChatMessage message) async {

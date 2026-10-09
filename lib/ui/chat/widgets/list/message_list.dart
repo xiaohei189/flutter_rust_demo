@@ -43,6 +43,7 @@ class MessageList extends StatefulWidget {
     this.messageReactions = const {},
     this.onPlayAudio,
     this.onRetrySend,
+    this.unreadCountAtOpen = 0,
   });
 
   final List<ChatMessage> messages;
@@ -64,6 +65,12 @@ class MessageList extends StatefulWidget {
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
 
+  /// 进入会话时会话记录的未读数（进入瞬间的快照）。
+  ///
+  /// OpenIM 的会话未读数与消息 isRead 可能不一致（跨端已读、历史数据）：
+  /// 消息全标已读但会话仍记未读时，用它兜底定位分割线位置。
+  final int unreadCountAtOpen;
+
   @override
   State<MessageList> createState() => MessageListState();
 }
@@ -71,6 +78,22 @@ class MessageList extends StatefulWidget {
 class MessageListState extends State<MessageList> {
   final Map<String, GlobalKey> _messageKeys = {};
   static const int _maxMessageKeys = 300;
+
+  /// 离开底部多远才显示「回到最新」按钮（reverse 列表：offset 越大越靠上）。
+  static const double _awayFromBottomThreshold = 240;
+
+  /// 进入会话时的未读边界消息 id。
+  ///
+  /// 只在首次拿到消息时快照一次：之后已读回执会把 isRead 翻成 true，
+  /// 若跟着重算，「以下为新消息」分割线会在进入会话后立刻消失。
+  String? _unreadBoundaryId;
+
+  /// 边界之后的条数（消息数变化时重算），用于「N 条新消息」。
+  int _unreadBoundaryNewCount = 0;
+  int _unreadBoundaryTotal = -1;
+
+  /// 当前是否已离开列表底部（决定是否显示回到底部按钮）。
+  bool _awayFromBottom = false;
 
   /// 分组时间头的时间间隔阈值（分钟）
   static const int _timeHeaderGapMinutes = 5;
@@ -86,6 +109,159 @@ class MessageListState extends State<MessageList> {
   bool _cachedNeedsVisibilityTracking = false;
   List<ChatMessage>? _cachedTrackingMessages;
   String? _cachedTrackingUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScrollChanged);
+  }
+
+  @override
+  void didUpdateWidget(MessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_onScrollChanged);
+      widget.scrollController.addListener(_onScrollChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScrollChanged);
+    super.dispose();
+  }
+
+  /// 列表是 reverse 的：offset 0 = 最新消息，越往上翻 offset 越大。
+  void _onScrollChanged() {
+    final controller = widget.scrollController;
+    if (!controller.hasClients) return;
+    final away = controller.position.pixels > _awayFromBottomThreshold;
+    if (away != _awayFromBottom) {
+      setState(() => _awayFromBottom = away);
+    }
+  }
+
+  /// 首次拿到消息时快照未读边界；之后仅在消息数变化时刷新边界之后的条数。
+  void _resolveUnreadBoundary(
+    List<ChatMessage> messages,
+    String? currentUserId,
+  ) {
+    if (messages.isEmpty) return;
+    final boundaryId = _unreadBoundaryId;
+
+    if (boundaryId == null) {
+      if (_unreadBoundaryTotal == messages.length) return;
+      _unreadBoundaryTotal = messages.length;
+      final userId = currentUserId ?? '';
+      for (var i = 0; i < messages.length; i++) {
+        final message = messages[i];
+        if (message.isRead || message.messageType == MessageType.system) {
+          continue;
+        }
+        if (userId.isNotEmpty && message.sendId == userId) continue;
+        _unreadBoundaryId = message.clientMsgId;
+        _unreadBoundaryNewCount = messages.length - i;
+        return;
+      }
+      // 兜底：消息都被标了已读、会话未读数却仍 > 0（跨端已读/历史数据常见），
+      // 从尾部往回数未读数条对方消息，把分割线放在最早的那条上。
+      if (widget.unreadCountAtOpen > 0) {
+        var remaining = widget.unreadCountAtOpen;
+        for (var i = messages.length - 1; i >= 0; i--) {
+          final message = messages[i];
+          if (message.messageType == MessageType.system) continue;
+          if (userId.isNotEmpty && message.sendId == userId) continue;
+          remaining--;
+          if (remaining <= 0) {
+            _unreadBoundaryId = message.clientMsgId;
+            _unreadBoundaryNewCount = messages.length - i;
+            return;
+          }
+        }
+      }
+      _unreadBoundaryNewCount = 0;
+      return;
+    }
+
+    if (_unreadBoundaryTotal == messages.length) return;
+    _unreadBoundaryTotal = messages.length;
+    final index = messages.indexWhere((m) => m.clientMsgId == boundaryId);
+    if (index < 0) {
+      // 边界消息被删除/清空：分割线与计数一并失效。
+      _unreadBoundaryId = null;
+      _unreadBoundaryNewCount = 0;
+      return;
+    }
+    _unreadBoundaryNewCount = messages.length - index;
+  }
+
+  void _scrollToBottom() {
+    final controller = widget.scrollController;
+    if (!controller.hasClients) return;
+    controller.animateTo(
+      0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
+  /// 该消息是否是本次进入会话时的未读起点（多选模式下不展示分割线）。
+  bool _isUnreadBoundary(ChatMessage message) =>
+      !widget.selectMode &&
+      _unreadBoundaryId != null &&
+      message.clientMsgId == _unreadBoundaryId;
+
+  /// 未读分割线：对齐列表语汇，只留居中文字，不画两侧横线。
+  Widget _buildUnreadDivider(BuildContext context) {
+    final colors = context.appColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Text(
+          '以下为新消息',
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.primary.withValues(alpha: 0.9),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 回到底部：离开底部时出现，带上「N 条新消息」提示。
+  Widget _buildJumpToBottomButton(BuildContext context, AppColors colors) {
+    final count = _unreadBoundaryNewCount;
+    return Material(
+      color: colors.surface,
+      elevation: 3,
+      shadowColor: colors.shadow,
+      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _scrollToBottom,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (count > 0) ...[
+                Text(
+                  '$count 条新消息',
+                  style: TextStyle(fontSize: 12, color: colors.primary),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: colors.primary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   bool _needsVisibilityTracking(
     List<ChatMessage> messages,
@@ -175,6 +351,7 @@ class MessageListState extends State<MessageList> {
     }
 
     const useReverse = true;
+    _resolveUnreadBoundary(widget.messages, widget.currentUserId);
     final itemCount = widget.messages.length + (widget.isLoading ? 1 : 0);
     final dateLabels = _dateLabelsFor(widget.messages);
     // 只有列表里还存在「对方发来的未读消息」时才逐项挂可见性检测（记忆化，见
@@ -186,72 +363,83 @@ class MessageListState extends State<MessageList> {
     // 每帧重建（MediaQuery.maybeOf 会注册无条件依赖，任何字段变化都会重建）。
     final maxBubbleWidth = (MediaQuery.maybeWidthOf(context) ?? 0) * 0.65;
 
-    return ListView.builder(
-      controller: widget.scrollController,
-      reverse: useReverse,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        if (widget.isLoading && index == widget.messages.length) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(color: colors.primary),
-            ),
-          );
-        }
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: widget.scrollController,
+          reverse: useReverse,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            if (widget.isLoading && index == widget.messages.length) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(color: colors.primary),
+                ),
+              );
+            }
 
-        final messageIndex = widget.messages.length - 1 - index;
-        if (messageIndex < 0 || messageIndex >= widget.messages.length) {
-          return const SizedBox.shrink();
-        }
+            final messageIndex = widget.messages.length - 1 - index;
+            if (messageIndex < 0 || messageIndex >= widget.messages.length) {
+              return const SizedBox.shrink();
+            }
 
-        final message = widget.messages[messageIndex];
-        final dateLabel = dateLabels[messageIndex];
-        final timeHeader = _timeHeaderFor(widget.messages, messageIndex);
-        final messageKey = _messageKeys.putIfAbsent(
-          message.clientMsgId,
-          () => GlobalKey(),
-        );
-        final selected =
-            widget.selectMode &&
-            widget.selectedClientMsgIds.contains(message.clientMsgId);
+            final message = widget.messages[messageIndex];
+            final dateLabel = dateLabels[messageIndex];
+            final timeHeader = _timeHeaderFor(widget.messages, messageIndex);
+            final messageKey = _messageKeys.putIfAbsent(
+              message.clientMsgId,
+              () => GlobalKey(),
+            );
+            final selected =
+                widget.selectMode &&
+                widget.selectedClientMsgIds.contains(message.clientMsgId);
 
-        final Widget messageBody = _VisibleMessageBubble(
-          message: message,
-          otherUser: widget.otherUser,
-          currentUserId: widget.currentUserId,
-          currentUserAvatar: widget.currentUserAvatar,
-          maxBubbleWidth: maxBubbleWidth,
-          cachedSenderProfile: widget.cachedSenderProfiles?[message.sendId],
-          cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
-          onLongPress: (msg) => _openMessageToolPanel(msg, messageKey),
-          onVisible: trackVisibility ? widget.onMessageVisible : null,
-          onTap: widget.onMessageTap,
-          selectionIndicator:
-              widget.selectMode && message.messageType != MessageType.system
-              ? _SelectionCheckbox(
-                  selected: selected,
-                  onTap: () => widget.onMessageTap?.call(message),
-                )
-              : null,
-          reactionGroups:
-              widget.messageReactions[message.clientMsgId] ?? const [],
-          groupReadReceipts: widget.groupReadReceipts,
-          onPlayAudio: widget.onPlayAudio,
-          onRetrySend: widget.onRetrySend,
-        );
+            final Widget messageBody = _VisibleMessageBubble(
+              message: message,
+              otherUser: widget.otherUser,
+              currentUserId: widget.currentUserId,
+              currentUserAvatar: widget.currentUserAvatar,
+              maxBubbleWidth: maxBubbleWidth,
+              cachedSenderProfile: widget.cachedSenderProfiles?[message.sendId],
+              cachedCurrentUserProfile: widget.cachedCurrentUserProfile,
+              onLongPress: (msg) => _openMessageToolPanel(msg, messageKey),
+              onVisible: trackVisibility ? widget.onMessageVisible : null,
+              onTap: widget.onMessageTap,
+              selectionIndicator:
+                  widget.selectMode && message.messageType != MessageType.system
+                  ? _SelectionCheckbox(
+                      selected: selected,
+                      onTap: () => widget.onMessageTap?.call(message),
+                    )
+                  : null,
+              reactionGroups:
+                  widget.messageReactions[message.clientMsgId] ?? const [],
+              groupReadReceipts: widget.groupReadReceipts,
+              onPlayAudio: widget.onPlayAudio,
+              onRetrySend: widget.onRetrySend,
+            );
 
-        return Column(
-          key: messageKey,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (dateLabel != null) _buildDateSeparator(context, dateLabel),
-            if (timeHeader != null) _buildTimeHeader(context, timeHeader),
-            messageBody,
-          ],
-        );
-      },
+            return Column(
+              key: messageKey,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (dateLabel != null) _buildDateSeparator(context, dateLabel),
+                if (timeHeader != null) _buildTimeHeader(context, timeHeader),
+                if (_isUnreadBoundary(message)) _buildUnreadDivider(context),
+                messageBody,
+              ],
+            );
+          },
+        ),
+        if (_awayFromBottom)
+          Positioned(
+            right: 16,
+            bottom: 12,
+            child: _buildJumpToBottomButton(context, colors),
+          ),
+      ],
     );
   }
 

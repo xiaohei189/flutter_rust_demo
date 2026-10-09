@@ -17,7 +17,6 @@ import 'chat_dialogs.dart'
         showLocationDetailDialog,
         showMergeForwardTitleDialog;
 import 'file_actions_sheet.dart' show showFileActionsSheet;
-import 'message_hover_toolbar.dart' show MessageReactionGroup;
 
 /// 聊天页消息操作：发送、复制、撤回、删除、重发、表情、置顶、转发、文件与消息点击路由。
 /// 与 [ChatMediaActions] 一样由页面持有，方法按需接收 [BuildContext]。
@@ -26,23 +25,17 @@ class ChatMessageActions {
     required this.viewModel,
     required this.preLoaded,
     required this.readState,
-    required this.messageReactions,
-    required this.pinnedMessageIds,
     required this.onError,
     required this.onClearComposer,
     required this.onScrollToBottom,
-    required this.onStateChanged,
   });
 
   final ChatDetailViewModel viewModel;
   final bool preLoaded;
   final ChatDetailState Function() readState;
-  final Map<String, List<MessageReactionGroup>> messageReactions;
-  final Set<String> pinnedMessageIds;
   final void Function(String message) onError;
   final VoidCallback onClearComposer;
   final VoidCallback onScrollToBottom;
-  final VoidCallback onStateChanged;
 
   String? get _errorText => readState().errorText;
 
@@ -80,22 +73,18 @@ class ChatMessageActions {
     );
   }
 
-  void toggleReaction(ChatMessage message, String emoji) {
-    toggleMessageReaction(messageReactions, message, emoji);
-    onStateChanged();
+  /// 表情回复：写入本地扩展（退出会话重进后仍在）。
+  Future<void> toggleReaction(ChatMessage message, String emoji) async {
+    await viewModel.toggleReaction(message, emoji);
   }
 
-  void togglePin(ChatMessage message, BuildContext context) {
-    final isPinned = pinnedMessageIds.contains(message.clientMsgId);
-    if (isPinned) {
-      pinnedMessageIds.remove(message.clientMsgId);
-    } else {
-      pinnedMessageIds.add(message.clientMsgId);
-    }
-    onStateChanged();
+  /// 置顶/取消置顶消息：同样落在本地扩展里。
+  Future<void> togglePin(ChatMessage message, BuildContext context) async {
+    final pinned = await viewModel.togglePin(message);
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isPinned ? '已取消置顶' : '已置顶'),
+        content: Text(pinned ? '已置顶' : '已取消置顶'),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -285,42 +274,4 @@ class ChatMessageActions {
   void showLocationDetail(ChatMessage message, BuildContext context) {
     showLocationDetailDialog(context, message);
   }
-}
-
-/// 切换当前用户对消息的表情：加/减/移除。
-void toggleMessageReaction(
-  Map<String, List<MessageReactionGroup>> messageReactions,
-  ChatMessage message,
-  String emoji,
-) {
-  final groups = List<MessageReactionGroup>.from(
-    messageReactions[message.clientMsgId] ?? const [],
-  );
-  final index = groups.indexWhere((group) => group.emoji == emoji);
-  if (index == -1) {
-    groups.add(
-      MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
-    );
-  } else {
-    final group = groups[index];
-    if (group.names.contains('我')) {
-      final names = group.names.where((name) => name != '我').toList();
-      if (names.isEmpty) {
-        groups.removeAt(index);
-      } else {
-        groups[index] = MessageReactionGroup(
-          emoji: emoji,
-          count: names.length,
-          names: names,
-        );
-      }
-    } else {
-      groups[index] = MessageReactionGroup(
-        emoji: emoji,
-        count: group.count + 1,
-        names: [...group.names, '我'],
-      );
-    }
-  }
-  messageReactions[message.clientMsgId] = groups;
 }

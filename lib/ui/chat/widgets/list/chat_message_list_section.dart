@@ -24,6 +24,7 @@ class ChatMessageListSection extends ConsumerWidget {
     required this.messageReactions,
     required this.onMessageVisible,
     required this.onMessageTap,
+    this.unreadCountAtOpen = 0,
     this.messageActionsBuilder,
     this.onPlayAudio,
     this.onRetrySend,
@@ -40,6 +41,7 @@ class ChatMessageListSection extends ConsumerWidget {
   final Map<String, List<MessageReactionGroup>> messageReactions;
   final void Function(ChatMessage message) onMessageVisible;
   final void Function(ChatMessage message) onMessageTap;
+  final int unreadCountAtOpen;
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
@@ -75,6 +77,7 @@ class ChatMessageListSection extends ConsumerWidget {
         onMessageTap: onMessageTap,
         onPlayAudio: onPlayAudio,
         onRetrySend: onRetrySend,
+        unreadCountAtOpen: unreadCountAtOpen,
       ),
     );
   }

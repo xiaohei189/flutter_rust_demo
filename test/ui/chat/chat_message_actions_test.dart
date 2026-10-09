@@ -1,63 +1,47 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flutter_rust_demo/domain/models/chat_message.dart'
-    show ChatMessage;
-import 'package:flutter_rust_demo/ui/chat/widgets/menu/chat_message_actions.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/menu/message_hover_toolbar.dart'
-    show MessageReactionGroup;
+import 'package:flutter_rust_demo/ui/chat/providers/message_extras_provider.dart';
 
-ChatMessage _message(String id) => ChatMessage(
-  clientMsgId: id,
-  serverMsgId: '',
-  sendId: 'user_a',
-  recvId: 'user_b',
-  groupId: '',
-  senderPlatformId: 0,
-  senderNickname: '张三',
-  senderFaceUrl: '',
-  sessionType: 1,
-  msgFrom: 0,
-  contentType: 101,
-  content: '{"content":"hi"}',
-  seq: 0,
-  sendTime: 0,
-  createTime: 0,
-  status: 2,
-  isRead: false,
-  attachedInfo: '',
-  ex: '',
-);
+/// 表情回复：改为落在消息本地扩展（MessageExtras）里，语义从「模拟他人 reaction」
+/// 收敛为「当前用户对这条消息的表情」——服务端不提供 reaction 数据。
+Future<MessageExtrasNotifier> _notifier() async {
+  SharedPreferences.setMockInitialValues({});
+  final container = ProviderContainer();
+  addTearDown(container.dispose);
+  final notifier = container.read(messageExtrasProvider.notifier);
+  await Future<void>.delayed(const Duration(milliseconds: 50));
+  return notifier;
+}
 
 void main() {
-  test('首次点击添加“我”的 reaction', () {
-    final reactions = <String, List<MessageReactionGroup>>{};
-    toggleMessageReaction(reactions, _message('m1'), '👍');
-    final groups = reactions['m1']!;
-    expect(groups, hasLength(1));
-    expect(groups.first.emoji, '👍');
-    expect(groups.first.count, 1);
-    expect(groups.first.names, ['我']);
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('首次点击添加表情回复', () async {
+    final notifier = await _notifier();
+
+    await notifier.toggleReaction('si_a_b', 'm1', '👍');
+
+    expect(notifier.extrasOf('si_a_b', 'm1').reactions, {'👍'});
   });
 
-  test('再次点击移除“我”的 reaction', () {
-    final reactions = <String, List<MessageReactionGroup>>{
-      'm1': [
-        const MessageReactionGroup(emoji: '👍', count: 1, names: ['我']),
-      ],
-    };
-    toggleMessageReaction(reactions, _message('m1'), '👍');
-    expect(reactions['m1'], isEmpty);
+  test('再次点击同一个表情即移除', () async {
+    final notifier = await _notifier();
+    await notifier.toggleReaction('si_a_b', 'm1', '👍');
+
+    await notifier.toggleReaction('si_a_b', 'm1', '👍');
+
+    expect(notifier.extrasOf('si_a_b', 'm1').reactions, isEmpty);
   });
 
-  test('非我点击增加 count 并追加“我”', () {
-    final reactions = <String, List<MessageReactionGroup>>{
-      'm1': [
-        const MessageReactionGroup(emoji: '👍', count: 2, names: ['李四', '王五']),
-      ],
-    };
-    toggleMessageReaction(reactions, _message('m1'), '👍');
-    final group = reactions['m1']!.single;
-    expect(group.count, 3);
-    expect(group.names, ['李四', '王五', '我']);
+  test('多个表情可以并存，且只影响当前消息', () async {
+    final notifier = await _notifier();
+
+    await notifier.toggleReaction('si_a_b', 'm1', '👍');
+    await notifier.toggleReaction('si_a_b', 'm1', '🎉');
+
+    expect(notifier.extrasOf('si_a_b', 'm1').reactions, {'👍', '🎉'});
+    expect(notifier.extrasOf('si_a_b', 'm2').reactions, isEmpty);
   });
 }

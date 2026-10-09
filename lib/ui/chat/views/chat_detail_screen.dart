@@ -11,6 +11,7 @@ import '../../../domain/models/user_profile.dart';
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../domain/models/message_extras.dart' show MessageExtras;
 import '../../../providers/im_providers.dart';
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
@@ -23,6 +24,7 @@ import '../providers/chat_detail_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
+import '../providers/message_extras_provider.dart';
 import '../providers/message_revision_provider.dart'
     show loginUserProfileProvider;
 import '../view_models/chat_detail_view_model.dart';
@@ -40,6 +42,7 @@ import '../widgets/list/chat_message_list_section.dart';
 import '../widgets/list/forward_progress_banner.dart';
 import '../mappers/message_media.dart';
 import '../widgets/list/message_list.dart';
+import '../widgets/list/pinned_message_bar.dart';
 import '../widgets/composer/quote_preview_bar.dart';
 import '../widgets/shared/chat_detail_app_bar.dart';
 
@@ -82,8 +85,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   Animation<double>? _routeTransitionAnimation;
   String _lastMessageListTailId = '';
   String? _lastReportedSendError;
-  final Map<String, List<MessageReactionGroup>> _messageReactions = {};
-  final Set<String> _pinnedMessageIds = {};
+
+  /// 进入会话瞬间的未读数快照：会话被标记已读后 unreadCount 会归零，
+  /// 而「以下为新消息」分割线需要记住进来时的状态（跨端已读时兜底用）。
+  int _unreadCountAtOpen = 0;
   ChatDetailViewModel? _viewModel;
   late final ChatMediaActions _mediaActions;
   late final ChatMessageActions _messageActions;
@@ -95,6 +100,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _viewModel = ref.read(
       chatDetailViewModelProvider(widget.conversationId).notifier,
     );
+    _unreadCountAtOpen = _viewModel?.conversation?.unreadCount ?? 0;
     _mediaActions = ChatMediaActions(
       viewModel: _viewModel!,
       onError: _showError,
@@ -107,12 +113,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       viewModel: _viewModel!,
       preLoaded: widget.preLoaded,
       readState: () => _chatState,
-      messageReactions: _messageReactions,
-      pinnedMessageIds: _pinnedMessageIds,
       onError: _showError,
       onClearComposer: () => _textController.clear(),
       onScrollToBottom: _scrollToBottom,
-      onStateChanged: () => setState(() {}),
     );
     _scrollController.addListener(_onScroll);
     _textController.addListener(_onTextChanged);
@@ -494,9 +497,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onQuote: (message) => _viewModel?.setQuotedMessage(message),
       onMultiSelect: () => _viewModel?.enterSelectMode(),
       onResend: _messageActions.resend,
-      onPin: (message) => _messageActions.togglePin(message, context),
-      onReaction: _messageActions.toggleReaction,
+      onPin: (message) {
+        unawaited(_messageActions.togglePin(message, context));
+      },
+      onReaction: (message, emoji) {
+        unawaited(_messageActions.toggleReaction(message, emoji));
+      },
     );
+  }
+
+  /// 当前会话里各消息的表情回复（本地扩展 → 气泡上的胶囊分组）。
+  Map<String, List<MessageReactionGroup>> _reactionGroupsOf(
+    Map<String, MessageExtras> extras,
+  ) {
+    final prefix = '${widget.conversationId}|';
+    final result = <String, List<MessageReactionGroup>>{};
+    for (final entry in extras.entries) {
+      if (!entry.key.startsWith(prefix)) continue;
+      final emojis = entry.value.reactions;
+      if (emojis.isEmpty) continue;
+      result[entry.key.substring(prefix.length)] = [
+        for (final emoji in emojis)
+          MessageReactionGroup(emoji: emoji, count: 1, names: const ['我']),
+      ];
+    }
+    return result;
   }
 
   void _handleMessageTap(ChatMessage msg) =>
@@ -521,6 +546,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     User user,
     String currentUserId,
     String? currentUserAvatar,
+    Map<String, MessageExtras> extras,
   ) {
     return Expanded(
       // 业界模型：列表留白 = 「输入行 + 底部占位块」，占位块 = max(面板, 键盘)。
@@ -545,7 +571,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             isLoading: chatDetailState.isLoading,
             selectMode: chatDetailState.selectMode,
             selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
-            messageReactions: _messageReactions,
+            messageReactions: _reactionGroupsOf(extras),
+            unreadCountAtOpen: _unreadCountAtOpen,
             onMessageVisible: (msg) {
               if (!msg.isRead &&
                   msg.sendId !=
@@ -595,6 +622,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     User user,
     String currentUserId,
     String? currentUserAvatar,
+    Map<String, MessageExtras> extras,
   ) {
     // 输入区高度上限：多行输入 + 表情/附件面板可能超出可用高度。
     // 用屏幕可用高度近似，面板内部 Flexible 会在受限时自动收缩兜底。
@@ -626,11 +654,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                       onMergeForward: () =>
                           _messageActions.forwardSelected(context, merge: true),
                     ),
+                  PinnedMessageBar(
+                    conversationId: widget.conversationId,
+                    onTapMessage: (clientMsgId) => _messageListKey.currentState
+                        ?.scrollToMessage(clientMsgId),
+                  ),
                   _buildMessageListSection(
                     chatDetailState,
                     user,
                     currentUserId,
                     currentUserAvatar,
+                    extras,
                   ),
                   if (chatDetailState.isForwarding)
                     ForwardProgressBanner(
@@ -696,6 +730,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         '';
     // 自发头像同理：只在展示头像变化时重建
     final currentUserAvatar = ref.watch(currentUserDisplayAvatarProvider);
+    // 表情回复/置顶消息存在本地扩展里：订阅整表即可，条目很少。
+    final extras = ref.watch(messageExtrasProvider);
     final typingUserId = ref.watch(
       messageServiceProvider.select(
         (s) => s.typingUsers[widget.conversationId],
@@ -735,7 +771,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         },
         onSearch: _showMessageSearch,
       ),
-      body: _buildBody(chatDetailState, user, currentUserId, currentUserAvatar),
+      body: _buildBody(
+        chatDetailState,
+        user,
+        currentUserId,
+        currentUserAvatar,
+        extras,
+      ),
     );
   }
 }
