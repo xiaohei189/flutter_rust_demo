@@ -25,6 +25,7 @@ class MessageActions {
   final void Function(ChatMessage message)? onResend;
   final void Function(ChatMessage message)? onPin;
   final void Function(ChatMessage message, String emoji)? onReaction;
+  final void Function(ChatMessage message)? onFlag;
 
   const MessageActions({
     required this.onCopy,
@@ -36,6 +37,7 @@ class MessageActions {
     this.onResend,
     this.onPin,
     this.onReaction,
+    this.onFlag,
   });
 }
 
@@ -48,6 +50,7 @@ void showMessageToolPanel({
   required String currentUserId,
   required MessageActions actions,
   Set<String> reactions = const {},
+  bool flagged = false,
 }) {
   showModalBottomSheet<void>(
     context: context,
@@ -72,6 +75,7 @@ void showMessageToolPanel({
         currentUserId: currentUserId,
         actions: actions,
         reactions: reactions,
+        flagged: flagged,
         rootContext: context,
         onClose: () => Navigator.of(sheetContext).maybePop(),
       ),

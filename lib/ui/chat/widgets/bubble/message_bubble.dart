@@ -30,6 +30,9 @@ class MessageBubble extends StatelessWidget {
   final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;
   final List<MessageReactionGroup> reactionGroups;
+
+  /// 该消息被本地标记（收藏）时在气泡内展示一个标记胶囊。
+  final bool flagged;
   final int? uploadProgress;
   final GroupReadReceipt? groupReadReceipt;
   final void Function(String source)? onPlayAudio;
@@ -48,6 +51,7 @@ class MessageBubble extends StatelessWidget {
     this.onTap,
     this.selectionIndicator,
     this.reactionGroups = const [],
+    this.flagged = false,
     this.uploadProgress,
     this.groupReadReceipt,
     this.onPlayAudio,
@@ -160,6 +164,32 @@ class MessageBubble extends StatelessWidget {
             onPlayAudio: onPlayAudio,
           ),
           // 表情回复贴在气泡内（对齐飞书稿）
+          if (flagged)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.flag,
+                    size: 12,
+                    color: isFromMe
+                        ? context.appColors.onPrimary.withValues(alpha: 0.7)
+                        : context.appColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '已标记',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isFromMe
+                          ? context.appColors.onPrimary.withValues(alpha: 0.7)
+                          : context.appColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (reactionGroups.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 6),

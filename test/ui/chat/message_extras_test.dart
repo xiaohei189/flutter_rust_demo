@@ -83,4 +83,20 @@ void main() {
 
     expect(container.read(messageExtrasProvider), isEmpty);
   });
+
+  test('标记消息：可标记可取消，标记集合按会话过滤', () async {
+    final container = await _containerWith({});
+    final notifier = container.read(messageExtrasProvider.notifier);
+
+    expect(await notifier.toggleFlagged('si_a_b', 'm1'), isTrue);
+    await notifier.toggleFlagged('si_a_b', 'm2');
+    await notifier.toggleFlagged('si_x_y', 'm9');
+
+    expect(notifier.flaggedMessageIds('si_a_b'), {'m1', 'm2'});
+    expect(notifier.flaggedMessageIds('si_x_y'), {'m9'});
+    expect(notifier.extrasOf('si_a_b', 'm1').pinned, isFalse);
+
+    expect(await notifier.toggleFlagged('si_a_b', 'm1'), isFalse);
+    expect(notifier.flaggedMessageIds('si_a_b'), {'m2'});
+  });
 }

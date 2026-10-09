@@ -41,6 +41,7 @@ class MessageList extends StatefulWidget {
     this.groupReadReceipts,
     this.messageActionsBuilder,
     this.messageReactions = const {},
+    this.flaggedClientMsgIds = const {},
     this.onPlayAudio,
     this.onRetrySend,
     this.unreadCountAtOpen = 0,
@@ -62,6 +63,9 @@ class MessageList extends StatefulWidget {
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final MessageActions Function(ChatMessage message)? messageActionsBuilder;
   final Map<String, List<MessageReactionGroup>> messageReactions;
+
+  /// 被「标记」的消息 id（本地扩展），用于气泡上的标记胶囊与长按菜单文案。
+  final Set<String> flaggedClientMsgIds;
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
 
@@ -314,6 +318,7 @@ class MessageListState extends State<MessageList> {
       message: message,
       currentUserId: widget.currentUserId ?? '',
       actions: actions,
+      flagged: widget.flaggedClientMsgIds.contains(message.clientMsgId),
       reactions:
           widget.messageReactions[message.clientMsgId]
               ?.map((group) => group.emoji)
@@ -416,6 +421,9 @@ class MessageListState extends State<MessageList> {
                   : null,
               reactionGroups:
                   widget.messageReactions[message.clientMsgId] ?? const [],
+              flagged: widget.flaggedClientMsgIds.contains(
+                message.clientMsgId,
+              ),
               groupReadReceipts: widget.groupReadReceipts,
               onPlayAudio: widget.onPlayAudio,
               onRetrySend: widget.onRetrySend,
@@ -634,6 +642,7 @@ class _VisibleMessageBubble extends ConsumerWidget {
     this.onTap,
     this.selectionIndicator,
     this.reactionGroups = const [],
+    this.flagged = false,
     this.groupReadReceipts,
     this.onPlayAudio,
     this.onRetrySend,
@@ -651,6 +660,7 @@ class _VisibleMessageBubble extends ConsumerWidget {
   final void Function(ChatMessage message)? onTap;
   final Widget? selectionIndicator;
   final List<MessageReactionGroup> reactionGroups;
+  final bool flagged;
   final Map<String, GroupReadReceipt>? groupReadReceipts;
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
@@ -678,6 +688,7 @@ class _VisibleMessageBubble extends ConsumerWidget {
         onTap: onTap,
         selectionIndicator: selectionIndicator,
         reactionGroups: reactionGroups,
+        flagged: flagged,
         uploadProgress: uploadProgress,
         groupReadReceipt: groupReadReceipt,
         onPlayAudio: onPlayAudio,
@@ -704,6 +715,7 @@ class _VisibleMessageBubble extends ConsumerWidget {
         onTap: onTap,
         selectionIndicator: selectionIndicator,
         reactionGroups: reactionGroups,
+        flagged: flagged,
         uploadProgress: uploadProgress,
         groupReadReceipt: groupReadReceipt,
         onPlayAudio: onPlayAudio,

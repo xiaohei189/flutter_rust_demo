@@ -390,6 +390,11 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     return !pinned;
   }
 
+  /// 标记/取消标记；返回操作后是否处于「已标记」状态。
+  Future<bool> toggleFlagged(ChatMessage message) => ref
+      .read(messageExtrasProvider.notifier)
+      .toggleFlagged(arg, message.clientMsgId);
+
   Future<bool> revokeMessage(ChatMessage message) async {
     final conv = conversation;
     if (conv == null) return false;

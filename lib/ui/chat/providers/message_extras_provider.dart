@@ -57,6 +57,25 @@ class MessageExtrasNotifier extends Notifier<Map<String, MessageExtras>> {
     );
   }
 
+  /// 标记/取消标记一条消息（本地收藏，供后续回看）。
+  Future<bool> toggleFlagged(String conversationId, String clientMsgId) async {
+    final key = keyOf(conversationId, clientMsgId);
+    final current = state[key] ?? MessageExtras.empty;
+    final flagged = !current.flagged;
+    await _write(key, current.copyWith(flagged: flagged));
+    return flagged;
+  }
+
+  /// 某会话内被标记的消息 id（按会话内消息顺序由调用方决定展示顺序）。
+  Set<String> flaggedMessageIds(String conversationId) {
+    final prefix = '$conversationId|';
+    return {
+      for (final entry in state.entries)
+        if (entry.key.startsWith(prefix) && entry.value.flagged)
+          entry.key.substring(prefix.length),
+    };
+  }
+
   /// 某会话内被置顶的消息 id，按置顶时间从新到旧。
   List<String> pinnedMessageIds(String conversationId) {
     final prefix = '$conversationId|';

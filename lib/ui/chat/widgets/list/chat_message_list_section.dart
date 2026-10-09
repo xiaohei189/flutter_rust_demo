@@ -22,6 +22,7 @@ class ChatMessageListSection extends ConsumerWidget {
     required this.selectMode,
     required this.selectedClientMsgIds,
     required this.messageReactions,
+    this.flaggedClientMsgIds = const {},
     required this.onMessageVisible,
     required this.onMessageTap,
     this.unreadCountAtOpen = 0,
@@ -39,6 +40,7 @@ class ChatMessageListSection extends ConsumerWidget {
   final bool selectMode;
   final Set<String> selectedClientMsgIds;
   final Map<String, List<MessageReactionGroup>> messageReactions;
+  final Set<String> flaggedClientMsgIds;
   final void Function(ChatMessage message) onMessageVisible;
   final void Function(ChatMessage message) onMessageTap;
   final int unreadCountAtOpen;
@@ -74,6 +76,7 @@ class ChatMessageListSection extends ConsumerWidget {
         onMessageVisible: onMessageVisible,
         messageActionsBuilder: messageActionsBuilder,
         messageReactions: messageReactions,
+        flaggedClientMsgIds: flaggedClientMsgIds,
         onMessageTap: onMessageTap,
         onPlayAudio: onPlayAudio,
         onRetrySend: onRetrySend,

@@ -13,6 +13,7 @@ class MessageToolPanel extends StatefulWidget {
     required this.currentUserId,
     required this.actions,
     required this.reactions,
+    required this.flagged,
     required this.rootContext,
     required this.onClose,
   });
@@ -21,6 +22,7 @@ class MessageToolPanel extends StatefulWidget {
   final String currentUserId;
   final MessageActions actions;
   final Set<String> reactions;
+  final bool flagged;
   final BuildContext rootContext;
   final VoidCallback onClose;
 
@@ -318,8 +320,9 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   List<_MessageToolAction> _secondGroupActions() => [
     _MessageToolAction(
       icon: Icons.flag_outlined,
-      label: '标记',
-      onTap: () => _runAction((_) => _notSupported('标记')),
+      label: widget.flagged ? '取消标记' : '标记',
+      enabled: widget.actions.onFlag != null,
+      onTap: () => _runAction(widget.actions.onFlag ?? (_) {}),
     ),
     _MessageToolAction(
       icon: Icons.push_pin_outlined,

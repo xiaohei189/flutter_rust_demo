@@ -90,6 +90,18 @@ class ChatMessageActions {
     );
   }
 
+  /// 标记/取消标记消息（本地收藏）。
+  Future<void> toggleFlag(ChatMessage message, BuildContext context) async {
+    final flagged = await viewModel.toggleFlagged(message);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(flagged ? '已标记' : '已取消标记'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> forward(ChatMessage message, BuildContext context) async {
     final result = await AppRouter.goToContactPicker<List<ContactPickItem>>(
       context,

@@ -503,6 +503,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onReaction: (message, emoji) {
         unawaited(_messageActions.toggleReaction(message, emoji));
       },
+      onFlag: (message) {
+        unawaited(_messageActions.toggleFlag(message, context));
+      },
     );
   }
 
@@ -572,6 +575,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             selectMode: chatDetailState.selectMode,
             selectedClientMsgIds: chatDetailState.selectedClientMsgIds,
             messageReactions: _reactionGroupsOf(extras),
+            flaggedClientMsgIds: ref
+                .read(messageExtrasProvider.notifier)
+                .flaggedMessageIds(widget.conversationId),
             unreadCountAtOpen: _unreadCountAtOpen,
             onMessageVisible: (msg) {
               if (!msg.isRead &&
