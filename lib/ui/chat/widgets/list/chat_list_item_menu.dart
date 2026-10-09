@@ -176,16 +176,6 @@ Future<void> showChatListItemMenu(
                       ),
                       _menuAction(
                         ctx,
-                        icon: Icons.label_outline,
-                        label: '标签',
-                        // 会话标签体系未落地：先给明确反馈，不留「点了没反应」。
-                        onTap: () {
-                          close();
-                          _notSupported(context, '标签');
-                        },
-                      ),
-                      _menuAction(
-                        ctx,
                         icon: isMuted
                             ? Icons.notifications_off_outlined
                             : Icons.notifications_none,
@@ -356,17 +346,6 @@ Widget _menuDivider(AppColors colors) {
     height: 1,
     margin: const EdgeInsets.symmetric(horizontal: 12),
     color: colors.divider.withValues(alpha: 0.6),
-  );
-}
-
-/// 尚未开放的功能：与聊天设置页一致，给一次性提示。
-void _notSupported(BuildContext context, String label) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text('「$label」暂未开放'),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(milliseconds: 1200),
-    ),
   );
 }
 

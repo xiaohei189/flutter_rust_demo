@@ -33,6 +33,7 @@ class GroupFilterPanel extends StatelessWidget {
     this.onSelectFolder,
     this.onCreateFolder,
     this.onDeleteFolder,
+    this.onManageFolders,
   });
 
   final GroupFilter activeFilter;
@@ -49,6 +50,7 @@ class GroupFilterPanel extends StatelessWidget {
   final ValueChanged<String>? onSelectFolder;
   final VoidCallback? onCreateFolder;
   final ValueChanged<String>? onDeleteFolder;
+  final VoidCallback? onManageFolders;
 
   @override
   Widget build(BuildContext context) {
@@ -84,13 +86,17 @@ class GroupFilterPanel extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          GestureDetector(
-                            onTap: () => AppRouter.goBack(context),
-                            child: Icon(
-                              Icons.tune,
-                              size: 20,
-                              color: colors.textSecondary.withValues(
-                                alpha: 0.6,
+                          Tooltip(
+                            message: '分组管理',
+                            child: GestureDetector(
+                              onTap: onManageFolders ??
+                                  () => AppRouter.goBack(context),
+                              child: Icon(
+                                Icons.tune,
+                                size: 20,
+                                color: colors.textSecondary.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ),
@@ -177,12 +183,18 @@ class GroupFilterPanel extends StatelessWidget {
                               ),
                           ],
                           if (onCreateFolder != null)
-                            ListTile(
-                              leading: const Icon(
-                                Icons.create_new_folder_outlined,
+                            // ListTile 的背景与波纹画在最近的 Material 上：面板底色是
+                            // 外层 Container(color:)，中间不垫 Material 会触发
+                            // "ListTile background color or ink splashes may be invisible"。
+                            Material(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.create_new_folder_outlined,
+                                ),
+                                title: const Text('新建分组'),
+                                onTap: onCreateFolder,
                               ),
-                              title: const Text('新建分组'),
-                              onTap: onCreateFolder,
                             ),
                         ],
                       ),

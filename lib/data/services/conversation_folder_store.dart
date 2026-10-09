@@ -4,7 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 会话自定义分组本地存储（SharedPreferences JSON）。
 ///
-/// 结构：{ 分组名: [conversationId, ...] }。分组为空时删除该键。
+/// 结构：{ 分组名: [conversationId, ...] }。
+///
+/// 空分组（0 个会话）同样落盘：用户可以先建好分组再往里放会话；
+/// 删除分组由 `ConversationFoldersNotifier.removeFolder` 显式触发，
+/// 不能靠「列表为空」隐式清理，否则新建的分组重启后会消失。
 class ConversationFolderStore {
   static const _key = 'conversation_folders_v1';
 
@@ -30,9 +34,6 @@ class ConversationFolderStore {
 
   Future<void> save(Map<String, List<String>> folders) async {
     final prefs = await SharedPreferences.getInstance();
-    final clean = Map<String, List<String>>.fromEntries(
-      folders.entries.where((e) => e.value.isNotEmpty),
-    );
-    await prefs.setString(_key, jsonEncode(clean));
+    await prefs.setString(_key, jsonEncode(folders));
   }
 }

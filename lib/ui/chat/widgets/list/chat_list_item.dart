@@ -46,6 +46,9 @@ class ChatListItem extends StatelessWidget {
   final bool hasSendFailure;
   final VoidCallback? onRetrySend;
 
+  /// 会话所属的自定义分组名（列表胶囊展示）。
+  final String? folderLabel;
+
   const ChatListItem({
     super.key,
     required this.conversation,
@@ -71,6 +74,7 @@ class ChatListItem extends StatelessWidget {
     this.typingText,
     this.hasSendFailure = false,
     this.onRetrySend,
+    this.folderLabel,
   });
 
   Widget _buildContent(BuildContext context) {
@@ -85,6 +89,7 @@ class ChatListItem extends StatelessWidget {
       typingText: typingText,
       hasSendFailure: hasSendFailure,
       onRetrySend: onRetrySend,
+      folderLabel: folderLabel,
       onTap: onTap,
       onLongPress: (Rect rowRect) {
         if (isSelectionMode) return;

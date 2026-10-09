@@ -19,6 +19,7 @@ import '../providers/chat_list_provider.dart';
 import '../providers/conversation_folder_provider.dart';
 import '../providers/conversation_provider.dart';
 import '../view_models/chat_list_view_model.dart';
+import 'conversation_folder_manage_screen.dart';
 import '../widgets/list/chat_list_dialogs.dart';
 import '../view_models/conversation_view_model.dart';
 
@@ -121,9 +122,28 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             AppRouter.goBack(context);
             _dialogs.showDeleteFolderDialog(context, name);
           },
+          onManageFolders: () {
+            AppRouter.goBack(context);
+            _openFolderManageScreen();
+          },
         ),
       ),
     );
+  }
+
+  /// 打开分组管理页；返回后如果当前筛选的分组已被删除或改名，就退回「消息」。
+  Future<void> _openFolderManageScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ConversationFolderManageScreen(),
+      ),
+    );
+    if (!mounted) return;
+    final folders = ref.read(conversationFoldersProvider);
+    final activeFolder = ref.read(chatListViewModelProvider).activeFolder;
+    if (activeFolder != null && !folders.containsKey(activeFolder)) {
+      _viewModel.setFolder(null);
+    }
   }
 
   @override
@@ -133,6 +153,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final connectionState = ref.watch(connectionProvider);
     final userProfileState = ref.watch(userProfileViewProvider);
     final cachedUserProfiles = ref.watch(conversationUserProfilesProvider);
+    final folderLabels = ref.watch(conversationFolderLabelProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final listState = ref.watch(chatListViewModelProvider);
     final activeFilter = listState.activeFilter;
@@ -208,6 +229,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 currentUserLocalAvatarPath: currentUserLocalAvatarPath,
                 typingByConversation: typingByConversation,
                 failedConversationIds: failedConversationIds,
+                folderLabels: folderLabels,
               ),
             ),
           ),
@@ -228,6 +250,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required String? currentUserLocalAvatarPath,
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
+    required Map<String, String> folderLabels,
   }) {
     if (conversationState.isLoading && conversations.isEmpty) {
       return ListView(
@@ -281,6 +304,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             currentUserLocalAvatarPath: currentUserLocalAvatarPath,
             typingByConversation: typingByConversation,
             failedConversationIds: failedConversationIds,
+            folderLabels: folderLabels,
             focusAtMe: focusAtMe,
             conversationState: conversationState,
           ),
@@ -324,6 +348,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required String? currentUserLocalAvatarPath,
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
+    required Map<String, String> folderLabels,
     required bool focusAtMe,
     required ConversationListState conversationState,
   }) {
@@ -357,6 +382,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       isSelected: _selectedIds.contains(conversation.conversationId),
       typingText: typingText,
       hasSendFailure: hasSendFailure,
+      folderLabel: folderLabels[conversation.conversationId],
       onRetrySend: () =>
           _viewModel.retryFailedSend(conversation.conversationId),
       onTap: () {

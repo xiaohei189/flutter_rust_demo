@@ -20,7 +20,7 @@ void main() {
     expect(loaded['家庭'], ['si_c_d', 'sg_group_1']);
   });
 
-  test('空分组在保存时被清理', () async {
+  test('空分组也会落盘（新建后还没放会话）', () async {
     SharedPreferences.setMockInitialValues({});
     final store = ConversationFolderStore();
 
@@ -30,7 +30,7 @@ void main() {
     });
 
     final loaded = await store.load();
-    expect(loaded.containsKey('工作'), isFalse);
+    expect(loaded['工作'], isEmpty);
     expect(loaded['家庭'], ['si_a_b']);
   });
 

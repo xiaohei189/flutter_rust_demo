@@ -28,6 +28,7 @@ class ChatListItemContent extends StatelessWidget {
     this.hasSendFailure = false,
     this.onRetrySend,
     this.contentHorizontalPadding,
+    this.folderLabel,
   });
 
   final Conversation conversation;
@@ -49,6 +50,9 @@ class ChatListItemContent extends StatelessWidget {
   final bool hasSendFailure;
   final VoidCallback? onRetrySend;
   final double? contentHorizontalPadding;
+
+  /// 会话所属的自定义分组名（列表胶囊展示，取自本地分组数据）。
+  final String? folderLabel;
 
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -212,28 +216,6 @@ class ChatListItemContent extends StatelessWidget {
 
   bool get _isGroup =>
       conversation.conversationType == 2 || conversation.conversationType == 3;
-
-  /// 占位标签：无 external/bot/agent 数据，先用会话 ID 稳定伪随机分配一个，
-  /// 用于对齐设计稿的「外部/智能体/机器人」文字胶囊。
-  static const List<String> _placeholderTagNames = ['外部', '智能体', '机器人'];
-
-  static const Map<String, Color> _placeholderTagColors = {
-    // 从飞书参考图采样，色值统一取装饰色板。
-    '外部': AppIconColors.blue,
-    '智能体': AppIconColors.purple,
-    '机器人': AppIconColors.orange,
-  };
-
-  String? _placeholderTagName() {
-    if (conversation.conversationId.isEmpty) return null;
-    var h = 0;
-    for (final code in conversation.conversationId.codeUnits) {
-      h = (h * 31 + code) & 0x7fffffff;
-    }
-    // 约 1/3 不展示，其余稳定落到某个标签上，避免每次刷新漂移。
-    if (h % 3 == 0) return null;
-    return _placeholderTagNames[h % _placeholderTagNames.length];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,18 +382,15 @@ class ChatListItemContent extends StatelessWidget {
     );
   }
 
-  /// 标签收敛：最多展示 2 个，优先级 不在群内 > @我 > 通知。
+  /// 标签收敛：最多展示 2 个，优先级 自定义分组 > 不在群内 > @我 > 通知。
   List<Widget> _buildTags(BuildContext context) {
     final colors = context.appColors;
     final tags = <Widget>[];
-    // 占位：无 external/bot/agent 数据，先展示设计稿同款文字胶囊。
-    final placeholder = _placeholderTagName();
-    if (placeholder != null) {
+    // 会话所属的自定义分组（真实数据，取代此前的伪随机占位胶囊）。
+    final folderLabel = this.folderLabel;
+    if (folderLabel != null && folderLabel.isNotEmpty) {
       tags.add(
-        _TagLabel(
-          text: placeholder,
-          color: _placeholderTagColors[placeholder]!,
-        ),
+        _TagLabel(text: folderLabel, color: AppIconColors.blue),
       );
     }
     if (conversation.isNotInGroup) {

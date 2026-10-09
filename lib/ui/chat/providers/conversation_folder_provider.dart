@@ -35,6 +35,35 @@ class ConversationFoldersNotifier extends Notifier<Map<String, List<String>>> {
     await _persist();
   }
 
+  /// 重命名分组：新名为空、与原名相同或已存在时返回 false。
+  ///
+  /// 重命名保留分组内会话与分组顺序（Dart Map 保序，整体重建即可）。
+  Future<bool> renameFolder(String oldName, String newName) async {
+    if (!state.containsKey(oldName)) return false;
+    final trimmed = newName.trim();
+    if (trimmed.isEmpty || trimmed == oldName) return false;
+    if (state.containsKey(trimmed)) return false;
+    state = {
+      for (final entry in state.entries)
+        entry.key == oldName ? trimmed : entry.key: entry.value,
+    };
+    await _persist();
+    return true;
+  }
+
+  /// 按给定顺序重排分组。
+  ///
+  /// 只接受与当前分组集合完全一致的顺序，避免误传导致分组丢失。
+  Future<void> reorderFolders(List<String> orderedNames) async {
+    if (orderedNames.length != state.length) return;
+    if (orderedNames.toSet().length != orderedNames.length) return;
+    for (final name in orderedNames) {
+      if (!state.containsKey(name)) return;
+    }
+    state = {for (final name in orderedNames) name: state[name]!};
+    await _persist();
+  }
+
   Future<void> addToFolder(String folder, String conversationId) async {
     final current = state[folder] ?? <String>[];
     if (current.contains(conversationId)) return;
@@ -63,3 +92,17 @@ final conversationFoldersProvider =
     NotifierProvider<ConversationFoldersNotifier, Map<String, List<String>>>(
       ConversationFoldersNotifier.new,
     );
+
+/// conversationId → 所属分组名（会话可能属于多个分组，列表胶囊只取第一个）。
+///
+/// 会话列表行显示分组胶囊时用，避免每行都去遍历分组表。
+final conversationFolderLabelProvider = Provider<Map<String, String>>((ref) {
+  final folders = ref.watch(conversationFoldersProvider);
+  final labels = <String, String>{};
+  for (final entry in folders.entries) {
+    for (final conversationId in entry.value) {
+      labels.putIfAbsent(conversationId, () => entry.key);
+    }
+  }
+  return labels;
+});

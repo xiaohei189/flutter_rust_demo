@@ -17,6 +17,7 @@ import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
 import '../widgets/settings_dialogs.dart';
 import '../widgets/chat_message_search_sheet.dart';
+import 'conversation_folder_manage_screen.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
 class ChatSettingsScreen extends ConsumerStatefulWidget {
@@ -255,11 +256,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 value: settings.pinChat,
                 onChanged: _setPinChat,
               ),
-              SettingsNavRow(title: '标签', onTap: () => _notSupported('标签')),
-              SettingsSwitchRow(
-                title: '添加到标记',
-                value: false,
-                onChanged: (_) => _notSupported('添加到标记'),
+              SettingsNavRow(
+                title: '标签',
+                // 标签体系收敛到自定义分组：直接进分组管理页。
+                onTap: _openFolderManage,
               ),
               SettingsSwitchRow(
                 title: l10n?.privateChat ?? '私聊（阅后即焚）',
@@ -635,6 +635,15 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         content: Text('「$label」暂未开放'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(milliseconds: 1200),
+      ),
+    );
+  }
+
+  /// 「标签」入口：标签体系收敛到自定义分组，直接进分组管理页。
+  void _openFolderManage() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ConversationFolderManageScreen(),
       ),
     );
   }

@@ -44,13 +44,16 @@ class ChatListHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              GestureDetector(
-                onTap: onOpenGroupFilter,
-                behavior: HitTestBehavior.opaque,
-                child: SizedBox(
-                  width: 36,
-                  height: 44,
-                  child: Icon(Icons.menu, size: 26, color: colors.textPrimary),
+              Tooltip(
+                message: '分组筛选',
+                child: GestureDetector(
+                  onTap: onOpenGroupFilter,
+                  behavior: HitTestBehavior.opaque,
+                  child: SizedBox(
+                    width: 36,
+                    height: 44,
+                    child: Icon(Icons.menu, size: 26, color: colors.textPrimary),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
