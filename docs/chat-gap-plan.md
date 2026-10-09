@@ -107,13 +107,19 @@
   - 新增 `PinnedMessageBar`：会话顶部展示最近一条置顶消息，点击定位到该消息，右侧 ✕ 取消置顶；置顶消息不在当前分页范围时自动隐藏。
   - 测试：`test/ui/chat/message_extras_test.dart`（JSON 往返 / 落盘重启 / 置顶排序 / 脏数据）、`test/ui/chat/chat_message_actions_test.dart`（表情加/减/并存）。
   - 真机验证：会话内长按 → 置顶消息 → 顶栏出现置顶条；表情回复出现「👍 我」胶囊；热重启后两者都还在；点 ✕ 取消置顶后顶栏消失、表情保留。
-- [ ] P1-2 消息编辑：Repository/ViewModel 接通 `editMessage`，长按菜单加「编辑」（限本人、限文本类、限时间窗），编辑结果走消息事件回流。
-- [ ] P1-3 消息标记/收藏：复用 P1-1 的 `localEx` 链路，把工具面板「标记」从占位变为可用。
+- [ ] P1-2 消息编辑：**阻塞在 SDK**。`rust/src/core/message/send/sender.rs::edit_message` 是「用新内容构造一条新消息再 send_msg」，既没带原消息的 clientMsgId，也没设置任何修改标记（注释说会发 `MsgDataToModifyByMQ`，代码里没有）。直接接 UI 会变成「多发一条消息」而不是编辑。要么先补 SDK 的编辑协议（改发送侧携带原 msgID + 服务端修改通知），要么砍掉这条需求。
+- [x] P1-3 消息标记（本地收藏，2026-10-10）：复用 P1-1 的本地扩展链路。
+  - `MessageExtras` 增加 `flagged`；Notifier 增加 `toggleFlagged` / `flaggedMessageIds(conversationId)`。
+  - 工具面板「标记」不再提示暂未开放：按状态显示「标记 / 取消标记」并写入本地扩展，操作后有「已标记 / 已取消标记」提示。
+  - 气泡内展示「🏳 已标记」胶囊，退出会话/重启后仍在。
+  - 测试：`test/ui/chat/message_extras_test.dart` 增加标记开关与按会话过滤用例。
+  - 待补：独立的「标记消息」列表页（现在只能在会话里逐条看到标记态）。
 - [ ] P1-4 群已读详情页：气泡已读计数可点开看成员名单；**前置**确认服务端是否提供 reader list 接口，拿不到则只做本地已读用户合并。
 - [ ] P1-5 语音播放态：播放中动画 + 进度 + 停止。
 
 ### 4.3 P2：需新方案（单独立项）
 
+- [ ] P2-0 修复 FFI codegen 配置（2026-10-10 排查）：`flutter_rust_bridge.yaml` 的 `rust_input: crate::ffi` 是旧模块路径，改成 `crate::api::ffi` 后生成器才能扫到 API。但输入模块变深会让产物按 Rust 模块树镜像成 `api/core/domain/infra/sdk` 五套目录，旧的 `ffi/`、`model/`、`event/`、`constant/` 变成未引用的陈旧副本（两套模型类型并存）。必须同时迁移手写 import 或让生成器保持扁平布局，属于独立的生成代码迁移任务；当前先回滚，保持仓库现状。
 - [ ] P2-1 @所有人：Rust 已有 `get_at_all_tag`，发送侧补 `atAllTag` 支持，成本小，可提前到 P1 尾。
 - [ ] P2-2 音视频通话：LiveKit 接入（权限、来电弹窗、通话页），独立模块。
 - [ ] P2-3 翻译 / 网页搜索 / 飞书内搜索：依赖第三方服务与「选中文本」上下文能力，先出方案。
