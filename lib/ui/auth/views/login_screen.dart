@@ -198,6 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       Expanded(
                         child: TextFormField(
+                          key: const ValueKey('login_verify_code'),
                           controller: _codeController,
                           decoration: const InputDecoration(
                             labelText: '验证码',
