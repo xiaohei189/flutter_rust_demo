@@ -6,6 +6,7 @@ import '../../../../router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../providers/chat_list_provider.dart';
 import '../../providers/conversation_folder_provider.dart';
+import '../../providers/message_service_provider.dart';
 import '../../view_models/chat_list_view_model.dart';
 
 /// 会话列表页的对话框与扫码处理：分组新建/删除/移动、全部归档、扫码跳转。
@@ -136,6 +137,44 @@ class ChatListDialogs {
     if (confirmed == true && context.mounted) {
       await viewModel.archiveAllConversations();
     }
+  }
+
+  /// 一键把全部会话标记为已读（服务端已读序列一并推进）。
+  ///
+  /// 只影响服务端未读数；用户手动「标为未读」的本地标记不会被清掉。
+  Future<void> confirmMarkAllRead(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('全部已读'),
+        content: const Text('确定把所有会话标为已读吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              '全部已读',
+              style: TextStyle(color: context.appColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    await ref.read(messageServiceProvider.notifier).markAllConversationsAsRead();
+    await viewModel.refreshConversations();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('已把全部会话标为已读'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
+    );
   }
 
   /// 处理扫码结果：URL 提示复制，群/用户 ID 跳转对应资料页。

@@ -90,6 +90,12 @@ class WorkbenchScreen extends ConsumerWidget {
             label: '全部归档',
             onTap: () => _handleArchiveAll(context, ref),
           ),
+          (
+            icon: Icons.done_all_outlined,
+            color: AppIconColors.blue,
+            label: '全部已读',
+            onTap: () => _handleMarkAllRead(context, ref),
+          ),
         ];
 
     return Container(
@@ -145,6 +151,10 @@ class WorkbenchScreen extends ConsumerWidget {
 
   Future<void> _handleArchiveAll(BuildContext context, WidgetRef ref) async {
     await _dialogs(ref).confirmArchiveAll(context);
+  }
+
+  Future<void> _handleMarkAllRead(BuildContext context, WidgetRef ref) async {
+    await _dialogs(ref).confirmMarkAllRead(context);
   }
 
   ChatListDialogs _dialogs(WidgetRef ref) => ChatListDialogs(
