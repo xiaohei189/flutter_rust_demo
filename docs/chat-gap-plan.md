@@ -119,12 +119,18 @@
 
 ### 4.3 P2：需新方案（单独立项）
 
-- [ ] P2-0 修复 FFI codegen 配置（2026-10-10 排查，2026-10-11 补提交记录考古）：
+- [x] P2-0 修复 FFI codegen 配置（2026-10-11 完成，方案 B）：
   - **成因**：Rust 五层目录迁移（`10d81a7` 建骨架 → `05e8746` domain → `3346f15` infra → `424f18b` core → `0e7923d` sdk/api 收尾，2026-08-17～08-21）把 `rust/src/ffi/` 搬到 `rust/src/api/ffi/`，但**没有同步 `flutter_rust_bridge.yaml`**（该文件最后一次改动是 08-17 的 `9e23c53`），于是 `rust_input: crate::ffi` 指向了不存在的模块。
   - **当年怎么蒙混过关**：`0e7923d` 的 diff 显示 `rust/src/frb_generated.rs` 被**手工做路径替换**（`use crate::ffi::client::*` → `use crate::api::ffi::client::*`），Dart 侧生成树则停更在迁移前的 `7b99712`（08-19），此后从未重新生成 —— 「生成代码禁止手改」的约定在那次迁移里被打破且无人发现。
   - **现在的后果**：① 跑 codegen 只能产出 90 行空壳（原 13,618 行），Rust 侧新增字段进不了 Dart；② 桥接已出现漂移——Rust FFI 183 个函数 vs Dart 182 个，缺的正是 08-26 才加的 `logcatMakeWriter`（未被 Dart 引用，暂未暴露 bug）。
   - **修法**：改动 `rust_input` 后产物会按 Rust 模块树镜像成 `api/core/domain/infra/sdk` 五套目录，旧的 `ffi/ model/ event/ constant/` 变成未引用副本。两条路：A. 给 crate 加回顶层 `pub mod ffi`（`pub use crate::api::ffi::*`）保住扁平布局，改 31 处手写 import 的成本为 0；B. 接受镜像布局并迁移 31 个文件、27 个 `generated/rust/...` 路径前缀，重跑 `build_runner`。
   - **配套门禁**（建议加进 `AGENTS.md` 提交前清单）：跑一次 codegen 后 `git diff --exit-code -- lib/generated rust/src/frb_generated.rs`，不一致即失败，避免再次手改生成文件或忘记重生成。
+  - **已按方案 B 落地**（提交 `56cd9eb`）：
+    - `flutter_rust_bridge.yaml` 的 `rust_input` 改为 `crate::api::ffi`；删除旧扁平生成树（34 个文件），生成树改为镜像 Rust 模块路径 `api/ core/ domain/ infra/ sdk/`。
+    - 迁移 42 个手写文件的 101 处 `generated/rust` 引用（相对 + `package:` 两种写法）。
+    - 新增 `scripts/check-codegen.ps1`（跑 codegen 后校验产物与仓库一致）并写入 `AGENTS.md` 提交前清单。
+    - 验证：`flutter analyze` 干净；`flutter test` **433 全过**；`cargo build --lib` 通过；连续两次 codegen 产物逐字节一致；真机（Android 模拟器）登录 → 会话列表 → 消息详情 → 未读分割线/表情回复/消息标记全部正常，无运行时错误。
+    - 遗留注意：新布局与 Rust 目录耦合，Rust 侧再动目录仍需同步迁移 Dart import —— 由 `check-codegen.ps1` 兜住（改完不重新生成会直接失败）。
 - [ ] P2-1 @所有人：Rust 已有 `get_at_all_tag`，发送侧补 `atAllTag` 支持，成本小，可提前到 P1 尾。
 - [ ] P2-2 音视频通话：LiveKit 接入（权限、来电弹窗、通话页），独立模块。
 - [ ] P2-3 翻译 / 网页搜索 / 飞书内搜索：依赖第三方服务与「选中文本」上下文能力，先出方案。
