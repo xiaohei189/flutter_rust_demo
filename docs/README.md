@@ -68,6 +68,7 @@
 | [docs/SDK_PROGRESS.md](./SDK_PROGRESS.md) | ⚠️ 部分过时 | SDK 进度（大量 ✅ 为规划估算，**以 testing-gap.md + 代码为准**） |
 | [docs/testing-gap.md](./testing-gap.md) | ✅ 现行 | **测试缺口与状态矩阵**（文档冲突的权威裁决） |
 | [docs/ui-optimization-plan.md](./ui-optimization-plan.md) | 📌 参考 | UI 与目录组织优化计划（已大部分落地） |
+| [docs/create-group-plan.md](./create-group-plan.md) | 📌 分析稿 | 创建群组 / 群模式（对话·话题）功能与交互设计分析（待评审） |
 | [rust/tests/README.md](../rust/tests/README.md) | ✅ 现行 | Rust 测试说明 |
 
 ## 🔬 专项实现说明（docs/ 下）

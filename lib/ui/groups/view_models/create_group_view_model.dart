@@ -2,18 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/repositories/group_repository.dart';
 import '../../../../domain/models/group.dart';
+import '../../../../domain/models/group_mode.dart';
 import '../providers/group_provider.dart';
 
 class CreateGroupState {
   final bool isCreating;
   final Group? createdGroup;
   final List<String> selectedMemberIds;
+  final GroupMode mode;
   final String? error;
 
   const CreateGroupState({
     this.isCreating = false,
     this.createdGroup,
     this.selectedMemberIds = const [],
+    this.mode = GroupMode.chat,
     this.error,
   });
 
@@ -21,6 +24,7 @@ class CreateGroupState {
     bool? isCreating,
     Group? createdGroup,
     List<String>? selectedMemberIds,
+    GroupMode? mode,
     String? error,
     bool clearCreatedGroup = false,
   }) {
@@ -30,6 +34,7 @@ class CreateGroupState {
           ? null
           : (createdGroup ?? this.createdGroup),
       selectedMemberIds: selectedMemberIds ?? this.selectedMemberIds,
+      mode: mode ?? this.mode,
       error: error,
     );
   }
@@ -59,6 +64,11 @@ class CreateGroupViewModel extends Notifier<CreateGroupState> {
           .where((id) => id != userId)
           .toList(),
     );
+  }
+
+  /// 群模式（对话 / 话题）。当前只落在建群流程里，服务端持久化见 P1 计划。
+  void setMode(GroupMode mode) {
+    state = state.copyWith(mode: mode);
   }
 
   Future<Group?> createGroup({
