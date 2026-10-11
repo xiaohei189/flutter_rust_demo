@@ -13,6 +13,8 @@ import '../../../domain/models/message_search_result.dart'
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/message_extras.dart' show MessageExtras;
 import '../../../providers/im_providers.dart';
+import '../../../data/services/audio_player_service.dart'
+    show AudioPlayerService;
 import '../../../providers/online_status_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../ui/core/theme/app_theme.dart';
@@ -34,6 +36,7 @@ import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/menu/chat_message_actions.dart';
 import '../widgets/menu/chat_detail_selection_top_bar.dart';
 import '../widgets/chat_message_search_sheet.dart';
+import '../widgets/marked_messages_sheet.dart';
 import '../widgets/menu/message_action_menu.dart';
 import '../widgets/composer/group_member_picker.dart'
     show insertAtMention, showGroupMemberPicker;
@@ -90,6 +93,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// 而「以下为新消息」分割线需要记住进来时的状态（跨端已读时兜底用）。
   int _unreadCountAtOpen = 0;
   ChatDetailViewModel? _viewModel;
+  /// 缓存的音频服务实例：dispose 阶段不能再触碰 ref。
+  late final AudioPlayerService _audioPlayer;
   late final ChatMediaActions _mediaActions;
   late final ChatMessageActions _messageActions;
 
@@ -100,6 +105,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _viewModel = ref.read(
       chatDetailViewModelProvider(widget.conversationId).notifier,
     );
+    _audioPlayer = ref.read(audioPlayerServiceProvider);
     _unreadCountAtOpen = _viewModel?.conversation?.unreadCount ?? 0;
     _mediaActions = ChatMediaActions(
       viewModel: _viewModel!,
@@ -191,6 +197,11 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       unawaited(viewModel.saveDraft(_textController.text));
       // 退出会话补一次已读：系统返回键不再被 PopScope 拦截，退出路径统一收口到 dispose
       unawaited(viewModel.markConversationMessageAsRead());
+    }
+    // 离开会话即停掉语音播放：避免返回列表后还在响（没有在播就不碰播放器，
+    // 免得在测试/无插件环境下产生无效平台调用）
+    if (_audioPlayer.playback.value.source != null) {
+      unawaited(_audioPlayer.stop());
     }
     _scrollController.removeListener(_onScroll);
     _textController.removeListener(_onTextChanged);
@@ -445,6 +456,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         onMessageTap: _locateMessage,
       ),
     );
+  }
+
+  /// 「标记消息」列表：弹层里点某条 → 关闭并定位到该消息。
+  void _showMarkedMessages() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
+      ),
+      builder: (_) => MarkedMessagesSheet(
+        conversationId: widget.conversationId,
+        onMessageTap: _locateMessageById,
+      ),
+    );
+  }
+
+  /// 按 clientMsgId 定位消息；不在当前视图内时给出提示（不静默失败）。
+  void _locateMessageById(String clientMsgId) {
+    final found =
+        _messageListKey.currentState?.scrollToMessage(clientMsgId) ?? false;
+    if (!found) _showError('该消息不在当前视图内，向上滚动可继续查找');
   }
 
   void _locateMessage(MessageSearchResult log) {
@@ -776,6 +812,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           AppRouter.goToChatSettings(context, conversation);
         },
         onSearch: _showMessageSearch,
+        onOpenMarkedMessages: _showMarkedMessages,
       ),
       body: _buildBody(
         chatDetailState,
@@ -804,6 +841,7 @@ class _ChatDetailAppBarHost extends ConsumerWidget
     required this.onBack,
     required this.onOpenSettings,
     required this.onSearch,
+    this.onOpenMarkedMessages,
   });
 
   final User user;
@@ -816,6 +854,8 @@ class _ChatDetailAppBarHost extends ConsumerWidget
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
   final VoidCallback onSearch;
+
+  final VoidCallback? onOpenMarkedMessages;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -833,6 +873,7 @@ class _ChatDetailAppBarHost extends ConsumerWidget
       onBack: onBack,
       onOpenSettings: onOpenSettings,
       onSearch: onSearch,
+      onOpenMarkedMessages: onOpenMarkedMessages,
     );
   }
 }

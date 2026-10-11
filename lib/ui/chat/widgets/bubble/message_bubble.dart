@@ -7,6 +7,8 @@ import '../../../../domain/models/group_read_receipt.dart'
     show GroupReadReceipt;
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../domain/models/user_profile.dart' show UserProfile;
+import '../../../../data/services/audio_player_service.dart'
+    show AudioPlaybackState;
 import '../../../previews/app_theme_preview.dart';
 import '../../../previews/fake_data.dart';
 import '../../../../router/app_router.dart';
@@ -33,6 +35,9 @@ class MessageBubble extends StatelessWidget {
 
   /// 该消息被本地标记（收藏）时在气泡内展示一个标记胶囊。
   final bool flagged;
+
+  /// 语音播放状态（仅语音气泡使用）。
+  final AudioPlaybackState? audioPlayback;
   final int? uploadProgress;
   final GroupReadReceipt? groupReadReceipt;
   final void Function(String source)? onPlayAudio;
@@ -52,6 +57,7 @@ class MessageBubble extends StatelessWidget {
     this.selectionIndicator,
     this.reactionGroups = const [],
     this.flagged = false,
+    this.audioPlayback,
     this.uploadProgress,
     this.groupReadReceipt,
     this.onPlayAudio,
@@ -162,6 +168,7 @@ class MessageBubble extends StatelessWidget {
             isFromMe: isFromMe,
             uploadProgress: uploadProgress,
             onPlayAudio: onPlayAudio,
+            audioPlayback: audioPlayback,
           ),
           // 表情回复贴在气泡内（对齐飞书稿）
           if (flagged)

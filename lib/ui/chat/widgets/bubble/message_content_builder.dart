@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../mappers/message_display.dart';
 import '../../../../domain/models/message.dart' show MessageType;
+import '../../../../data/services/audio_player_service.dart'
+    show AudioPlaybackState;
 import 'parts/media_message_content.dart';
 import 'parts/quote_message_content.dart';
 import 'parts/rich_message_content.dart';
@@ -14,6 +16,7 @@ Widget buildMessageContent({
   required bool isFromMe,
   int? uploadProgress,
   void Function(String source)? onPlayAudio,
+  AudioPlaybackState? audioPlayback,
 }) {
   return switch (message.messageType) {
     MessageType.image => ImageMessageContent(
@@ -30,6 +33,7 @@ Widget buildMessageContent({
       message: message,
       isFromMe: isFromMe,
       onPlay: onPlayAudio,
+      playback: audioPlayback,
     ),
     MessageType.file => FileMessageContent(
       message: message,

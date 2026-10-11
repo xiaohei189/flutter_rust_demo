@@ -4,6 +4,8 @@ import '../../../mappers/message_display.dart';
 import '../../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_image.dart';
+import '../../../../../data/services/audio_player_service.dart'
+    show AudioPlaybackState;
 
 class UploadProgress extends StatelessWidget {
   const UploadProgress({
@@ -189,6 +191,7 @@ class AudioMessageContent extends StatelessWidget {
     required this.message,
     required this.isFromMe,
     this.onPlay,
+    this.playback,
   });
 
   final ChatMessage message;
@@ -197,8 +200,15 @@ class AudioMessageContent extends StatelessWidget {
   /// 播放语音回调；为空时（预览/测试场景）点击不触发播放。
   final void Function(String source)? onPlay;
 
+  /// 当前播放状态；播放中的是这条语音时展示停止图标与进度条。
+  final AudioPlaybackState? playback;
+
   @override
   Widget build(BuildContext context) {
+    final isPlayingThis = playback?.isPlayingSource(message.soundSource) ?? false;
+    final foreground = isFromMe
+        ? context.appColors.onPrimary
+        : context.appColors.bubbleOtherText;
     return GestureDetector(
       onTap: () {
         if (message.soundSource.isEmpty) {
@@ -209,24 +219,42 @@ class AudioMessageContent extends StatelessWidget {
         }
         onPlay?.call(message.soundSource);
       },
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.play_circle_outline,
-            size: 24,
-            color: isFromMe
-                ? context.appColors.onPrimary
-                : context.appColors.primary,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isPlayingThis
+                    ? Icons.stop_circle_outlined
+                    : Icons.play_circle_outline,
+                size: 24,
+                color: isFromMe
+                    ? context.appColors.onPrimary
+                    : context.appColors.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                message.audioDurationString,
+                style: TextStyle(color: foreground, fontSize: 16),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            message.audioDurationString,
-            style: TextStyle(
-              color: isFromMe
-                  ? context.appColors.onPrimary
-                  : context.appColors.bubbleOtherText,
-              fontSize: 16,
+          // 进度条常驻（闲置时为 0），避免播放开始/结束时气泡高度突变导致列表位移。
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: SizedBox(
+              width: 96,
+              child: LinearProgressIndicator(
+                value: isPlayingThis ? (playback?.progress ?? 0) : 0,
+                minHeight: 2,
+                backgroundColor: foreground.withValues(alpha: 0.25),
+                color: isFromMe
+                    ? context.appColors.onPrimary
+                    : context.appColors.primary,
+              ),
             ),
           ),
         ],

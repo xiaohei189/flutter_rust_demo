@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/services/services.dart';
@@ -29,6 +30,14 @@ final mediaUploadServiceProvider = Provider<MediaUploadService>((ref) {
 /// 音频播放服务 Provider
 final audioPlayerServiceProvider = Provider<AudioPlayerService>((ref) {
   return AudioPlayerService();
+});
+
+/// 语音播放状态（ValueListenable）：气泡用 ValueListenableBuilder 订阅，
+/// 播放进度每 tick 只重建语音气泡自身。
+final audioPlaybackProvider = Provider<ValueListenable<AudioPlaybackState>>((
+  ref,
+) {
+  return ref.watch(audioPlayerServiceProvider).playback;
 });
 
 /// 图片选择服务 Provider

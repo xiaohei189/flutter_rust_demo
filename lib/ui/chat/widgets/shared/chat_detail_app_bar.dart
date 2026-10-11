@@ -14,6 +14,7 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onBack,
     required this.onOpenSettings,
     required this.onSearch,
+    this.onOpenMarkedMessages,
     this.online,
   });
 
@@ -24,6 +25,9 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
   final VoidCallback onSearch;
+
+  /// 「标记消息」入口；为空时不展示该按钮。
+  final VoidCallback? onOpenMarkedMessages;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -94,6 +98,16 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        if (onOpenMarkedMessages != null)
+          Semantics(
+            label: '标记消息',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.bookmark_border),
+              tooltip: '标记消息',
+              onPressed: onOpenMarkedMessages,
+            ),
+          ),
         Semantics(
           label: '搜索聊天记录',
           button: true,

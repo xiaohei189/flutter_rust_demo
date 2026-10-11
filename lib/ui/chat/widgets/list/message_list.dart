@@ -13,6 +13,9 @@ import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../previews/app_theme_preview.dart';
 import '../../../previews/fake_data.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../../data/services/audio_player_service.dart'
+    show AudioPlaybackState;
+import '../../../../providers/im_providers.dart' show audioPlaybackProvider;
 import '../menu/message_action_menu.dart'
     show MessageActions, showMessageToolPanel;
 import '../bubble/message_bubble.dart';
@@ -294,16 +297,20 @@ class MessageListState extends State<MessageList> {
   }
 
   /// 滚动到指定消息并尽量居中显示。
-  void scrollToMessage(String clientMsgId) {
+  ///
+  /// 返回是否找到了该消息的渲染节点：`ListView.builder` 只构建可视区域内的行，
+  /// 目标在视口之外（或被回收）时返回 false，调用方可以据此给用户提示。
+  bool scrollToMessage(String clientMsgId) {
     final key = _messageKeys[clientMsgId];
     final targetContext = key?.currentContext;
-    if (targetContext == null) return;
+    if (targetContext == null) return false;
     Scrollable.ensureVisible(
       targetContext,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
       alignment: 0.5,
     );
+    return true;
   }
 
   void _openMessageToolPanel(ChatMessage message, GlobalKey messageKey) {
@@ -675,8 +682,9 @@ class _VisibleMessageBubble extends ConsumerWidget {
     final groupReadReceipt =
         groupReadReceipts?[message.clientMsgId] ??
         groupReadReceipts?[message.serverMsgId];
-    if (onVisible == null) {
-      return MessageBubble(
+
+    Widget buildBubble(AudioPlaybackState? audioPlayback) {
+      final bubble = MessageBubble(
         message: message,
         otherUser: otherUser,
         currentUserId: currentUserId,
@@ -693,34 +701,28 @@ class _VisibleMessageBubble extends ConsumerWidget {
         groupReadReceipt: groupReadReceipt,
         onPlayAudio: onPlayAudio,
         onRetrySend: onRetrySend,
+        audioPlayback: audioPlayback,
+      );
+      if (onVisible == null) return bubble;
+      return VisibilityDetector(
+        key: Key('msg_${message.clientMsgId}'),
+        onVisibilityChanged: (info) {
+          if (info.visibleFraction > 0) {
+            onVisible?.call(message);
+          }
+        },
+        child: bubble,
       );
     }
 
-    return VisibilityDetector(
-      key: Key('msg_${message.clientMsgId}'),
-      onVisibilityChanged: (info) {
-        if (info.visibleFraction > 0) {
-          onVisible?.call(message);
-        }
-      },
-      child: MessageBubble(
-        message: message,
-        otherUser: otherUser,
-        currentUserId: currentUserId,
-        currentUserAvatar: currentUserAvatar,
-        maxBubbleWidth: maxBubbleWidth,
-        cachedSenderProfile: cachedSenderProfile,
-        cachedCurrentUserProfile: cachedCurrentUserProfile,
-        onLongPress: onLongPress,
-        onTap: onTap,
-        selectionIndicator: selectionIndicator,
-        reactionGroups: reactionGroups,
-        flagged: flagged,
-        uploadProgress: uploadProgress,
-        groupReadReceipt: groupReadReceipt,
-        onPlayAudio: onPlayAudio,
-        onRetrySend: onRetrySend,
-      ),
+    // 只有语音消息订阅播放状态：进度每 tick 产生的重建被限制在语音气泡内，
+    // 图片/文本等其他气泡不受影响。
+    if (message.messageType != MessageType.audio) {
+      return buildBubble(null);
+    }
+    return ValueListenableBuilder<AudioPlaybackState>(
+      valueListenable: ref.watch(audioPlaybackProvider),
+      builder: (context, playback, _) => buildBubble(playback),
     );
   }
 }
