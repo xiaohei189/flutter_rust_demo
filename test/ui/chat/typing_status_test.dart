@@ -12,8 +12,8 @@ import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/domain/models/chat_session_type.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
-import 'package:flutter_rust_demo/generated/rust/event/events/conversation.dart';
-import 'package:flutter_rust_demo/generated/rust/event/events/message.dart'
+import 'package:flutter_rust_demo/generated/rust/core/event/events/conversation.dart';
+import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart'
     show MessageEvent;
 import 'package:flutter_rust_demo/ui/chat/providers/chat_detail_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';

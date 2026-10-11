@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/services/online_status_service.dart';
-import 'package:flutter_rust_demo/generated/rust/http/online.dart';
+import 'package:flutter_rust_demo/generated/rust/infra/http/online.dart';
 
 class FakeOnlineStatusClient implements OnlineStatusClient {
   FakeOnlineStatusClient({

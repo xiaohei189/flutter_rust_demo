@@ -4,9 +4,9 @@ import '../../../data/mappers/conversation_mapper.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/message.dart' show MessageSendStatus;
-import '../../../generated/rust/event/events/message.dart' show MessageReceipt;
+import '../../../generated/rust/core/event/events/message.dart' show MessageReceipt;
 import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
-import '../../../generated/rust/model/local.dart' show LocalConversation;
+import '../../../generated/rust/domain/model/local.dart' show LocalConversation;
 
 import 'message_service_state.dart';
 

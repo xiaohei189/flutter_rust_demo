@@ -1,5 +1,5 @@
-import '../../generated/rust/ffi/client.dart' as fb;
-import '../../generated/rust/model/group.dart' show GroupMember;
+import '../../generated/rust/api/ffi/client.dart' as fb;
+import '../../generated/rust/domain/model/group.dart' show GroupMember;
 import '../../core/utils/app_logger.dart';
 
 mixin GroupMemberMixin on Object {

@@ -5,8 +5,8 @@ import '../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../domain/models/user_profile.dart' show UserProfile;
-import '../../generated/rust/constant/enums.dart' show SessionType;
-import '../../generated/rust/model/msg_struct.dart' show MsgStruct;
+import '../../generated/rust/domain/constant/enums.dart' show SessionType;
+import '../../generated/rust/domain/model/msg_struct.dart' show MsgStruct;
 
 export 'message_repository_impl.dart';
 

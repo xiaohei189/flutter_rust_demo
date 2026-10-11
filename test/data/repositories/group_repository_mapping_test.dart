@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/group_repository.dart';
-import 'package:flutter_rust_demo/generated/rust/http/group.dart';
-import 'package:flutter_rust_demo/generated/rust/model/group.dart';
+import 'package:flutter_rust_demo/generated/rust/infra/http/group.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/group.dart';
 
 void main() {
   group('GroupRepository mapping', () {

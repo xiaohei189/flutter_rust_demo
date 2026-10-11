@@ -30,6 +30,10 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
   （`Color(0x…)` / 裸 `Colors.*`），统一取 `context.appColors.*` 或装饰色板 `AppIconColors`；
   基线已归零，新增一处即失败。确属功能性的例外在行尾标注 `// design-token-ignore: 原因`。
   详见 `docs/conventions.md` 的「主题/颜色」。
+- 改动 `rust/src/api/**`（FFI 入口）或 `flutter_rust_bridge.yaml` 后必须运行
+  `scripts/check-codegen.ps1`：它会跑一次 codegen 并校验 `lib/generated` 与
+  `rust/src/frb_generated.rs` 无差异。生成代码**禁止手改**，产物有变化时与源码一起提交。
+  （历史教训：五层目录迁移漏改 `rust_input` 并手工替换生成文件，导致 codegen 两个月产出空壳。）
 
 ## Build, Test, and Development Commands
 

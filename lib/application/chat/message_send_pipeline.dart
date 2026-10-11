@@ -7,8 +7,8 @@ import '../../../data/repositories/message_repository.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/message.dart' show MessageSendStatus;
-import '../../../generated/rust/constant/enums.dart' show SessionType;
-import '../../../generated/rust/model/msg_struct.dart' show MsgStruct;
+import '../../../generated/rust/domain/constant/enums.dart' show SessionType;
+import '../../../generated/rust/domain/model/msg_struct.dart' show MsgStruct;
 import 'message_service_notifier.dart';
 
 /// 一次发送的「本地受理结果」。

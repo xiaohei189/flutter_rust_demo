@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_rust_demo/data/mappers/conversation_mapper.dart';
-import 'package:flutter_rust_demo/generated/rust/model/local.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/local.dart';
 
 void main() {
   group('ConversationMapper', () {

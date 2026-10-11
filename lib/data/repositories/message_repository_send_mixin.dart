@@ -1,11 +1,11 @@
 import '../../domain/models/chat_message.dart' show ChatMessage;
-import '../../generated/rust/ffi/client.dart' show OpenImBridgeClient;
-import '../../generated/rust/constant/enums.dart' show SessionType;
-import '../../generated/rust/ffi/message.dart' as ffi_message;
-import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
-import '../../generated/rust/ffi/message_builder.dart' as ffi_message_builder;
-import '../../generated/rust/http/message.dart' show RevokeMessageReq;
-import '../../generated/rust/model/msg_struct.dart'
+import '../../generated/rust/api/ffi/client.dart' show OpenImBridgeClient;
+import '../../generated/rust/domain/constant/enums.dart' show SessionType;
+import '../../generated/rust/api/ffi/message.dart' as ffi_message;
+import '../../generated/rust/api/ffi/message_advanced.dart' as ffi_message_advanced;
+import '../../generated/rust/api/ffi/message_builder.dart' as ffi_message_builder;
+import '../../generated/rust/infra/http/message.dart' show RevokeMessageReq;
+import '../../generated/rust/domain/model/msg_struct.dart'
     show MsgStruct, PictureBaseInfo, CardElem;
 import '../mappers/message_mapper.dart'
     show messageFromMsgStruct, msgStructFromChatMessage;

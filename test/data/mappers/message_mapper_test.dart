@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/mappers/message_mapper.dart';
-import 'package:flutter_rust_demo/generated/rust/event/events/message.dart'
+import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart'
     as generated_events;
 
 void main() {

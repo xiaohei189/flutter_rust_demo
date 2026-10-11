@@ -1,4 +1,6 @@
-rust_input: crate::ffi
+# FFI 入口模块：Rust 五层重构后为 rust/src/api/ffi（旧的 crate::ffi 已不存在，
+# 会让 codegen 扫不到任何 API 并产出空壳绑定）。
+rust_input: crate::api::ffi
 rust_root: rust/
 dart_output: lib/generated/rust
 # 64 位整型（i64/u64/usize/isize）全平台生成 int，避免 web 下 BigInt 语义导致

@@ -13,9 +13,9 @@ import 'package:flutter_rust_demo/domain/models/chat_session_type.dart'
     show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/message.dart'
     show MessageSendStatus;
-import 'package:flutter_rust_demo/generated/rust/constant/enums.dart'
+import 'package:flutter_rust_demo/generated/rust/domain/constant/enums.dart'
     show SessionType;
-import 'package:flutter_rust_demo/generated/rust/model/msg_struct.dart'
+import 'package:flutter_rust_demo/generated/rust/domain/model/msg_struct.dart'
     show MsgStruct;
 
 /// 只用真实 Reducer 维护状态，避免依赖 FFI 客户端。

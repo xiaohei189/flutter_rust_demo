@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../../../generated/rust/event/events/connection.dart';
+import '../../../generated/rust/core/event/events/connection.dart';
 import '../../../data/services/connection_service.dart';
 import '../../../data/services/login_storage.dart';
 import '../../../data/services/navigation_service.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_rust_demo/generated/rust/model/local.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/local.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/domain/models/group_read_receipt.dart'

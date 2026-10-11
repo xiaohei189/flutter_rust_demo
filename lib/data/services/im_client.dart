@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:path_provider/path_provider.dart';
 
-import '../../generated/rust/ffi/client.dart';
-import '../../generated/rust/ffi/ffi_init.dart';
-import '../../generated/rust/event/events/connection.dart';
-import '../../generated/rust/event/events/conversation.dart';
-import '../../generated/rust/event/events/friend.dart';
-import '../../generated/rust/event/events/group.dart';
-import '../../generated/rust/event/events/message.dart';
-import '../../generated/rust/event/events/user.dart';
-import '../../generated/rust/client/config.dart';
+import '../../generated/rust/api/ffi/client.dart';
+import '../../generated/rust/api/ffi/ffi_init.dart';
+import '../../generated/rust/core/event/events/connection.dart';
+import '../../generated/rust/core/event/events/conversation.dart';
+import '../../generated/rust/core/event/events/friend.dart';
+import '../../generated/rust/core/event/events/group.dart';
+import '../../generated/rust/core/event/events/message.dart';
+import '../../generated/rust/core/event/events/user.dart';
+import '../../generated/rust/core/config.dart';
 import '../../core/utils/app_logger.dart';
 
 /// IM 客户端管理 - 负责 OpenImBridgeClient 的创建和管理

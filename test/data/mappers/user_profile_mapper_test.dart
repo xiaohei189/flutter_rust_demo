@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/mappers/user_profile_mapper.dart';
-import 'package:flutter_rust_demo/generated/rust/model/user.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/user.dart';
 
 void main() {
   test('UserProfileMapper.fromUserInfo 保留核心字段', () {

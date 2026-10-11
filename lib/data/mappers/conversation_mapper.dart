@@ -1,5 +1,5 @@
 import '../../domain/models/conversation.dart';
-import '../../generated/rust/model/local.dart' show LocalConversation;
+import '../../generated/rust/domain/model/local.dart' show LocalConversation;
 
 /// 会话领域模型与生成的 LocalConversation 之间的映射。
 class ConversationMapper {

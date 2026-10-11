@@ -7,11 +7,11 @@ import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
-import 'package:flutter_rust_demo/generated/rust/model/local.dart'
+import 'package:flutter_rust_demo/generated/rust/domain/model/local.dart'
     show LocalConversation;
-import 'package:flutter_rust_demo/generated/rust/model/message.dart'
+import 'package:flutter_rust_demo/generated/rust/domain/model/message.dart'
     show MessageInfo;
-import 'package:flutter_rust_demo/generated/rust/event/events/message.dart'
+import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart'
     show MessageReceipt;
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 

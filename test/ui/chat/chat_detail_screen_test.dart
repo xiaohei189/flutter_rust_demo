@@ -14,7 +14,7 @@ import 'package:flutter_rust_demo/ui/chat/widgets/shared/chat_detail_app_bar.dar
 import 'package:flutter_rust_demo/ui/chat/views/chat_detail_screen.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/profile/view_models/user_profile_view_model.dart';
-import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
+import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart';
 import 'package:flutter_rust_demo/domain/models/chat_session_type.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;

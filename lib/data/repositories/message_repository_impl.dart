@@ -11,10 +11,10 @@ import '../../domain/models/user_profile.dart'
 import '../mappers/conversation_mapper.dart';
 import '../mappers/message_mapper.dart';
 import '../mappers/user_profile_mapper.dart';
-import '../../generated/rust/client.dart';
-import '../../generated/rust/constant/enums.dart' show SessionType;
-import '../../generated/rust/ffi/message_advanced.dart' as ffi_message_advanced;
-import '../../generated/rust/ffi/client.dart';
+import '../../generated/rust/sdk/client.dart';
+import '../../generated/rust/domain/constant/enums.dart' show SessionType;
+import '../../generated/rust/api/ffi/message_advanced.dart' as ffi_message_advanced;
+import '../../generated/rust/api/ffi/client.dart';
 
 import 'message_repository.dart';
 import 'message_repository_send_mixin.dart';

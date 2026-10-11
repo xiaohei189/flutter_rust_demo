@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import '../../../data/services/online_status_service.dart';
-import '../../../generated/rust/event/events/friend.dart';
-import '../../../generated/rust/event/events/group.dart';
+import '../../../generated/rust/core/event/events/friend.dart';
+import '../../../generated/rust/core/event/events/group.dart';
 import '../../../data/mappers/message_mapper.dart'
     show groupReadReceiptsFromGenerated;
 import '../../../domain/models/group_read_receipt.dart' show GroupReadReceipt;
-import '../../../generated/rust/event/events/user.dart';
+import '../../../generated/rust/core/event/events/user.dart';
 import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 import 'message_service_reducer.dart';

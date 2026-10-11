@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_application_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_repository.dart';
 import 'package:flutter_rust_demo/data/repositories/friend_search_repository.dart';
-import 'package:flutter_rust_demo/generated/rust/http/friend.dart';
-import 'package:flutter_rust_demo/generated/rust/model/friend.dart';
+import 'package:flutter_rust_demo/generated/rust/infra/http/friend.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/friend.dart';
 
 void main() {
   group('FriendRepository mapping', () {

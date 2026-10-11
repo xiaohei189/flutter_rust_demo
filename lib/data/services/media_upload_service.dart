@@ -1,4 +1,4 @@
-import '../../generated/rust/ffi/message_media.dart' as ffi_message_media;
+import '../../generated/rust/api/ffi/message_media.dart' as ffi_message_media;
 
 abstract class MediaUploadService {
   Future<String> uploadFile({

@@ -4,7 +4,7 @@ import 'package:flutter_rust_demo/domain/models/chat_session_type.dart'
     show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/message_search_result.dart'
     show MessageSearchResult;
-import 'package:flutter_rust_demo/generated/rust/constant/enums.dart'
+import 'package:flutter_rust_demo/generated/rust/domain/constant/enums.dart'
     show SessionType;
 
 import 'message_service_notifier.dart';

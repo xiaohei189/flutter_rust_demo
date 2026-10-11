@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/application/chat/message_service_notifier.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import '../../support/fakes/fake_message_repository.dart';
-import 'package:flutter_rust_demo/generated/rust/event/events/message.dart';
-import 'package:flutter_rust_demo/generated/rust/model/message.dart' show MessageInfo;
+import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/message.dart' show MessageInfo;
 
 MessageInfo _makeMessage(String clientMsgId, int seq, int sendTime) =>
     MessageInfo(

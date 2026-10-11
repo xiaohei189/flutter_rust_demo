@@ -6,38 +6,38 @@
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
-import 'client.dart';
-import 'client/config.dart';
-import 'constant/enums.dart';
+import 'api/ffi/client.dart';
+import 'api/ffi/ffi_init.dart';
+import 'api/ffi/global.dart';
+import 'api/ffi/message.dart';
+import 'api/ffi/message_advanced.dart';
+import 'api/ffi/message_builder.dart';
+import 'api/ffi/message_media.dart';
+import 'api/ffi/third.dart';
+import 'core/config.dart';
+import 'core/event/events/connection.dart';
+import 'core/event/events/conversation.dart';
+import 'core/event/events/friend.dart';
+import 'core/event/events/group.dart';
+import 'core/event/events/message.dart';
+import 'core/event/events/user.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'event/events/connection.dart';
-import 'event/events/conversation.dart';
-import 'event/events/friend.dart';
-import 'event/events/group.dart';
-import 'event/events/message.dart';
-import 'event/events/user.dart';
-import 'ffi/client.dart';
-import 'ffi/ffi_init.dart';
-import 'ffi/global.dart';
-import 'ffi/message.dart';
-import 'ffi/message_advanced.dart';
-import 'ffi/message_builder.dart';
-import 'ffi/message_media.dart';
-import 'ffi/third.dart';
+import 'domain/constant/enums.dart';
+import 'domain/model/friend.dart';
+import 'domain/model/group.dart';
+import 'domain/model/local.dart';
+import 'domain/model/message.dart';
+import 'domain/model/msg_struct.dart';
+import 'domain/model/user.dart';
 import 'frb_generated.dart';
-import 'http/friend.dart';
-import 'http/group.dart';
-import 'http/message.dart';
-import 'http/online.dart';
-import 'logger/config.dart';
-import 'model/friend.dart';
-import 'model/group.dart';
-import 'model/local.dart';
-import 'model/message.dart';
-import 'model/msg_struct.dart';
-import 'model/user.dart';
+import 'infra/http/friend.dart';
+import 'infra/http/group.dart';
+import 'infra/http/message.dart';
+import 'infra/http/online.dart';
+import 'infra/logger/config.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
+import 'sdk/client.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({

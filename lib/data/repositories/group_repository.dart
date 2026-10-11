@@ -3,9 +3,9 @@ import '../../domain/models/group_application.dart';
 import '../../domain/models/group_member.dart';
 import '../services/group_service.dart';
 import '../services/im_client.dart';
-import '../../generated/rust/ffi/client.dart';
-import '../../generated/rust/http/group.dart' show GroupApplyInfo;
-import '../../generated/rust/model/group.dart' as raw_group;
+import '../../generated/rust/api/ffi/client.dart';
+import '../../generated/rust/infra/http/group.dart' show GroupApplyInfo;
+import '../../generated/rust/domain/model/group.dart' as raw_group;
 
 abstract class GroupRepository {
   Future<List<Group>> loadGroups({int offset = 0, int count = 50});

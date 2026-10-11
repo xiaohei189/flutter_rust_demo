@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_rust_demo/generated/rust/ffi/ffi_init.dart'
+import 'package:flutter_rust_demo/generated/rust/api/ffi/ffi_init.dart'
     show setLogDirectory;
 import 'package:flutter_rust_demo/generated/rust/frb_generated.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,7 +15,7 @@ import 'data/services/app_lifecycle_service.dart';
 import 'data/services/im_client.dart';
 import 'data/services/local_notification_service.dart';
 import 'data/services/locale_service.dart';
-import 'generated/rust/ffi/global.dart' show setAppBackgroundStatus;
+import 'generated/rust/api/ffi/global.dart' show setAppBackgroundStatus;
 import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'ui/core/theme/app_theme.dart';
