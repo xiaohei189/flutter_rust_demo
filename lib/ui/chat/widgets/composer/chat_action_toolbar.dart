@@ -224,33 +224,34 @@ class _VoiceToolbarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final btn = Tooltip(
+    // Tooltip 必须在 GestureDetector **外层**：Tooltip 默认用长按触发，
+    // 放在内层会先抢到长按手势，导致「长按录音」永远收不到回调（真机表现为按了没反应）。
+    return Tooltip(
       message: '语音（长按录音，上滑取消）',
-      child: Semantics(
-        label: '语音（长按录音，上滑取消）',
-        button: true,
-        child: SizedBox(
-          // 工具栏图标尺寸（图标 24 居中）：调小 → 图标之间间距更小
-          width: 36,
-          height: 36,
-          child: IconButton(
-            icon: Icon(
-              Icons.mic_none,
-              size: 24,
-              color: colors.textPrimary.withValues(alpha: 0.7),
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPressStart: onLongPressStart,
+        onLongPressMoveUpdate: onLongPressMoveUpdate,
+        onLongPressEnd: onLongPressEnd,
+        child: Semantics(
+          label: '语音（长按录音，上滑取消）',
+          button: true,
+          child: SizedBox(
+            // 工具栏图标尺寸（图标 24 居中）：调小 → 图标之间间距更小
+            width: 36,
+            height: 36,
+            child: IconButton(
+              icon: Icon(
+                Icons.mic_none,
+                size: 24,
+                color: colors.textPrimary.withValues(alpha: 0.7),
+              ),
+              onPressed: null,
+              padding: EdgeInsets.zero,
             ),
-            onPressed: null,
-            padding: EdgeInsets.zero,
           ),
         ),
       ),
-    );
-    return GestureDetector(
-      onTap: onTap,
-      onLongPressStart: onLongPressStart,
-      onLongPressMoveUpdate: onLongPressMoveUpdate,
-      onLongPressEnd: onLongPressEnd,
-      child: btn,
     );
   }
 }
