@@ -12,6 +12,7 @@ import '../../../../ui/chat/widgets/list/chat_list_item.dart';
 import '../../../../ui/chat/widgets/shared/conversation_title_bar.dart';
 import '../../../../ui/chat/widgets/list/group_filter_panel.dart';
 import '../../../../ui/chat/widgets/list/chat_list_skeleton.dart';
+import '../../../../ui/shared/widgets/app_dropdown_menu.dart';
 import '../../../../ui/profile/views/profile_drawer_screen.dart';
 import '../../profile/providers/user_profile_provider.dart';
 import '../../core/view_models/connection_view_model.dart';
@@ -34,6 +35,9 @@ class ChatListScreen extends ConsumerStatefulWidget {
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   late final ChatListViewModel _viewModel;
   late final ChatListDialogs _dialogs;
+
+  /// 顶部「+」按钮，用于给下拉菜单定位。
+  final GlobalKey _addButtonKey = GlobalKey();
 
   bool _selectionMode = false;
   final Set<String> _selectedIds = <String>{};
@@ -131,6 +135,42 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     );
   }
 
+  /// 右上角「+」菜单。飞书稿里这一栏很长，本仓库先落「扫一扫」「创建群组」
+  /// 两个真实入口，其余（添加成员/文档/会议等）等对应功能就绪再逐个补。
+  void _openAddMenu() {
+    showAppDropdownMenu(
+      context: context,
+      anchorKey: _addButtonKey,
+      items: [
+        AppMenuItem(
+          key: const ValueKey('chat_add_menu_scan'),
+          icon: Icons.qr_code_scanner,
+          label: '扫一扫',
+          onTap: _scanQrCode,
+        ),
+        AppMenuItem(
+          key: const ValueKey('chat_add_menu_create_group'),
+          icon: Icons.group_add_outlined,
+          label: '创建群组',
+          onTap: () => AppRouter.goToCreateGroup(context),
+        ),
+        AppMenuItem(
+          key: const ValueKey('chat_add_menu_multi_select'),
+          icon: Icons.checklist,
+          label: '多选管理',
+          onTap: _enterSelectionMode,
+        ),
+      ],
+    );
+  }
+
+  /// 扫一扫：识别结果交给 [ChatListDialogs.handleScanResult] 决定去向。
+  Future<void> _scanQrCode() async {
+    final raw = await AppRouter.goToScan(context);
+    if (!mounted || raw == null || raw.isEmpty) return;
+    _dialogs.handleScanResult(context, raw);
+  }
+
   /// 打开分组管理页；返回后如果当前筛选的分组已被删除或改名，就退回「消息」。
   Future<void> _openFolderManageScreen() async {
     await Navigator.of(context).push(
@@ -173,6 +213,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       backgroundColor: colors.surface,
       appBar: ConversationTitleBar(
         currentUserId: currentUserId,
+        addButtonKey: _addButtonKey,
         nickname: userProfileState.profile?.nickname,
         statusText: userProfileState.signature,
         avatarUrl: _viewModel.displayAvatarUrl,
@@ -198,7 +239,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           AppRouter.goToSearch(context);
         },
         onRefresh: _viewModel.refreshConversations,
-        onManage: _enterSelectionMode,
+        onAddTap: _openAddMenu,
       ),
       body: Column(
         children: [

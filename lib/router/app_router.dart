@@ -179,9 +179,9 @@ class AppRouter {
     context.push(AppPaths.createGroup);
   }
 
-  /// 导航到扫码页
-  static void goToScan(BuildContext context) {
-    context.push(AppPaths.scan);
+  /// 导航到扫码页；识别成功返回扫到的原始字符串，取消返回 null。
+  static Future<String?> goToScan(BuildContext context) {
+    return context.push<String>(AppPaths.scan);
   }
 
   /// 导航到二维码页

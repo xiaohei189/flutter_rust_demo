@@ -6,13 +6,16 @@ import '../../../core/theme/app_theme.dart';
 
 /// 会话列表顶部栏（参考飞书风格）
 /// 左侧：用户头像 + 昵称/用户名
-/// 右侧：搜索图标 + 「+」按钮（仅保留列表批量操作「多选管理」，
-/// 其余应用类入口已收敛到「工作台」Tab）
+/// 右侧：搜索图标 + 「+」按钮
+///
+/// 「+」只负责报位置和回调，菜单项由页面提供：菜单要贴着按钮弹出，
+/// 需要拿到按钮的 [addButtonKey] 算坐标；菜单内容属于页面语义，不放在这里。
 class ConversationTitleBar extends StatelessWidget
     implements PreferredSizeWidget {
   const ConversationTitleBar({
     super.key,
     required this.currentUserId,
+    required this.addButtonKey,
     this.nickname,
     this.avatarUrl,
     this.statusText,
@@ -21,11 +24,14 @@ class ConversationTitleBar extends StatelessWidget
     this.syncProgress = 0,
     this.onAvatarTap,
     this.onSearchTap,
-    this.onManage,
+    this.onAddTap,
     this.onRefresh,
   });
 
   final String currentUserId;
+
+  /// 挂在「+」按钮上的 key，供 [showAppDropdownMenu] 计算弹出位置。
+  final GlobalKey addButtonKey;
   final String? nickname;
   final String? avatarUrl;
   final String? statusText;
@@ -34,7 +40,7 @@ class ConversationTitleBar extends StatelessWidget
   final int syncProgress;
   final VoidCallback? onAvatarTap;
   final VoidCallback? onSearchTap;
-  final VoidCallback? onManage;
+  final VoidCallback? onAddTap;
   final VoidCallback? onRefresh;
 
   String get _displayName {
@@ -154,26 +160,20 @@ class ConversationTitleBar extends StatelessWidget
                 ),
               ),
             ),
-            PopupMenuButton<String>(
-              icon: Icon(Icons.add_circle, size: 30, color: colors.textPrimary),
-              color: colors.surface,
-              onSelected: (value) {
-                switch (value) {
-                  case 'manage':
-                    onManage?.call();
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'manage',
-                  child: ListTile(
-                    leading: Icon(Icons.checklist),
-                    title: Text('多选管理'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
+            Semantics(
+              key: const ValueKey('chat_add_button'),
+              label: '添加',
+              button: true,
+              child: IconButton(
+                key: addButtonKey,
+                icon: const Icon(Icons.add_circle, size: 30),
+                color: colors.textPrimary,
+                onPressed: onAddTap,
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(40, 40),
                 ),
-              ],
+              ),
             ),
           ],
         ),
