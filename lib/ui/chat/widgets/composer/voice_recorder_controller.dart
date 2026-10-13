@@ -77,15 +77,20 @@ class VoiceRecorderController extends ChangeNotifier {
   ]) async {
     _recordingTimer?.cancel();
     _recordingTimer = null;
-    if (_isRecording) {
-      _isRecording = false;
+    // 先取出取消标记再复位：否则「上滑取消」结束后标记会残留，
+    // 语音面板会一直停在红色的「松开手指，取消发送」状态。
+    final wasCancel = _recordingCancel;
+    final wasRecording = _isRecording;
+    _recordingCancel = false;
+    _isRecording = false;
+    if (wasRecording || wasCancel) {
       notifyListeners();
     }
 
     if (_recordingPath == null || _recordingStart == null) return;
 
     // 横滑/上滑取消：先停止录音（否则麦克风会一直占用），再丢弃文件
-    if (_recordingCancel) {
+    if (wasCancel) {
       final path = _recordingPath;
       _recordingPath = null;
       _recordingStart = null;
@@ -138,6 +143,7 @@ class VoiceRecorderController extends ChangeNotifier {
   void _clearRecording() {
     _recordingPath = null;
     _recordingStart = null;
+    _recordingCancel = false;
     if (_isRecording) {
       _isRecording = false;
       notifyListeners();

@@ -219,41 +219,81 @@ class AudioMessageContent extends StatelessWidget {
         }
         onPlay?.call(message.soundSource);
       },
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isPlayingThis
-                    ? Icons.stop_circle_outlined
-                    : Icons.play_circle_outline,
-                size: 24,
-                color: isFromMe
-                    ? context.appColors.onPrimary
-                    : context.appColors.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                message.audioDurationString,
-                style: TextStyle(color: foreground, fontSize: 16),
-              ),
-            ],
+          // 圆形播放/停止按钮（对齐飞书：对方语音为蓝底白图标，自己语音为半透明白底）
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isFromMe
+                  ? context.appColors.onPrimary.withValues(alpha: 0.22)
+                  : context.appColors.primary,
+            ),
+            child: Icon(
+              isPlayingThis ? Icons.stop_rounded : Icons.play_arrow_rounded,
+              size: 20,
+              color: context.appColors.onPrimary,
+            ),
           ),
-          // 进度条常驻（闲置时为 0），避免播放开始/结束时气泡高度突变导致列表位移。
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: SizedBox(
-              width: 96,
-              child: LinearProgressIndicator(
-                value: isPlayingThis ? (playback?.progress ?? 0) : 0,
-                minHeight: 2,
-                backgroundColor: foreground.withValues(alpha: 0.25),
-                color: isFromMe
-                    ? context.appColors.onPrimary
-                    : context.appColors.primary,
+          const SizedBox(width: 10),
+          AudioProgressTrack(
+            progress: isPlayingThis ? (playback?.progress ?? 0) : 0,
+            trackColor: foreground.withValues(alpha: 0.25),
+            dotColor: isFromMe
+                ? context.appColors.onPrimary
+                : context.appColors.surface,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            message.audioDurationString,
+            style: TextStyle(color: foreground, fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 语音播放进度轨道：浅色底线 + 随进度移动的圆点（对齐飞书气泡）。
+///
+/// 空闲（未播放）时圆点停在最左端，播放中随进度右移；轨道宽度固定，
+/// 因此开始/结束播放不会改变气泡高度与宽度。
+class AudioProgressTrack extends StatelessWidget {
+  const AudioProgressTrack({
+    super.key,
+    required this.progress,
+    required this.trackColor,
+    required this.dotColor,
+    this.width = 72,
+  });
+
+  final double progress;
+  final Color trackColor;
+  final Color dotColor;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = progress.clamp(0.0, 1.0);
+    return SizedBox(
+      width: width,
+      height: 8,
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          Container(width: width, height: 2, color: trackColor),
+          // 圆点位置 = 进度：用 Align(-1 ~ 1) 把 0~1 映射到轨道两端
+          Align(
+            alignment: Alignment(value * 2 - 1, 0),
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: dotColor,
               ),
             ),
           ),
