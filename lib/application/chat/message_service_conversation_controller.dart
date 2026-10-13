@@ -108,8 +108,13 @@ class MessageServiceConversationController {
           isTyping: platformIds.isNotEmpty,
         );
       },
-      syncFailed: (reinstalled, e) =>
-          appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e'),
+      syncFailed: (reinstalled, e) {
+        appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e');
+        // 同步失败也要收起进度条：否则「同步中」会永远停在最后一次进度上。
+        service.updateState(
+          service.currentState.copyWith(isSyncingConversations: false),
+        );
+      },
       orElse: () {},
     );
   }

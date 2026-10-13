@@ -189,7 +189,7 @@ impl ConnectionApi for OpenIMClient {
                 let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
                 if stage < sync_flag::SYNC_STAGE_DONE {
                     debug!("[SDK] 重装阶段：消息全量同步");
-                    let _ = message_syncer.sync_all_conversations(true).await;
+                    let _ = message_syncer.sync_reinstall_full().await;
                     let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_DONE).await;
                 }
             } else {
