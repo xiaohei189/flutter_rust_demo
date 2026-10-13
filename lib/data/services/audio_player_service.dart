@@ -85,20 +85,32 @@ class AudioPlayerService {
 
   bool get isPlaying => _player?.state == PlayerState.playing;
 
-  Future<void> play(String source) async {
+  /// 播放语音，返回是否成功开始播放。
+  ///
+  /// 本地临时文件被清理、远端 URL 不可达等情况下播放器会直接抛错；
+  /// 这里必须把播放态复位，否则气泡会永远停在「播放中」的停止图标上。
+  Future<bool> play(String source) async {
     final player = _ensurePlayer;
     if (_currentSource == source && isPlaying) {
       await player.stop();
       _currentSource = null;
       playback.value = const AudioPlaybackState();
-      return;
+      return true;
     }
     _currentSource = source;
     await player.stop();
     playback.value = AudioPlaybackState(source: source, isPlaying: true);
-    await player.play(
-      source.startsWith('http') ? UrlSource(source) : DeviceFileSource(source),
-    );
+    try {
+      await player.play(
+        source.startsWith('http') ? UrlSource(source) : DeviceFileSource(source),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[AudioPlayer] 播放失败: source=$source err=$e');
+      _currentSource = null;
+      playback.value = const AudioPlaybackState();
+      return false;
+    }
   }
 
   Future<void> stop() async {

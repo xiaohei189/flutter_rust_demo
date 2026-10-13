@@ -1066,7 +1066,25 @@ impl MessageSender {
         // 上传/提交失败同样要把已上屏的那条消息收敛为失败（否则永远转圈且不可重发）。
         let conversation_id = conversation_id_for_msg(&msg);
         match process_media_content_impl(&self.file_uploader, &msg, Some(upload_progress_callback(&self.context, &msg.client_msg_id))).await {
-            Ok(content) => msg.content = content,
+            Ok(content) => {
+                let backfilled = content != msg.content;
+                msg.content = content;
+                // 上传回填的 URL 必须写回本地行：本地是「先入库上屏（只有本地临时路径、
+                // URL 为空）→ 再上传」的顺序，而 batch_insert 是 INSERT OR IGNORE，
+                // 上传后的内容写不进去。临时文件上传后已删除，行里留着旧内容会让
+                // 发送方自己的语音/图片永远打不开（sourceUrl 为空、路径已失效）。
+                if backfilled && !online_only {
+                    if let Err(e) = self
+                        .context
+                        .repositories
+                        .message_repo
+                        .update_message_content_and_type(&conversation_id, &msg.client_msg_id, &msg.content, msg.content_type)
+                        .await
+                    {
+                        error!("回填媒体消息内容失败: client_msg_id={}, err={}", msg.client_msg_id, e);
+                    }
+                }
+            }
             Err(e) => {
                 if !online_only {
                     mark_send_failed_impl(&self.context, &msg.client_msg_id, &format!("{}", e)).await;

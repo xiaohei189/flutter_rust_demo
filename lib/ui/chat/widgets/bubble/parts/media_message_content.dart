@@ -239,16 +239,22 @@ class AudioMessageContent extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          AudioProgressTrack(
-            progress: isPlayingThis ? (playback?.progress ?? 0) : 0,
-            trackColor: foreground.withValues(alpha: 0.25),
-            dotColor: isFromMe
-                ? context.appColors.onPrimary
-                : context.appColors.surface,
+          // 轨道可收缩：气泡最大宽度受屏宽限制，固定宽度会把时长挤出气泡外（真机溢出）
+          Flexible(
+            fit: FlexFit.loose,
+            child: AudioProgressTrack(
+              progress: isPlayingThis ? (playback?.progress ?? 0) : 0,
+              trackColor: foreground.withValues(alpha: 0.25),
+              dotColor: isFromMe
+                  ? context.appColors.onPrimary
+                  : context.appColors.surface,
+            ),
           ),
           const SizedBox(width: 10),
           Text(
             message.audioDurationString,
+            maxLines: 1,
+            softWrap: false,
             style: TextStyle(color: foreground, fontSize: 15),
           ),
         ],
@@ -281,23 +287,31 @@ class AudioProgressTrack extends StatelessWidget {
     return SizedBox(
       width: width,
       height: 8,
-      child: Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          Container(width: width, height: 2, color: trackColor),
-          // 圆点位置 = 进度：用 Align(-1 ~ 1) 把 0~1 映射到轨道两端
-          Align(
-            alignment: Alignment(value * 2 - 1, 0),
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: dotColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 父级给了更窄的宽度（气泡被屏宽限制）时按实际可用宽度画，避免溢出
+          final trackWidth = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : width;
+          return Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Container(width: trackWidth, height: 2, color: trackColor),
+              // 圆点位置 = 进度：用 Align(-1 ~ 1) 把 0~1 映射到轨道两端
+              Align(
+                alignment: Alignment(value * 2 - 1, 0),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

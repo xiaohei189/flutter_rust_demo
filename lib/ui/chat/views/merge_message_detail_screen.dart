@@ -136,8 +136,14 @@ class MergeMessageDetailScreen extends ConsumerWidget {
             avatar: sub.senderFaceUrl.isNotEmpty ? sub.senderFaceUrl : null,
           ),
           currentUserId: currentUserId,
-          onPlayAudio: (source) =>
-              ref.read(audioPlayerServiceProvider).play(source),
+          onPlayAudio: (source) async {
+            final ok = await ref.read(audioPlayerServiceProvider).play(source);
+            if (!ok && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('语音播放失败：文件已失效或网络不可用')),
+              );
+            }
+          },
           onTap:
               sub.messageType == MessageType.image &&
                   sub.displayImageSource.isNotEmpty

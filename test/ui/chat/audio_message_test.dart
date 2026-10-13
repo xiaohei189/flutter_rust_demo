@@ -7,6 +7,8 @@ import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/widgets/bubble/parts/media_message_content.dart'
     show AudioMessageContent, AudioProgressTrack;
+import 'package:flutter_rust_demo/ui/chat/widgets/bubble/message_bubble.dart';
+import 'package:flutter_rust_demo/domain/models/user.dart' show User;
 
 ChatMessage _audioMessage({String source = 'https://cdn.example.com/a.mp3'}) {
   return ChatMessage(
@@ -129,6 +131,40 @@ void main() {
       );
 
       expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    });
+
+    testWidgets('窄屏（真机 1080x2340 @2.75）下语音气泡不溢出', (tester) async {
+      // 回归：气泡最大宽度受屏宽限制，固定宽度的按钮+轨道+时长会把时长挤出气泡，
+      // 真机上表现为「RIGHT OVERFLOWED BY 15 PIXELS」。
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.reset);
+
+      final windowWidth = 1080 / 2.75;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.centerLeft,
+              child: MessageBubble(
+                message: _audioMessage(),
+                otherUser: const User(id: 'me', name: '我'),
+                // sendId='other' 且 currentUserId='other' → 己方气泡（真机溢出的正是这种）
+                currentUserId: 'other',
+                maxBubbleWidth: windowWidth * 0.65,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0:08'), findsOneWidget);
+      // 轨道按可用宽度收缩，把空间让给时长（固定 72 宽会溢出）
+      expect(
+        tester.getSize(find.byType(AudioProgressTrack)).width,
+        lessThan(72),
+      );
     });
   });
 }

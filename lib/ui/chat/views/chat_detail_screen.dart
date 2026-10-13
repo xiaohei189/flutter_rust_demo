@@ -626,8 +626,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onMessageTap: _handleMessageTap,
             // 点失败标记直接重发（对齐飞书/微信）
             onRetrySend: _messageActions.resend,
-            onPlayAudio: (source) =>
-                ref.read(audioPlayerServiceProvider).play(source),
+            onPlayAudio: (source) async {
+              final ok = await ref
+                  .read(audioPlayerServiceProvider)
+                  .play(source);
+              if (!ok && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('语音播放失败：文件已失效或网络不可用')),
+                );
+              }
+            },
           ),
         ),
       ),
