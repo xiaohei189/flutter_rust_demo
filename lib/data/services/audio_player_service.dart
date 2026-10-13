@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 /// 语音播放状态（供气泡展示播放中动画/进度）。
 class AudioPlaybackState {
@@ -101,9 +105,11 @@ class AudioPlayerService {
     await player.stop();
     playback.value = AudioPlaybackState(source: source, isPlaying: true);
     try {
-      await player.play(
-        source.startsWith('http') ? UrlSource(source) : DeviceFileSource(source),
-      );
+      // 远端语音先落盘再播：`/object/...` 是 302 跳转到对象存储的地址，
+      // Android 平台的 MediaPlayer 走这条链路会卡住不返回（真机 MIUI 实测
+      // 30s 超时后报「Future not completed」），Dart 侧下载后按文件播最稳。
+      final playPath = await _localFileFor(source) ?? source;
+      await player.play(DeviceFileSource(playPath));
       return true;
     } catch (e) {
       debugPrint('[AudioPlayer] 播放失败: source=$source err=$e');
@@ -111,6 +117,37 @@ class AudioPlayerService {
       playback.value = const AudioPlaybackState();
       return false;
     }
+  }
+
+  /// 远端地址返回本地缓存文件路径（已缓存则直接复用）；本地路径返回 null。
+  Future<String?> _localFileFor(String source) async {
+    if (!source.startsWith('http')) return null;
+    final dir = Directory('${(await getTemporaryDirectory()).path}/audio_cache');
+    if (!dir.existsSync()) {
+      await dir.create(recursive: true);
+    }
+    final rawName = source.split('/').last.split('?').first;
+    final safeName = rawName.replaceAll(RegExp(r'[^\w.\-]'), '_');
+    final file = File('${dir.path}/${_stableKey(source)}_$safeName');
+    if (file.existsSync() && file.lengthSync() > 0) return file.path;
+
+    final resp = await http
+        .get(Uri.parse(source))
+        .timeout(const Duration(seconds: 20));
+    if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
+      throw Exception('语音下载失败: HTTP ${resp.statusCode}');
+    }
+    await file.writeAsBytes(resp.bodyBytes, flush: true);
+    return file.path;
+  }
+
+  /// 稳定的缓存键（String.hashCode 跨进程不保证一致，会让缓存文件越攒越多）
+  String _stableKey(String value) {
+    var hash = 0x811c9dc5;
+    for (final unit in value.codeUnits) {
+      hash = ((hash ^ unit) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16);
   }
 
   Future<void> stop() async {
