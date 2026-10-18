@@ -260,6 +260,9 @@ pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, ms
     local_log.send_time = send_time;
     local_log.create_time = send_time;
     local_log.status = MessageSendStatus::Sending as i32;
+    // 会话列表预览存完整消息信封（客户端要靠 contentType 渲染「[语音]」等文案）；
+    // 必须在 move 进 batch_insert 之前算好。
+    let latest_msg = crate::core::conversation::converter::latest_msg_envelope(&local_log);
 
     context.repositories.message_repo.batch_insert(&[local_log]).await?;
     context
@@ -271,7 +274,7 @@ pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, ms
             ex: String::new(),
         })
         .await?;
-    context.repositories.conversation_repo.update_after_sent_message(&conversation_id, &msg.content, send_time).await?;
+    context.repositories.conversation_repo.update_after_sent_message(&conversation_id, &latest_msg, send_time).await?;
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
     if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
