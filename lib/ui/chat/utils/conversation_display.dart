@@ -44,6 +44,7 @@ String latestMessagePreview(String latestMsgJson) {
     if (map == null) return '暂无消息';
 
     final contentType = _getKey<int>(map, 'contentType', 'content_type') ?? 0;
+    final sessionType = _getKey<int>(map, 'sessionType', 'session_type') ?? 0;
     final senderNickname =
         _getKey<String>(map, 'senderNickname', 'sender_nickname') ?? '';
     final content = map['content'];
@@ -118,7 +119,8 @@ String latestMessagePreview(String latestMsgJson) {
     }
 
     if (body.isEmpty) body = '暂无消息';
-    if (senderNickname.isNotEmpty && body != '暂无消息') {
+    // 对齐飞书：只有群聊预览带「发送者:」前缀，单聊直接显示正文
+    if (sessionType != 1 && senderNickname.isNotEmpty && body != '暂无消息') {
       return '$senderNickname: $body';
     }
     return body;

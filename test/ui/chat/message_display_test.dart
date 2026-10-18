@@ -57,6 +57,26 @@ void main() {
       expect(latestMessagePreview(json), '[语音]');
     });
 
+    test('群聊预览带发送者前缀', () {
+      final json = jsonEncode({
+        'contentType': 103,
+        'sessionType': 3,
+        'senderNickname': '张三',
+        'content': '{}',
+      });
+      expect(latestMessagePreview(json), '张三: [语音]');
+    });
+
+    test('单聊预览不带发送者前缀（对齐飞书）', () {
+      final json = jsonEncode({
+        'contentType': 103,
+        'sessionType': 1,
+        'senderNickname': '张三',
+        'content': '{}',
+      });
+      expect(latestMessagePreview(json), '[语音]');
+    });
+
     test('视频消息', () {
       final json = jsonEncode({'contentType': 104, 'content': '{}'});
       expect(latestMessagePreview(json), '[视频]');
