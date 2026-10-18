@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -48,6 +49,13 @@ class AudioPlaybackState {
 class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
+
+  /// 语音缓存总上限：超过后按「最久未使用」淘汰。
+  /// `cache/audio_cache` 只增不删会持续占空间，这里给一个明确上限。
+  static const int audioCacheMaxBytes = 100 * 1024 * 1024;
+
+  /// 语音缓存最长保留时间（过期直接清理）。
+  static const Duration audioCacheMaxAge = Duration(days: 7);
 
   String? _currentSource;
 
@@ -129,7 +137,10 @@ class AudioPlayerService {
     final rawName = source.split('/').last.split('?').first;
     final safeName = rawName.replaceAll(RegExp(r'[^\w.\-]'), '_');
     final file = File('${dir.path}/${_stableKey(source)}_$safeName');
-    if (file.existsSync() && file.lengthSync() > 0) return file.path;
+    if (file.existsSync() && file.lengthSync() > 0) {
+      unawaited(_trimCache(dir));
+      return file.path;
+    }
 
     final resp = await http
         .get(Uri.parse(source))
@@ -138,7 +149,65 @@ class AudioPlayerService {
       throw Exception('语音下载失败: HTTP ${resp.statusCode}');
     }
     await file.writeAsBytes(resp.bodyBytes, flush: true);
+    unawaited(_trimCache(dir));
     return file.path;
+  }
+
+  /// 清理过期/超量的语音缓存（尽力而为，失败不影响播放）。
+  Future<void> _trimCache(Directory dir) async {
+    try {
+      final files = dir.listSync().whereType<File>().toList();
+      for (final f in selectCacheEvictions(
+        files,
+        maxBytes: audioCacheMaxBytes,
+        maxAge: audioCacheMaxAge,
+      )) {
+        try {
+          f.deleteSync();
+        } catch (_) {
+          // 单个文件删不掉就跳过，下次再清
+        }
+      }
+    } catch (e) {
+      debugPrint('[AudioPlayer] 清理语音缓存失败: $e');
+    }
+  }
+
+  /// 纯计算：返回应删除的缓存文件 —— 先清过期，再按最久未使用淘汰到总量上限内。
+  ///
+  /// 拆成静态方法便于单测（不依赖播放器平台通道）。
+  static List<File> selectCacheEvictions(
+    List<File> files, {
+    required int maxBytes,
+    required Duration maxAge,
+    DateTime? now,
+  }) {
+    final cutoff = (now ?? DateTime.now()).subtract(maxAge);
+    final alive = <({File file, int size, DateTime modified})>[];
+    final doomed = <File>[];
+    for (final file in files) {
+      try {
+        final stat = file.statSync();
+        if (stat.type != FileSystemEntityType.file) continue;
+        if (stat.modified.isBefore(cutoff)) {
+          doomed.add(file);
+        } else {
+          alive.add((file: file, size: stat.size, modified: stat.modified));
+        }
+      } catch (_) {
+        // 读取失败的文件不参与统计
+      }
+    }
+    var total = alive.fold<int>(0, (sum, e) => sum + e.size);
+    if (total <= maxBytes) return doomed;
+
+    alive.sort((a, b) => a.modified.compareTo(b.modified));
+    for (final entry in alive) {
+      if (total <= maxBytes) break;
+      doomed.add(entry.file);
+      total -= entry.size;
+    }
+    return doomed;
   }
 
   /// 稳定的缓存键（String.hashCode 跨进程不保证一致，会让缓存文件越攒越多）

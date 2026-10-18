@@ -160,7 +160,29 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('0:08'), findsOneWidget);
-      // 轨道按可用宽度收缩，把空间让给时长（固定 72 宽会溢出）
+    });
+
+    testWidgets('气泡可用宽度被压得很窄时轨道收缩、仍不溢出', (tester) async {
+      // 兜底回归：任何原因导致气泡拿到的最大宽度很小（如分屏/超长昵称），
+      // 固定 72 宽的轨道会把时长挤出气泡；此时轨道应收缩。
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.centerLeft,
+              child: MessageBubble(
+                message: _audioMessage(),
+                otherUser: const User(id: 'me', name: '我'),
+                currentUserId: 'other',
+                maxBubbleWidth: 160,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0:08'), findsOneWidget);
       expect(
         tester.getSize(find.byType(AudioProgressTrack)).width,
         lessThan(72),

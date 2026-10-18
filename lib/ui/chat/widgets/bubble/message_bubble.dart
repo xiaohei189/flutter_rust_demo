@@ -124,7 +124,10 @@ class MessageBubble extends StatelessWidget {
 
     final isFromMe = _isFromMe;
     final senderUser = _buildSenderUser();
-    final screenWidth = maxBubbleWidth ?? MediaQuery.sizeOf(context).width;
+    // 列表层已按「窗口宽 × 0.65」算好上限；这里不能再乘一次 0.65，
+    // 否则气泡只有窗口宽的 42%（语音轨道/时长会被挤，文字也会过早换行）。
+    final bubbleMaxWidth =
+        maxBubbleWidth ?? MediaQuery.sizeOf(context).width * 0.65;
 
     // 图片与合并转发消息不使用外层气泡背景：图片直接展示，合并转发自带卡片背景，避免两层颜色重叠
     final isPlainContent =
@@ -140,7 +143,7 @@ class MessageBubble extends StatelessWidget {
         : otherBubbleColor;
 
     final bubble = Container(
-      constraints: BoxConstraints(maxWidth: screenWidth * 0.65),
+      constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
       padding: isPlainContent
           ? EdgeInsets.zero
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
