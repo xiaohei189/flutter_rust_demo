@@ -430,7 +430,6 @@ class _ChatInputState extends State<ChatInput> {
     _closeAllPanels();
     // 不主动收键盘：抽屉内输入框 autofocus 会接管焦点，键盘保持连续，
     // 避免“先收起键盘、抽屉弹出后再弹键盘”导致的键盘翻动。
-    final wasFocused = _focusNode.hasFocus;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -457,20 +456,12 @@ class _ChatInputState extends State<ChatInput> {
         // 收起动画开始前把焦点交还主输入框：
         // 抽屉输入框失焦会让键盘同时收起，而抽屉高度依赖 viewInsets，
         // 键盘 inset 在退出动画中一路变化，整块布局会跟着跳。
-        onBeforeCollapse: () {
-          if (wasFocused) _focusNode.requestFocus();
-        },
+        onBeforeCollapse: _focusNode.requestFocus,
       ),
     ).then((_) {
-      // 缩回后恢复打开前的输入区状态：若打开前未聚焦（工具栏收起），
-      // 则取消主输入框焦点，避免抽屉关闭后焦点回弹导致底部工具栏意外展开。
-      if (mounted && !wasFocused && _focusNode.hasFocus) {
-        _focusNode.unfocus();
-      }
-      // 兜底：打开前是聚焦态但焦点没回来时补一次，避免键盘意外收起。
-      if (mounted && wasFocused && !_focusNode.hasFocus) {
-        _focusNode.requestFocus();
-      }
+      // 无论是点「缩回」、点遮罩还是返回键关闭，都把焦点留给主输入框，
+      // 保持键盘连续（抽屉关闭时键盘不回收）。
+      if (mounted) _focusNode.requestFocus();
     });
   }
 
