@@ -28,6 +28,7 @@ class MessageComposerSheet extends StatefulWidget {
     this.onGifSelected,
     this.attachmentItems = const [],
     this.sendToLabel = '发送消息',
+    this.onBeforeCollapse,
   });
 
   final TextEditingController controller;
@@ -45,6 +46,10 @@ class MessageComposerSheet extends StatefulWidget {
 
   /// 输入区占位文案（飞书稿为「发送给 XXX」）
   final String sendToLabel;
+
+  /// 收起抽屉前回调：用于先把焦点交还主输入框，避免键盘收起
+  /// 导致抽屉高度在退出动画中突变（观感上像卡了一下）。
+  final VoidCallback? onBeforeCollapse;
 
   @override
   State<MessageComposerSheet> createState() => _MessageComposerSheetState();
@@ -75,6 +80,12 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
 
   /// 抽屉高度占屏幕比例（拖拽把手可调整 0.3~0.95）
   double _heightFactor = 0.85;
+
+  /// 退出动画期间冻结键盘 inset。
+  ///
+  /// 收起时输入框失焦会触发键盘收起，viewInsets 每帧变化；
+  /// 抽屉高度又依赖它，若不冻结，整块内容会在下滑动画里边滑边“长大”。
+  double? _frozenKeyboardInset;
 
   void _insertEmoji(String emoji) {
     final controller = widget.controller;
@@ -111,6 +122,12 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
       text,
       _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
     );
+    Navigator.of(context).pop();
+  }
+
+  void _collapse() {
+    widget.onBeforeCollapse?.call();
+    _frozenKeyboardInset = MediaQuery.of(context).viewInsets.bottom;
     Navigator.of(context).pop();
   }
 
@@ -290,15 +307,14 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final mediaQuery = MediaQuery.of(context);
+    final keyboardInset = _frozenKeyboardInset ?? mediaQuery.viewInsets.bottom;
     // 可用高度 = 屏幕高度 - 顶部安全区 - 键盘占位，
     // 保证抽屉顶部始终在状态栏下方（把手/缩回按钮可正常选中）
     final availableHeight =
-        mediaQuery.size.height -
-        mediaQuery.padding.top -
-        mediaQuery.viewInsets.bottom;
+        mediaQuery.size.height - mediaQuery.padding.top - keyboardInset;
     return Padding(
       // 键盘弹出时整体抬起
-      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: keyboardInset),
       child: SizedBox(
         height: availableHeight * _heightFactor,
         child: Column(
@@ -315,7 +331,7 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                 final next = _heightFactor - details.delta.dy / availableHeight;
                 if (next <= 0.50) {
                   // 缩小到阈值以下：自动退出到单行编辑（关闭抽屉）
-                  Navigator.of(context).pop();
+                  _collapse();
                   return;
                 }
                 setState(() {
@@ -340,7 +356,7 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
                         color: colors.textSecondary,
                       ),
                       tooltip: '缩回',
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: _collapse,
                       padding: EdgeInsets.zero,
                     ),
                   ],

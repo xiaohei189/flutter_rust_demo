@@ -454,12 +454,22 @@ class _ChatInputState extends State<ChatInput> {
         onGifSelected: widget.onGifSelected,
         attachmentItems: _attachmentItems,
         sendToLabel: widget.sendToLabel ?? '发送消息',
+        // 收起动画开始前把焦点交还主输入框：
+        // 抽屉输入框失焦会让键盘同时收起，而抽屉高度依赖 viewInsets，
+        // 键盘 inset 在退出动画中一路变化，整块布局会跟着跳。
+        onBeforeCollapse: () {
+          if (wasFocused) _focusNode.requestFocus();
+        },
       ),
     ).then((_) {
       // 缩回后恢复打开前的输入区状态：若打开前未聚焦（工具栏收起），
       // 则取消主输入框焦点，避免抽屉关闭后焦点回弹导致底部工具栏意外展开。
       if (mounted && !wasFocused && _focusNode.hasFocus) {
         _focusNode.unfocus();
+      }
+      // 兜底：打开前是聚焦态但焦点没回来时补一次，避免键盘意外收起。
+      if (mounted && wasFocused && !_focusNode.hasFocus) {
+        _focusNode.requestFocus();
       }
     });
   }
