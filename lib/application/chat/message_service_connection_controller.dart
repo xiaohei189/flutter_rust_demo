@@ -82,7 +82,11 @@ class MessageServiceConnectionController {
         service.currentState.isConnected &&
         sameUser) {
       onlineStatusService.setClient(imClient.client);
-      appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景）');
+      // 热重载/热重启后旧的 Stream 订阅会绑在已被重建的 Dart 对象/端口上，
+      // 表现为「客户端已连接但收不到任何事件」（新消息不上屏、发送状态不收敛）。
+      // frb 的事件流 getter 每次都会新建一条流，这里幂等重绑即可恢复。
+      await _registerEventStreams();
+      appLog.i('ℹ️ 客户端已连接，跳过重复初始化（热更新场景），事件流已重绑');
       return;
     }
 
@@ -134,27 +138,7 @@ class MessageServiceConnectionController {
       onlineStatusService.setClient(imClient.client);
       unawaited(service.loadConversations());
 
-      service.subscriptions.add(
-        imClient.connectionStream.listen(service.onConnectionEvent),
-      );
-      service.subscriptions.add(
-        imClient.conversationStream.listen(
-          service.onConversationEvent,
-        ),
-      );
-      service.subscriptions.add(
-        imClient.friendStream.listen(service.onFriendEvent),
-      );
-      service.subscriptions.add(
-        imClient.groupStream.listen(service.onGroupEvent),
-      );
-      service.subscriptions.add(
-        imClient.messageStream.listen(service.onMessageEvent),
-      );
-      service.subscriptions.add(
-        imClient.userStream.listen(service.onUserEvent),
-      );
-      appLog.i('[MessageService] 6 模块事件流已注册');
+      await _registerEventStreams();
 
       service.updateState(service.currentState.copyWith(isConnected: true));
       connectionService.updateStatus(ConnectionStatus.connected);
@@ -238,5 +222,39 @@ class MessageServiceConnectionController {
     } catch (e) {
       appLog.w('[MessageService] 取消事件流订阅失败: $e');
     }
+  }
+
+  /// 订阅 6 个模块事件流（幂等：先取消旧订阅再重绑）。
+  ///
+  /// 必须可重复调用：热重载走「客户端已连接，跳过重复初始化」分支时，
+  /// 旧订阅可能已经收不到事件，需要重新绑到新的 frb 事件流上。
+  Future<void> _registerEventStreams() async {
+    await _cancelSubscriptions();
+    service.subscriptions.addAll([
+      _listen('connection', imClient.connectionStream, service.onConnectionEvent),
+      _listen(
+        'conversation',
+        imClient.conversationStream,
+        service.onConversationEvent,
+      ),
+      _listen('friend', imClient.friendStream, service.onFriendEvent),
+      _listen('group', imClient.groupStream, service.onGroupEvent),
+      _listen('message', imClient.messageStream, service.onMessageEvent),
+      _listen('user', imClient.userStream, service.onUserEvent),
+    ]);
+    appLog.i('[MessageService] 6 模块事件流已注册');
+  }
+
+  StreamSubscription<dynamic> _listen<T>(
+    String module,
+    Stream<T> stream,
+    void Function(T) onData,
+  ) {
+    return stream.listen(
+      onData,
+      onError: (Object e, StackTrace st) {
+        appLog.e('[MessageService] $module 事件流异常: $e', e, st);
+      },
+    );
   }
 }
