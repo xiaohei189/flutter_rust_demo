@@ -62,7 +62,8 @@ class MessageComposerSheet extends StatefulWidget {
 /// 表情/附件面板互斥展开
 enum _Panel { none, emoji, attachment }
 
-class _MessageComposerSheetState extends State<MessageComposerSheet> {
+class _MessageComposerSheetState extends State<MessageComposerSheet>
+    with SingleTickerProviderStateMixin {
   /// 是否 Markdown 模式（底部工具栏 Aa 切换，Markdown 时显示格式栏）
   late bool _isMarkdownMode;
 
@@ -91,10 +92,36 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   /// 抽屉高度又依赖它，若不冻结，整块内容会在下滑动画里边滑边“长大”。
   double? _frozenKeyboardInset;
 
+  /// 0 = 只剩底部工具栏，1 = 完全展开。
+  ///
+  /// 不用路由自带的整页下滑：那样底部工具栏会跟着一起移动。
+  /// 这里只动画编辑区高度，底部工具栏始终贴在键盘上方不动。
+  late final AnimationController _anim;
+  bool _closing = false;
+
+  /// 底部工具栏实际高度：先给一个安全估值，首帧后按真实布局校正，
+  /// 避免不同字号/密度下收起到底时溢出几个像素。
+  final GlobalKey _bottomBarKey = GlobalKey();
+  double _bottomBarHeight = 64;
+
   @override
   void initState() {
     super.initState();
     _isMarkdownMode = widget.initialMarkdownMode;
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      reverseDuration: const Duration(milliseconds: 320),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _anim.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
   }
 
   void _insertEmoji(String emoji) {
@@ -132,13 +159,30 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
       text,
       _isMarkdownMode ? MessageContentType.markdown : MessageContentType.text,
     );
-    Navigator.of(context).pop();
+    _collapse();
   }
 
   void _collapse() {
+    if (_closing) return;
+    _closing = true;
     widget.onBeforeCollapse?.call();
     _frozenKeyboardInset = MediaQuery.of(context).viewInsets.bottom;
-    Navigator.of(context).pop();
+    if (_activePanel != _Panel.none) {
+      setState(() => _activePanel = _Panel.none);
+    }
+    _anim.reverse().whenComplete(() {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  void _syncBottomBarHeight() {
+    final size = _bottomBarKey.currentContext?.size;
+    final height = size?.height;
+    if (height == null || height <= 0) return;
+    if ((height - _bottomBarHeight).abs() < 0.5) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _bottomBarHeight = height);
+    });
   }
 
   /// 底部操作行：与主输入框完全一致（😊 @ 🎤 🖼 Aa ⊕ + 发送）。
@@ -344,138 +388,214 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
     // 保证抽屉顶部始终在状态栏下方（把手/缩回按钮可正常选中）
     final availableHeight =
         mediaQuery.size.height - mediaQuery.padding.top - keyboardInset;
-    return Padding(
-      // 键盘弹出时整体抬起
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: SizedBox(
-        height: availableHeight * _heightFactor,
-        child: Column(
-          children: [
-            // 头部：标题 + 缩回（对齐飞书稿）。整行仍可拖动调整高度，
-            // 避免默认 BottomSheet 整体拖动导致工具栏消失。
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onVerticalDragUpdate: (details) {
-                final availableHeight =
-                    MediaQuery.of(context).size.height -
-                    MediaQuery.of(context).padding.top -
-                    MediaQuery.of(context).viewInsets.bottom;
-                final next = _heightFactor - details.delta.dy / availableHeight;
-                if (next <= 0.50) {
-                  // 缩小到阈值以下：自动退出到单行编辑（关闭抽屉）
-                  _collapse();
-                  return;
-                }
-                setState(() {
-                  _heightFactor = next.clamp(0.35, 0.95);
-                });
-              },
-              child: Container(
-                width: double.infinity,
-                height: 44,
-                padding: const EdgeInsets.only(left: 16, right: 4),
-                child: Row(
-                  children: [
-                    Text(
-                      '无标题',
-                      style: TextStyle(fontSize: 17, color: colors.textSecondary),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close_fullscreen,
-                        size: 20,
-                        color: colors.textSecondary,
+    final fullHeight = availableHeight * _heightFactor;
+    // 工具栏高度会随 Markdown 模式/字号变化，布局后同步一次。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncBottomBarHeight();
+    });
+    // 收起后保留的高度：底部工具栏实测高度。
+    final bottomBarHeight = _bottomBarHeight;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _collapse();
+      },
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, _) {
+          final t = Curves.easeOutCubic.transform(_anim.value);
+          // 底边固定在键盘上方；只收缩编辑区，底部工具栏不移动。
+          final height = bottomBarHeight + (fullHeight - bottomBarHeight) * t;
+          return SizedBox.expand(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _collapse,
+                    child: ColoredBox(
+                      color: colors.mediaScrim.withValues(
+                        alpha: colors.mediaScrim.a * t,
                       ),
-                      tooltip: '缩回',
-                      onPressed: _collapse,
-                      padding: EdgeInsets.zero,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            // 编辑区（缩回按钮已移到顶部标题行）
-            Expanded(
-              child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-                      child: TextField(
-                        controller: widget.controller,
-                        autofocus: true,
-                        // expands 填满抽屉剩余高度（minLines/maxLines 需为 null）
-                        expands: true,
-                        // expands 时默认垂直居中，显式顶部对齐避免首行距顶部大片空白
-                        textAlignVertical: TextAlignVertical.top,
-                        minLines: null,
-                        maxLines: null,
-                        maxLength: 4000,
-                        buildCounter:
-                            (
-                              _, {
-                              required currentLength,
-                              required isFocused,
-                              int? maxLength,
-                            }) => const SizedBox.shrink(),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: colors.textPrimary,
-                          fontFamily: _isMarkdownMode ? 'monospace' : null,
-                        ),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: colors.surface,
-                          hintText: widget.sendToLabel,
-                          hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: colors.textSecondary,
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: keyboardInset,
+                  child: ClipRect(
+                    child: SizedBox(
+                      height: height,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          // 收起到底时圆角归零，避免工具栏顶部出现圆角切换。
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(AppTheme.radiusSheet * t),
                           ),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // 收起时头部先被压缩掉，只保留编辑区与工具栏。
+                                  final showHeader = constraints.maxHeight >= 44;
+                                  return Column(
+                                    children: [
+                                      if (showHeader) _buildHeader(colors),
+                                      Expanded(child: _buildEditor(colors)),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                            _buildBottomBar(colors),
+                            _buildPanels(),
+                          ],
                         ),
                       ),
-              ),
-            ),
-            // 底部工具栏：Markdown 模式切换为格式栏
-            if (_isMarkdownMode)
-              MarkdownFormatBar(
-                onFormat: _handleFormat,
-                onClose: () {
-                  setState(() => _isMarkdownMode = false);
-                  _closeAllPanels();
-                },
-                trailing: ValueListenableBuilder<bool>(
-                  valueListenable: widget.hasText,
-                  builder: (_, hasText, __) {
-                    return SendButton(enabled: hasText, onSend: _send);
-                  },
+                    ),
+                  ),
                 ),
-              )
-            else
-              _buildActionRow(colors),
-            // 表情/附件面板（互斥展开，与主输入框一致）
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_emojiPanelOpened)
-                    Offstage(
-                      offstage: _activePanel != _Panel.emoji,
-                      child: _emojiPanel,
-                    ),
-                  if (_attachmentPanelOpened)
-                    Offstage(
-                      offstage: _activePanel != _Panel.attachment,
-                      child: _attachmentPanel,
-                    ),
-                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 头部：标题 + 缩回。整行可拖动调整高度。
+  Widget _buildHeader(AppColors colors) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: (details) {
+        final availableHeight =
+            MediaQuery.of(context).size.height -
+            MediaQuery.of(context).padding.top -
+            MediaQuery.of(context).viewInsets.bottom;
+        final next = _heightFactor - details.delta.dy / availableHeight;
+        if (next <= 0.50) {
+          // 缩小到阈值以下：自动退出到单行编辑（关闭抽屉）
+          _collapse();
+          return;
+        }
+        setState(() {
+          _heightFactor = next.clamp(0.35, 0.95);
+        });
+      },
+      child: Container(
+        width: double.infinity,
+        height: 44,
+        padding: const EdgeInsets.only(left: 16, right: 4),
+        child: Row(
+          children: [
+            Text(
+              '无标题',
+              style: TextStyle(fontSize: 17, color: colors.textSecondary),
+            ),
+            const Spacer(),
+            IconButton(
+              icon: Icon(
+                Icons.close_fullscreen,
+                size: 20,
+                color: colors.textSecondary,
               ),
+              tooltip: '缩回',
+              onPressed: _collapse,
+              padding: EdgeInsets.zero,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 编辑区（缩回按钮已移到顶部标题行）。
+  Widget _buildEditor(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+      child: TextField(
+        controller: widget.controller,
+        autofocus: true,
+        // expands 填满抽屉剩余高度（minLines/maxLines 需为 null）
+        expands: true,
+        // expands 时默认垂直居中，显式顶部对齐避免首行距顶部大片空白
+        textAlignVertical: TextAlignVertical.top,
+        minLines: null,
+        maxLines: null,
+        maxLength: 4000,
+        buildCounter:
+            (
+              _, {
+              required currentLength,
+              required isFocused,
+              int? maxLength,
+            }) => const SizedBox.shrink(),
+        style: TextStyle(
+          fontSize: 16,
+          color: colors.textPrimary,
+          fontFamily: _isMarkdownMode ? 'monospace' : null,
+        ),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: colors.surface,
+          hintText: widget.sendToLabel,
+          hintStyle: TextStyle(fontSize: 16, color: colors.textSecondary),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+
+  /// 底部工具栏：Markdown 模式切换为格式栏。
+  Widget _buildBottomBar(AppColors colors) {
+    final Widget bar;
+    if (_isMarkdownMode) {
+      bar = MarkdownFormatBar(
+        onFormat: _handleFormat,
+        onClose: () {
+          setState(() => _isMarkdownMode = false);
+          _closeAllPanels();
+        },
+        trailing: ValueListenableBuilder<bool>(
+          valueListenable: widget.hasText,
+          builder: (_, hasText, __) {
+            return SendButton(enabled: hasText, onSend: _send);
+          },
+        ),
+      );
+    } else {
+      bar = _buildActionRow(colors);
+    }
+    return KeyedSubtree(key: _bottomBarKey, child: bar);
+  }
+
+  /// 表情/附件面板（互斥展开，与主输入框一致）
+  Widget _buildPanels() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_emojiPanelOpened)
+            Offstage(
+              offstage: _activePanel != _Panel.emoji,
+              child: _emojiPanel,
+            ),
+          if (_attachmentPanelOpened)
+            Offstage(
+              offstage: _activePanel != _Panel.attachment,
+              child: _attachmentPanel,
+            ),
+        ],
       ),
     );
   }

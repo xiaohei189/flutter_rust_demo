@@ -201,6 +201,7 @@ void main() {
       ),
     );
 
+    await tester.pumpAndSettle();
     expect(find.byTooltip('缩回'), findsOneWidget, reason: '长消息抽屉应保留缩回按钮');
 
     await tester.tap(find.byTooltip('表情'));

@@ -437,22 +437,13 @@ class _ChatInputState extends State<ChatInput> {
       // 改为把手拖动调整高度并保持，底部工具栏固定
       // 覆盖 M3 BottomSheet 默认 maxWidth 640，抽屉全宽
       constraints: const BoxConstraints(maxWidth: double.infinity),
-      // 默认退场只有 200ms，抽屉整体下滑偏快；放慢到 320ms，
-      // 退场曲线与路由遮罩的线性淡出保持一致，避免抽屉已到底、
-      // 遮罩还残留暗度的最后几帧，看起来像“闪一下”。
-      sheetAnimationStyle: const AnimationStyle(
-        duration: Duration(milliseconds: 260),
-        reverseDuration: Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.linear,
-      ),
-      // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusSheet),
-        ),
-      ),
+      // 抽屉自己动画编辑区高度，路由本身不做整页下滑：
+      // 否则底部工具栏会跟着一起移动。遮罩也由抽屉内部淡入淡出。
+      sheetAnimationStyle: AnimationStyle.noAnimation,
+      backgroundColor: context.appColors.surface.withValues(alpha: 0),
+      barrierColor: context.appColors.mediaScrim.withValues(alpha: 0),
+      isDismissible: false,
+      enableDrag: false,
       builder: (_) => MessageComposerSheet(
         controller: widget.controller,
         hasText: _composer.hasText,
