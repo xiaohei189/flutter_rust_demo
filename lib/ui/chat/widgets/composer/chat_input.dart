@@ -437,6 +437,15 @@ class _ChatInputState extends State<ChatInput> {
       // 改为把手拖动调整高度并保持，底部工具栏固定
       // 覆盖 M3 BottomSheet 默认 maxWidth 640，抽屉全宽
       constraints: const BoxConstraints(maxWidth: double.infinity),
+      // 默认退场只有 200ms，抽屉整体下滑偏快；放慢到 320ms，
+      // 退场曲线与路由遮罩的线性淡出保持一致，避免抽屉已到底、
+      // 遮罩还残留暗度的最后几帧，看起来像“闪一下”。
+      sheetAnimationStyle: const AnimationStyle(
+        duration: Duration(milliseconds: 260),
+        reverseDuration: Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.linear,
+      ),
       // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
       backgroundColor: context.appColors.surface,
       shape: const RoundedRectangleBorder(
