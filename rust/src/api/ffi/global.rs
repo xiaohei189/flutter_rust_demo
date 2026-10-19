@@ -6,16 +6,23 @@
 use crate::sdk::client::SdkApi;
 use anyhow::Result;
 use std::sync::Arc;
-use std::sync::OnceLock;
+use std::sync::RwLock;
 
-static CLIENT_HOLDER: OnceLock<Arc<dyn SdkApi>> = OnceLock::new();
+/// 当前 SDK 客户端。
+///
+/// 必须是「可替换」的：热重启 / 切换账号会创建新的 OpenIMClient，
+/// 旧的 OnceLock 只保留第一次创建的实例，导致 sendMessage 等全局 FFI
+/// 继续走旧客户端——旧实例的事件没有订阅者，表现为「消息发出去了但不上屏」。
+static CLIENT_HOLDER: RwLock<Option<Arc<dyn SdkApi>>> = RwLock::new(None);
 
-pub(crate) fn client_holder() -> Result<&'static Arc<dyn SdkApi>> {
-    CLIENT_HOLDER.get().ok_or_else(|| anyhow::anyhow!("SDK 客户端未初始化，请先调用 new"))
+pub(crate) fn client_holder() -> Result<Arc<dyn SdkApi>> {
+    CLIENT_HOLDER.read().ok().and_then(|guard| guard.clone()).ok_or_else(|| anyhow::anyhow!("SDK 客户端未初始化，请先调用 new"))
 }
 
 pub(crate) fn set_client(client: Arc<dyn SdkApi>) {
-    let _ = CLIENT_HOLDER.set(client);
+    if let Ok(mut guard) = CLIENT_HOLDER.write() {
+        *guard = Some(client);
+    }
 }
 
 /// 设置 App 前后台状态（对齐 Go SDK SetAppBackgroundStatus）

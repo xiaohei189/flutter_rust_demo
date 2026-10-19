@@ -16,29 +16,40 @@ use std::sync::Mutex;
 
 type SinkSlot<T> = Arc<Mutex<Option<StreamSink<T>>>>;
 
+fn install_sink<T>(name: &'static str, slot: &SinkSlot<T>, sink: StreamSink<T>) {
+    if let Ok(mut guard) = slot.lock() {
+        *guard = Some(sink);
+    }
+    tracing::info!("[Bridge] {} 订阅已接入", name);
+}
+
 /// 把事件泵到「当前订阅者」的 sink。
 ///
 /// frb 的 StreamSink 只在订阅期间有效：Dart 侧取消订阅 / 热重载后，
 /// 旧 sink 的 `add` 会失败。这里把 sink 放进可替换槽位，泵只取一次
 /// 底层 mpsc 接收端，之后换订阅只是替换 sink，不会再触发
 /// `receiver already taken`。
-fn spawn_event_pump<T: Send + 'static + SseEncode>(slot: SinkSlot<T>, mut rx: tokio::sync::mpsc::UnboundedReceiver<T>) {
+fn spawn_event_pump<T: Send + 'static + SseEncode>(name: &'static str, slot: SinkSlot<T>, mut rx: tokio::sync::mpsc::UnboundedReceiver<T>) {
     tokio::spawn(async move {
         while let Some(event) = rx.recv().await {
             let sink = slot.lock().ok().and_then(|mut guard| guard.take());
             let Some(sink) = sink else {
                 // 当前没有订阅者（例如热重载窗口内），丢弃该事件。
+                tracing::warn!("[Bridge] {} 事件无订阅者，已丢弃", name);
                 continue;
             };
-            if sink.add(event).is_ok() {
-                if let Ok(mut guard) = slot.lock() {
-                    // 期间可能有新订阅写入，优先保留新 sink。
-                    if guard.is_none() {
-                        *guard = Some(sink);
+            match sink.add(event) {
+                Ok(()) => {
+                    if let Ok(mut guard) = slot.lock() {
+                        // 期间可能有新订阅写入，优先保留新 sink。
+                        if guard.is_none() {
+                            *guard = Some(sink);
+                        }
                     }
                 }
+                // add 失败说明订阅端已关闭，丢弃旧 sink，等待下一次订阅。
+                Err(e) => tracing::warn!("[Bridge] {} 事件推送失败: {:?}", name, e),
             }
-            // add 失败说明订阅端已关闭，丢弃旧 sink，等待下一次订阅。
         }
     });
 }
@@ -123,66 +134,54 @@ impl OpenIMBridgeClient {
 
     #[flutter_rust_bridge::frb]
     pub async fn connection_stream(&self, sink: StreamSink<crate::core::event::events::connection::ConnectionEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.conn_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("connection", &self.conn_sink, sink);
         if !self.conn_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.conn_sink.clone(), self.inner.take_conn_rx()?);
+            spawn_event_pump("connection", self.conn_sink.clone(), self.inner.take_conn_rx()?);
         }
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn conversation_stream(&self, sink: StreamSink<crate::core::event::events::conversation::ConversationEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.conv_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("conversation", &self.conv_sink, sink);
         if !self.conv_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.conv_sink.clone(), self.inner.take_conv_rx()?);
+            spawn_event_pump("conversation", self.conv_sink.clone(), self.inner.take_conv_rx()?);
         }
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn friend_stream(&self, sink: StreamSink<crate::core::event::events::friend::FriendEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.friend_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("friend", &self.friend_sink, sink);
         if !self.friend_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.friend_sink.clone(), self.inner.take_friend_rx()?);
+            spawn_event_pump("friend", self.friend_sink.clone(), self.inner.take_friend_rx()?);
         }
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn group_stream(&self, sink: StreamSink<crate::core::event::events::group::GroupEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.group_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("group", &self.group_sink, sink);
         if !self.group_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.group_sink.clone(), self.inner.take_group_rx()?);
+            spawn_event_pump("group", self.group_sink.clone(), self.inner.take_group_rx()?);
         }
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn message_stream(&self, sink: StreamSink<MessageEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.message_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("message", &self.message_sink, sink);
         if !self.message_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.message_sink.clone(), MessageApi::take_message_rx(&*self.inner)?);
+            spawn_event_pump("message", self.message_sink.clone(), MessageApi::take_message_rx(&*self.inner)?);
         }
         Ok(())
     }
 
     #[flutter_rust_bridge::frb]
     pub async fn user_stream(&self, sink: StreamSink<UserEvent>) -> Result<()> {
-        if let Ok(mut guard) = self.user_sink.lock() {
-            *guard = Some(sink);
-        }
+        install_sink("user", &self.user_sink, sink);
         if !self.user_pump_started.swap(true, Ordering::SeqCst) {
-            spawn_event_pump(self.user_sink.clone(), UserApi::take_user_rx(&*self.inner)?);
+            spawn_event_pump("user", self.user_sink.clone(), UserApi::take_user_rx(&*self.inner)?);
         }
         Ok(())
     }
