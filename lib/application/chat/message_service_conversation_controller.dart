@@ -68,6 +68,7 @@ class MessageServiceConversationController {
         service.currentState.copyWith(
           isSyncingConversations: true,
           syncProgress: 0,
+          clearSyncError: true,
         ),
       ),
       syncFinished: (_) {
@@ -75,6 +76,7 @@ class MessageServiceConversationController {
           service.currentState.copyWith(
             isSyncingConversations: false,
             syncProgress: 100,
+            clearSyncError: true,
           ),
         );
         unawaited(loadConversations());
@@ -83,6 +85,7 @@ class MessageServiceConversationController {
         service.currentState.copyWith(
           isSyncingConversations: true,
           syncProgress: p,
+          clearSyncError: true,
         ),
       ),
       totalUnreadCountChanged: (c) {
@@ -111,12 +114,39 @@ class MessageServiceConversationController {
       syncFailed: (reinstalled, e) {
         appLog.i('[MsgSvc] syncFailed: reinstalled=$reinstalled error=$e');
         // 同步失败也要收起进度条：否则「同步中」会永远停在最后一次进度上。
+        // 同时把失败态暴露到列表头部，由用户手动重试。
         service.updateState(
-          service.currentState.copyWith(isSyncingConversations: false),
+          service.currentState.copyWith(
+            isSyncingConversations: false,
+            syncError: '消息同步失败，请检查网络后重试',
+          ),
         );
       },
       orElse: () {},
     );
+  }
+
+  /// 同步失败后的手动重试：重新触发会话增量同步。
+  Future<void> retrySync() async {
+    if (service.currentState.isSyncingConversations) return;
+    service.updateState(
+      service.currentState.copyWith(
+        isSyncingConversations: true,
+        syncProgress: 0,
+        clearSyncError: true,
+      ),
+    );
+    try {
+      await service.repository.resyncConversations();
+    } catch (e) {
+      appLog.w('[MsgSvc] 重新同步会话失败: $e');
+      service.updateState(
+        service.currentState.copyWith(
+          isSyncingConversations: false,
+          syncError: '消息同步失败，请检查网络后重试',
+        ),
+      );
+    }
   }
 
   Future<void> loadConversations() async {

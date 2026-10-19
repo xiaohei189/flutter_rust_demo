@@ -33,6 +33,10 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
+  /// 触发一次会话增量同步（登录同步失败后的手动重试）。
+  /// 默认空实现，测试替身无需关心；真实实现见 MessageRepositoryImpl。
+  Future<void> resyncConversations() async {}
+
   // ---- 本地消息构造（对齐 Go SDK CreateXxxMessage）----
 
   /// 构造本地文本消息：不发网络，供上层乐观上屏

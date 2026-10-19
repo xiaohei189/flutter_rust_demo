@@ -249,6 +249,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             isQuickTab: _viewModel.isQuickTab(activeFilter),
             isSyncing: conversationState.isSyncing,
             syncProgress: conversationState.syncProgress,
+            syncError: conversationState.syncError,
+            onRetrySync: () =>
+                ref.read(conversationListProvider.notifier).retrySync(),
             onFilterChange: _viewModel.setFilter,
             onOpenGroupFilter: _openGroupFilterPanel,
             onSearchTap: () => AppRouter.goToSearch(context),

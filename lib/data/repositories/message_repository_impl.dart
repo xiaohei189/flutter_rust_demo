@@ -42,6 +42,10 @@ class MessageRepositoryImpl
   }
 
   @override
+  Future<void> resyncConversations() =>
+      ffi_message_advanced.incrSyncConversations();
+
+  @override
   Future<void> updateUserProfile({
     String? nickname,
     String? faceUrl,
