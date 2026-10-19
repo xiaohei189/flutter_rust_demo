@@ -57,6 +57,17 @@ void main() {
       expect(keyword, isNull);
     });
 
+    test('插入完整昵称后（带空格）不再弹候选', () {
+      const query = AtMemberQuery();
+      final keyword = query.resolve(
+        '@张三 ',
+        const TextSelection.collapsed(offset: 4),
+        isGroupChat: true,
+        atMembers: [_member('u1', '张三')],
+      );
+      expect(keyword, isNull);
+    });
+
     test('按昵称和 ID 过滤成员', () {
       const query = AtMemberQuery();
       final members = [

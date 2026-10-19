@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/group_member.dart';
+import '../../../../domain/models/mention.dart' show kAtAllTag;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_image.dart';
 
@@ -62,7 +63,7 @@ class AtMemberSuggestions extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Text(
-                      member.userId,
+                      member.userId == kAtAllTag ? '群内所有成员' : member.userId,
                       style: TextStyle(fontSize: 11, color: colors.textSecondary),
                     ),
                     onTap: () => onSelect(member),
