@@ -462,6 +462,7 @@ class _ChatInputState extends State<ChatInput> {
         onGifSelected: widget.onGifSelected,
         attachmentItems: _attachmentItems,
         sendToLabel: widget.sendToLabel ?? '发送消息',
+        initialMarkdownMode: _composer.isMarkdownMode,
         // 收起动画开始前把焦点交还主输入框：
         // 抽屉输入框失焦会让键盘同时收起，而抽屉高度依赖 viewInsets，
         // 键盘 inset 在退出动画中一路变化，整块布局会跟着跳。

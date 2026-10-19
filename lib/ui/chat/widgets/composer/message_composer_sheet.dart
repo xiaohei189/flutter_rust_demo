@@ -29,6 +29,7 @@ class MessageComposerSheet extends StatefulWidget {
     this.attachmentItems = const [],
     this.sendToLabel = '发送消息',
     this.onBeforeCollapse,
+    this.initialMarkdownMode = false,
   });
 
   final TextEditingController controller;
@@ -51,6 +52,9 @@ class MessageComposerSheet extends StatefulWidget {
   /// 导致抽屉高度在退出动画中突变（观感上像卡了一下）。
   final VoidCallback? onBeforeCollapse;
 
+  /// 打开时的 Markdown 状态（与主输入框同步，保证 Aa 图标不高亮跳变）。
+  final bool initialMarkdownMode;
+
   @override
   State<MessageComposerSheet> createState() => _MessageComposerSheetState();
 }
@@ -60,7 +64,7 @@ enum _Panel { none, emoji, attachment }
 
 class _MessageComposerSheetState extends State<MessageComposerSheet> {
   /// 是否 Markdown 模式（底部工具栏 Aa 切换，Markdown 时显示格式栏）
-  bool _isMarkdownMode = false;
+  late bool _isMarkdownMode;
 
   _Panel _activePanel = _Panel.none;
 
@@ -86,6 +90,12 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
   /// 收起时输入框失焦会触发键盘收起，viewInsets 每帧变化；
   /// 抽屉高度又依赖它，若不冻结，整块内容会在下滑动画里边滑边“长大”。
   double? _frozenKeyboardInset;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMarkdownMode = widget.initialMarkdownMode;
+  }
 
   void _insertEmoji(String emoji) {
     final controller = widget.controller;
@@ -131,69 +141,55 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
     Navigator.of(context).pop();
   }
 
-  /// 底部操作行（对齐飞书稿）：😊 @ 🖼 📄 Aa ——右侧固定纸飞机发送。
+  /// 底部操作行：与主输入框完全一致（😊 @ 🎤 🖼 Aa ⊕ + 发送）。
+  ///
+  /// 图标集合、顺序、尺寸、底色都与 [ChatInput] 的行动作一致，
+  /// 展开/收起时底部这一行保持不动，只有上方编辑区上下滑动。
   Widget _buildActionRow(AppColors colors) {
     final emojiActive = _activePanel == _Panel.emoji;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          for (final icon in <Widget>[
-            InputToolbarIcon(
-              icon: emojiActive
-                  ? Icons.emoji_emotions
-                  : Icons.emoji_emotions_outlined,
-              tooltip: '表情',
-              active: emojiActive,
-              onTap: () => _togglePanel(_Panel.emoji),
-            ),
-            InputToolbarIcon(
-              icon: Icons.alternate_email,
-              tooltip: '@ 提及',
-              onTap: widget.onAtMention ?? () {},
-            ),
-            InputToolbarIcon(
-              icon: Icons.image_outlined,
-              tooltip: '相册',
-              enabled: widget.onImagePick != null,
-              onTap: widget.onImagePick ?? () {},
-            ),
-            InputToolbarIcon(
-              icon: Icons.upload_file_outlined,
-              tooltip: '文件',
-              onTap: () => _togglePanel(_Panel.attachment),
-            ),
-            Tooltip(
-              message: 'Markdown 格式',
-              child: Semantics(
-                label: 'Aa',
-                button: true,
-                child: InkResponse(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _isMarkdownMode = !_isMarkdownMode);
-                    _closeAllPanels();
-                  },
-                  radius: 20,
-                  child: SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Center(
-                      child: Text(
-                        'Aa',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+    final moreActive = _activePanel == _Panel.attachment;
+    return Container(
+      // 与主输入框的工具栏底色一致，收起时底部不会出现白色→灰色的切换。
+      color: colors.inputBackground,
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            for (final icon in <Widget>[
+              InputToolbarIcon(
+                icon: emojiActive
+                    ? Icons.emoji_emotions
+                    : Icons.emoji_emotions_outlined,
+                tooltip: '表情',
+                active: emojiActive,
+                onTap: () => _togglePanel(_Panel.emoji),
               ),
-            ),
-          ])
-            Expanded(child: Center(child: icon)),
+              InputToolbarIcon(
+                icon: Icons.alternate_email,
+                tooltip: '@ 提及',
+                onTap: widget.onAtMention ?? () {},
+              ),
+              InputToolbarIcon(
+                icon: Icons.mic_none,
+                tooltip: '语音（缩回主输入框使用）',
+                onTap: _collapse,
+              ),
+              InputToolbarIcon(
+                icon: Icons.image_outlined,
+                tooltip: '相册',
+                enabled: widget.onImagePick != null,
+                onTap: widget.onImagePick ?? () {},
+              ),
+              _buildMarkdownToggle(colors),
+              InputToolbarIcon(
+                icon: moreActive ? Icons.cancel : Icons.add_circle_outline,
+                tooltip: moreActive ? '收起' : '更多',
+                active: moreActive,
+                onTap: () => _togglePanel(_Panel.attachment),
+              ),
+            ])
+              Expanded(child: Center(child: icon)),
           const SizedBox(width: 4),
           ValueListenableBuilder<bool>(
             valueListenable: widget.hasText,
@@ -220,7 +216,43 @@ class _MessageComposerSheetState extends State<MessageComposerSheet> {
               ),
             ),
           ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Aa：Markdown 模式开关（与主输入框一致）。
+  Widget _buildMarkdownToggle(AppColors colors) {
+    return Tooltip(
+      message: _isMarkdownMode ? '关闭 Markdown' : 'Markdown 格式',
+      child: Semantics(
+        label: 'Aa',
+        button: true,
+        child: InkResponse(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            setState(() => _isMarkdownMode = !_isMarkdownMode);
+            _closeAllPanels();
+          },
+          radius: 20,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Center(
+              child: Text(
+                'Aa',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: _isMarkdownMode
+                      ? colors.primary
+                      : colors.textPrimary.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
