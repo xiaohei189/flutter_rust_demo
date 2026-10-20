@@ -23,6 +23,7 @@ import '../view_models/chat_list_view_model.dart';
 import 'conversation_folder_manage_screen.dart';
 import '../widgets/list/chat_list_dialogs.dart';
 import '../view_models/conversation_view_model.dart';
+import '../providers/message_service_provider.dart';
 
 /// 会话列表页（参考飞书风格）
 class ChatListScreen extends ConsumerStatefulWidget {
@@ -152,7 +153,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           key: const ValueKey('chat_add_menu_create_group'),
           icon: Icons.group_add_outlined,
           label: '创建群组',
-          onTap: () => AppRouter.goToCreateGroup(context),
+          onTap: _openCreateGroup,
         ),
         AppMenuItem(
           key: const ValueKey('chat_add_menu_multi_select'),
@@ -162,6 +163,18 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         ),
       ],
     );
+  }
+
+  /// 创建群组：成功后刷新会话并进入新群聊。
+  ///
+  /// 服务端会在创建群时生成 `sg_<groupID>` 会话，Rust 侧同时落了本地会话；
+  /// 这里 reload 一次本地会话列表再跳转，避免用户回到列表看不到新群。
+  Future<void> _openCreateGroup() async {
+    final group = await AppRouter.goToCreateGroup(context);
+    if (!mounted || group == null) return;
+    await ref.read(messageServiceProvider.notifier).loadConversations();
+    if (!mounted) return;
+    AppRouter.goToChatDetailById(context, 'sg_${group.groupId}');
   }
 
   /// 扫一扫：识别结果交给 [ChatListDialogs.handleScanResult] 决定去向。
@@ -675,7 +688,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () => AppRouter.goToCreateGroup(context),
+                  onPressed: _openCreateGroup,
                   icon: const Icon(Icons.group_add_outlined, size: 18),
                   label: const Text('发起群聊'),
                 ),

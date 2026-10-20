@@ -109,6 +109,7 @@ class ContactPickerList extends StatelessWidget {
     final isSelected = selectedIds.contains(id);
 
     return InkWell(
+      key: ValueKey('contact_picker_friend_$id'),
       onTap: () => onToggle(
         ContactPickItem(
           id: id,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../domain/models/conversation.dart';
 import '../domain/models/chat_message.dart' show ChatMessage;
+import '../domain/models/group.dart';
 import '../ui/shared/views/route_error_page.dart';
 import 'app_paths.dart';
 import 'auth_routes.dart';
@@ -175,8 +176,8 @@ class AppRouter {
   }
 
   /// 导航到创建群组页
-  static void goToCreateGroup(BuildContext context) {
-    context.push(AppPaths.createGroup);
+  static Future<Group?> goToCreateGroup(BuildContext context) {
+    return context.push<Group>(AppPaths.createGroup);
   }
 
   /// 导航到扫码页；识别成功返回扫到的原始字符串，取消返回 null。
