@@ -237,7 +237,12 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
 
   void _toast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        // 创建页/新群聊底部都有输入工具栏，提示上移避免压住工具按钮。
+        margin: const EdgeInsets.fromLTRB(40, 0, 40, 120),
+      ),
     );
   }
 
