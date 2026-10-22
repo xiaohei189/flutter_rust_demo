@@ -58,6 +58,35 @@ impl ConversationSyncer {
         }
     }
 
+    /// 修复历史会话预览：早期实现把「裸 content」写进 `latest_msg`（缺 `contentType`），
+    /// 客户端只能回退成「暂无消息」；媒体消息（语音/图片/视频/文件）尤其明显。
+    ///
+    /// 这里用本地最新一条消息重建完整信封（与 Go SDK `Conversation.latestMsg` 一致）。
+    /// 只处理缺 `contentType` 的会话，正常情况下扫到 0 行，可安全地在每次登录同步后调用。
+    pub async fn heal_latest_msg_previews(&self) -> Result<usize> {
+        let mut healed = 0usize;
+        let mut healed_convs: Vec<LocalConversation> = Vec::new();
+        for mut conv in self.repositories.conversation_repo.get_all().await? {
+            if conv.latest_msg.contains("\"contentType\"") {
+                continue;
+            }
+            let Some(log) = self.repositories.message_repo.get_by_conversation(&conv.conversation_id, 0, 1).await?.into_iter().next() else {
+                continue;
+            };
+            conv.latest_msg = crate::core::conversation::converter::latest_msg_envelope(&log);
+            conv.latest_msg_send_time = conv.latest_msg_send_time.max(log.send_time);
+            self.repositories.conversation_repo.upsert(&conv).await?;
+            healed_convs.push(conv);
+            healed += 1;
+        }
+        if healed > 0 {
+            info!(target: "im::sync", "[Sync] 修复历史会话预览 {} 条", healed);
+            // 修复发生在首屏会话加载之后时，必须推一次会话变更事件，否则界面仍是旧预览
+            ConversationListenerExt::emit(&*self.listener, ConversationEvent::Changed(healed_convs));
+        }
+        Ok(healed)
+    }
+
     pub(crate) fn send(&self, e: ConversationEvent) {
         self.listener.emit(e);
     }
@@ -543,6 +572,57 @@ mod tests {
             ConversationEvent::Changed(convs) => assert_eq!(convs.len(), 2),
             other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
         }
+    }
+
+    /// 历史数据修复：`latest_msg` 只有裸 content（缺 `contentType`）时，用本地最新消息
+    /// 重建完整信封，让客户端能把预览渲染成「[语音]」而不是「暂无消息」。
+    #[tokio::test]
+    async fn test_heal_latest_msg_previews_rewrites_bare_content() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+
+        repositories
+            .conversation_repo
+            .upsert(&LocalConversation {
+                conversation_id: "conv_legacy".to_string(),
+                latest_msg: r#"{"soundPath":"/tmp/a.aac","duration":3}"#.to_string(),
+                latest_msg_send_time: 1000,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        let mut msg = crate::domain::model::msg_struct::MsgStruct::default();
+        msg.client_msg_id = "c1".to_string();
+        msg.send_id = "u1".to_string();
+        msg.recv_id = "u2".to_string();
+        msg.session_type = 1;
+        msg.content_type = 103;
+        msg.content = r#"{"soundPath":"/tmp/a.aac","duration":3}"#.to_string();
+        msg.send_time = 2000;
+        let mut log = crate::domain::model::local::LocalChatLog::from(&msg);
+        log.conversation_id = "conv_legacy".to_string();
+        repositories.message_repo.batch_insert(&[log]).await.unwrap();
+
+        let api = Arc::new(MockConversationApi::new());
+        let (syncer, mut rx) = make_syncer_with_hub(api, repositories.clone());
+        assert_eq!(syncer.heal_latest_msg_previews().await.unwrap(), 1);
+
+        // 修复后必须推送会话变更事件，界面才能立即刷新旧预览
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => {
+                assert_eq!(convs.len(), 1);
+                assert!(convs[0].latest_msg.contains(r#""contentType":103"#));
+            }
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+
+        let conv = repositories.conversation_repo.get_by_id("conv_legacy").await.unwrap().unwrap();
+        assert!(conv.latest_msg.contains(r#""contentType":103"#), "latest_msg 应为完整信封: {}", conv.latest_msg);
+        assert_eq!(conv.latest_msg_send_time, 2000);
+
+        // 幂等：再次执行不应重复处理
+        assert_eq!(syncer.heal_latest_msg_previews().await.unwrap(), 0);
     }
 
     #[tokio::test]

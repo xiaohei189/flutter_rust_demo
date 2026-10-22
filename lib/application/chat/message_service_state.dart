@@ -20,6 +20,7 @@ class MessageServiceState {
     bool? isConnected,
     bool? isSyncingConversations,
     int? syncProgress,
+    String? syncError,
     String? currentUserId,
     List<Conversation>? conversations,
     Map<String, List<ChatMessage>>? messages,
@@ -40,6 +41,7 @@ class MessageServiceState {
           conversations: conversations ?? const [],
           isSyncingConversations: isSyncingConversations ?? false,
           syncProgress: syncProgress ?? 0,
+          syncError: syncError,
           totalUnreadCount: totalUnreadCount ?? 0,
         ),
         message = MessageStore(
@@ -70,6 +72,7 @@ class MessageServiceState {
   bool get isConnected => connection.isConnected;
   bool get isSyncingConversations => conversation.isSyncingConversations;
   int get syncProgress => conversation.syncProgress;
+  String? get syncError => conversation.syncError;
   String get currentUserId => userProfile.currentUserId;
   List<Conversation> get conversations => conversation.conversations;
   Map<String, List<ChatMessage>> get messages => message.messages;
@@ -88,6 +91,8 @@ class MessageServiceState {
     bool? isConnected,
     bool? isSyncingConversations,
     int? syncProgress,
+    String? syncError,
+    bool clearSyncError = false,
     String? currentUserId,
     List<Conversation>? conversations,
     Map<String, List<ChatMessage>>? messages,
@@ -112,6 +117,8 @@ class MessageServiceState {
         conversations: conversations,
         isSyncingConversations: isSyncingConversations,
         syncProgress: syncProgress,
+        syncError: syncError,
+        clearSyncError: clearSyncError,
         totalUnreadCount: totalUnreadCount,
       ),
       message: message.copyWith(

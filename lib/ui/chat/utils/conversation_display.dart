@@ -8,9 +8,22 @@ T? _getKey<T>(Map<String, dynamic> map, String camel, String snake) {
   return null;
 }
 
-String _contentToDisplay(dynamic content) {
+String _contentToDisplay(dynamic content, [int depth = 0]) {
   if (content == null) return '';
-  if (content is String) return content.trim();
+  if (content is String) {
+    final trimmed = content.trim();
+    // 部分客户端（含 OpenIM 文本消息）的 content 本身是 JSON 字符串，
+    // 例如 {"content":"你好"}；直接展示会漏出原始 JSON。
+    if (depth < 3 &&
+        (trimmed.startsWith('{') || trimmed.startsWith('['))) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        final nested = _contentToDisplay(decoded, depth + 1);
+        if (nested.isNotEmpty) return nested;
+      } catch (_) {}
+    }
+    return trimmed;
+  }
   if (content is List) {
     try {
       return utf8.decode(content.cast<int>()).trim();
@@ -21,12 +34,19 @@ String _contentToDisplay(dynamic content) {
   if (content is Map<String, dynamic>) {
     final text = content['text'];
     if (text is Map<String, dynamic> && text['content'] != null) {
-      return text['content'].toString().trim();
+      final nested = _contentToDisplay(text['content'], depth + 1);
+      if (nested.isNotEmpty) return nested;
     }
-    if (content['content'] != null) return content['content'].toString().trim();
+    if (content['content'] != null) {
+      final nested = _contentToDisplay(content['content'], depth + 1);
+      if (nested.isNotEmpty) return nested;
+    }
     for (final value in content.values) {
-      if (value is String && value.isNotEmpty) return value;
+      final nested = _contentToDisplay(value, depth + 1);
+      if (nested.isNotEmpty) return nested;
     }
+    // 空对象 / 无可展示字段：不要退化成 "{}"。
+    return '';
   }
   return content.toString().trim();
 }
@@ -44,6 +64,7 @@ String latestMessagePreview(String latestMsgJson) {
     if (map == null) return '暂无消息';
 
     final contentType = _getKey<int>(map, 'contentType', 'content_type') ?? 0;
+    final sessionType = _getKey<int>(map, 'sessionType', 'session_type') ?? 0;
     final senderNickname =
         _getKey<String>(map, 'senderNickname', 'sender_nickname') ?? '';
     final content = map['content'];
@@ -118,7 +139,8 @@ String latestMessagePreview(String latestMsgJson) {
     }
 
     if (body.isEmpty) body = '暂无消息';
-    if (senderNickname.isNotEmpty && body != '暂无消息') {
+    // 对齐飞书：只有群聊预览带「发送者:」前缀，单聊直接显示正文
+    if (sessionType != 1 && senderNickname.isNotEmpty && body != '暂无消息') {
       return '$senderNickname: $body';
     }
     return body;

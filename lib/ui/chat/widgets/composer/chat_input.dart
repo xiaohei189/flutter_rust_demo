@@ -18,6 +18,7 @@ import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
 import 'recording_overlay.dart';
+import 'voice_panel.dart';
 import 'voice_recorder_controller.dart';
 
 /// 底部输入区：
@@ -145,6 +146,7 @@ class _ChatInputState extends State<ChatInput> {
   );
   bool _emojiPanelOpened = false;
   bool _attachmentPanelOpened = false;
+  bool _voicePanelOpened = false;
 
   @override
   void initState() {
@@ -355,6 +357,8 @@ class _ChatInputState extends State<ChatInput> {
     switch (_composer.activePanel) {
       case ComposerPanel.emoji:
         _emojiPanelOpened = true;
+      case ComposerPanel.voice:
+        _voicePanelOpened = true;
       case ComposerPanel.attachment:
         _attachmentPanelOpened = true;
       case ComposerPanel.none:
@@ -426,7 +430,6 @@ class _ChatInputState extends State<ChatInput> {
     _closeAllPanels();
     // 不主动收键盘：抽屉内输入框 autofocus 会接管焦点，键盘保持连续，
     // 避免“先收起键盘、抽屉弹出后再弹键盘”导致的键盘翻动。
-    final wasFocused = _focusNode.hasFocus;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -434,13 +437,13 @@ class _ChatInputState extends State<ChatInput> {
       // 改为把手拖动调整高度并保持，底部工具栏固定
       // 覆盖 M3 BottomSheet 默认 maxWidth 640，抽屉全宽
       constraints: const BoxConstraints(maxWidth: double.infinity),
-      // surface 随深浅色主题变化（onPrimary 恒为白，不能当背景用）
-      backgroundColor: context.appColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppTheme.radiusSheet),
-        ),
-      ),
+      // 抽屉自己动画编辑区高度，路由本身不做整页下滑：
+      // 否则底部工具栏会跟着一起移动。遮罩也由抽屉内部淡入淡出。
+      sheetAnimationStyle: AnimationStyle.noAnimation,
+      backgroundColor: context.appColors.surface.withValues(alpha: 0),
+      barrierColor: context.appColors.mediaScrim.withValues(alpha: 0),
+      isDismissible: false,
+      enableDrag: false,
       builder: (_) => MessageComposerSheet(
         controller: widget.controller,
         hasText: _composer.hasText,
@@ -450,13 +453,16 @@ class _ChatInputState extends State<ChatInput> {
         onGifSelected: widget.onGifSelected,
         attachmentItems: _attachmentItems,
         sendToLabel: widget.sendToLabel ?? '发送消息',
+        initialMarkdownMode: _composer.isMarkdownMode,
+        // 收起动画开始前把焦点交还主输入框：
+        // 抽屉输入框失焦会让键盘同时收起，而抽屉高度依赖 viewInsets，
+        // 键盘 inset 在退出动画中一路变化，整块布局会跟着跳。
+        onBeforeCollapse: _focusNode.requestFocus,
       ),
     ).then((_) {
-      // 缩回后恢复打开前的输入区状态：若打开前未聚焦（工具栏收起），
-      // 则取消主输入框焦点，避免抽屉关闭后焦点回弹导致底部工具栏意外展开。
-      if (mounted && !wasFocused && _focusNode.hasFocus) {
-        _focusNode.unfocus();
-      }
+      // 无论是点「缩回」、点遮罩还是返回键关闭，都把焦点留给主输入框，
+      // 保持键盘连续（抽屉关闭时键盘不回收）。
+      if (mounted) _focusNode.requestFocus();
     });
   }
 
@@ -514,10 +520,13 @@ class _ChatInputState extends State<ChatInput> {
         _composer.activePanel == ComposerPanel.emoji && !keyboardOnTop;
     final moreActive =
         _composer.activePanel == ComposerPanel.attachment && !keyboardOnTop;
+    final voiceActive =
+        _composer.activePanel == ComposerPanel.voice && !keyboardOnTop;
     // 面板的「设计高度」：占位块的下限（表情 300 / 附件 320）。
     // 面板渲染时会被撑到占位块高度，所以这里用设计常量即可，不必等实测。
     final panelPreferred = switch (_composer.activePanel) {
       ComposerPanel.emoji => kEmojiPanelHeight,
+      ComposerPanel.voice => kVoicePanelHeight,
       ComposerPanel.attachment => kAttachmentPanelHeight,
       ComposerPanel.none => 0.0,
     };
@@ -566,7 +575,10 @@ class _ChatInputState extends State<ChatInput> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_voiceRecorder.isRecording)
+                // 语音面板开着时，录音状态由面板自身（大圆按钮 + 提示）呈现，
+                // 不再叠浮层；只有"长按工具栏小图标直接录"的快捷路径才用浮层。
+                if (_voiceRecorder.isRecording &&
+                    _composer.activePanel != ComposerPanel.voice)
                   RecordingOverlay(cancel: _voiceRecorder.recordingCancel),
                 _MeasureSize(
                   onChange: _onInputRowSized,
@@ -593,7 +605,7 @@ class _ChatInputState extends State<ChatInput> {
                           _buildFormatBar()
                         else
                           // 常驻操作行：😊 @ 🎤 🖼 Aa ⊕ ——右侧固定发送
-                          _buildActionRow(emojiActive, moreActive),
+                          _buildActionRow(emojiActive, moreActive, voiceActive),
                         const SizedBox(height: 6),
                       ],
                     ),
@@ -638,6 +650,23 @@ class _ChatInputState extends State<ChatInput> {
                                       _composer.activePanel !=
                                       ComposerPanel.attachment,
                                   child: _attachmentPanel,
+                                ),
+                              ),
+                            if (_voicePanelOpened)
+                              Flexible(
+                                child: Offstage(
+                                  offstage:
+                                      _composer.activePanel !=
+                                      ComposerPanel.voice,
+                                  child: VoicePanel(
+                                    recording: _voiceRecorder.isRecording,
+                                    cancel: _voiceRecorder.recordingCancel,
+                                    onRecordStart: (details) =>
+                                        _voiceRecorder.start(context, details),
+                                    onRecordMove: _voiceRecorder.onMove,
+                                    onRecordEnd: (details) =>
+                                        _voiceRecorder.stop(context, details),
+                                  ),
                                 ),
                               ),
                           ],
@@ -697,7 +726,11 @@ class _ChatInputState extends State<ChatInput> {
   /// 常驻操作行（飞书稿）：😊 @ 🎤 🖼 Aa ⊕ 均匀分布，最右固定发送。
   /// 开关面板只改图标形态（蓝色/实心），行结构与输入框 Element 始终不变，
   /// 因此聚焦、切面板都不会替换 TextField（键盘不会闪）。
-  Widget _buildActionRow(bool emojiActive, bool moreActive) {
+  Widget _buildActionRow(
+    bool emojiActive,
+    bool moreActive,
+    bool voiceActive,
+  ) {
     final colors = context.appColors;
     final imagePicker = widget.onImagesPick ?? widget.onImagePick;
     return Padding(
@@ -719,9 +752,11 @@ class _ChatInputState extends State<ChatInput> {
               onTap: () => widget.onAtMention?.call(),
             ),
             InputToolbarIcon(
-              icon: Icons.mic_none,
+              icon: voiceActive ? Icons.keyboard_voice : Icons.mic_none,
               tooltip: '语音（长按录音，上滑取消）',
-              onTap: () => _focusNode.requestFocus(),
+              active: voiceActive,
+              // 轻点切到语音面板（对齐飞书）；长按仍是"直接录"的快捷路径。
+              onTap: () => _togglePanel(ComposerPanel.voice),
               onLongPressStart: (details) =>
                   _voiceRecorder.start(context, details),
               onLongPressMoveUpdate: _voiceRecorder.onMove,

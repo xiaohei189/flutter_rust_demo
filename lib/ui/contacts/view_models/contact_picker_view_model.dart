@@ -62,12 +62,16 @@ class ContactPickerViewModel extends Notifier<ContactPickerState> {
   void initialize({
     required bool multiSelect,
     List<String> excludeIds = const [],
+    Set<String> selectedIds = const {},
   }) {
-    if (state.initialized) return;
+    // 每次进入选择页都按本次参数重置：选择模式、排除项、已勾选项都可能和上一次
+    // 流程不同（历史实现只在首次生效，导致「先单选转发、再进建群多选」时仍是单选）。
     state = state.copyWith(
       initialized: true,
       multiSelect: multiSelect,
       excludeIds: excludeIds,
+      selectedIds: selectedIds,
+      keyword: '',
     );
   }
 

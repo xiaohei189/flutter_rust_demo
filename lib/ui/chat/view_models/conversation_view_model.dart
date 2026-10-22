@@ -10,6 +10,7 @@ class ConversationListState {
   final List<Conversation> conversations;
   final bool isSyncing;
   final int syncProgress;
+  final String? syncError;
   final bool isLoading;
   final String? error;
   final Map<String, String> previews;
@@ -25,6 +26,7 @@ class ConversationListState {
     this.conversations = const [],
     this.isSyncing = false,
     this.syncProgress = 0,
+    this.syncError,
     this.isLoading = false,
     this.error,
     this.previews = const {},
@@ -37,6 +39,8 @@ class ConversationListState {
     List<Conversation>? conversations,
     bool? isSyncing,
     int? syncProgress,
+    String? syncError,
+    bool clearSyncError = false,
     bool? isLoading,
     String? error,
     Map<String, String>? previews,
@@ -48,6 +52,7 @@ class ConversationListState {
       conversations: conversations ?? this.conversations,
       isSyncing: isSyncing ?? this.isSyncing,
       syncProgress: syncProgress ?? this.syncProgress,
+      syncError: clearSyncError ? null : (syncError ?? this.syncError),
       isLoading: isLoading ?? this.isLoading,
       error: error,
       previews: previews ?? this.previews,
@@ -81,6 +86,9 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
     final syncProgress = ref.watch(
       messageServiceProvider.select((s) => s.syncProgress),
     );
+    final syncError = ref.watch(
+      messageServiceProvider.select((s) => s.syncError),
+    );
     final typingUsers = ref.watch(
       messageServiceProvider.select((s) => s.typingUsers),
     );
@@ -110,6 +118,7 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
       conversations: conversations,
       isSyncing: isSyncing,
       syncProgress: syncProgress,
+      syncError: syncError,
       previews: previews,
       timeTexts: timeTexts,
       typingByConversation: Map.unmodifiable(typingUsers),
@@ -128,6 +137,10 @@ class ConversationListNotifier extends Notifier<ConversationListState> {
       state = state.copyWith(isLoading: false, error: '刷新会话列表失败: $e');
     }
   }
+
+  /// 同步失败后的手动重试。
+  Future<void> retrySync() =>
+      ref.read(messageServiceProvider.notifier).retrySyncConversations();
 
   Conversation? getConversation(String conversationId) {
     try {

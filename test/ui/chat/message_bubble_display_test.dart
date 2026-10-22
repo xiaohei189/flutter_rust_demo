@@ -43,9 +43,10 @@ void main() {
   testWidgets('语音消息（103）渲染语音组件并展示时长', (tester) async {
     await pumpMessage(tester, fakeAudioMessage(duration: 8));
 
-    expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
+    // 语音气泡已改版为「圆形播放按钮 + 轨道 + 时长」（对齐飞书）
+    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.stop_rounded), findsNothing);
     expect(find.text('0:08'), findsOneWidget);
-    expect(find.byIcon(Icons.play_circle_fill), findsNothing);
   });
 
   testWidgets('视频消息（104）渲染视频组件并展示播放图标', (tester) async {

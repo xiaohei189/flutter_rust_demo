@@ -303,6 +303,23 @@ class AppTheme {
       elevation: 8,
       backgroundColor: Colors.white,
     ),
+    // 轻提示统一为深色胶囊：默认 M3 SnackBar 是直角深灰条，
+    // 和飞书式的圆角、轻量界面不统一。
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: textPrimaryColor.withValues(alpha: 0.92),
+      contentTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: fontSizeSmall,
+        height: 1.3,
+      ),
+      actionTextColor: Colors.white,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(radiusPill)),
+      ),
+      insetPadding: const EdgeInsets.fromLTRB(40, 0, 40, 16),
+    ),
     // 开关配色对齐飞书稿：关闭 = 浅灰轨道 + 白色拇指（无描边），开启 = 主色轨道 + 白色拇指。
     // 不覆盖的话 M3 默认关闭态是「灰轨道 + 深灰拇指 + 深灰描边」，看起来像禁用。
     switchTheme: SwitchThemeData(
@@ -355,6 +372,21 @@ class AppTheme {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
       backgroundColor: AppColors.dark.surface,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: AppColors.dark.surfaceMuted,
+      contentTextStyle: TextStyle(
+        color: AppColors.dark.textPrimary,
+        fontSize: fontSizeSmall,
+        height: 1.3,
+      ),
+      actionTextColor: AppColors.dark.primary,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(radiusPill)),
+      ),
+      insetPadding: const EdgeInsets.fromLTRB(40, 0, 40, 16),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),

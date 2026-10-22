@@ -7,7 +7,7 @@ import 'format_toolbar.dart' show MarkdownFormat;
 import 'markdown_editor.dart';
 
 /// 输入面板展开状态
-enum ComposerPanel { none, emoji, attachment }
+enum ComposerPanel { none, emoji, voice, attachment }
 
 /// 聊天输入组合状态：面板互斥、Markdown 模式、@ 查询、文本提示。
 /// 输入区 State 只负责布局、焦点与录音/附件等设备能力。

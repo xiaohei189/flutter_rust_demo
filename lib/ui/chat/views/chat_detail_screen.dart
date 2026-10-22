@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/group_member.dart';
+import '../../../domain/models/mention.dart' show atAllGroupMember;
 import '../../../domain/models/user.dart';
 import '../../../domain/models/user_profile.dart';
 import '../../../domain/models/message_search_result.dart'
@@ -348,7 +349,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (!_isGroup) return const [];
     final target = _viewModel?.sendTarget;
     if (target == null || target.groupId.isEmpty) return const [];
-    return ref.read(groupMemberProvider(target.groupId)).members;
+    final members = ref.read(groupMemberProvider(target.groupId)).members;
+    if (members.isEmpty) return members;
+    // 实时 @ 列表也提供「所有人」，与工具栏选择器保持一致。
+    return [atAllGroupMember(target.groupId), ...members];
   }
 
   Future<void> _sendGif(String url) async {
@@ -438,6 +442,9 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 
   void _insertAtMention(String displayName, String userId) {
+    // 工具栏选人只改了文本；atUserId 必须一起记下，
+    // 否则发送时会退化成普通文本（没有 @ 提醒）。
+    _viewModel?.addAtUserId(userId);
     insertAtMention(_textController, displayName, userId);
   }
 
@@ -626,8 +633,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
             onMessageTap: _handleMessageTap,
             // 点失败标记直接重发（对齐飞书/微信）
             onRetrySend: _messageActions.resend,
-            onPlayAudio: (source) =>
-                ref.read(audioPlayerServiceProvider).play(source),
+            onPlayAudio: (source) async {
+              final ok = await ref
+                  .read(audioPlayerServiceProvider)
+                  .play(source);
+              if (!ok && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('语音播放失败：文件已失效或网络不可用')),
+                );
+              }
+            },
           ),
         ),
       ),

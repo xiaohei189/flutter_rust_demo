@@ -375,7 +375,14 @@ impl MessageProcessor {
             let is_conversation_update = ContentTypeUtils::should_update_conversation(msg.content_type);
             let is_self = msg.send_id == login_user_id;
             let is_online_only = msg.options.get("isOnlineOnly").copied().unwrap_or(false);
-            let content_str = String::from_utf8_lossy(&msg.content);
+            // 会话列表预览存「完整消息信封」而不是裸 content：客户端要靠
+            // contentType 渲染「[语音]」「[图片]」等文案（裸 content 缺该字段 →
+            // 媒体消息预览退化成「暂无消息」）。
+            let latest_msg = if is_conversation_update {
+                crate::core::conversation::converter::latest_msg_envelope(&LocalChatLog::from_msg_data(conv_id, msg))
+            } else {
+                String::new()
+            };
 
             if seen_convs.insert(conv_id.to_string()) {
                 let existing = self.repositories.conversation_repo.get_by_id(conv_id).await?;
@@ -394,7 +401,7 @@ impl MessageProcessor {
                         group_id: if msg.session_type != 1 { msg.group_id.clone() } else { String::new() },
                         show_name: msg.sender_nickname.clone(),
                         face_url: msg.sender_face_url.clone(),
-                        latest_msg: if is_conversation_update { content_str.to_string() } else { String::new() },
+                        latest_msg: latest_msg.clone(),
                         latest_msg_send_time: if is_conversation_update { msg.send_time } else { 0 },
                         unread_count: 0,
                         recv_msg_opt: 0,
@@ -421,7 +428,7 @@ impl MessageProcessor {
             }
 
             if is_conversation_update && !is_online_only {
-                self.repositories.conversation_repo.update_latest_msg(conv_id, &content_str, msg.send_time).await?;
+                self.repositories.conversation_repo.update_latest_msg(conv_id, &latest_msg, msg.send_time).await?;
 
                 // 对齐 Go `incrUnreadCount`：IsNewMsg → Incr + DB +1（仅新消息增加未读，
                 // 重复处理/并发时不会重复 +1；会话已在上方创建，UPDATE 必然生效）
@@ -977,7 +984,10 @@ mod tests {
         handler.handle_messages("conv_latest", msgs1).await.unwrap();
 
         let conv = conversation_dao.get_by_id("conv_latest").await.unwrap().unwrap();
-        assert_eq!(conv.latest_msg, msg1_content);
+        // latest_msg 存完整消息信封（客户端靠 contentType 渲染预览）
+        let env1: serde_json::Value = serde_json::from_str(&conv.latest_msg).unwrap();
+        assert_eq!(env1["contentType"], content_type::TEXT);
+        assert_eq!(env1["content"], msg1_content);
         assert_eq!(conv.latest_msg_send_time, 1000);
         assert_eq!(conv.unread_count, 1);
 
@@ -991,7 +1001,9 @@ mod tests {
         handler.handle_messages("conv_latest", msgs2).await.unwrap();
 
         let conv = conversation_dao.get_by_id("conv_latest").await.unwrap().unwrap();
-        assert_eq!(conv.latest_msg, msg2_content);
+        let env2: serde_json::Value = serde_json::from_str(&conv.latest_msg).unwrap();
+        assert_eq!(env2["contentType"], content_type::TEXT);
+        assert_eq!(env2["content"], msg2_content);
         assert_eq!(conv.latest_msg_send_time, 2000);
         assert_eq!(conv.unread_count, 2);
     }
@@ -1019,7 +1031,9 @@ mod tests {
         handler.handle_messages("conv_other", msgs).await.unwrap();
 
         let conv = conversation_dao.get_by_id("conv_other").await.unwrap().unwrap();
-        assert_eq!(conv.latest_msg, msg_content);
+        let env: serde_json::Value = serde_json::from_str(&conv.latest_msg).unwrap();
+        assert_eq!(env["contentType"], content_type::TEXT);
+        assert_eq!(env["content"], msg_content);
         assert_eq!(conv.latest_msg_send_time, 1000);
         assert_eq!(conv.unread_count, 1);
     }

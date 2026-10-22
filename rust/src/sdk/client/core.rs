@@ -189,7 +189,7 @@ impl ConnectionApi for OpenIMClient {
                 let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
                 if stage < sync_flag::SYNC_STAGE_DONE {
                     debug!("[SDK] 重装阶段：消息全量同步");
-                    let _ = message_syncer.sync_all_conversations(true).await;
+                    let _ = message_syncer.sync_reinstall_full().await;
                     let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_DONE).await;
                 }
             } else {
@@ -215,6 +215,12 @@ impl ConnectionApi for OpenIMClient {
                 if let Err(e) = conversation_service.refresh_face_url_and_name().await {
                     warn!("[SDK] 登录后刷新会话名称失败: {}", e);
                 }
+            }
+
+            // 历史数据修复：旧版本把裸 content 写进 latest_msg，媒体消息在会话列表里
+            // 会显示「暂无消息」。这里用本地最新消息重建完整信封（正常情况下 0 行）。
+            if let Err(e) = conversation_syncer.heal_latest_msg_previews().await {
+                warn!("[SDK] 修复历史会话预览失败: {}", e);
             }
         });
 

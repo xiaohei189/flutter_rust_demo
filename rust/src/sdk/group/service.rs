@@ -3,7 +3,7 @@ use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListener
 
 use crate::infra::http::GroupServerApi;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
-use crate::domain::model::local::LocalGroup;
+use crate::domain::model::local::{LocalConversation, LocalGroup};
 use crate::domain::model::UserId;
 
 use crate::sdk::client::context::Repositories;
@@ -238,6 +238,43 @@ impl GroupService {
 
         let group = server_to_group_info(resp.group);
         self.groups.write().await.push(group.clone());
+
+        // 服务端创建群时会为每个成员创建会话（sg_<groupID>），
+        // 但增量会话同步不保证立刻把它推下来。这里直接落本地：
+        // 1) 群信息持久化，重启后群列表不丢；
+        // 2) 会话落库，创建后立刻能在会话列表看到并进入聊天。
+        if let Err(e) = self.repositories.group_repo.upsert_group(&group_info_to_local(&group)).await {
+            warn!("创建群后写入本地群组失败: {}", e);
+        }
+        let local_conversation = LocalConversation {
+            conversation_id: format!("sg_{}", group.group_id),
+            conversation_type: 3,
+            user_id: String::new(),
+            group_id: group.group_id.clone(),
+            show_name: group.group_name.clone(),
+            face_url: group.face_url.clone(),
+            latest_msg: String::new(),
+            latest_msg_send_time: chrono::Utc::now().timestamp_millis(),
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        };
+        if let Err(e) = self.repositories.conversation_repo.upsert(&local_conversation).await {
+            warn!("创建群后写入本地会话失败: {}", e);
+        }
 
         info!("群组已创建: {}", group.group_id);
         Ok(group)

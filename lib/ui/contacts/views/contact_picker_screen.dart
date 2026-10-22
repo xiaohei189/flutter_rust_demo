@@ -17,6 +17,10 @@ class ContactPickerScreen extends ConsumerStatefulWidget {
   final String? title;
   final List<String>? excludeIds;
   final bool includeGroups;
+  final bool includeFriends;
+
+  /// 进入页面时预先勾选的 ID（例如建群时回显已选成员）。
+  final Set<String> initialSelectedIds;
 
   const ContactPickerScreen({
     super.key,
@@ -24,6 +28,8 @@ class ContactPickerScreen extends ConsumerStatefulWidget {
     this.title,
     this.excludeIds,
     this.includeGroups = true,
+    this.includeFriends = true,
+    this.initialSelectedIds = const {},
   });
 
   @override
@@ -43,6 +49,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
       _viewModel.initialize(
         multiSelect: widget.multiSelect,
         excludeIds: widget.excludeIds ?? const [],
+        selectedIds: widget.initialSelectedIds,
       );
       unawaited(_viewModel.ensureDataLoaded());
     });
@@ -107,7 +114,7 @@ class _ContactPickerScreenState extends ConsumerState<ContactPickerScreen> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ContactPickerList(
-                    friends: filteredFriends,
+                    friends: widget.includeFriends ? filteredFriends : const [],
                     groups: widget.includeGroups ? filteredGroups : const [],
                     keyword: pickerState.keyword,
                     multiSelect: widget.multiSelect,

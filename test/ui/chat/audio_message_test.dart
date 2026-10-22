@@ -6,7 +6,9 @@ import 'package:flutter_rust_demo/data/services/audio_player_service.dart'
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
 import 'package:flutter_rust_demo/ui/chat/widgets/bubble/parts/media_message_content.dart'
-    show AudioMessageContent;
+    show AudioMessageContent, AudioProgressTrack;
+import 'package:flutter_rust_demo/ui/chat/widgets/bubble/message_bubble.dart';
+import 'package:flutter_rust_demo/domain/models/user.dart' show User;
 
 ChatMessage _audioMessage({String source = 'https://cdn.example.com/a.mp3'}) {
   return ChatMessage(
@@ -88,12 +90,12 @@ void main() {
     testWidgets('未播放时展示播放图标、进度为 0', (tester) async {
       await tester.pumpWidget(host(null));
 
-      expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
-      expect(find.byIcon(Icons.stop_circle_outlined), findsNothing);
-      final bar = tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.stop_rounded), findsNothing);
+      final track = tester.widget<AudioProgressTrack>(
+        find.byType(AudioProgressTrack),
       );
-      expect(bar.value, 0);
+      expect(track.progress, 0);
     });
 
     testWidgets('播放中变成停止图标并显示进度', (tester) async {
@@ -108,12 +110,12 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
-      final bar = tester.widget<LinearProgressIndicator>(
-        find.byType(LinearProgressIndicator),
+      expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+      final track = tester.widget<AudioProgressTrack>(
+        find.byType(AudioProgressTrack),
       );
-      expect(bar.value, 0.5);
+      expect(track.progress, 0.5);
     });
 
     testWidgets('别的语音在播放时，本条仍是播放图标', (tester) async {
@@ -128,7 +130,63 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    });
+
+    testWidgets('窄屏（真机 1080x2340 @2.75）下语音气泡不溢出', (tester) async {
+      // 回归：气泡最大宽度受屏宽限制，固定宽度的按钮+轨道+时长会把时长挤出气泡，
+      // 真机上表现为「RIGHT OVERFLOWED BY 15 PIXELS」。
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.75;
+      addTearDown(tester.view.reset);
+
+      final windowWidth = 1080 / 2.75;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.centerLeft,
+              child: MessageBubble(
+                message: _audioMessage(),
+                otherUser: const User(id: 'me', name: '我'),
+                // sendId='other' 且 currentUserId='other' → 己方气泡（真机溢出的正是这种）
+                currentUserId: 'other',
+                maxBubbleWidth: windowWidth * 0.65,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0:08'), findsOneWidget);
+    });
+
+    testWidgets('气泡可用宽度被压得很窄时轨道收缩、仍不溢出', (tester) async {
+      // 兜底回归：任何原因导致气泡拿到的最大宽度很小（如分屏/超长昵称），
+      // 固定 72 宽的轨道会把时长挤出气泡；此时轨道应收缩。
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.centerLeft,
+              child: MessageBubble(
+                message: _audioMessage(),
+                otherUser: const User(id: 'me', name: '我'),
+                currentUserId: 'other',
+                maxBubbleWidth: 160,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('0:08'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(AudioProgressTrack)).width,
+        lessThan(72),
+      );
     });
   });
 }

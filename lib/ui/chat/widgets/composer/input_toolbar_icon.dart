@@ -32,40 +32,39 @@ class InputToolbarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLongPress = onLongPressStart != null;
-    final btn = Tooltip(
-      message: tooltip,
-      child: Semantics(
-        label: tooltip,
-        button: true,
-        child: SizedBox(
-          // 默认按钮尺寸（图标 24 居中）；可传 size 单独覆盖（如表情/更多用更小值收紧它们之间的间距）
-          width: size ?? 28,
-          height: size ?? 28,
-          child: IconButton(
-            icon: Icon(
-              icon,
-              size: 24,
-              color: enabled
-                  ? (active
-                        ? context.appColors.primary
-                        : context.appColors.textPrimary.withValues(alpha: 0.7))
-                  : context.appColors.textSecondary.withValues(alpha: 0.3),
-            ),
-            onPressed: hasLongPress ? null : (enabled ? onTap : null),
-            padding: EdgeInsets.zero,
+    Widget content = Semantics(
+      label: tooltip,
+      button: true,
+      child: SizedBox(
+        // 默认按钮尺寸（图标 24 居中）；可传 size 单独覆盖（如表情/更多用更小值收紧它们之间的间距）
+        width: size ?? 28,
+        height: size ?? 28,
+        child: IconButton(
+          icon: Icon(
+            icon,
+            size: 24,
+            color: enabled
+                ? (active
+                      ? context.appColors.primary
+                      : context.appColors.textPrimary.withValues(alpha: 0.7))
+                : context.appColors.textSecondary.withValues(alpha: 0.3),
           ),
+          onPressed: hasLongPress ? null : (enabled ? onTap : null),
+          padding: EdgeInsets.zero,
         ),
       ),
     );
     if (hasLongPress) {
-      return GestureDetector(
+      content = GestureDetector(
         onTap: enabled ? onTap : null,
         onLongPressStart: onLongPressStart,
         onLongPressMoveUpdate: onLongPressMoveUpdate,
         onLongPressEnd: onLongPressEnd,
-        child: btn,
+        child: content,
       );
     }
-    return btn;
+    // Tooltip 必须在 GestureDetector **外层**：Tooltip 默认以长按触发，
+    // 放在内层会先抢走长按手势，导致「长按录音」永远收不到回调（真机表现为按了没反应）。
+    return Tooltip(message: tooltip, child: content);
   }
 }

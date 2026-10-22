@@ -336,6 +336,46 @@ impl MessageSyncer {
         }
     }
 
+    /// 重装登录阶段的全量消息同步（core.rs 重装分支专用）。
+    ///
+    /// 与 `sync_on_login` 一样成对发出 `SyncStarted` / `SyncFinished`：
+    /// 重装分支原先直接调 `sync_all_conversations(true)`，只有 `SyncProgress`
+    /// 没有结束事件，前端「同步中」进度条会永远停在 100% 不消失。
+    pub async fn sync_reinstall_full(&self) -> Result<()> {
+        let _guard = self.sync_lock.try_lock();
+        if _guard.is_err() {
+            info!(target: "im::sync", "[Sync] 消息同步已在进行中，跳过重装同步");
+            return Ok(());
+        }
+
+        info!(target: "im::sync", "[Sync] === 消息同步开始: sync_reinstall_full ===");
+        self.send(ConversationEvent::SyncStarted(true));
+        self.send(ConversationEvent::SyncProgress {
+            progress: 1,
+            message: "重装同步开始".into(),
+        });
+
+        match self.sync_all_conversations(true).await {
+            Ok(()) => {
+                self.send(ConversationEvent::SyncProgress {
+                    progress: 100,
+                    message: "重装同步完成".into(),
+                });
+                self.send(ConversationEvent::SyncFinished(true));
+                info!(target: "im::sync", "[Sync] === 消息同步成功: sync_reinstall_full ===");
+                Ok(())
+            }
+            Err(e) => {
+                self.send(ConversationEvent::SyncFailed {
+                    reinstalled: true,
+                    error: format!("{}", e),
+                });
+                error!(target: "im::sync", "[Sync] === 消息同步失败: sync_reinstall_full, error={} ===", e);
+                Err(e)
+            }
+        }
+    }
+
     /// 推送消息触发同步：检测 seq 连续性，不连续时自动补拉
     pub async fn push_trigger_and_sync(&self, conv_id: &str, pushed_seqs: &[i64]) -> Result<()> {
         if pushed_seqs.is_empty() {

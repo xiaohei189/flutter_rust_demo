@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/group_member.dart';
+import '../../../../domain/models/mention.dart';
 import '../../../../domain/models/user.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/user_avatar.dart';
@@ -32,9 +33,29 @@ Future<GroupMember?> showGroupMemberPicker(
           Flexible(
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: members.length,
+              // 第一位固定是「所有人」，其余为真实群成员。
+              itemCount: members.length + 1,
               itemBuilder: (_, i) {
-                final member = members[i];
+                if (i == 0) {
+                  return ListTile(
+                    key: const ValueKey('at_all_option'),
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: context.appColors.primary,
+                      child: Icon(
+                        Icons.groups_rounded,
+                        size: 20,
+                        color: context.appColors.onPrimary,
+                      ),
+                    ),
+                    title: const Text(kAtAllDisplayName),
+                    subtitle: const Text('提醒群内所有成员'),
+                    onTap: () => Navigator.of(
+                      ctx,
+                    ).pop(atAllGroupMember(members.first.groupId)),
+                  );
+                }
+                final member = members[i - 1];
                 return ListTile(
                   leading: UserAvatar.fromUser(
                     user: User(

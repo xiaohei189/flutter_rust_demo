@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/app_logger.dart';
 import '../../../application/chat/message_send_pipeline.dart' show PendingSend;
 import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
@@ -256,7 +257,12 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     unawaited(
       pending.done.then<void>(
         (_) {},
-        onError: (Object e) => _setError('$failText，点击消息可重发'),
+        onError: (Object e) {
+          // 本地已上屏、远端失败：异常不写日志的话，界面只有「点击可重发」，
+          // 排查时拿不到任何原因（上传失败 / 服务端拒绝都会落到这里）。
+          appLog.e('[Send] $failText（异步）: $e');
+          _setError('$failText，点击消息可重发');
+        },
       ),
     );
     return true;

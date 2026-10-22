@@ -522,6 +522,10 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
   Future<void> loadConversations() =>
       conversationController.loadConversations();
 
+  /// 同步失败后的手动重试。
+  Future<void> retrySyncConversations() =>
+      conversationController.retrySync();
+
   Future<void> refreshConversations() =>
       conversationController.refreshConversations();
 

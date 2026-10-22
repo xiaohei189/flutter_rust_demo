@@ -142,7 +142,10 @@
     - 新增 `scripts/check-codegen.ps1`（跑 codegen 后校验产物与仓库一致）并写入 `AGENTS.md` 提交前清单。
     - 验证：`flutter analyze` 干净；`flutter test` **433 全过**；`cargo build --lib` 通过；连续两次 codegen 产物逐字节一致；真机（Android 模拟器）登录 → 会话列表 → 消息详情 → 未读分割线/表情回复/消息标记全部正常，无运行时错误。
     - 遗留注意：新布局与 Rust 目录耦合，Rust 侧再动目录仍需同步迁移 Dart import —— 由 `check-codegen.ps1` 兜住（改完不重新生成会直接失败）。
-- [ ] P2-1 @所有人：Rust 已有 `get_at_all_tag`，发送侧补 `atAllTag` 支持，成本小，可提前到 P1 尾。
+- [x] P2-1 @所有人（2026-10-19）：工具栏 @ 选择器与实时 @ 列表均置顶「所有人」，选中后写入 `AtAllTag` 并插入 `@所有人 ` 文本；发送为 contentType=106，`atUserList/atUserIDList` 携带 `AtAllTag`，服务端据此计算 `groupAtType`。
+  - 顺带修复：工具栏 @ 选人只改文本、没记 atUserId，导致发出普通文本；插入完整昵称后候选列表重新弹出的问题。
+  - 测试：`test/ui/chat/group_member_picker_test.dart`、`test/ui/chat/composer_helpers_test.dart`；真机（模拟器）验证消息落库 `atUserIDList=["AtAllTag"]`。
+  - 同批修复：全局客户端持有者由 `OnceLock` 改为可替换 `RwLock`。热重启/重登后 `sendMessage` 仍走旧客户端，表现为「服务端已收到、本地气泡不上屏」。
 - [ ] P2-2 音视频通话：LiveKit 接入（权限、来电弹窗、通话页），独立模块。
 - [ ] P2-3 翻译 / 网页搜索 / 飞书内搜索：依赖第三方服务与「选中文本」上下文能力，先出方案。
 - [ ] P2-4 云文档、任务、日程、定时消息、边写边译、群机器人、举报：均依赖外部系统，OpenIM 无对应协议；建议**从 UI 摘除**或保留占位并明确标注未排期。

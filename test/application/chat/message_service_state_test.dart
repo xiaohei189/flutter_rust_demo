@@ -41,4 +41,14 @@ void main() {
     expect(identical(state.userProfile.copyWith(), state.userProfile), isTrue);
     expect(identical(state.social.copyWith(), state.social), isTrue);
   });
+
+  test('syncError 可设置，clearSyncError 可清除', () {
+    final failed = MessageServiceState().copyWith(
+      syncError: '消息同步失败，请检查网络后重试',
+    );
+    expect(failed.syncError, '消息同步失败，请检查网络后重试');
+
+    final retried = failed.copyWith(clearSyncError: true);
+    expect(retried.syncError, isNull);
+  });
 }

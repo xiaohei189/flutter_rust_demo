@@ -16,7 +16,11 @@ class AtMemberQuery {
     final searchFrom = caret > 0 ? caret - 1 : 0;
     final lastAt = text.lastIndexOf('@', searchFrom);
     if (lastAt < 0) return null;
-    return text.substring(lastAt + 1, caret).trim();
+    final token = text.substring(lastAt + 1, caret);
+    // 已经插入完整昵称（后面跟了空格/标点）后不再弹候选，
+    // 否则工具栏选人后列表会立刻重新展开。
+    if (RegExp(r'\s').hasMatch(token)) return null;
+    return token.trim();
   }
 
   List<GroupMember> filter(String? keyword, List<GroupMember> members) {

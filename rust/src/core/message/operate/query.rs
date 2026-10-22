@@ -327,9 +327,10 @@ impl MessageService {
         };
         self.repositories.message_repo.batch_insert(std::slice::from_ref(&local_log)).await?;
 
-        // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
+        // 对齐 Go SDK：更新/创建会话 latest_msg（完整消息信封）并发布会话变更
+        let latest_msg = crate::core::conversation::converter::latest_msg_envelope(&local_log);
         if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
-            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &local_log.content, now).await?;
+            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &latest_msg, now).await?;
         } else {
             let login_user_id = self.user_id.get().await;
             let mut conv = LocalConversation {
@@ -338,7 +339,7 @@ impl MessageService {
                 user_id: String::new(),
                 group_id: group_id.to_string(),
                 show_name: String::new(),
-                latest_msg: local_log.content.clone(),
+                latest_msg,
                 latest_msg_send_time: now,
                 ..Default::default()
             };
@@ -389,15 +390,16 @@ impl MessageService {
         };
         self.repositories.message_repo.batch_insert(std::slice::from_ref(&local_log)).await?;
 
-        // 对齐 Go SDK：更新/创建会话 latest_msg 并发布会话变更
+        // 对齐 Go SDK：更新/创建会话 latest_msg（完整消息信封）并发布会话变更
+        let latest_msg = crate::core::conversation::converter::latest_msg_envelope(&local_log);
         if self.repositories.conversation_repo.get_by_id(&conversation_id).await?.is_some() {
-            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &local_log.content, now).await?;
+            self.repositories.conversation_repo.update_after_sent_message(&conversation_id, &latest_msg, now).await?;
         } else {
             let conv = LocalConversation {
                 conversation_id: conversation_id.clone(),
                 conversation_type: 1,
                 user_id: other_id,
-                latest_msg: local_log.content.clone(),
+                latest_msg,
                 latest_msg_send_time: now,
                 ..Default::default()
             };

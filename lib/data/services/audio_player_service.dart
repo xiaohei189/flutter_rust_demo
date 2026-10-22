@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 /// 语音播放状态（供气泡展示播放中动画/进度）。
 class AudioPlaybackState {
@@ -45,6 +50,13 @@ class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
 
+  /// 语音缓存总上限：超过后按「最久未使用」淘汰。
+  /// `cache/audio_cache` 只增不删会持续占空间，这里给一个明确上限。
+  static const int audioCacheMaxBytes = 100 * 1024 * 1024;
+
+  /// 语音缓存最长保留时间（过期直接清理）。
+  static const Duration audioCacheMaxAge = Duration(days: 7);
+
   String? _currentSource;
 
   /// 播放器实例按需创建：`AudioPlayer()` 构造即初始化平台通道，
@@ -85,20 +97,126 @@ class AudioPlayerService {
 
   bool get isPlaying => _player?.state == PlayerState.playing;
 
-  Future<void> play(String source) async {
+  /// 播放语音，返回是否成功开始播放。
+  ///
+  /// 本地临时文件被清理、远端 URL 不可达等情况下播放器会直接抛错；
+  /// 这里必须把播放态复位，否则气泡会永远停在「播放中」的停止图标上。
+  Future<bool> play(String source) async {
     final player = _ensurePlayer;
     if (_currentSource == source && isPlaying) {
       await player.stop();
       _currentSource = null;
       playback.value = const AudioPlaybackState();
-      return;
+      return true;
     }
     _currentSource = source;
     await player.stop();
     playback.value = AudioPlaybackState(source: source, isPlaying: true);
-    await player.play(
-      source.startsWith('http') ? UrlSource(source) : DeviceFileSource(source),
-    );
+    try {
+      // 远端语音先落盘再播：`/object/...` 是 302 跳转到对象存储的地址，
+      // Android 平台的 MediaPlayer 走这条链路会卡住不返回（真机 MIUI 实测
+      // 30s 超时后报「Future not completed」），Dart 侧下载后按文件播最稳。
+      final playPath = await _localFileFor(source) ?? source;
+      await player.play(DeviceFileSource(playPath));
+      return true;
+    } catch (e) {
+      debugPrint('[AudioPlayer] 播放失败: source=$source err=$e');
+      _currentSource = null;
+      playback.value = const AudioPlaybackState();
+      return false;
+    }
+  }
+
+  /// 远端地址返回本地缓存文件路径（已缓存则直接复用）；本地路径返回 null。
+  Future<String?> _localFileFor(String source) async {
+    if (!source.startsWith('http')) return null;
+    final dir = Directory('${(await getTemporaryDirectory()).path}/audio_cache');
+    if (!dir.existsSync()) {
+      await dir.create(recursive: true);
+    }
+    final rawName = source.split('/').last.split('?').first;
+    final safeName = rawName.replaceAll(RegExp(r'[^\w.\-]'), '_');
+    final file = File('${dir.path}/${_stableKey(source)}_$safeName');
+    if (file.existsSync() && file.lengthSync() > 0) {
+      unawaited(_trimCache(dir));
+      return file.path;
+    }
+
+    final resp = await http
+        .get(Uri.parse(source))
+        .timeout(const Duration(seconds: 20));
+    if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
+      throw Exception('语音下载失败: HTTP ${resp.statusCode}');
+    }
+    await file.writeAsBytes(resp.bodyBytes, flush: true);
+    unawaited(_trimCache(dir));
+    return file.path;
+  }
+
+  /// 清理过期/超量的语音缓存（尽力而为，失败不影响播放）。
+  Future<void> _trimCache(Directory dir) async {
+    try {
+      final files = dir.listSync().whereType<File>().toList();
+      for (final f in selectCacheEvictions(
+        files,
+        maxBytes: audioCacheMaxBytes,
+        maxAge: audioCacheMaxAge,
+      )) {
+        try {
+          f.deleteSync();
+        } catch (_) {
+          // 单个文件删不掉就跳过，下次再清
+        }
+      }
+    } catch (e) {
+      debugPrint('[AudioPlayer] 清理语音缓存失败: $e');
+    }
+  }
+
+  /// 纯计算：返回应删除的缓存文件 —— 先清过期，再按最久未使用淘汰到总量上限内。
+  ///
+  /// 拆成静态方法便于单测（不依赖播放器平台通道）。
+  static List<File> selectCacheEvictions(
+    List<File> files, {
+    required int maxBytes,
+    required Duration maxAge,
+    DateTime? now,
+  }) {
+    final cutoff = (now ?? DateTime.now()).subtract(maxAge);
+    final alive = <({File file, int size, DateTime modified})>[];
+    final doomed = <File>[];
+    for (final file in files) {
+      try {
+        final stat = file.statSync();
+        if (stat.type != FileSystemEntityType.file) continue;
+        if (stat.modified.isBefore(cutoff)) {
+          doomed.add(file);
+        } else {
+          alive.add((file: file, size: stat.size, modified: stat.modified));
+        }
+      } catch (_) {
+        // 读取失败的文件不参与统计
+      }
+    }
+    var total = alive.fold<int>(0, (sum, e) => sum + e.size);
+    if (total <= maxBytes) return doomed;
+
+    alive.sort((a, b) => a.modified.compareTo(b.modified));
+    for (final entry in alive) {
+      if (total <= maxBytes) break;
+      doomed.add(entry.file);
+      total -= entry.size;
+    }
+    return doomed;
+  }
+
+  /// 稳定的缓存键（String.hashCode 跨进程不保证一致，会让缓存文件越攒越多）
+  String _stableKey(String value) {
+    var hash = 0x811c9dc5;
+    for (final unit in value.codeUnits) {
+      hash = ((hash ^ unit) * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16);
   }
 
   Future<void> stop() async {

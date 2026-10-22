@@ -24,11 +24,41 @@ void main() {
       final json = jsonEncode({
         'contentType': 101,
         'senderNickname': '张三',
+        'sessionType': 2,
         'content': jsonEncode({'content': '你好'}),
       });
       final result = latestMessagePreview(json);
-      expect(result, contains('你好'));
-      expect(result, contains('张三'));
+      expect(result, '张三: 你好', reason: '嵌套 JSON 应展开为正文，不能漏出原始 JSON');
+    });
+
+    test('单聊文本 content 为 JSON 字符串时只显示正文', () {
+      final json = jsonEncode({
+        'contentType': 101,
+        'sessionType': 1,
+        'senderNickname': '小萌',
+        'content': jsonEncode({'content': '噢噢噢'}),
+      });
+      expect(latestMessagePreview(json), '噢噢噢');
+    });
+
+    test('多层嵌套 JSON 字符串逐层展开', () {
+      final json = jsonEncode({
+        'contentType': 101,
+        'sessionType': 1,
+        'content': jsonEncode({
+          'content': jsonEncode({'content': '深层文本'}),
+        }),
+      });
+      expect(latestMessagePreview(json), '深层文本');
+    });
+
+    test('纯文本 content 不做 JSON 解析', () {
+      final json = jsonEncode({
+        'contentType': 101,
+        'sessionType': 1,
+        'content': '普通文本',
+      });
+      expect(latestMessagePreview(json), '普通文本');
     });
 
     test('文本消息 textElem 结构', () {
@@ -54,6 +84,26 @@ void main() {
 
     test('语音消息', () {
       final json = jsonEncode({'contentType': 103, 'content': '{}'});
+      expect(latestMessagePreview(json), '[语音]');
+    });
+
+    test('群聊预览带发送者前缀', () {
+      final json = jsonEncode({
+        'contentType': 103,
+        'sessionType': 3,
+        'senderNickname': '张三',
+        'content': '{}',
+      });
+      expect(latestMessagePreview(json), '张三: [语音]');
+    });
+
+    test('单聊预览不带发送者前缀（对齐飞书）', () {
+      final json = jsonEncode({
+        'contentType': 103,
+        'sessionType': 1,
+        'senderNickname': '张三',
+        'content': '{}',
+      });
       expect(latestMessagePreview(json), '[语音]');
     });
 

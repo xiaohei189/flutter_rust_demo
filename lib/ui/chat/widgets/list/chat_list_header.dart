@@ -17,6 +17,8 @@ class ChatListHeader extends StatelessWidget {
     required this.isQuickTab,
     required this.isSyncing,
     required this.syncProgress,
+    this.syncError,
+    this.onRetrySync,
     required this.onFilterChange,
     required this.onOpenGroupFilter,
     required this.onSearchTap,
@@ -28,6 +30,8 @@ class ChatListHeader extends StatelessWidget {
   final bool isQuickTab;
   final bool isSyncing;
   final int syncProgress;
+  final String? syncError;
+  final VoidCallback? onRetrySync;
   final ValueChanged<GroupFilter> onFilterChange;
   final VoidCallback onOpenGroupFilter;
   final VoidCallback onSearchTap;
@@ -109,6 +113,34 @@ class ChatListHeader extends StatelessWidget {
                       color: colors.primary,
                     ),
                   ),
+                ),
+              ],
+            ),
+          ],
+          if (!isSyncing && syncError != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.cloud_off, size: 14, color: colors.danger),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    syncError!,
+                    style: TextStyle(fontSize: 11, color: colors.danger),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                TextButton(
+                  key: const ValueKey('sync_retry_button'),
+                  onPressed: onRetrySync,
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: const Size(0, 28),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('重试', style: TextStyle(fontSize: 11)),
                 ),
               ],
             ),

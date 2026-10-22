@@ -260,6 +260,9 @@ pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, ms
     local_log.send_time = send_time;
     local_log.create_time = send_time;
     local_log.status = MessageSendStatus::Sending as i32;
+    // 会话列表预览存完整消息信封（客户端要靠 contentType 渲染「[语音]」等文案）；
+    // 必须在 move 进 batch_insert 之前算好。
+    let latest_msg = crate::core::conversation::converter::latest_msg_envelope(&local_log);
 
     context.repositories.message_repo.batch_insert(&[local_log]).await?;
     context
@@ -271,7 +274,7 @@ pub(crate) async fn insert_message_before_send_impl(context: &RuntimeContext, ms
             ex: String::new(),
         })
         .await?;
-    context.repositories.conversation_repo.update_after_sent_message(&conversation_id, &msg.content, send_time).await?;
+    context.repositories.conversation_repo.update_after_sent_message(&conversation_id, &latest_msg, send_time).await?;
 
     // 会话乐观更新（对齐 Go SDK api.go L322-324）
     if let Ok(Some(conv)) = context.repositories.conversation_repo.get_by_id(&conversation_id).await {
@@ -1066,7 +1069,25 @@ impl MessageSender {
         // 上传/提交失败同样要把已上屏的那条消息收敛为失败（否则永远转圈且不可重发）。
         let conversation_id = conversation_id_for_msg(&msg);
         match process_media_content_impl(&self.file_uploader, &msg, Some(upload_progress_callback(&self.context, &msg.client_msg_id))).await {
-            Ok(content) => msg.content = content,
+            Ok(content) => {
+                let backfilled = content != msg.content;
+                msg.content = content;
+                // 上传回填的 URL 必须写回本地行：本地是「先入库上屏（只有本地临时路径、
+                // URL 为空）→ 再上传」的顺序，而 batch_insert 是 INSERT OR IGNORE，
+                // 上传后的内容写不进去。临时文件上传后已删除，行里留着旧内容会让
+                // 发送方自己的语音/图片永远打不开（sourceUrl 为空、路径已失效）。
+                if backfilled && !online_only {
+                    if let Err(e) = self
+                        .context
+                        .repositories
+                        .message_repo
+                        .update_message_content_and_type(&conversation_id, &msg.client_msg_id, &msg.content, msg.content_type)
+                        .await
+                    {
+                        error!("回填媒体消息内容失败: client_msg_id={}, err={}", msg.client_msg_id, e);
+                    }
+                }
+            }
             Err(e) => {
                 if !online_only {
                     mark_send_failed_impl(&self.context, &msg.client_msg_id, &format!("{}", e)).await;
