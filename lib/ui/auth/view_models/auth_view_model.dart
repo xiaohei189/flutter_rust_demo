@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/app_logger.dart';
+import '../../../application/auth/auto_login_error.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../domain/models/auth.dart';
 import '../../../providers/current_user_provider.dart';
@@ -222,7 +223,11 @@ class AuthViewModel extends Notifier<AuthState> {
       return true;
     } catch (e) {
       appLog.w('自动登录失败，跳转登录页: $e');
-      await _authRepository.clearCredentials();
+      if (shouldClearCredentialsOnAutoLoginFailure(e)) {
+        await _authRepository.clearCredentials();
+      } else {
+        appLog.w('自动登录失败属于临时/网络错误，保留本地凭证，等待下次重试');
+      }
       return false;
     }
   }
