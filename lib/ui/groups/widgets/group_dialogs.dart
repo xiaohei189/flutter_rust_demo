@@ -32,22 +32,26 @@ Future<String?> showGroupMemberActionsSheet(
           ),
           const Divider(height: 1),
           ListTile(
+            key: const ValueKey('group_member_action_kick'),
             leading: const Icon(Icons.person_remove_outlined),
             title: const Text('踢出群聊'),
             onTap: () => Navigator.of(ctx).pop('kick'),
           ),
           ListTile(
+            key: const ValueKey('group_member_action_mute'),
             leading: const Icon(Icons.volume_off_outlined),
             title: const Text('禁言'),
             onTap: () => Navigator.of(ctx).pop('mute'),
           ),
           ListTile(
+            key: const ValueKey('group_member_action_unmute'),
             leading: const Icon(Icons.volume_up_outlined),
             title: const Text('取消禁言'),
             onTap: () => Navigator.of(ctx).pop('unmute'),
           ),
           if (isOwner && member.roleLevel != 3)
             ListTile(
+              key: const ValueKey('group_member_action_admin'),
               leading: const Icon(Icons.admin_panel_settings_outlined),
               title: Text(member.roleLevel == 2 ? '取消管理员' : '设为管理员'),
               onTap: () => Navigator.of(
@@ -56,6 +60,7 @@ Future<String?> showGroupMemberActionsSheet(
             ),
           if (isOwner)
             ListTile(
+              key: const ValueKey('group_member_action_transfer'),
               leading: const Icon(Icons.swap_horiz),
               title: const Text('转让群主'),
               onTap: () => Navigator.of(ctx).pop('transfer'),
@@ -86,21 +91,25 @@ Future<String?> showGroupManageSheet(BuildContext context) {
           ),
           const Divider(height: 1),
           ListTile(
+            key: const ValueKey('group_manage_mute_all_action'),
             leading: const Icon(Icons.volume_off_outlined),
             title: const Text('全员禁言'),
             onTap: () => Navigator.of(ctx).pop('muteAll'),
           ),
           ListTile(
+            key: const ValueKey('group_manage_unmute_all_action'),
             leading: const Icon(Icons.volume_up_outlined),
             title: const Text('解除全员禁言'),
             onTap: () => Navigator.of(ctx).pop('unmuteAll'),
           ),
           ListTile(
+            key: const ValueKey('group_manage_transfer_action'),
             leading: const Icon(Icons.swap_horiz),
             title: const Text('转让群主'),
             onTap: () => Navigator.of(ctx).pop('transfer'),
           ),
           ListTile(
+            key: const ValueKey('group_manage_dismiss_action'),
             leading: Icon(
               Icons.delete_outline,
               color: context.appColors.danger,

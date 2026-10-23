@@ -687,9 +687,21 @@ fn server_to_group_member(s: ServerGroupMember) -> GroupMember {
         user_id: s.user_id,
         nickname: s.nickname,
         face_url: s.face_url,
-        role_level: s.role_level,
+        role_level: normalize_role_level(s.role_level),
         join_time: s.join_time,
         join_source: s.join_source.to_string(),
+    }
+}
+
+/// 服务端角色等级：100=群主、60=管理员、20=普通成员；
+/// 客户端领域模型统一为 3/2/1，供 UI 判断权限。
+fn normalize_role_level(raw: i32) -> i32 {
+    match raw {
+        100 => 3,
+        60 => 2,
+        20 => 1,
+        value @ 1..=3 => value,
+        _ => 1,
     }
 }
 
@@ -764,7 +776,7 @@ mod tests {
             user_id: "user_456".to_string(),
             nickname: "Test Member".to_string(),
             face_url: "https://example.com/member.jpg".to_string(),
-            role_level: 1,
+            role_level: 100,
             join_time: 1234567890,
             join_source: 1,
             operator_user_id: "owner_1".to_string(),
@@ -775,6 +787,18 @@ mod tests {
         assert_eq!(domain.group_id, "group_123");
         assert_eq!(domain.user_id, "user_456");
         assert_eq!(domain.nickname, "Test Member");
+        assert_eq!(domain.role_level, 3);
+    }
+
+    #[test]
+    fn test_normalize_role_level() {
+        assert_eq!(normalize_role_level(100), 3);
+        assert_eq!(normalize_role_level(60), 2);
+        assert_eq!(normalize_role_level(20), 1);
+        // 已是客户端等级时保持原值
+        assert_eq!(normalize_role_level(3), 3);
+        assert_eq!(normalize_role_level(2), 2);
+        assert_eq!(normalize_role_level(1), 1);
     }
 
     #[test]
