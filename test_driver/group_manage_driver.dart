@@ -54,7 +54,8 @@ Future<void> main() async {
     await driver.tap(find.byType('TextField'));
     await driver.enterText('群管理回归验证');
     await driver.tap(find.text('保存'));
-    await Future<void>.delayed(const Duration(seconds: 2));
+    // 等 SnackBar 消失，避免它盖住底部“全员禁言”行。
+    await Future<void>.delayed(const Duration(seconds: 5));
 
     // 全员禁言 / 解除
     await _scrollTo(driver, find.byValueKey('group_info_manage'));
@@ -65,7 +66,7 @@ Future<void> main() async {
     await _scrollTo(driver, find.byValueKey('group_info_manage'));
     await driver.tap(find.byValueKey('group_info_manage'));
     await driver.tap(find.text('解除全员禁言'));
-    await Future<void>.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 5));
 
     // 回设置页邀请杨帆
     await driver.tap(find.pageBack());
@@ -80,7 +81,7 @@ Future<void> main() async {
     );
     await driver.tap(find.byValueKey('invite_member_4508967079'));
     await driver.tap(find.text('确定 (1)'));
-    await Future<void>.delayed(const Duration(seconds: 3));
+    await Future<void>.delayed(const Duration(seconds: 5));
     await _shot(driver, '4_invited');
 
     // 再进群信息，踢出杨帆
