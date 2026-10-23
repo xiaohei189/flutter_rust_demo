@@ -170,6 +170,9 @@ Future<void> showInviteMemberSheet(
                                   );
 
                                   return ListTile(
+                                    key: ValueKey(
+                                      'invite_member_${friend.userId}',
+                                    ),
                                     leading: UserAvatar.fromUser(
                                       user: User(
                                         id: friend.userId,
