@@ -88,6 +88,7 @@ class GroupMemberSection extends StatelessWidget {
         else
           ...members.map(
             (m) => ListTile(
+              key: ValueKey('group_member_${m.userId}'),
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               leading: UserAvatar.fromUser(

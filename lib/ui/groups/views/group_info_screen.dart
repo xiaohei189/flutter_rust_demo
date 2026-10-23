@@ -65,6 +65,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         CardLayout(
           children: [
             ListRow(
+              key: const ValueKey('group_info_manage'),
               label: l10n?.muteAll ?? '全员禁言',
               trailing: Icon(
                 Icons.volume_off_outlined,
@@ -74,6 +75,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               onTap: () => _memberActions.showGroupManageSheet(context),
             ),
             ListRow(
+              key: const ValueKey('group_info_transfer'),
               label: l10n?.transferOwner ?? '转让群主',
               trailing: Icon(
                 Icons.swap_horiz,
@@ -83,6 +85,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
               onTap: () => _memberActions.transferOwner(context),
             ),
             DangerActionRow(
+              key: const ValueKey('group_info_dismiss'),
               title: l10n?.dismissGroup ?? '解散群组',
               onTap: () => _memberActions.dismissGroup(context),
             ),
@@ -187,6 +190,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 onTap: _changeGroupAvatar,
               ),
               TwoLineListRow(
+                key: const ValueKey('group_info_name'),
                 label: l10n?.groupName ?? '群名称',
                 value: groupInfo.groupName,
                 onTap: () => _editField(
@@ -196,6 +200,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 ),
               ),
               TwoLineListRow(
+                key: const ValueKey('group_info_description'),
                 label: l10n?.groupDescription ?? '群描述',
                 value: groupInfo.groupDescription,
                 onTap: () => _editField(

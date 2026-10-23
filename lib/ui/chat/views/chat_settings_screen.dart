@@ -466,6 +466,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       Padding(
         padding: const EdgeInsets.all(16),
         child: InkWell(
+          key: const ValueKey('chat_settings_group_info'),
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           onTap: () {
             if (conversation != null) {
@@ -563,7 +564,10 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           runSpacing: 12,
           children: [
             for (final member in members) RealMemberAvatar(member: member),
-            AddMemberButton(onTap: _showInviteMemberDialog),
+            AddMemberButton(
+              key: const ValueKey('chat_settings_add_member'),
+              onTap: _showInviteMemberDialog,
+            ),
           ],
         ),
       ),
