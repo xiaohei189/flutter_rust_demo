@@ -11,7 +11,11 @@ Future<void> _shot(FlutterDriver driver, String name) async {
 }
 
 /// 群改名 → 返回设置页/会话列表，验证群名是否同步（进入时需停留在会话列表）。
+///
+/// 目标群名可用环境变量 `RENAME_TO` 覆盖，默认「小萌、黄磊-改名同步验证」。
 Future<void> main() async {
+  final newName =
+      Platform.environment['RENAME_TO'] ?? '小萌、黄磊-改名同步验证';
   final driver = await FlutterDriver.connect(
     dartVmServiceUrl: Platform.environment['VM_SERVICE_URL'],
     timeout: const Duration(seconds: 30),
@@ -38,7 +42,7 @@ Future<void> main() async {
     // 改名
     await driver.tap(find.byValueKey('group_info_name'));
     await driver.tap(find.byType('TextField'));
-    await driver.enterText('小萌、黄磊-改名同步验证');
+    await driver.enterText(newName);
     await driver.tap(find.text('保存'));
     await Future<void>.delayed(const Duration(seconds: 8));
     await _shot(driver, '1_renamed');
