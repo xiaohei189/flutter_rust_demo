@@ -5,6 +5,25 @@ import '../../../domain/models/user.dart';
 import '../../../ui/core/theme/app_theme.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
 
+/// 底部弹窗内容容器：内容超出可用高度时可滚动。
+///
+/// 大字/大显示缩放的设备上，固定高度的弹窗会把最后几项（例如「解散群组」）
+/// 挤出屏幕且无法操作，这里统一改成「装得下就按内容高度、装不下就滚动」。
+class _SheetBody extends StatelessWidget {
+  const _SheetBody({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: children),
+      ),
+    );
+  }
+}
+
 /// 成员操作底部弹窗，返回动作标识：kick/mute/unmute/setAdmin/unsetAdmin/transfer。
 Future<String?> showGroupMemberActionsSheet(
   BuildContext context,
@@ -19,54 +38,51 @@ Future<String?> showGroupMemberActionsSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: Text(
-              member.nickname.isNotEmpty ? member.nickname : member.userId,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+    builder: (ctx) => _SheetBody(
+      children: [
+        ListTile(
+          title: Text(
+            member.nickname.isNotEmpty ? member.nickname : member.userId,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          const Divider(height: 1),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          key: const ValueKey('group_member_action_kick'),
+          leading: const Icon(Icons.person_remove_outlined),
+          title: const Text('踢出群聊'),
+          onTap: () => Navigator.of(ctx).pop('kick'),
+        ),
+        ListTile(
+          key: const ValueKey('group_member_action_mute'),
+          leading: const Icon(Icons.volume_off_outlined),
+          title: const Text('禁言'),
+          onTap: () => Navigator.of(ctx).pop('mute'),
+        ),
+        ListTile(
+          key: const ValueKey('group_member_action_unmute'),
+          leading: const Icon(Icons.volume_up_outlined),
+          title: const Text('取消禁言'),
+          onTap: () => Navigator.of(ctx).pop('unmute'),
+        ),
+        if (isOwner && member.roleLevel != 3)
           ListTile(
-            key: const ValueKey('group_member_action_kick'),
-            leading: const Icon(Icons.person_remove_outlined),
-            title: const Text('踢出群聊'),
-            onTap: () => Navigator.of(ctx).pop('kick'),
+            key: const ValueKey('group_member_action_admin'),
+            leading: const Icon(Icons.admin_panel_settings_outlined),
+            title: Text(member.roleLevel == 2 ? '取消管理员' : '设为管理员'),
+            onTap: () => Navigator.of(
+              ctx,
+            ).pop(member.roleLevel == 2 ? 'unsetAdmin' : 'setAdmin'),
           ),
+        if (isOwner)
           ListTile(
-            key: const ValueKey('group_member_action_mute'),
-            leading: const Icon(Icons.volume_off_outlined),
-            title: const Text('禁言'),
-            onTap: () => Navigator.of(ctx).pop('mute'),
+            key: const ValueKey('group_member_action_transfer'),
+            leading: const Icon(Icons.swap_horiz),
+            title: const Text('转让群主'),
+            onTap: () => Navigator.of(ctx).pop('transfer'),
           ),
-          ListTile(
-            key: const ValueKey('group_member_action_unmute'),
-            leading: const Icon(Icons.volume_up_outlined),
-            title: const Text('取消禁言'),
-            onTap: () => Navigator.of(ctx).pop('unmute'),
-          ),
-          if (isOwner && member.roleLevel != 3)
-            ListTile(
-              key: const ValueKey('group_member_action_admin'),
-              leading: const Icon(Icons.admin_panel_settings_outlined),
-              title: Text(member.roleLevel == 2 ? '取消管理员' : '设为管理员'),
-              onTap: () => Navigator.of(
-                ctx,
-              ).pop(member.roleLevel == 2 ? 'unsetAdmin' : 'setAdmin'),
-            ),
-          if (isOwner)
-            ListTile(
-              key: const ValueKey('group_member_action_transfer'),
-              leading: const Icon(Icons.swap_horiz),
-              title: const Text('转让群主'),
-              onTap: () => Navigator.of(ctx).pop('transfer'),
-            ),
-        ],
-      ),
+      ],
     ),
   );
 }
@@ -81,47 +97,41 @@ Future<String?> showGroupManageSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('群管理', style: TextStyle(fontWeight: FontWeight.w600)),
+    builder: (ctx) => _SheetBody(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('群管理', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          key: const ValueKey('group_manage_mute_all_action'),
+          leading: const Icon(Icons.volume_off_outlined),
+          title: const Text('全员禁言'),
+          onTap: () => Navigator.of(ctx).pop('muteAll'),
+        ),
+        ListTile(
+          key: const ValueKey('group_manage_unmute_all_action'),
+          leading: const Icon(Icons.volume_up_outlined),
+          title: const Text('解除全员禁言'),
+          onTap: () => Navigator.of(ctx).pop('unmuteAll'),
+        ),
+        ListTile(
+          key: const ValueKey('group_manage_transfer_action'),
+          leading: const Icon(Icons.swap_horiz),
+          title: const Text('转让群主'),
+          onTap: () => Navigator.of(ctx).pop('transfer'),
+        ),
+        ListTile(
+          key: const ValueKey('group_manage_dismiss_action'),
+          leading: Icon(Icons.delete_outline, color: context.appColors.danger),
+          title: Text(
+            '解散群组',
+            style: TextStyle(color: context.appColors.danger),
           ),
-          const Divider(height: 1),
-          ListTile(
-            key: const ValueKey('group_manage_mute_all_action'),
-            leading: const Icon(Icons.volume_off_outlined),
-            title: const Text('全员禁言'),
-            onTap: () => Navigator.of(ctx).pop('muteAll'),
-          ),
-          ListTile(
-            key: const ValueKey('group_manage_unmute_all_action'),
-            leading: const Icon(Icons.volume_up_outlined),
-            title: const Text('解除全员禁言'),
-            onTap: () => Navigator.of(ctx).pop('unmuteAll'),
-          ),
-          ListTile(
-            key: const ValueKey('group_manage_transfer_action'),
-            leading: const Icon(Icons.swap_horiz),
-            title: const Text('转让群主'),
-            onTap: () => Navigator.of(ctx).pop('transfer'),
-          ),
-          ListTile(
-            key: const ValueKey('group_manage_dismiss_action'),
-            leading: Icon(
-              Icons.delete_outline,
-              color: context.appColors.danger,
-            ),
-            title: Text(
-              '解散群组',
-              style: TextStyle(color: context.appColors.danger),
-            ),
-            onTap: () => Navigator.of(ctx).pop('dismiss'),
-          ),
-        ],
-      ),
+          onTap: () => Navigator.of(ctx).pop('dismiss'),
+        ),
+      ],
     ),
   );
 }
@@ -140,35 +150,29 @@ Future<void> showGroupOwnerAdminSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '群主和管理员',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          const Divider(height: 1),
-          ...members.map(
-            (m) => ListTile(
-              leading: UserAvatar.fromUser(
-                user: User(
-                  id: m.userId,
-                  name: m.nickname,
-                  avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
-                ),
-                radius: 18,
+    builder: (sheetContext) => _SheetBody(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('群主和管理员', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        const Divider(height: 1),
+        ...members.map(
+          (m) => ListTile(
+            leading: UserAvatar.fromUser(
+              user: User(
+                id: m.userId,
+                name: m.nickname,
+                avatar: m.faceUrl.isNotEmpty ? m.faceUrl : null,
               ),
-              title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
-              subtitle: Text(roleName(m.roleLevel)),
-              onTap: () => Navigator.of(sheetContext).pop(),
+              radius: 18,
             ),
+            title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
+            subtitle: Text(roleName(m.roleLevel)),
+            onTap: () => Navigator.of(sheetContext).pop(),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -189,25 +193,19 @@ Future<int?> showGroupMuteDurationSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '选择禁言时长',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
+    builder: (ctx) => _SheetBody(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('选择禁言时长', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        ...durations.entries.map(
+          (e) => ListTile(
+            title: Text(e.key),
+            onTap: () => Navigator.of(ctx).pop(e.value),
           ),
-          ...durations.entries.map(
-            (e) => ListTile(
-              title: Text(e.key),
-              onTap: () => Navigator.of(ctx).pop(e.value),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -225,24 +223,21 @@ Future<GroupMember?> showGroupOwnerPickerSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('选择新群主', style: TextStyle(fontWeight: FontWeight.w600)),
+    builder: (ctx) => _SheetBody(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('选择新群主', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        const Divider(height: 1),
+        ...candidates.map(
+          (m) => ListTile(
+            key: ValueKey('transfer_owner_${m.userId}'),
+            title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
+            onTap: () => Navigator.of(ctx).pop(m),
           ),
-          const Divider(height: 1),
-          ...candidates.map(
-            (m) => ListTile(
-              key: ValueKey('transfer_owner_${m.userId}'),
-              title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
-              onTap: () => Navigator.of(ctx).pop(m),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -301,27 +296,24 @@ Future<String?> showGroupAvatarPickerSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('更换群头像', style: TextStyle(fontWeight: FontWeight.w600)),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('从相册选择'),
-            onTap: () => Navigator.of(ctx).pop('gallery'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.link),
-            title: const Text('输入图片链接'),
-            onTap: () => Navigator.of(ctx).pop('url'),
-          ),
-        ],
-      ),
+    builder: (ctx) => _SheetBody(
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: Text('更换群头像', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        const Divider(height: 1),
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: const Text('从相册选择'),
+          onTap: () => Navigator.of(ctx).pop('gallery'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.link),
+          title: const Text('输入图片链接'),
+          onTap: () => Navigator.of(ctx).pop('url'),
+        ),
+      ],
     ),
   );
 }

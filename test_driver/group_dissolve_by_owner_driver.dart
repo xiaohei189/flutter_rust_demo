@@ -51,6 +51,19 @@ Future<void> main() async {
     timeout: const Duration(seconds: 30),
   );
   try {
+    // 回到会话列表：群内/群信息页同样能复用本脚本。
+    for (final key in <String>[
+      'group_info_back',
+      'chat_settings_back',
+      'chat_detail_back',
+    ]) {
+      final finder = find.byValueKey(key);
+      if (await _exists(driver, finder)) {
+        await driver.tap(finder);
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+    }
+
     // 优先直接点会话；新群未产生消息时成员侧可能还没有会话，退回「通讯录 → 我的群组」。
     if (groupId.isNotEmpty &&
         await _exists(driver, find.byValueKey('sg_$groupId'))) {
@@ -83,6 +96,16 @@ Future<void> main() async {
       find.byValueKey('group_manage_dismiss_action'),
       timeout: const Duration(seconds: 10),
     );
+    // 大字/大缩放的设备上弹窗内容会滚动，「解散群组」可能在首屏之外，先滚到底。
+    try {
+      await driver.scroll(
+        find.byType('SingleChildScrollView'),
+        0,
+        -200,
+        const Duration(milliseconds: 300),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    } catch (_) {}
     await driver.tap(find.byValueKey('group_manage_dismiss_action'));
     await driver.waitFor(
       find.text('解散'),

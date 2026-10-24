@@ -42,6 +42,8 @@ Future<bool> _exists(
 /// 验证点：接口 200、我降为成员、对方成为群主。
 Future<void> main() async {
   final existingGroupId = Platform.environment['GROUP_ID'] ?? '';
+  // 新群主：默认小萌；传 NEW_OWNER_ID 可改（如 9850839580=黄磊，用于被动解散回归）。
+  final newOwnerId = Platform.environment['NEW_OWNER_ID'] ?? '2772835353';
   final driver = await FlutterDriver.connect(
     dartVmServiceUrl: Platform.environment['VM_SERVICE_URL'],
     timeout: const Duration(seconds: 30),
@@ -92,11 +94,11 @@ Future<void> main() async {
     await _shot(driver, '1_before');
     await driver.tap(find.byValueKey('group_info_transfer'));
     await driver.waitFor(
-      find.byValueKey('transfer_owner_2772835353'),
+      find.byValueKey('transfer_owner_$newOwnerId'),
       timeout: const Duration(seconds: 10),
     );
     await _shot(driver, '2_picker');
-    await driver.tap(find.byValueKey('transfer_owner_2772835353'));
+    await driver.tap(find.byValueKey('transfer_owner_$newOwnerId'));
     await Future<void>.delayed(const Duration(seconds: 6));
     await _shot(driver, '3_transferred');
 
