@@ -236,6 +236,7 @@ Future<GroupMember?> showGroupOwnerPickerSheet(
           const Divider(height: 1),
           ...candidates.map(
             (m) => ListTile(
+              key: ValueKey('transfer_owner_${m.userId}'),
               title: Text(m.nickname.isNotEmpty ? m.nickname : m.userId),
               onTap: () => Navigator.of(ctx).pop(m),
             ),

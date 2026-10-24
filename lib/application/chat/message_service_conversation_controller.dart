@@ -100,7 +100,14 @@ class MessageServiceConversationController {
         appLog.i('[MsgSvc] newConversation: count=${conversations.length}');
         service.applyConversationEvent(conversations);
       },
-      deleted: (_) => appLog.i('[MsgSvc] conversationDeleted'),
+      deleted: (ids) {
+        appLog.i('[MsgSvc] conversationDeleted: $ids');
+        // 群被解散/自己被移出时服务端只发通知，本地会话已在 SDK 侧删除，
+        // 这里同步移出内存列表，避免列表残留进不去的死群。
+        for (final id in ids) {
+          service.removeConversation(id);
+        }
+      },
       userInputStatusChanged: (cid, uid, platformIds) {
         appLog.i(
           '[MsgSvc] typing: conv=$cid user=$uid platforms=${platformIds.length}',
