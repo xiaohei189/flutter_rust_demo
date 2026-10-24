@@ -461,6 +461,18 @@ mod tests {
     }
 
     #[test]
+    fn test_dismiss_group_req_keeps_member_so_notification_is_sent() {
+        // 服务端仅在 deleteMember=false 时投递 1511 群解散通知（见 design.md 取证），
+        // 因此客户端主动解散必须传 false，成员由 push 服务异步清理。
+        let req = DismissGroupReq {
+            group_id: "group_123".to_string(),
+            delete_member: false,
+        };
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains(r#""deleteMember":false"#), "实际请求体: {}", json);
+    }
+
+    #[test]
     fn test_accept_group_application_req_serialization() {
         let req = AcceptGroupApplicationReq {
             group_id: "group_123".to_string(),

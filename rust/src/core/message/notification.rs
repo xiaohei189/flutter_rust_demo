@@ -10,7 +10,7 @@
 //! 再解析内层 detail 到目标类型。
 
 use crate::domain::constant::notification_type;
-use crate::core::conversation::service::ConversationService;
+use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
@@ -446,9 +446,7 @@ impl NotificationHandler {
             let self_user_id = self.user_id.get().await;
             let removed_is_self = detail.quit_user.as_ref().map(|u| u.user_id == self_user_id).unwrap_or(false) || detail.kicked_user_list.iter().any(|u| u.user_id == self_user_id);
             if removed_is_self {
-                if let Err(e) = self.conversation_service.delete_conversation(&format!("sg_{}", group_id)).await {
-                    warn!("[NOTIFY] 清理被移出群会话失败: {}", e);
-                }
+                self.cleanup_group_conversation(&group_id, CleanupSource::Push).await;
             }
             let user = detail.quit_user.as_ref().or_else(|| detail.kicked_user_list.first());
             if let Some(user) = user {
@@ -489,14 +487,21 @@ impl NotificationHandler {
         }
         if !group_id.is_empty() {
             // 群已解散：本地会话删除并通知 UI（事件驱动列表刷新，避免重启后才消失）。
-            if let Err(e) = self.conversation_service.delete_conversation(&format!("sg_{}", group_id)).await {
-                warn!("[NOTIFY] 清理已解散群会话失败: {}", e);
-            }
+            self.cleanup_group_conversation(&group_id, CleanupSource::Push).await;
             if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
                 if let Some(group) = groups.into_iter().next() {
                     self.group_listener.emit(GroupEvent::Dismissed(group));
                 }
             }
+        }
+    }
+
+    /// 群不再可用（被解散/自己被移出）时的本地会话清理，统一走 `ConversationService`：
+    /// 删库与 `Deleted` 事件成对发生，日志带 `cleanup_source` 便于排查漏推。
+    async fn cleanup_group_conversation(&self, group_id: &str, source: CleanupSource) {
+        let conversation_id = format!("sg_{}", group_id);
+        if let Err(e) = self.conversation_service.delete_conversation_with_source(&conversation_id, source).await {
+            warn!("[NOTIFY] 清理群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}", source.as_str(), group_id, conversation_id, e);
         }
     }
 
@@ -514,6 +519,7 @@ mod tests {
 
     use crate::core::event::hub::EventHub;
     use crate::core::event::test_util::*;
+    use crate::core::event::events::conversation::ConversationEvent;
     use crate::infra::http::client::HttpApiClient;
     use crate::infra::http::conversation::ConversationServerApi;
     use crate::infra::http::friend::FriendServerApi;
@@ -869,5 +875,139 @@ mod tests {
         let revoked = message_repo.get_by_conversation_and_seq("conv_revoke", 5).await.unwrap().unwrap();
         assert_eq!(revoked.content_type, notification_type::REVOKE);
         assert!(revoked.content.contains("revokerNickname"));
+    }
+
+    // ========================================================================
+    // 群生命周期通知：被解散 / 自己被移出 → 本地会话清理 + 广播 Deleted
+    // （服务端不会下发该群的会话删除，客户端必须在通知路径上兜住）
+    // ========================================================================
+
+    fn group_conversation(group_id: &str) -> crate::domain::model::local::LocalConversation {
+        crate::domain::model::local::LocalConversation {
+            conversation_id: format!("sg_{}", group_id),
+            conversation_type: 3,
+            group_id: group_id.to_string(),
+            show_name: format!("群 {}", group_id),
+            ..Default::default()
+        }
+    }
+
+    /// 构造带独立 repos/hub 的 handler，便于预置并断言本地会话表
+    fn make_handler_with_state(pool: sqlx::SqlitePool, hub: &Arc<EventHub>) -> (NotificationHandler, Arc<Repositories>, Arc<ConversationService>) {
+        let repos = make_repositories(pool);
+        let http = make_http_client();
+        let user_id = UserId::new("test_user");
+
+        let friend_api: Arc<dyn FriendServerApi> = Arc::new(crate::infra::http::friend_api::HttpFriendApi::new(http.clone()));
+        let friend_service = Arc::new(FriendService::new(friend_api, repos.clone(), user_id.clone(), hub.clone()));
+
+        let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
+        let conversation_service = Arc::new(ConversationService::new(repos.clone(), hub.clone()));
+        let group_service = Arc::new(
+            GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()).with_conversation_service(conversation_service.clone()),
+        );
+
+        let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), repos.clone(), hub.clone()));
+
+        let conv_api: Arc<dyn ConversationServerApi> = Arc::new(crate::infra::http::conversation_api::HttpConversationApi::new(http.clone()));
+        let syncer = Arc::new(ConversationSyncer::new_with_api(conv_api, repos.clone(), user_id.clone(), hub.clone()));
+
+        let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
+
+        let handler = NotificationHandler::new(
+            friend_service,
+            group_service,
+            user_service,
+            syncer,
+            conversation_service.clone(),
+            processor,
+            noop_friend_listener(),
+            noop_group_listener(),
+            noop_user_listener(),
+            user_id,
+        );
+        (handler, repos, conversation_service)
+    }
+
+    fn take_deleted_conversation_ids(rx: &mut tokio::sync::mpsc::UnboundedReceiver<ConversationEvent>) -> Vec<String> {
+        let mut ids = Vec::new();
+        while let Ok(event) = rx.try_recv() {
+            if let ConversationEvent::Deleted(deleted) = event {
+                ids.extend(deleted);
+            }
+        }
+        ids
+    }
+
+    /// 群被他人解散（1511）：本地会话删除并广播 Deleted，UI 无需重启即可移除死群
+    #[tokio::test]
+    async fn test_notification_group_dismissed_cleans_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let (handler, _repos, conversation_service) = make_handler_with_state(pool, &hub);
+
+        conversation_service.upsert_conversation(group_conversation("group_1")).await.unwrap();
+        let _ = conv_rx.try_recv();
+
+        let detail = serde_json::json!({ "group": { "groupID": "group_1" } });
+        let msg = MsgData {
+            content_type: notification_type::GROUP_DISMISSED,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        assert!(conversation_service.get_conversation("sg_group_1").await.unwrap().is_none(), "群解散后本地会话必须清理");
+        assert_eq!(take_deleted_conversation_ids(&mut conv_rx), vec!["sg_group_1".to_string()]);
+    }
+
+    /// 自己被移出群（1508 踢人且被踢者是自己）：同样清理会话并广播 Deleted
+    #[tokio::test]
+    async fn test_notification_group_member_kicked_self_cleans_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let (handler, _repos, conversation_service) = make_handler_with_state(pool, &hub);
+
+        conversation_service.upsert_conversation(group_conversation("group_1")).await.unwrap();
+        let _ = conv_rx.try_recv();
+
+        let detail = serde_json::json!({
+            "group": { "groupID": "group_1" },
+            "kickedUserList": [{ "userID": "test_user" }]
+        });
+        let msg = MsgData {
+            content_type: notification_type::MEMBER_KICKED,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        assert!(conversation_service.get_conversation("sg_group_1").await.unwrap().is_none(), "被移出群后本地会话必须清理");
+        assert_eq!(take_deleted_conversation_ids(&mut conv_rx), vec!["sg_group_1".to_string()]);
+    }
+
+    /// 别人被踢（不是自己）：不能清理自己的会话
+    #[tokio::test]
+    async fn test_notification_group_member_kicked_other_keeps_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let hub = EventHub::new();
+        let (handler, _repos, conversation_service) = make_handler_with_state(pool, &hub);
+
+        conversation_service.upsert_conversation(group_conversation("group_1")).await.unwrap();
+
+        let detail = serde_json::json!({
+            "group": { "groupID": "group_1" },
+            "kickedUserList": [{ "userID": "other_user" }]
+        });
+        let msg = MsgData {
+            content_type: notification_type::MEMBER_KICKED,
+            content: serde_json::json!({ "detail": detail.to_string() }).to_string().into_bytes(),
+            ..Default::default()
+        };
+        handler.handle_single_notification(&msg).await.unwrap();
+
+        assert!(conversation_service.get_conversation("sg_group_1").await.unwrap().is_some(), "别人被踢不影响自己的会话");
     }
 }

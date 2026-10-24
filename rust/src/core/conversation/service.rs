@@ -11,6 +11,36 @@ use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
+/// 群会话 ID 前缀（`sg_<groupID>`）
+const GROUP_CONVERSATION_PREFIX: &str = "sg_";
+
+/// 群会话 ID → 群 ID；非群会话返回 `None`
+pub fn group_id_of_group_conversation(conversation_id: &str) -> Option<&str> {
+    conversation_id.strip_prefix(GROUP_CONVERSATION_PREFIX).filter(|g| !g.is_empty())
+}
+
+/// 本地清理来源：用于区分「推送 / 同步兜底 / 本端操作」，
+/// 日志里带上它才能判断死群残留是服务端漏推还是客户端漏清理。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CleanupSource {
+    /// 服务端通知（群解散、自己被移出群等）
+    Push,
+    /// 同步兜底（登录/重连、群增量同步成功后的对账）
+    Sync,
+    /// 本端主动操作（主动退群、主动解散群、删除会话）
+    LocalAction,
+}
+
+impl CleanupSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CleanupSource::Push => "push",
+            CleanupSource::Sync => "sync",
+            CleanupSource::LocalAction => "local_action",
+        }
+    }
+}
+
 pub struct ConversationService {
     /// 外部依赖
     repositories: Arc<Repositories>,
@@ -87,9 +117,49 @@ impl ConversationService {
     }
 
     pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
+        self.delete_conversation_with_source(conversation_id, CleanupSource::LocalAction).await
+    }
+
+    /// 删除本地会话并广播 `Deleted`（唯一实现：删库 + 事件必须成对发生）。
+    ///
+    /// `source` 只进日志，用来定位「群失效后会话残留」是哪条链路漏了清理。
+    /// 幂等：会话本来就不存在时删除不报错，允许重复调用。
+    pub async fn delete_conversation_with_source(&self, conversation_id: &str, source: CleanupSource) -> Result<()> {
         self.repositories.conversation_repo.delete(conversation_id).await?;
+        info!(
+            "本地会话已清理: cleanup_source={}, conversation_id={}, group_id={}",
+            source.as_str(),
+            conversation_id,
+            group_id_of_group_conversation(conversation_id).unwrap_or_default()
+        );
         self.send(ConversationEvent::Deleted(vec![conversation_id.to_string()]));
         Ok(())
+    }
+
+    /// 群会话对账：删除不在 `valid_group_ids` 里的 `sg_<groupID>` 会话，并逐条广播 `Deleted`。
+    ///
+    /// 服务端不会为「被解散 / 自己被移出」的群下发会话删除，群通知也可能不到，
+    /// 所以每次群同步成功后都要以「服务端返回的群集合」为准对齐一次会话表。
+    /// 返回清理掉的会话条数；重复执行安全（第二次已无脏会话可清）。
+    pub async fn reconcile_group_conversations(&self, valid_group_ids: &[String], source: CleanupSource) -> Result<usize> {
+        let valid: std::collections::HashSet<&str> = valid_group_ids.iter().map(|id| id.as_str()).collect();
+        let conversations = self.repositories.conversation_repo.get_all().await?;
+        let mut removed = 0usize;
+        for conversation in conversations {
+            let Some(group_id) = group_id_of_group_conversation(&conversation.conversation_id) else {
+                continue;
+            };
+            if valid.contains(group_id) {
+                continue;
+            }
+            // 群已不在群表里 → 会话进不去了，清理并通知 UI 从列表移除
+            self.delete_conversation_with_source(&conversation.conversation_id, source).await?;
+            removed += 1;
+        }
+        if removed > 0 {
+            info!("群会话对账完成: cleanup_source={}, removed={}", source.as_str(), removed);
+        }
+        Ok(removed)
     }
 
     pub async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
@@ -868,4 +938,78 @@ mod tests {
         manager.refresh_face_url_and_name().await.unwrap();
         assert!(rx.try_recv().is_err(), "无变化不应发布事件");
     }
+
+    // ========================================================================
+    // reconcile_group_conversations：以当前群集合为准清理孤儿群会话
+    // （服务端不会为「被解散 / 自己被移出」的群下发会话删除，必须客户端兜底）
+    // ========================================================================
+
+    fn create_group_conversation(group_id: &str) -> LocalConversation {
+        LocalConversation {
+            conversation_id: format!("sg_{}", group_id),
+            conversation_type: 3,
+            user_id: String::new(),
+            group_id: group_id.to_string(),
+            show_name: format!("群 {}", group_id),
+            ..Default::default()
+        }
+    }
+
+    /// 群还在 → 会话保留，不广播任何事件
+    #[tokio::test]
+    async fn test_reconcile_group_conversations_keeps_valid_group() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub);
+
+        manager.upsert_conversation(create_test_conversation("si_me_u1")).await.unwrap();
+        manager.upsert_conversation(create_group_conversation("group_1")).await.unwrap();
+        let _ = rx.try_recv();
+        let _ = rx.try_recv();
+
+        let removed = manager.reconcile_group_conversations(&["group_1".to_string()], CleanupSource::Sync).await.unwrap();
+
+        assert_eq!(removed, 0);
+        assert!(manager.get_conversation("sg_group_1").await.unwrap().is_some(), "群还在时的会话不能被误删");
+        assert!(manager.get_conversation("si_me_u1").await.unwrap().is_some(), "单聊会话不受对账影响");
+        assert!(rx.try_recv().is_err(), "无脏会话时不应广播事件");
+    }
+
+    /// 群已不存在 → 删会话 + 广播 Deleted；重复执行幂等（第二次无脏会话可清）
+    #[tokio::test]
+    async fn test_reconcile_group_conversations_deletes_orphan_and_is_idempotent() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub);
+
+        manager.upsert_conversation(create_group_conversation("group_dead")).await.unwrap();
+        manager.upsert_conversation(create_group_conversation("group_alive")).await.unwrap();
+        let _ = rx.try_recv();
+        let _ = rx.try_recv();
+
+        let removed = manager
+            .reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync)
+            .await
+            .unwrap();
+        assert_eq!(removed, 1);
+        assert!(manager.get_conversation("sg_group_dead").await.unwrap().is_none(), "失效群的会话必须被清理");
+        assert!(manager.get_conversation("sg_group_alive").await.unwrap().is_some());
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["sg_group_dead".to_string()]),
+            other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
+        }
+
+        // 重复执行：不报错，也不再广播
+        let removed_again = manager
+            .reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync)
+            .await
+            .unwrap();
+        assert_eq!(removed_again, 0);
+        assert!(rx.try_recv().is_err(), "重复对账不应重复广播删除");
+    }
+
 }

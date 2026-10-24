@@ -1,4 +1,5 @@
 use crate::domain::error::Result;
+use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 
 use crate::infra::http::GroupServerApi;
@@ -25,6 +26,8 @@ pub struct GroupService {
     /// 内部状态
     groups: Arc<RwLock<Vec<GroupInfo>>>,
     members: Arc<RwLock<Vec<GroupMember>>>,
+    /// 群失效后的会话清理/对账（由 builder 注入；未注入时跳过并记日志）
+    conversation_service: Option<Arc<ConversationService>>,
     /// 事件出口（Listener trait）
     pub(crate) listener: Arc<dyn GroupListener>,
 }
@@ -37,8 +40,16 @@ impl GroupService {
             user_id,
             groups: Arc::new(RwLock::new(Vec::new())),
             members: Arc::new(RwLock::new(Vec::new())),
+            conversation_service: None,
             listener,
         }
+    }
+
+    /// 注入会话服务：群不再可用（被解散/自己被移出/主动退出）时，
+    /// 会话清理与对账统一走 `ConversationService`，保证删库与 `Deleted` 事件成对发生。
+    pub fn with_conversation_service(mut self, conversation_service: Arc<ConversationService>) -> Self {
+        self.conversation_service = Some(conversation_service);
+        self
     }
 
     #[allow(dead_code)]
@@ -90,6 +101,8 @@ impl GroupService {
         *self.groups.write().await = groups.clone();
 
         info!("群组列表已全量同步, count={}", groups.len());
+        // 内存群列表刚被服务端结果替换，以它为准对齐一次会话表（全量同步也会漏掉服务端不下发的会话删除）
+        self.reconcile_group_conversations(CleanupSource::Sync).await;
         Ok(())
     }
 
@@ -148,7 +161,9 @@ impl GroupService {
             for group_id in &resp.delete {
                 // 被解散 / 被移出群时服务端只把群标记为删除，
                 // 本地会话不会自动消失，这里一并清理，避免残留进不去的死群。
-                self.remove_local_group_state(group_id).await;
+                // 清理统一走 ConversationService（删库 + 广播 Deleted），
+                // 不在群服务里直接删会话表，避免「删了库 UI 不知道」和无事件删除。
+                self.remove_local_group_state(group_id, CleanupSource::Sync).await;
             }
         }
 
@@ -192,6 +207,8 @@ impl GroupService {
         }
 
         info!("增量同步群组完成, insert={}, update={}, delete={}", resp.insert.len(), resp.update.len(), resp.delete.len());
+        // 兜底对账：推送缺失时，内存群列表已是最新，用它清掉历史遗留的孤儿群会话
+        self.reconcile_group_conversations(CleanupSource::Sync).await;
         Ok(())
     }
 
@@ -329,7 +346,7 @@ impl GroupService {
 
         self.api.quit_group(&req).await?;
 
-        self.remove_local_group_state(&group_id).await;
+        self.remove_local_group_state(&group_id, CleanupSource::LocalAction).await;
 
         info!("已退出群组: {}", group_id);
         Ok(())
@@ -338,12 +355,15 @@ impl GroupService {
     pub async fn dismiss_group(&self, group_id: String) -> Result<()> {
         let req = DismissGroupReq {
             group_id: group_id.clone(),
-            delete_member: true,
+            // 服务端只在 deleteMember=false 时才向成员投递并持久化
+            // GroupDismissedNotification(1511)；成员记录由 push 服务随后异步清理。
+            // 传 true 会直接删成员并跳过通知，成员端只能等重连后的增量同步才发现群没了。
+            delete_member: false,
         };
 
         self.api.dismiss_group(&req).await?;
 
-        self.remove_local_group_state(&group_id).await;
+        self.remove_local_group_state(&group_id, CleanupSource::LocalAction).await;
 
         info!("群组已解散: {}", group_id);
         Ok(())
@@ -353,15 +373,37 @@ impl GroupService {
     ///
     /// 服务端增量会话同步不保证立刻下发该会话的删除，若不主动清理，
     /// 会话列表会残留无法进入的「死群」。
-    async fn remove_local_group_state(&self, group_id: &str) {
+    /// 会话删除统一委托 `ConversationService`：删库与 `Deleted` 事件必须成对发生。
+    async fn remove_local_group_state(&self, group_id: &str, source: CleanupSource) {
         self.groups.write().await.retain(|g| g.group_id != group_id);
         self.members.write().await.retain(|m| m.group_id != group_id);
         if let Err(e) = self.repositories.group_repo.delete_group(group_id).await {
             warn!("清理本地群资料失败: group={}, err={}", group_id, e);
         }
         let conversation_id = format!("sg_{}", group_id);
-        if let Err(e) = self.repositories.conversation_repo.delete(&conversation_id).await {
-            warn!("清理本地群会话失败: conv={}, err={}", conversation_id, e);
+        match &self.conversation_service {
+            Some(conversation_service) => {
+                if let Err(e) = conversation_service.delete_conversation_with_source(&conversation_id, source).await {
+                    warn!("清理本地群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}", source.as_str(), group_id, conversation_id, e);
+                }
+            }
+            None => warn!("会话服务未注入，跳过本地群会话清理: group_id={}, conversation_id={}", group_id, conversation_id),
+        }
+    }
+
+    /// 群同步成功后对齐「群集合 → 会话集合」（清理服务端未推送删除的孤儿群会话）。
+    ///
+    /// 只在群同步成功后调用：此时内存群列表就是服务端返回的全集，否则可能误删尚未同步下来的群会话。
+    /// 用内存列表而不是 DB 群表：全量同步只 upsert 不删行，群表可能残留过期群。
+    async fn reconcile_group_conversations(&self, source: CleanupSource) {
+        let Some(conversation_service) = &self.conversation_service else {
+            return;
+        };
+        let valid_group_ids: Vec<String> = self.groups.read().await.iter().map(|g| g.group_id.clone()).collect();
+        match conversation_service.reconcile_group_conversations(&valid_group_ids, source).await {
+            Ok(removed) if removed > 0 => info!("群会话对账完成: cleanup_source={}, removed={}", source.as_str(), removed),
+            Ok(_) => {}
+            Err(e) => warn!("群会话对账失败: cleanup_source={}, err={}", source.as_str(), e),
         }
     }
 
@@ -814,6 +856,142 @@ fn local_to_group_info(l: &LocalGroup) -> GroupInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::conversation::service::ConversationService;
+    use crate::core::event::events::conversation::ConversationEvent;
+    use crate::core::event::hub::EventHub;
+
+    /// 只关心「增量同步返回 delete=[...]」的服务端桩；其余接口不该被调用
+    struct IncrementalDeleteGroupApi {
+        deleted_group_ids: Vec<String>,
+    }
+
+    #[async_trait::async_trait]
+    impl GroupServerApi for IncrementalDeleteGroupApi {
+        async fn get_incremental_join_group(&self, _req: &GetIncrementalJoinGroupReq) -> Result<GetIncrementalJoinGroupResp> {
+            Ok(GetIncrementalJoinGroupResp {
+                version: 2,
+                version_id: "v2".to_string(),
+                full: false,
+                delete: self.deleted_group_ids.clone(),
+                insert: Vec::new(),
+                update: Vec::new(),
+                sort_version: 0,
+            })
+        }
+        async fn get_joined_group_list(&self, _req: &GetJoinedGroupListReq) -> Result<GetJoinedGroupListResp> {
+            unimplemented!("本用例只走增量同步删除分支")
+        }
+        async fn get_groups_info(&self, _req: &GetGroupsInfoReq) -> Result<GetGroupsInfoResp> {
+            unimplemented!()
+        }
+        async fn create_group(&self, _req: &CreateGroupReq) -> Result<CreateGroupResp> {
+            unimplemented!()
+        }
+        async fn join_group(&self, _req: &JoinGroupReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn quit_group(&self, _req: &QuitGroupReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn dismiss_group(&self, _req: &DismissGroupReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn set_group_info(&self, _req: &SetGroupInfoReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn get_group_member_list(&self, _req: &GetGroupMemberListReq) -> Result<GetGroupMemberListResp> {
+            unimplemented!()
+        }
+        async fn get_group_members_info(&self, _req: &GetGroupMembersInfoReq) -> Result<GetGroupMembersInfoResp> {
+            unimplemented!()
+        }
+        async fn kick_group_member(&self, _req: &KickGroupMemberReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn invite_user_to_group(&self, _req: &InviteUserToGroupReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn set_group_member_info(&self, _req: &SetGroupMemberInfoReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn get_group_application_list(&self, _req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp> {
+            unimplemented!()
+        }
+        async fn get_recv_group_application_list(&self, _req: &GetGroupApplicationListReq) -> Result<GetGroupApplicationListResp> {
+            unimplemented!()
+        }
+        async fn get_send_group_application_list(&self, _req: &GetUserReqApplicationListReq) -> Result<GetGroupApplicationListResp> {
+            unimplemented!()
+        }
+        async fn get_group_application_unhandled_count(&self, _user_id: &str) -> Result<i32> {
+            unimplemented!()
+        }
+        async fn accept_group_application(&self, _req: &AcceptGroupApplicationReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn refuse_group_application(&self, _req: &RefuseGroupApplicationReq) -> Result<()> {
+            unimplemented!()
+        }
+        async fn transfer_group_owner(&self, _group_id: &str, _old_owner_user_id: &str, _new_owner_user_id: &str) -> Result<()> {
+            unimplemented!()
+        }
+        async fn mute_group(&self, _group_id: &str, _is_mute: bool) -> Result<()> {
+            unimplemented!()
+        }
+        async fn mute_group_member(&self, _group_id: &str, _user_id: &str, _muted_seconds: i64) -> Result<()> {
+            unimplemented!()
+        }
+    }
+
+    fn local_group(group_id: &str) -> LocalGroup {
+        LocalGroup {
+            group_id: group_id.to_string(),
+            name: format!("群 {}", group_id),
+            ..Default::default()
+        }
+    }
+
+    fn group_conversation(group_id: &str) -> LocalConversation {
+        LocalConversation {
+            conversation_id: format!("sg_{}", group_id),
+            conversation_type: 3,
+            group_id: group_id.to_string(),
+            show_name: format!("群 {}", group_id),
+            ..Default::default()
+        }
+    }
+
+    /// 增量同步删除分支：群资料与会话都要清理，且会话删除只广播一次（走 ConversationService）
+    #[tokio::test]
+    async fn test_sync_incremental_delete_cleans_group_conversation_once() {
+        let pool = crate::infra::db::pool::create_pool_memory().await.unwrap();
+        let repositories = Repositories::new(&pool);
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
+        let service = GroupService::new(
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec!["group_1".to_string()] }),
+            repositories.clone(),
+            UserId::new("test_user"),
+            hub.clone(),
+        )
+        .with_conversation_service(conversation_service.clone());
+
+        // 预置：本地群资料 + 该群会话（服务端解散后两者都要被清掉）
+        repositories.group_repo.upsert_group(&local_group("group_1")).await.unwrap();
+        conversation_service.upsert_conversation(group_conversation("group_1")).await.unwrap();
+        let _ = conv_rx.try_recv();
+
+        service.sync_groups_incremental().await.unwrap();
+
+        assert!(repositories.group_repo.get_group("group_1").await.unwrap().is_none(), "群资料必须清理");
+        assert!(conversation_service.get_conversation("sg_group_1").await.unwrap().is_none(), "群失效后本地会话必须清理");
+        match conv_rx.try_recv().expect("应广播会话删除事件") {
+            ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["sg_group_1".to_string()]),
+            other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
+        }
+        assert!(conv_rx.try_recv().is_err(), "删除分支与对账不应重复广播同一条会话删除");
+    }
 
     #[test]
     fn test_server_to_group_info_conversion() {

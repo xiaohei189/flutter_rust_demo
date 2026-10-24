@@ -61,4 +61,32 @@
 
 ## Open Questions
 
-- OpenIM 是否对「被解散群的普通成员」投递 `GroupDismissedNotification`？若有条件投递，可后续把兜底降级为低频对账。
+### [已取证 2026-10-24] OpenIM 是否对「被解散群的普通成员」投递 `GroupDismissedNotification`？
+
+**结论：服务端有能力投递，但当前客户端拿不到——本端解散请求固定带 `deleteMember=true`，服务端在该分支下直接删成员、根本不发这条通知。**
+因此普通成员只能靠重连后的群增量同步（`delete=1`）感知，与真机现象一致；「把兜底降级为低频对账」的前提（服务端无条件投递）不成立。
+
+证据（服务端以本地 `open-im-server` 检出（v3.8.1-264-gbd5b7a0b0，部署镜像二进制构建于 2026-07-25）为准）：
+
+- **只在 `deleteMember=false` 时发通知**：`internal/rpc/group/group.go:1443` `DismissGroup` 先 `db.DismissGroup(groupID, req.DeleteMember)`，随后 `if !req.DeleteMember { … notification.GroupDismissedNotification(…) }`（门控 `group.go:1466`，发通知 `group.go:1479`）；`deleteMember=true` 分支直接删掉全部群成员并跳过通知。非 admin 调用必须是群主（`group.go:1450` `not group owner`）。该逻辑在部署镜像构建前的最后一次改动（`7c242b849`，2026-06-04）即已如此，`internal/push/push_handler.go` 亦然。
+- **通知是「可靠通知」而非易失推送**：`config/notification.yml` 的 `groupDismissed: { isSendMsg: true, reliabilityLevel: 1 }` 经 `pkg/common/config/parse.go:74-75` 映射为 history + persistent，会话类型 `ReadGroupChatType`（`pkg/notification/msg.go:48,96`）——它会落进群会话消息流，离线成员后续同步可取；本部署 `offlinePush.enable=false`，不涉及厂商离线推送。
+- **推送侧会「顺带」删成员**：`internal/push/push_handler.go:313-327` 消费到该通知后先向群成员在线推送，再 `defer … DismissGroup(ctx, groupID, true)`。所以「通知」与「随后群同步 `delete=1`」是同一事件的两条产出，成员被删是通知触发的副作用（也解释了 `DismissGroup(false)` 不删成员、成员却仍会消失）。
+- **本端发的是 `deleteMember=true`**：`rust/src/sdk/group/service.rs:355-361`（`DismissGroupReq` 定义见 `rust/src/infra/http/group.rs:122-127`）。服务端因此走 `deleteMember=true` 分支 → 不发通知。
+
+本地真服对照实测（同一台 OpenIM，群主身份调 `/group/dismiss_group`，2026-10-24）：
+
+| 解散参数 | `group.status` | 群成员 | `sg_<groupID>:0` 消息文档 content_type | 成员侧 `sg_*` 会话 |
+| --- | --- | --- | --- | --- |
+| `deleteMember=false`（群 `531013377` / `3356806382` / `159222815`） | 2 | 2 → 0（push 服务异步删除，实测 ≤2s） | `[1501, 1511]` | 保留 |
+| `deleteMember=true`（群 `2836449022`） | 2 | 立即 0（RPC 内删除） | `[1501]` | 保留 |
+
+旁证（真机 2026-10-24 被动解散的 5 个群 `3336319524 / 2508474771 / 1384312415 / 751394274 / 2916163586`）：全部 `group_member=0`、`status=2`、`sg_*` 会话仍在；
+实验前全库每个群都有建群通知 1501，而 content_type=1511 的消息数为 **0**（实验后 1511 只来自上表 3 个手工建的群）——与「客户端一直在发 `deleteMember=true`」完全吻合。
+
+**对设计的影响（已采纳）**：客户端已实现 `handle_group_dismissed`（`rust/src/core/message/notification.rs:153,483`），服务端在 `deleteMember=false` 时会投递并持久化 1511。
+因此本变更把本端解散调用改为 `deleteMember=false`，恢复「解散 → 1511 → 成员端即时清理」的实时链路；成员记录由服务端 push 服务异步清理（实测 ≤2s），群同步仍会给出 `delete=1`。
+「同步对账」继续保留，用于覆盖推送丢失、离线补拉失败以及历史遗留的孤儿会话。
+
+**真机复现（变更前）**：被动解散后 logcat 中没有任何 1511/notification 记录，只有下一次重连的 `增量同步群组完成 ... delete=1`，随后会话列表仍保留该群，直到应用重启/再次同步。该片段作为任务 1.2 的证据。
+
+未覆盖项：在线成员在解散瞬间收到 WS 推送未做端到端观测（由任务 1.2 的真机 logcat 佐证）；离线成员补拉 1511 依赖客户端增量消息同步，属客户端行为，本任务未验证。

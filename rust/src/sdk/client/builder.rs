@@ -56,17 +56,22 @@ impl OpenIMClientBuilder {
             context.user_id.clone(),
             listeners.clone(),
         ));
-        let group = Arc::new(GroupService::new(
-            Arc::new(HttpGroupApi::new(context.infra.http_client.clone())),
-            context.repositories.clone(),
-            context.user_id.clone(),
-            listeners.clone(),
-        ));
         let conversation_api = Arc::new(HttpConversationApi::new(context.infra.http_client.clone()));
         let conversation = Arc::new(
             ConversationService::new(context.repositories.clone(), listeners.clone())
                 .with_server_api(conversation_api)
                 .with_user_id(context.user_id.clone()),
+        );
+        // 群服务要负责「群失效 → 清理本地群会话 + 广播 Deleted」与群同步后的会话对账，
+        // 因此注入会话服务（会话服务不反向依赖群服务，无循环引用）。
+        let group = Arc::new(
+            GroupService::new(
+                Arc::new(HttpGroupApi::new(context.infra.http_client.clone())),
+                context.repositories.clone(),
+                context.user_id.clone(),
+                listeners.clone(),
+            )
+            .with_conversation_service(conversation.clone()),
         );
         let online_status = Arc::new(OnlineStatusService::new(
             Arc::new(HttpOnlineStatusApi::new(context.infra.http_client.clone())),

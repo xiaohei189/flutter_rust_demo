@@ -2,7 +2,7 @@ use crate::sdk::client::builder::OpenIMClientBuilder;
 
 use crate::sdk::client::{ConnectionApi, MessageApi};
 use crate::core::connection::manager::ConnectionManager;
-use crate::core::conversation::service::ConversationService;
+use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::sdk::friend::service::FriendService;
 use crate::sdk::group::service::GroupService;
@@ -155,6 +155,8 @@ impl ConnectionApi for OpenIMClient {
             group.load_groups_from_db().await;
 
             let reinstalled = repositories.sync_version_repo.is_reinstalled().await.unwrap_or(false);
+            // 只有群同步成功（或此前已完成）时群表才是可信全集，才允许用它做会话对账
+            let mut groups_synced = false;
             if reinstalled {
                 let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
 
@@ -171,10 +173,14 @@ impl ConnectionApi for OpenIMClient {
                 if stage < sync_flag::SYNC_STAGE_CONVERSATIONS {
                     let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_GROUPS).await;
                     debug!("[SDK] 重装阶段：群组全量同步");
-                    if let Err(e) = group.sync_groups().await {
-                        warn!("[SDK] 重装群组全量同步失败: {}", e);
+                    match group.sync_groups().await {
+                        Ok(()) => groups_synced = true,
+                        Err(e) => warn!("[SDK] 重装群组全量同步失败: {}", e),
                     }
                     let _ = repositories.sync_version_repo.set_sync_flag(sync_flag::SYNC_STAGE_CONVERSATIONS).await;
+                } else {
+                    // 群同步阶段此前已跑完，群表可以直接作为对账依据
+                    groups_synced = true;
                 }
 
                 let stage = repositories.sync_version_repo.get_sync_flag().await.unwrap_or(0);
@@ -201,10 +207,14 @@ impl ConnectionApi for OpenIMClient {
                     }
                 }
                 debug!("[SDK] 普通登录：后台开始群组同步");
-                if let Err(e) = group.sync_groups_incremental().await {
-                    warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
-                    if let Err(e2) = group.sync_groups().await {
-                        warn!("[SDK] 登录后群组全量同步失败: {}", e2);
+                match group.sync_groups_incremental().await {
+                    Ok(()) => groups_synced = true,
+                    Err(e) => {
+                        warn!("[SDK] 登录后群组增量同步失败，回退全量同步: {}", e);
+                        match group.sync_groups().await {
+                            Ok(()) => groups_synced = true,
+                            Err(e2) => warn!("[SDK] 登录后群组全量同步失败: {}", e2),
+                        }
                     }
                 }
                 debug!("[SDK] 普通登录：后台开始会话增量同步");
@@ -214,6 +224,16 @@ impl ConnectionApi for OpenIMClient {
                 // 修复历史遗留的占位符（如 sg_xxx）或数据源晚于会话同步导致的空名
                 if let Err(e) = conversation_service.refresh_face_url_and_name().await {
                     warn!("[SDK] 登录后刷新会话名称失败: {}", e);
+                }
+            }
+
+            // 群生命周期兜底：服务端不会为「被解散/自己被移出」的群下发会话删除，
+            // 且群通知可能不到。这里在「群同步 + 会话同步」之后对一次账，
+            // 清掉重连期间重新灌入或被历史版本留下的死群会话（首次登录也走这条）。
+            if groups_synced {
+                let valid_group_ids: Vec<String> = group.get_joined_group_list().await.into_iter().map(|g| g.group_id).collect();
+                if let Err(e) = conversation_service.reconcile_group_conversations(&valid_group_ids, CleanupSource::Sync).await {
+                    warn!("[SDK] 登录后群会话对账失败: {}", e);
                 }
             }
 
