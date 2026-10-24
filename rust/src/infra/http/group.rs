@@ -429,7 +429,7 @@ pub trait GroupServerApi: Send + Sync {
     async fn get_group_application_unhandled_count(&self, user_id: &str) -> Result<i32>;
     async fn accept_group_application(&self, req: &AcceptGroupApplicationReq) -> Result<()>;
     async fn refuse_group_application(&self, req: &RefuseGroupApplicationReq) -> Result<()>;
-    async fn transfer_group_owner(&self, group_id: &str, new_owner_user_id: &str) -> Result<()>;
+    async fn transfer_group_owner(&self, group_id: &str, old_owner_user_id: &str, new_owner_user_id: &str) -> Result<()>;
     async fn mute_group(&self, group_id: &str, is_mute: bool) -> Result<()>;
     async fn mute_group_member(&self, group_id: &str, user_id: &str, muted_seconds: i64) -> Result<()>;
 }

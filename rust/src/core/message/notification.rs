@@ -442,6 +442,14 @@ impl NotificationHandler {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
         if !group_id.is_empty() {
+            // 自己被移出群时，本地会话要一并删除并通知 UI，否则列表残留进不去的死群。
+            let self_user_id = self.user_id.get().await;
+            let removed_is_self = detail.quit_user.as_ref().map(|u| u.user_id == self_user_id).unwrap_or(false) || detail.kicked_user_list.iter().any(|u| u.user_id == self_user_id);
+            if removed_is_self {
+                if let Err(e) = self.conversation_service.delete_conversation(&format!("sg_{}", group_id)).await {
+                    warn!("[NOTIFY] 清理被移出群会话失败: {}", e);
+                }
+            }
             let user = detail.quit_user.as_ref().or_else(|| detail.kicked_user_list.first());
             if let Some(user) = user {
                 self.group_listener.emit(GroupEvent::MemberDeleted(self.group_member(group_id, user)));
@@ -480,6 +488,10 @@ impl NotificationHandler {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
         if !group_id.is_empty() {
+            // 群已解散：本地会话删除并通知 UI（事件驱动列表刷新，避免重启后才消失）。
+            if let Err(e) = self.conversation_service.delete_conversation(&format!("sg_{}", group_id)).await {
+                warn!("[NOTIFY] 清理已解散群会话失败: {}", e);
+            }
             if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
                 if let Some(group) = groups.into_iter().next() {
                     self.group_listener.emit(GroupEvent::Dismissed(group));

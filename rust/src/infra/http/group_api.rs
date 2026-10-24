@@ -127,9 +127,11 @@ impl GroupServerApi for HttpGroupApi {
         Ok(())
     }
 
-    async fn transfer_group_owner(&self, group_id: &str, new_owner_user_id: &str) -> Result<()> {
+    async fn transfer_group_owner(&self, group_id: &str, old_owner_user_id: &str, new_owner_user_id: &str) -> Result<()> {
+        // 服务端校验 oldOwnerUserID 非空（缺失返回 1001 ArgsError）。
         let req = serde_json::json!({
             "groupID": group_id,
+            "oldOwnerUserID": old_owner_user_id,
             "newOwnerUserID": new_owner_user_id,
         });
         let _: serde_json::Value = self.http_client.post(TRANSFER_GROUP_OWNER, &req).await?;

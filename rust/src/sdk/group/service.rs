@@ -146,11 +146,10 @@ impl GroupService {
         if !resp.delete.is_empty() {
             info!("增量同步: 删除 {} 个群组", resp.delete.len());
             for group_id in &resp.delete {
-                if let Err(e) = self.repositories.group_repo.delete_group(group_id).await {
-                    warn!("增量删除群组数据库操作失败: {}", e);
-                }
+                // 被解散 / 被移出群时服务端只把群标记为删除，
+                // 本地会话不会自动消失，这里一并清理，避免残留进不去的死群。
+                self.remove_local_group_state(group_id).await;
             }
-            self.groups.write().await.retain(|g| !resp.delete.contains(&g.group_id));
         }
 
         // 4b. 新增
@@ -549,9 +548,21 @@ impl GroupService {
 
     /// 转让群主
     pub async fn transfer_group_owner(&self, group_id: String, new_owner_user_id: String) -> Result<()> {
-        self.api.transfer_group_owner(&group_id, &new_owner_user_id).await?;
+        // 只有群主能转让，oldOwnerUserID 取当前登录用户（服务端要求该字段非空）。
+        let old_owner_user_id = self.user_id.get().await;
+        self.api.transfer_group_owner(&group_id, &old_owner_user_id, &new_owner_user_id).await?;
         if let Err(e) = self.sync_groups().await {
             tracing::warn!("转让群主后同步群组列表失败: {}", e);
+        }
+        // 本地角色随之变化（我 → 成员、对方 → 群主），刷新本地群资料。
+        if let Ok(groups) = self.get_groups_info(vec![group_id.clone()]).await {
+            let mut cache = self.groups.write().await;
+            for group in groups {
+                match cache.iter_mut().find(|g| g.group_id == group.group_id) {
+                    Some(existing) => *existing = group,
+                    None => cache.push(group),
+                }
+            }
         }
         info!("群主已转让: group={}, new_owner={}", group_id, new_owner_user_id);
         Ok(())
