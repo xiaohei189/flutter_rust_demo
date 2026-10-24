@@ -20,15 +20,15 @@
 
 ## 4. UI 与会话列表
 
-- [ ] 4.1 确认 Dart `conversationDeleted` 事件按 id 移除列表项（现有实现），补 widget/单测，验证方式：`flutter test` 对应用例通过
-- [ ] 4.2 被动清理后无残留死群且无需重启，验证方式：真机截图 + logcat `cleanup_source=sync`
+- [x] 4.1 确认 Dart `conversationDeleted` 事件按 id 移除列表项（现有实现），补 widget/单测，验证方式：`flutter test` 对应用例通过
+- [x] 4.2 被动清理后无残留死群且无需重启，验证方式：真机截图 + logcat `cleanup_source=sync`（Mi 10 Pro：登录对账 `removed=6`；被动解散时 `cleanup_source=push` + `sync`，列表即时移除）
 
 ## 5. 集中验证
 
-- [ ] 5.1 在集成工作区运行 `cargo test --lib group`、`cargo clippy --all-targets`，验证方式：全绿
-- [ ] 5.2 运行 `flutter analyze lib test` 与相关 `flutter test` 用例，验证方式：全绿
-- [ ] 5.3 真机双端回归：A 建群→转让→B 解散，A 端在**不重启**情况下会话消失，验证方式：截图 + 日志
-- [ ] 5.4 回归主动路径：退群、主动解散仍正常且各只清理一次，验证方式：真机截图 + 日志
+- [x] 5.1 在集成工作区运行 `cargo test --lib group`、`cargo clippy --all-targets`，验证方式：全绿（42 passed；clippy 无告警）
+- [x] 5.2 运行 `flutter analyze lib test` 与相关 `flutter test` 用例，验证方式：全绿（analyze 无问题；会话删除/列表重建/群信息 31 项用例通过）
+- [x] 5.3 真机双端回归：A 建群→转让→B 解散，A 端在**不重启**情况下会话消失，验证方式：截图 + 日志（`group_remote_dismiss_driver` 输出 `GROUP_REMOTE_DISMISS_OK`，before/after 截图见 `build/group_remote_dismiss_{1,2}.png`）
+- [x] 5.4 回归主动路径：退群、主动解散仍正常且各只清理一次，验证方式：真机截图 + 日志（两条路径各一次 `cleanup_source=local_action`；后续 push/sync 为幂等空删）
 
 ## Workflow follow-up
 
