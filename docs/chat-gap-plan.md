@@ -151,7 +151,36 @@
 - [ ] P2-4 云文档、任务、日程、定时消息、边写边译、群机器人、举报：均依赖外部系统，OpenIM 无对应协议；建议**从 UI 摘除**或保留占位并明确标注未排期。
 - [ ] P2-5 置顶消息跨端同步：确认服务端是否支持消息级 Pin；不支持则用自定义消息（`content_type` 110）广播，与 P1-1 解耦。
 
-## 5. 验收与验证方式
+## 5. 群管理真机回归（2026-10-24）
+
+环境：Mi 10 Pro（`849f6987`，登录「我」`2006526104`）+ 测试群 `658698100`，服务端为本地 Docker OpenIM。
+回归脚本：`test_driver/group_manage_driver.dart`、`group_admin2_driver.dart`、`group_kick_driver.dart`。
+
+### 5.1 已验证通过
+
+| 功能 | 关键接口 | 结论 |
+|---|---|---|
+| 群成员角色展示 | `POST /group/get_group_member_list` | 群主/管理员/成员徽标正确，管理卡按当前用户角色出现 |
+| 修改群名称 / 群描述 | `POST /group/set_group_info` | 200；查 MongoDB 确认 `group_name`、`introduction` 已落服务端 |
+| 全员禁言 / 解除 | `POST /group/mute_group` | 开关往返正常 |
+| 设置 / 取消管理员 | `POST /group/set_group_member_info` | 200；请求体为批量 `{"members":[...]}`，UI 徽标即时切换 |
+| 邀请成员 | `POST /group/invite_user_to_group` | 200；成员数 3→4，成员列表出现被邀请人 |
+| 踢出成员 | `POST /group/kick_group` | 200；成员数 4→3，列表中移除 |
+
+### 5.2 回归中发现并修复
+
+1. **群成员角色映射错误**（`3fd51a1`）：服务端 `roleLevel` 为 100/60/20，UI 按 3/2/1 判断，直接透传导致全员显示「成员」、群主管理卡不渲染。已在 SDK 层归一化（100→3、60→2、20→1），发请求时再反归一化。
+2. **设置群成员信息请求体结构错误**：服务端要求 `{"members":[{"groupID","userID","roleLevel"}]}`，原实现发扁平对象，返回 `errCode=1001 ArgsError`，表现为「点了设管理员没反应」。
+3. **群信息页不拉服务端资料**：群名取本地会话缓存、群描述硬编码「暂无描述」，重启 App 后即便服务端已改名/已写描述仍显示旧值。改为进入页面时调用 `get_groups_info` 以服务端为准刷新（`lib/ui/groups/views/group_info_screen.dart`、`lib/ui/groups/view_models/group_info_view_model.dart`）。
+4. **群资料不落本地库**：`GroupService::get_groups_info` 只返回不落库、`set_group_info` 只改内存缓存，导致会话列表与群设置页的群名长期是旧值。改为拉取即落库（保留服务端不下发的本地字段），并把 `handle_group_info_changed` 里「刷新会话名称」安排在群资料落库之后。
+
+### 5.3 未覆盖
+
+- 转让群主、解散群：会改变测试群权限或销毁测试数据，未在 `658698100` 上执行；后续用一次性群验证。
+- 单人成员禁言 / 取消禁言：待补。
+- 群二维码、群公告、群成员日历等入口仍为占位，见 3.1「设置页占位项」。
+
+## 6. 验收与验证方式
 
 按仓库《迭代节奏》执行，避免全量重建与无谓测试：
 
@@ -160,7 +189,7 @@
 - Rust/SDK 改动：`cargo test --lib <模块>`，必要时 `rust/scripts/test-fast.ps1`。
 - 提交前：`scripts/check-architecture.ps1` + `scripts/check-design-tokens.ps1` 必须通过。
 
-## 6. 风险与待确认
+## 7. 风险与待确认
 
 1. 群已读成员详情依赖服务端接口，当前 Rust HTTP 层没有 reader list 封装，需先确认。
 2. 消息级 Pin 是否有服务端支持待确认；无则走自定义消息广播。
