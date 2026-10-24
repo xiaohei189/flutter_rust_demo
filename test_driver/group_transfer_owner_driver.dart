@@ -23,6 +23,19 @@ Future<void> _scrollTo(FlutterDriver driver, SerializableFinder item) async {
   );
 }
 
+Future<bool> _exists(
+  FlutterDriver driver,
+  SerializableFinder finder, {
+  Duration timeout = const Duration(seconds: 2),
+}) async {
+  try {
+    await driver.waitFor(finder, timeout: timeout);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// 转让群主回归（进入时需停留在会话列表，账号需为群主）。
 ///
 /// 传 `GROUP_ID` 时直接在已有群上转让；否则新建一次性群后再转让。
@@ -38,8 +51,14 @@ Future<void> main() async {
 
     if (existingGroupId.isEmpty) {
       // 新建一次性群
-      await driver.tap(
-        find.byValueKey('chat_add_button'),
+      if (!await _exists(driver, find.byValueKey('chat_add_menu_create_group'))) {
+        await driver.tap(
+          find.byValueKey('chat_add_button'),
+          timeout: const Duration(seconds: 10),
+        );
+      }
+      await driver.waitFor(
+        find.byValueKey('chat_add_menu_create_group'),
         timeout: const Duration(seconds: 10),
       );
       await driver.tap(find.byValueKey('chat_add_menu_create_group'));

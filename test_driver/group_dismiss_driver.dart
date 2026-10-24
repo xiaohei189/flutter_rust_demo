@@ -55,8 +55,14 @@ Future<void> main() async {
     }
 
     // 新建一次性群（只带小萌）
-    await driver.tap(
-      find.byValueKey('chat_add_button'),
+    if (!await _exists(driver, find.byValueKey('chat_add_menu_create_group'))) {
+      await driver.tap(
+        find.byValueKey('chat_add_button'),
+        timeout: const Duration(seconds: 10),
+      );
+    }
+    await driver.waitFor(
+      find.byValueKey('chat_add_menu_create_group'),
       timeout: const Duration(seconds: 10),
     );
     await driver.tap(find.byValueKey('chat_add_menu_create_group'));
