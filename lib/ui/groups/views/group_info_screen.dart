@@ -55,6 +55,8 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_viewModel.load());
+      // 每次进入页面都向服务端刷新一次群资料，避免显示本地缓存的旧群名/旧描述。
+      unawaited(_viewModel.loadServerGroupInfo());
     });
   }
 
@@ -151,6 +153,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.groupInfoTitle ?? '群信息'),
         leading: IconButton(
+          key: const ValueKey('group_info_back'),
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
         ),

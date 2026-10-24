@@ -117,11 +117,34 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
     );
     if (conv != null) {
       await loadMembers();
+      await loadServerGroupInfo();
     }
   }
 
   Future<void> loadMembers() {
     return ref.read(groupMemberProvider(groupId).notifier).loadMembers();
+  }
+
+  /// 从服务端拉取群资料（名称/描述/头像）。
+  ///
+  /// 本地会话缓存的群名与描述可能落后于服务端（例如其他端改过群资料），
+  /// 因此进入页面时以服务端为准刷新一次，避免描述永远显示「暂无描述」。
+  Future<void> loadServerGroupInfo() async {
+    try {
+      final groups = await ref
+          .read(groupRepositoryProvider)
+          .getGroupsInfo([groupId]);
+      final group = groups.where((g) => g.groupId == groupId).firstOrNull;
+      if (group == null) return;
+      state = state.copyWith(
+        groupName: group.groupName.isNotEmpty ? group.groupName : state.groupName,
+        groupDescription: group.introduction.isEmpty
+            ? '暂无描述'
+            : group.introduction,
+      );
+    } catch (e) {
+      appLog.w('[GroupInfo] 拉取群资料失败: $e');
+    }
   }
 
   Future<bool> updateGroupName(String value) async {

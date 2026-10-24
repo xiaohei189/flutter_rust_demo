@@ -83,6 +83,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
         centerTitle: true,
         title: Text(l10n?.chatSettingsTitle ?? '设置'),
         leading: IconButton(
+          key: const ValueKey('chat_settings_back'),
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
         ),

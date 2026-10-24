@@ -37,6 +37,7 @@ class ChatDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       centerTitle: false,
       leading: IconButton(
+        key: const ValueKey('chat_detail_back'),
         // 头部不展示会话未读数：进入会话即已读，未读只属于会话列表（对齐飞书）
         icon: const Icon(Icons.arrow_back_ios_new, size: 22),
         onPressed: onBack,
