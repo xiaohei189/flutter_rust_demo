@@ -218,15 +218,24 @@ pub struct InviteUserToGroupReq {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SetGroupMemberInfoReq {
+    pub members: Vec<SetGroupMemberInfoItem>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SetGroupMemberInfoItem {
     #[serde(rename = "groupID")]
     pub group_id: String,
     #[serde(rename = "userID")]
     pub user_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nickname: Option<String>,
     #[serde(rename = "faceURL")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub face_url: Option<String>,
     #[serde(rename = "roleLevel")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub role_level: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ex: Option<String>,
 }
 
@@ -494,14 +503,17 @@ mod tests {
     #[test]
     fn test_set_group_member_info_req_serialization() {
         let req = SetGroupMemberInfoReq {
-            group_id: "group_123".to_string(),
-            user_id: "user_b".to_string(),
-            nickname: Some("NewName".to_string()),
-            face_url: None,
-            role_level: None,
-            ex: None,
+            members: vec![SetGroupMemberInfoItem {
+                group_id: "group_123".to_string(),
+                user_id: "user_b".to_string(),
+                nickname: Some("NewName".to_string()),
+                face_url: None,
+                role_level: None,
+                ex: None,
+            }],
         };
         let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("members"));
         assert!(json.contains("groupID"));
         assert!(json.contains("NewName"));
     }

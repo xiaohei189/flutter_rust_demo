@@ -407,16 +407,17 @@ impl NotificationHandler {
         if let Err(e) = self.group_manager.sync_groups_incremental().await {
             warn!("[NOTIFY] 增量同步群组列表失败: {}", e);
         }
-        // 群名/群头像变更联动刷新会话名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
-        if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
-            warn!("[NOTIFY] 刷新会话名称失败: {}", e);
-        }
         if !group_id.is_empty() {
             if let Ok(groups) = self.group_manager.get_groups_info(vec![group_id]).await {
                 if let Some(group) = groups.into_iter().next() {
                     self.group_listener.emit(GroupEvent::GroupInfoChanged(group));
                 }
             }
+        }
+        // 群名/群头像变更联动刷新会话名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+        // 必须在群资料落库之后执行，否则补全用的是本地旧群名。
+        if let Err(e) = self.conversation_service.refresh_face_url_and_name().await {
+            warn!("[NOTIFY] 刷新会话名称失败: {}", e);
         }
     }
 

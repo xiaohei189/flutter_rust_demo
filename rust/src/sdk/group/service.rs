@@ -203,7 +203,35 @@ impl GroupService {
 
         let groups: Vec<GroupInfo> = resp.groups_info.into_iter().map(server_to_group_info).collect();
 
+        // 服务端群资料落库：会话列表/群设置页的群名、头像由本地 group 表补全，
+        // 不落库会出现「改完群名，会话列表与设置页还是旧名」。
+        for group in &groups {
+            self.persist_group_info(group).await;
+        }
+
         Ok(groups)
+    }
+
+    /// 用服务端群资料更新本地群表。
+    ///
+    /// 服务端不下发 `creator_user_id`/`group_type`/`need_verification` 等字段，
+    /// 因此写入前先读出本地已有记录并保留这些字段，避免被清空。
+    async fn persist_group_info(&self, server: &GroupInfo) {
+        let mut local = group_info_to_local(server);
+        if let Ok(Some(existing)) = self.repositories.group_repo.get_group(&server.group_id).await {
+            local.creator_user_id = existing.creator_user_id;
+            local.group_type = existing.group_type;
+            local.ex = existing.ex;
+            local.attached_info = existing.attached_info;
+            local.need_verification = existing.need_verification;
+            local.look_member_info = existing.look_member_info;
+            local.apply_member_friend = existing.apply_member_friend;
+            local.notification_update_time = existing.notification_update_time;
+            local.notification_user_id = existing.notification_user_id;
+        }
+        if let Err(e) = self.repositories.group_repo.upsert_group(&local).await {
+            warn!("群资料落库失败: group={}, err={}", server.group_id, e);
+        }
     }
 
     pub async fn create_group(
@@ -336,19 +364,19 @@ impl GroupService {
 
         self.api.set_group_info(&req).await?;
 
-        if let Some(group) = self.groups.write().await.iter_mut().find(|g| g.group_id == updates.group_id) {
-            if let Some(name) = &req.group_name {
-                group.group_name = name.clone();
+        // 以服务端最新资料为准刷新内存缓存并落库（含群名），
+        // 否则会话列表/群设置页仍显示本地旧的群名。
+        match self.get_groups_info(vec![updates.group_id.clone()]).await {
+            Ok(groups) => {
+                let mut cache = self.groups.write().await;
+                for group in groups {
+                    match cache.iter_mut().find(|g| g.group_id == group.group_id) {
+                        Some(existing) => *existing = group,
+                        None => cache.push(group),
+                    }
+                }
             }
-            if let Some(url) = &req.face_url {
-                group.face_url = url.clone();
-            }
-            if let Some(introduction) = &req.introduction {
-                group.introduction = introduction.clone();
-            }
-            if let Some(notification) = &req.notification {
-                group.notification = notification.clone();
-            }
+            Err(e) => warn!("设置群信息后刷新本地群资料失败: group={}, err={}", updates.group_id, e),
         }
 
         info!("群组信息已更新: {}", updates.group_id);
@@ -421,12 +449,14 @@ impl GroupService {
 
     pub async fn set_group_member_info(&self, updates: SetGroupMemberFields) -> Result<()> {
         let req = SetGroupMemberInfoReq {
-            group_id: updates.group_id.clone(),
-            user_id: updates.user_id.clone(),
-            nickname: updates.nickname,
-            face_url: updates.face_url,
-            role_level: updates.role_level,
-            ex: updates.ex,
+            members: vec![crate::infra::http::group::SetGroupMemberInfoItem {
+                group_id: updates.group_id.clone(),
+                user_id: updates.user_id.clone(),
+                nickname: updates.nickname,
+                face_url: updates.face_url,
+                role_level: updates.role_level.map(denormalize_role_level),
+                ex: updates.ex,
+            }],
         };
 
         self.api.set_group_member_info(&req).await?;
@@ -705,6 +735,20 @@ fn normalize_role_level(raw: i32) -> i32 {
     }
 }
 
+/// 客户端角色 3/2/1 -> 服务端 100/60/20。
+///
+/// 服务端 `set_group_member_info` 只接受 100/60/20，直接传 2 会返回
+/// `ArgsError`。已是服务端值时保持原值，便于复用。
+fn denormalize_role_level(level: i32) -> i32 {
+    match level {
+        3 => 100,
+        2 => 60,
+        1 => 20,
+        value @ (20 | 60 | 100) => value,
+        _ => 20,
+    }
+}
+
 fn group_info_to_local(g: &GroupInfo) -> LocalGroup {
     LocalGroup {
         group_id: g.group_id.clone(),
@@ -799,6 +843,17 @@ mod tests {
         assert_eq!(normalize_role_level(3), 3);
         assert_eq!(normalize_role_level(2), 2);
         assert_eq!(normalize_role_level(1), 1);
+    }
+
+    #[test]
+    fn test_denormalize_role_level() {
+        assert_eq!(denormalize_role_level(3), 100);
+        assert_eq!(denormalize_role_level(2), 60);
+        assert_eq!(denormalize_role_level(1), 20);
+        // 已是服务端值时保持原值
+        assert_eq!(denormalize_role_level(100), 100);
+        assert_eq!(denormalize_role_level(60), 60);
+        assert_eq!(denormalize_role_level(20), 20);
     }
 
     #[test]
