@@ -692,7 +692,8 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.of(context).pop();
+      // 已退出群聊，回会话列表；只 pop 一层会停在已退出的群聊页面。
+      AppRouter.goToMain(context);
     } else {
       _showError(_viewModel.currentState.error ?? '退出群组失败');
     }

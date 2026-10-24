@@ -209,7 +209,8 @@ class GroupMemberActions {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      AppRouter.goBack(context);
+      // 群已不存在，回会话列表；只 pop 一层会停在已解散的群设置页。
+      AppRouter.goToMain(context);
     } else {
       _showError(context, viewModel.currentState.error ?? '解散群组失败');
     }

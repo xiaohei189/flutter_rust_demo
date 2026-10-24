@@ -260,7 +260,11 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
       fallback: '解散群组失败',
     );
     if (ok) {
-      await ref.read(groupListProvider.notifier).loadGroups();
+      // 解散后本地群列表/会话列表都要同步清理；刷新失败不改变解散结果。
+      try {
+        await ref.read(groupListProvider.notifier).loadGroups();
+        await ref.read(conversationListProvider.notifier).refreshConversations();
+      } catch (_) {}
     }
     return ok;
   }

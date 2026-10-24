@@ -148,11 +148,15 @@ class ChatSettingsViewModel extends FamilyNotifier<ChatSettingsState, String> {
   Future<bool> quitGroup() async {
     try {
       await ref.read(groupRepositoryProvider).quitGroup(groupId);
-      return true;
     } catch (e) {
       state = state.copyWith(error: '退出群组失败: $e');
       return false;
     }
+    // 退出后会话应由服务端标记删除；刷新失败不影响退群结果。
+    try {
+      await ref.read(conversationListProvider.notifier).refreshConversations();
+    } catch (_) {}
+    return true;
   }
 
   Future<bool> clearHistory() async {

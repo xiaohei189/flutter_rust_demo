@@ -330,8 +330,7 @@ impl GroupService {
 
         self.api.quit_group(&req).await?;
 
-        self.groups.write().await.retain(|g| g.group_id != group_id);
-        self.members.write().await.retain(|m| m.group_id != group_id);
+        self.remove_local_group_state(&group_id).await;
 
         info!("已退出群组: {}", group_id);
         Ok(())
@@ -345,11 +344,26 @@ impl GroupService {
 
         self.api.dismiss_group(&req).await?;
 
-        self.groups.write().await.retain(|g| g.group_id != group_id);
-        self.members.write().await.retain(|m| m.group_id != group_id);
+        self.remove_local_group_state(&group_id).await;
 
         info!("群组已解散: {}", group_id);
         Ok(())
+    }
+
+    /// 退出/解散群后清理本地群资料与群会话。
+    ///
+    /// 服务端增量会话同步不保证立刻下发该会话的删除，若不主动清理，
+    /// 会话列表会残留无法进入的「死群」。
+    async fn remove_local_group_state(&self, group_id: &str) {
+        self.groups.write().await.retain(|g| g.group_id != group_id);
+        self.members.write().await.retain(|m| m.group_id != group_id);
+        if let Err(e) = self.repositories.group_repo.delete_group(group_id).await {
+            warn!("清理本地群资料失败: group={}, err={}", group_id, e);
+        }
+        let conversation_id = format!("sg_{}", group_id);
+        if let Err(e) = self.repositories.conversation_repo.delete(&conversation_id).await {
+            warn!("清理本地群会话失败: conv={}, err={}", conversation_id, e);
+        }
     }
 
     pub async fn set_group_info(&self, updates: SetGroupInfoFields) -> Result<()> {
