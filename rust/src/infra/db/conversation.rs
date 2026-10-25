@@ -11,7 +11,11 @@ pub trait ConversationRepository: Send + Sync {
     async fn get_all(&self) -> Result<Vec<LocalConversation>>;
     async fn update_unread_count(&self, conversation_id: &str, count: i32) -> Result<()>;
     async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()>;
-    async fn delete(&self, conversation_id: &str) -> Result<()>;
+    /// 删除会话，返回实际删除的行数（0 表示原本就不存在）。
+    ///
+    /// 调用方用返回值区分「真的清理了一条」与「重复清理的空删」，
+    /// 便于按日志条数核对「每群只清理一次」。
+    async fn delete(&self, conversation_id: &str) -> Result<u64>;
     async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()>;
     async fn get_all_ids(&self) -> Result<Vec<String>>;
     async fn update_draft(&self, conversation_id: &str, draft_text: &str, draft_time: i64) -> Result<()>;

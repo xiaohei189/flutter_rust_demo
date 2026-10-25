@@ -172,13 +172,14 @@ impl ConversationDao {
         Ok(())
     }
 
-    pub async fn delete(&self, conversation_id: &str) -> Result<()> {
-        sqlx::query("DELETE FROM local_conversations WHERE conversation_id = ?")
+    /// 删除会话，返回受影响行数（0 = 会话本来就不存在，属幂等空删）。
+    pub async fn delete(&self, conversation_id: &str) -> Result<u64> {
+        let result = sqlx::query("DELETE FROM local_conversations WHERE conversation_id = ?")
             .bind(conversation_id)
             .execute(&self.pool)
             .await
             .map_err(|e| SdkError::database(format!("delete conversation: {}", e)))?;
-        Ok(())
+        Ok(result.rows_affected())
     }
 
     /// 批量删除会话
@@ -460,7 +461,7 @@ impl ConversationRepository for ConversationDao {
     async fn update_after_new_message(&self, conversation_id: &str, latest_msg: &str, send_time: i64, seq: i64) -> Result<()> {
         self.update_after_new_message(conversation_id, latest_msg, send_time, seq).await
     }
-    async fn delete(&self, conversation_id: &str) -> Result<()> {
+    async fn delete(&self, conversation_id: &str) -> Result<u64> {
         self.delete(conversation_id).await
     }
     async fn batch_delete(&self, conversation_ids: &[String]) -> Result<()> {
@@ -614,6 +615,19 @@ mod tests {
         dao.update_max_seq("conv_1", 42).await.unwrap();
         let seq = dao.get_max_seq("conv_1").await.unwrap();
         assert_eq!(seq, 42);
+    }
+
+    /// 删除会话要能报出真实影响行数：首次删 1 行，重复删除为 0（幂等空删）。
+    /// 服务层据此把空删降级成 debug 日志，避免把「推送 + 对账」的同源清理误读成两次清理。
+    #[tokio::test]
+    async fn test_delete_reports_affected_rows_for_idempotent_cleanup() {
+        let pool = create_pool_memory().await.unwrap();
+        let dao = ConversationDao::new(pool);
+
+        dao.upsert(&make_conv("sg_dead_group")).await.unwrap();
+
+        assert_eq!(dao.delete("sg_dead_group").await.unwrap(), 1, "首次删除应命中 1 行");
+        assert_eq!(dao.delete("sg_dead_group").await.unwrap(), 0, "重复删除应为 0 行（空删）");
     }
 
     #[tokio::test]

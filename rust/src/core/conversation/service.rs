@@ -125,13 +125,24 @@ impl ConversationService {
     /// `source` 只进日志，用来定位「群失效后会话残留」是哪条链路漏了清理。
     /// 幂等：会话本来就不存在时删除不报错，允许重复调用。
     pub async fn delete_conversation_with_source(&self, conversation_id: &str, source: CleanupSource) -> Result<()> {
-        self.repositories.conversation_repo.delete(conversation_id).await?;
-        info!(
-            "本地会话已清理: cleanup_source={}, conversation_id={}, group_id={}",
-            source.as_str(),
-            conversation_id,
-            group_id_of_group_conversation(conversation_id).unwrap_or_default()
-        );
+        let removed = self.repositories.conversation_repo.delete(conversation_id).await?;
+        let group_id = group_id_of_group_conversation(conversation_id).unwrap_or_default();
+        if removed > 0 {
+            info!(
+                "本地会话已清理: cleanup_source={}, conversation_id={}, group_id={}, removed=true",
+                source.as_str(),
+                conversation_id,
+                group_id
+            );
+        } else {
+            // 推送与对账可能针对同一群重复触发，空删只留 debug，避免误读成「清理了两次」。
+            debug!(
+                "本地会话本就不存在: cleanup_source={}, conversation_id={}, group_id={}, removed=false",
+                source.as_str(),
+                conversation_id,
+                group_id
+            );
+        }
         self.send(ConversationEvent::Deleted(vec![conversation_id.to_string()]));
         Ok(())
     }
