@@ -37,28 +37,28 @@
 
 | 功能 | 现状 | 位置 |
 |---|---|---|
-| 长按菜单缺项 | 归档/取消归档、移动分组、清空、删除的回调已传入但菜单未渲染 | `lib/ui/chat/widgets/list/chat_list_item_menu.dart` |
+| 长按菜单缺项 | 已补齐（P0-1）：置顶/取消置顶、归档/取消归档、移动分组、清空、删除均渲染；清空与删除带二次确认 | `lib/ui/chat/widgets/list/chat_list_item_menu.dart` |
 | 会话「标签」 | 已收敛到自定义分组（P0-4）：菜单项合并进「移动到分组」，设置页「标签」跳分组管理页 | 同上、`lib/ui/chat/views/chat_settings_screen.dart` |
 | 列表「外部/智能体/机器人」胶囊 | 已删除假数据（P0-4），改为展示真实分组名 | `lib/ui/chat/widgets/list/chat_list_item_content.dart` |
 | 分组面板筛选图标 | 已补齐（P0-3）：打开分组管理页 | `lib/ui/chat/widgets/list/group_filter_panel.dart` |
 | 自定义分组 | 已补齐（P0-3）：支持重命名与拖动排序，仍只存本地 | `lib/ui/chat/providers/conversation_folder_provider.dart` |
 | 会话搜索 | 全局搜索只有「消息/联系人/群组」，无会话维度与搜索历史 | `lib/ui/shared/views/search_screen.dart` |
 | 全部已读 | 已补齐（P0-2）：工作台应用宫格入口 + 二次确认 | `lib/ui/workbench/views/workbench_screen.dart` |
-| 设置页占位项 | 分享、添加标签页、群机器人、@所有人消息不提示、标签、添加到标记、单聊「+ 添加成员」、群二维码 | `lib/ui/chat/views/chat_settings_screen.dart` |
+| 设置页占位项 | 分享、添加标签页、群机器人、@所有人消息不提示、添加到标记、单聊「+ 添加成员」仍为占位；群二维码只有聊天设置页仍是 `_notSupported` 占位，群信息页的二维码入口已可用（`lib/ui/shared/views/qr_code_screen.dart`） | `lib/ui/chat/views/chat_settings_screen.dart` |
 
 ### 3.2 消息详情
 
 | 功能 | 现状 | 位置 |
 |---|---|---|
 | 工具面板 9 项占位 | 创建话题、标记、Pin、复制消息链接、翻译、飞书内搜索、网页搜索、添加任务、导出到文档 | `lib/ui/chat/widgets/menu/message_tool_panel.dart` |
-| 表情回复 / 置顶消息 | 只存在页面内存，退出即丢，不落库、不发给对方 | `lib/ui/chat/views/chat_detail_screen.dart` |
+| 表情回复 / 置顶消息 | 表情回复已本地持久化（`MessageExtrasStore`）并按 emoji 分组渲染，重启后仍在；置顶消息仍无入口，也不发给对端 | `lib/ui/chat/views/chat_detail_screen.dart`、`lib/data/services/message_extras_store.dart` |
 | 置顶消息栏 | 无顶部置顶消息栏与列表 | 同上 |
 | 位置消息 | 只有经纬度弹窗，无地图与导航 | `lib/ui/chat/widgets/menu/chat_dialogs.dart` |
 | 群已读 | 只有「已读 n/m」文本，无已读/未读成员详情 | `lib/ui/chat/widgets/bubble/message_bubble.dart` |
-| 语音播放 | 无播放中状态、进度与停止入口 | `lib/ui/chat/widgets/bubble/parts/media_message_content.dart` |
+| 语音播放 | 已实现：播放中显示停止图标与进度条，带播放状态判定 | `lib/ui/chat/widgets/bubble/parts/media_message_content.dart` |
 | 音视频通话 | 全项目无通话代码，顶栏仅搜索/设置 | `lib/ui/chat/widgets/shared/chat_detail_app_bar.dart` |
-| @所有人 | 群成员选择器无「所有人」选项 | `lib/ui/chat/widgets/composer/group_member_picker.dart` |
-| 未读分割线 / 回到底部 | 无未读分割线、无「N 条新消息」悬浮按钮 | `lib/ui/chat/widgets/list/message_list.dart` |
+| @所有人 | 已实现（P2-1，2026-10-19）：选择器置顶「所有人」，发送为 contentType=106 且带 `AtAllTag` | `lib/ui/chat/widgets/composer/group_member_picker.dart` |
+| 未读分割线 / 回到底部 | 已实现（P0-5，2026-10-10）：进入会话快照未读边界，「以下为新消息」分割线 + 「N 条新消息」回到底部胶囊 | `lib/ui/chat/widgets/list/message_list.dart` |
 | 附件面板占位 | 云文档、日程、定时消息、任务、开启边写边译、更多 | `lib/ui/chat/widgets/composer/chat_input.dart` |
 
 ## 4. 工作项清单
@@ -192,11 +192,12 @@
 
 已知残留：
 
-- 单人禁言在成员行上没有状态展示（只有 SnackBar 反馈），建议补「禁言中」徽标与到期时间。
+- ~~单人禁言在成员行上没有状态展示（只有 SnackBar 反馈）~~ → 已修复（2026-10-25，`34e3405`）：群成员行展示「禁言中 · 剩 N 分钟/小时/天」徽标，数据取自成员列表接口的 `muteEndTime`，到期自动消失；真机已验（黄磊行显示剩余时长，其他成员无徽标）。
 - OpenIM 服务端在解散群后仍保留成员侧的会话记录，客户端只在本地清理；全量重装/全量会话同步后可能重新出现，后续应接服务端会话删除接口。目前由「群集合对账」（登录/群增量同步后按群表清理 `sg_*` 会话）兜住，见 5.4。
 - ~~「他人解散群」的通知未在真机日志中出现，被动端清理只能在重连后发生~~ → 已定位并修复：本端解散固定带 `deleteMember=true`，服务端在该分支跳过 1511 通知；改为 `deleteMember=false` 后成员端可即时收到通知，详见 5.4。
 - 新建群若没人发言，成员端没有该群会话（服务端不预建），成员只能从「通讯录 → 我的群组」进入，且此时群信息页会显示「群组不存在」；建议进群时按需创建本地会话。
-- 退群瞬间会话页仍在卸载中，会补发一次 `get_group_member_list` 并得到 1005 NoPermissionError（仅日志噪音，不影响交互）；可在删除会话时一并收起成员页。
+- ~~退群/解散瞬间会话页仍在卸载中，会补发一次 `get_group_member_list` 并得到 NoPermissionError（仅日志噪音，不影响交互）~~ → 已修复（2026-10-25）：实际错误码是 `errCode=1002 NoPermissionError`（原文写的 1005 有误），修法是群已不在本地群表时成员视图模型直接短路，不再发请求。真机复现（转让群主后由对方解散）：该群的成员列表请求与 NoPermissionError 均不再出现，清理日志正常。
+- ~~清理日志无法区分「真删」与「重复空删」~~ → 已修复（2026-10-25，`651422a`）：`ConversationRepository::delete` 返回影响行数，真删记 INFO `removed=true`，空删降级为 DEBUG `removed=false`；「每群只清理一次」可直接数 `removed=true` 的 INFO 行。
 
 ### 5.4 群生命周期清理回归（2026-10-25，OpenSpec 变更 `fix-remote-group-dismiss`）
 
@@ -216,8 +217,11 @@
 1. **横屏/小高度下「群管理」弹窗把最后一项挤出屏幕**：`showModalBottomSheet` 默认高度上限约为屏高的 9/16，横屏 344dp 下只有 ~212dp，而「群管理」弹窗内容约 269dp，`RenderFlex overflowed by 57 pixels`，「解散群组」不可点击（相同原因也让登录页按钮落到首屏之外）。已把群相关的 6 个底部弹窗统一改为可滚动容器（`_SheetBody`），装得下按内容高度、装不下可滚动。真机热重载后确认弹窗无溢出且能滚到「解散群组」完成解散。
 2. 回归脚本适配：`group_transfer_owner_driver` 支持 `NEW_OWNER_ID`（默认小萌）、`group_dissolve_by_owner_driver` 支持从任意页面回到会话列表并在弹窗内滚动、新增 `login_driver` 验证码登录辅助（真机令牌被新登录顶掉时可自助恢复登录态）。
 
-仍可优化（非阻塞）：`ConversationService` 的清理日志在「会话本来就不存在」时也会打印 `本地会话已清理`，被动路径上会出现 push + sync 两条同源日志；如需按条数核对「只清理一次」，可让日志带 `removed=true/false`。
+后续已补齐（同日）：
 
+- 清理日志带 `removed=true/false`：真删记 INFO，空删降级 DEBUG，「只清理一次」可直接按 INFO 条数核对（`651422a`）。
+- 群成员行展示禁言状态徽标（`34e3405`）。
+- 群已不在本地群表时成员视图模型短路，退群/解散不再补发无效的成员列表请求（消除 `NoPermissionError` 噪音）。
 ## 6. 验收与验证方式
 
 按仓库《迭代节奏》执行，避免全量重建与无谓测试：
