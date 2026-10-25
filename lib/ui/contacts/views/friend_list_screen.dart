@@ -12,6 +12,7 @@ import '../../../../router/app_router.dart';
 import '../../../../providers/current_user_provider.dart';
 import '../../../../ui/core/theme/app_icon_colors.dart';
 import '../../../../ui/core/theme/app_theme.dart';
+import '../../../../ui/core/widgets/scrollable_sheet_body.dart';
 import '../../../../ui/core/widgets/state_views.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../providers/friend_provider.dart';
@@ -291,59 +292,53 @@ class _FriendListScreenState extends ConsumerState<FriendListScreen> {
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                displayName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+      builder: (context) => ScrollableSheetBody(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              displayName,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            const Divider(height: 1),
-            ListTile(
-              leading: Icon(Icons.person, color: context.appColors.primary),
-              title: const Text('查看资料'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push(
-                  '/profile/user/${friend.userId}',
-                  extra: _friendToUser(friend),
-                );
-              },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.person, color: context.appColors.primary),
+            title: const Text('查看资料'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push(
+                '/profile/user/${friend.userId}',
+                extra: _friendToUser(friend),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.message, color: AppIconColors.green),
+            title: const Text('发消息'),
+            onTap: () {
+              Navigator.pop(context);
+              final currentUserId = ref.read(currentUserIdProvider);
+              final ids = [currentUserId, friend.userId]..sort();
+              final conversationId = 'si_${ids[0]}_${ids[1]}';
+              AppRouter.goToChatDetailById(context, conversationId);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.delete_outline,
+              color: context.appColors.danger,
             ),
-            ListTile(
-              leading: const Icon(Icons.message, color: AppIconColors.green),
-              title: const Text('发消息'),
-              onTap: () {
-                Navigator.pop(context);
-                final currentUserId = ref.read(currentUserIdProvider);
-                final ids = [currentUserId, friend.userId]..sort();
-                final conversationId = 'si_${ids[0]}_${ids[1]}';
-                AppRouter.goToChatDetailById(context, conversationId);
-              },
+            title: Text(
+              '删除好友',
+              style: TextStyle(color: context.appColors.danger),
             ),
-            ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: context.appColors.danger,
-              ),
-              title: Text(
-                '删除好友',
-                style: TextStyle(color: context.appColors.danger),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDeleteFriend(friend);
-              },
-            ),
-          ],
-        ),
+            onTap: () {
+              Navigator.pop(context);
+              _confirmDeleteFriend(friend);
+            },
+          ),
+        ],
       ),
     );
   }

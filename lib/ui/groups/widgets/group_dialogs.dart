@@ -3,26 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../domain/models/group_member.dart';
 import '../../../domain/models/user.dart';
 import '../../../ui/core/theme/app_theme.dart';
+import '../../../ui/core/widgets/scrollable_sheet_body.dart';
 import '../../../ui/core/widgets/user_avatar.dart';
-
-/// 底部弹窗内容容器：内容超出可用高度时可滚动。
-///
-/// 大字/大显示缩放的设备上，固定高度的弹窗会把最后几项（例如「解散群组」）
-/// 挤出屏幕且无法操作，这里统一改成「装得下就按内容高度、装不下就滚动」。
-class _SheetBody extends StatelessWidget {
-  const _SheetBody({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, children: children),
-      ),
-    );
-  }
-}
 
 /// 成员操作底部弹窗，返回动作标识：kick/mute/unmute/setAdmin/unsetAdmin/transfer。
 Future<String?> showGroupMemberActionsSheet(
@@ -38,7 +20,7 @@ Future<String?> showGroupMemberActionsSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => _SheetBody(
+    builder: (ctx) => ScrollableSheetBody(
       children: [
         ListTile(
           title: Text(
@@ -97,7 +79,7 @@ Future<String?> showGroupManageSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => _SheetBody(
+    builder: (ctx) => ScrollableSheetBody(
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
@@ -150,7 +132,7 @@ Future<void> showGroupOwnerAdminSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (sheetContext) => _SheetBody(
+    builder: (sheetContext) => ScrollableSheetBody(
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
@@ -193,7 +175,7 @@ Future<int?> showGroupMuteDurationSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => _SheetBody(
+    builder: (ctx) => ScrollableSheetBody(
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
@@ -223,7 +205,7 @@ Future<GroupMember?> showGroupOwnerPickerSheet(
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => _SheetBody(
+    builder: (ctx) => ScrollableSheetBody(
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
@@ -296,7 +278,7 @@ Future<String?> showGroupAvatarPickerSheet(BuildContext context) {
         top: Radius.circular(AppTheme.radiusSheet),
       ),
     ),
-    builder: (ctx) => _SheetBody(
+    builder: (ctx) => ScrollableSheetBody(
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12),

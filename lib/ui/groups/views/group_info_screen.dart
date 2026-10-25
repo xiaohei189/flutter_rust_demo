@@ -11,6 +11,7 @@ import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
 import '../../../../ui/core/widgets/card_layout.dart';
 import '../../../../ui/core/widgets/list_row.dart';
+import '../../../../ui/core/widgets/scrollable_sheet_body.dart';
 import '../../../../ui/core/widgets/user_avatar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../providers/group_info_provider.dart';
@@ -306,37 +307,34 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           top: Radius.circular(AppTheme.radiusSheet),
         ),
       ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                l10n?.joinTimeFilter ?? '按加入时间筛选',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
+      builder: (sheetContext) => ScrollableSheetBody(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              l10n?.joinTimeFilter ?? '按加入时间筛选',
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            const Divider(height: 1),
-            for (final filter in _JoinTimeFilter.values)
-              ListTile(
-                title: Text(switch (filter) {
-                  _JoinTimeFilter.all => l10n?.all ?? '全部',
-                  _JoinTimeFilter.today => l10n?.today ?? '今天',
-                  _JoinTimeFilter.week => l10n?.last7Days ?? '近 7 天',
-                  _JoinTimeFilter.month => l10n?.last30Days ?? '近 30 天',
-                }),
-                trailing: _joinTimeFilter == filter
-                    ? Icon(
-                        Icons.check,
-                        size: 20,
-                        color: context.appColors.primary,
-                      )
-                    : null,
-                onTap: () => Navigator.of(sheetContext).pop(filter),
-              ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          for (final filter in _JoinTimeFilter.values)
+            ListTile(
+              title: Text(switch (filter) {
+                _JoinTimeFilter.all => l10n?.all ?? '全部',
+                _JoinTimeFilter.today => l10n?.today ?? '今天',
+                _JoinTimeFilter.week => l10n?.last7Days ?? '近 7 天',
+                _JoinTimeFilter.month => l10n?.last30Days ?? '近 30 天',
+              }),
+              trailing: _joinTimeFilter == filter
+                  ? Icon(
+                      Icons.check,
+                      size: 20,
+                      color: context.appColors.primary,
+                    )
+                  : null,
+              onTap: () => Navigator.of(sheetContext).pop(filter),
+            ),
+        ],
       ),
     );
     if (selected != null && mounted) {

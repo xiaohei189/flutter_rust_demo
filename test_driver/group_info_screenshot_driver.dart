@@ -48,6 +48,19 @@ Future<void> main() async {
       timeout: const Duration(seconds: 15),
     );
     await Future<void>.delayed(const Duration(seconds: 3));
+
+    // 可选：打开「按加入时间筛选」底部弹窗，用于验证横屏/小高度下的滚动兜底
+    if (Platform.environment['OPEN_FILTER'] == '1') {
+      await driver.scrollUntilVisible(
+        find.byType('ListView'),
+        find.text('按加入时间筛选'),
+        dyScroll: -300,
+        timeout: const Duration(seconds: 20),
+      );
+      await driver.tap(find.text('按加入时间筛选'));
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+
     final bytes = await driver.screenshot();
     await File('build/group_info_$tag.png').writeAsBytes(bytes);
     print('GROUP_INFO_OK');
