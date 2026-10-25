@@ -17,6 +17,7 @@ List<RouteBase> buildChatRoutes() {
         final conversationId = state.pathParameters['id'];
         final preLoaded = state.uri.queryParameters['preLoaded'] == 'true';
         final focusAtMe = state.uri.queryParameters['focusAtMe'] == 'true';
+        final initialMessageId = state.uri.queryParameters['message'];
         if (conversationId == null || conversationId.isEmpty) {
           return const RouteErrorPage(message: '会话ID不存在');
         }
@@ -24,6 +25,7 @@ List<RouteBase> buildChatRoutes() {
           conversationId: conversationId,
           preLoaded: preLoaded,
           focusAtMe: focusAtMe,
+          initialMessageId: initialMessageId,
         );
       },
     ),

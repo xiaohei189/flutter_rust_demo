@@ -19,6 +19,7 @@ void main() {
               width: 800,
               height: 600,
               child: MessageList(
+                conversationId: 'sg_test',
                 messages: [message],
                 otherUser: const User(id: 'user_2', name: '李四'),
                 currentUserId: kPreviewMyUserId,
@@ -78,6 +79,7 @@ void main() {
               width: 800,
               height: 200,
               child: MessageList(
+                conversationId: 'sg_test',
                 messages: const [
                   ChatMessage(
                     clientMsgId: 'empty-send-id',

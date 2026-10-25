@@ -456,8 +456,16 @@ impl GroupService {
             .filter(|g| g.status == group_status::DISMISSED)
             .map(|g| g.group_id.clone())
             .collect();
+        if !dismissed.is_empty() {
+            // 一次对账可能清掉多个已解散群：日志聚合为一行，避免刷屏
+            info!(
+                "已解散群对齐本地状态: cleanup_source={}, count={}, groups={}",
+                source.as_str(),
+                dismissed.len(),
+                dismissed.join(",")
+            );
+        }
         for group_id in &dismissed {
-            info!("已解散群对齐本地状态: cleanup_source={}, group_id={}", source.as_str(), group_id);
             self.remove_local_group_state(group_id, source).await;
         }
 

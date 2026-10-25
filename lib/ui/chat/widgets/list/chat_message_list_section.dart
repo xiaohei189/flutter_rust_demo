@@ -61,6 +61,7 @@ class ChatMessageListSection extends ConsumerWidget {
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => FocusScope.of(context).unfocus(),
       child: MessageList(
+        conversationId: conversationId,
         messages: messages,
         otherUser: user,
         currentUserId: currentUserId,

@@ -28,6 +28,7 @@ import '../../providers/message_service_provider.dart';
 class MessageList extends StatefulWidget {
   const MessageList({
     super.key,
+    required this.conversationId,
     required this.messages,
     required this.otherUser,
     required this.currentUserId,
@@ -50,6 +51,8 @@ class MessageList extends StatefulWidget {
     this.unreadCountAtOpen = 0,
   });
 
+  /// 当前会话 ID：用于「复制消息链接」生成深链。
+  final String conversationId;
   final List<ChatMessage> messages;
   final User otherUser;
   final String? currentUserId;
@@ -322,6 +325,7 @@ class MessageListState extends State<MessageList> {
     }
     showMessageToolPanel(
       context: context,
+      conversationId: widget.conversationId,
       message: message,
       currentUserId: widget.currentUserId ?? '',
       actions: actions,
@@ -428,9 +432,7 @@ class MessageListState extends State<MessageList> {
                   : null,
               reactionGroups:
                   widget.messageReactions[message.clientMsgId] ?? const [],
-              flagged: widget.flaggedClientMsgIds.contains(
-                message.clientMsgId,
-              ),
+              flagged: widget.flaggedClientMsgIds.contains(message.clientMsgId),
               groupReadReceipts: widget.groupReadReceipts,
               onPlayAudio: widget.onPlayAudio,
               onRetrySend: widget.onRetrySend,
@@ -769,6 +771,7 @@ Widget messageListPreview() {
       child: SizedBox(
         height: 480,
         child: MessageList(
+          conversationId: 'sg_preview',
           messages: fakeMessageList(),
           otherUser: User.mockUsers[1],
           currentUserId: kPreviewMyUserId,

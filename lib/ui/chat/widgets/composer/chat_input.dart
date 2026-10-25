@@ -12,6 +12,7 @@ import 'at_member_suggestions.dart';
 import 'attachment_panel.dart';
 import 'chat_composer_controller.dart';
 import 'chat_input_field.dart';
+import 'composer_panel_metrics.dart';
 import 'emoji_panel.dart';
 import 'format_toolbar.dart' show MarkdownFormat;
 import 'input_toolbar_icon.dart';
@@ -726,11 +727,7 @@ class _ChatInputState extends State<ChatInput> {
   /// 常驻操作行（飞书稿）：😊 @ 🎤 🖼 Aa ⊕ 均匀分布，最右固定发送。
   /// 开关面板只改图标形态（蓝色/实心），行结构与输入框 Element 始终不变，
   /// 因此聚焦、切面板都不会替换 TextField（键盘不会闪）。
-  Widget _buildActionRow(
-    bool emojiActive,
-    bool moreActive,
-    bool voiceActive,
-  ) {
+  Widget _buildActionRow(bool emojiActive, bool moreActive, bool voiceActive) {
     final colors = context.appColors;
     final imagePicker = widget.onImagesPick ?? widget.onImagePick;
     return Padding(

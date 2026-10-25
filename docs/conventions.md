@@ -414,3 +414,17 @@ strip = true          # 去除调试符号
   依赖/原生配置改动、或要出真机安装包时才 build + install。
 - 全量测试不作为默认迭代步骤，也不作为每次提交的前置条件。
 - 静态检查迭代中按目录跑，全量按需。
+
+## 交付前一键门禁
+
+发布/交付前（或跨模块改动收尾时）跑一次：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\check-all.ps1
+# 生成物没有变化时可用 -SkipCodegen 省掉 codegen 复跑（约 3 分钟）
+powershell -ExecutionPolicy Bypass -File scripts\check-all.ps1 -SkipCodegen
+```
+
+它依次执行 `flutter test test`、`flutter analyze lib test`、`cargo test --lib`、
+`cargo clippy --all-targets`、架构边界、设计 token、codegen 一致性，任一步失败立即
+停止并返回非零，最后打印每步耗时汇总。

@@ -50,7 +50,7 @@
 
 | 功能 | 现状 | 位置 |
 |---|---|---|
-| 工具面板 9 项占位 | 创建话题、标记、Pin、复制消息链接、翻译、飞书内搜索、网页搜索、添加任务、导出到文档 | `lib/ui/chat/widgets/menu/message_tool_panel.dart` |
+| 工具面板占位 | 复制消息链接已接通（2026-10-26：写剪贴板 + 深链定位）；标记/取消标记已本地持久化；与「置顶消息」语义重复的「Pin」占位已删除（保留已实现的置顶）；其余创建话题、翻译、飞书内搜索、网页搜索、添加任务、导出到文档仍为占位，点按统一提示「功能开发中，敬请期待」 | `lib/ui/chat/widgets/menu/message_tool_panel.dart` |
 | 表情回复 / 置顶消息 | 表情回复与置顶都已本地持久化（`MessageExtrasStore`）：表情按 emoji 分组渲染、置顶可在消息操作里开关，重启后仍在；但都**不发给对端**（跨端不可见），置顶也没有「全部置顶消息」列表页 | `lib/ui/chat/views/chat_detail_screen.dart`、`lib/data/services/message_extras_store.dart` |
 | 置顶消息栏 | 已实现（`PinnedMessageBar`）：顶部展示最近一条置顶、点击定位、右侧取消置顶；仅本地状态，无跨端同步 | `lib/ui/chat/widgets/list/pinned_message_bar.dart` |
 | 位置消息 | 只有经纬度弹窗，无地图与导航 | `lib/ui/chat/widgets/menu/chat_dialogs.dart` |
@@ -127,6 +127,16 @@
   - 定位失败（消息不在当前视图）时给明确提示，不再静默失败：`MessageListState.scrollToMessage` 改为返回 bool。
   - 测试：`test/ui/chat/marked_messages_sheet_test.dart`（列表/取消标记/空态）。
   - 真机验证：顶栏入口 → 弹层显示「标记消息 1 条」+ 正确内容与时间。
+- [x] P1-6 复制消息链接（2026-10-26）：工具面板「复制消息链接」不再提示暂未开放，改为把消息深链写入剪贴板并提示「消息链接已复制」。
+  - 深链格式：`flutterrustdemo:///chat/<conversationId>?message=<clientMsgId>`（空 host + 路径，直接复用已有的 `/chat/:id` 路由，见 `lib/ui/chat/utils/message_link.dart`）。
+  - 链路：`lib/router/chat_routes.dart` 读 `?message=` → `ChatDetailScreen.initialMessageId` → 消息加载后延迟 120ms 调用 `_locateMessageById`（与「@我」定位同一套语义）；消息不在当前视图内时提示「该消息不在当前视图内，向上滚动可继续查找」。
+  - Android 侧 `android/app/src/main/AndroidManifest.xml` 给 MainActivity 补 `flutterrustdemo` 的 `VIEW`/`BROWSABLE` intent-filter；iOS 未配置（当前只维护 Android 真机链路）。
+  - 顺带收敛：工具面板其余占位统一为 1.6s「「xxx」功能开发中，敬请期待」；语音/表情/附件面板高度常量收敛到 `lib/ui/chat/widgets/composer/composer_panel_metrics.dart`。
+  - 顺带收敛：删除工具面板里与「置顶消息」语义重复的「Pin」占位（`test/ui/chat/message_tool_panel_test.dart` 补断言）；会话设置页的「Pin」入口仍为占位，语义是「本会话置顶消息列表」，列入后续。
+  - 测试：`test/ui/chat/message_link_test.dart`（生成/解析/非法链接），`test/ui/chat/message_tool_panel_test.dart` 补剪贴板断言。
+  - 待办（真机验证）：设备被其他场景占用，未执行；恢复后跑
+    `adb shell am start -a android.intent.action.VIEW -d "flutterrustdemo:///chat/<conversationId>?message=<clientMsgId>"`，
+    预期直接进入该群聊并定位到消息。
 
 ### 4.3 P2：需新方案（单独立项）
 
@@ -226,6 +236,8 @@
 - 离线补拉的 1511 会经「会话消息」通道建出孤儿会话：消息同步后再对一次账兜底，并清理本地残留的 `status=2` 群（群资料/成员/会话），同时不再把已解散群资料落库。
 - 底部弹窗统一收敛到公共 `ScrollableSheetBody`（群相关 6 个 + 群信息「按加入时间筛选」+ 好友操作），并补 640×300 小窗口 widget 测试兜住「横屏/小高度下最后一项被裁切」的回归；`@ 选择群成员`（Flexible + ListView）与 2 项短弹窗保持原样。
 - 无消息新群也会补建本地会话（群增量同步新增分支 + 本端建群统一走 `ensure_group_conversation`），成员端不再只能从「通讯录 → 我的群组」进入。
+- 对账日志从「每群一行」聚合为一行：`已解散群对齐本地状态: cleanup_source=sync, count=6, groups=...`，一次清理多个死群时不再刷屏（`rust/src/sdk/group/service.rs`）。
+
 ## 6. 验收与验证方式
 
 按仓库《迭代节奏》执行，避免全量重建与无谓测试：

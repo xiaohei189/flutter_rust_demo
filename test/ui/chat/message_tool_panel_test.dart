@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,13 +42,14 @@ void main() {
   final reacted = <String>[];
 
   // 气泡内部订阅上传进度（messageServiceProvider），需要 ProviderScope
-  Widget host() => ProviderScope(
+  Widget host({bool withPin = false}) => ProviderScope(
     child: MaterialApp(
       home: Scaffold(
         body: SizedBox(
           width: 400,
           height: 800,
           child: MessageList(
+            conversationId: 'sg_test',
             messages: [message()],
             otherUser: const User(id: 'other', name: '对方'),
             currentUserId: kPreviewMyUserId,
@@ -59,6 +61,7 @@ void main() {
               onForward: (_) {},
               onQuote: (_) {},
               onReaction: (_, emoji) => reacted.add(emoji),
+              onPin: withPin ? (_) {} : null,
             ),
           ),
         ),
@@ -73,8 +76,8 @@ void main() {
   double screenHeight(WidgetTester tester) =>
       tester.getSize(find.byType(Scaffold)).height;
 
-  Future<void> openPanel(WidgetTester tester) async {
-    await tester.pumpWidget(host());
+  Future<void> openPanel(WidgetTester tester, {bool withPin = false}) async {
+    await tester.pumpWidget(host(withPin: withPin));
     await tester.longPress(find.text('长按我'));
     await tester.pumpAndSettle();
   }
@@ -146,5 +149,35 @@ void main() {
     // 抽屉式高度：弹层 = 头部 + 内容（没有被拉伸，也就没有空白）
     expect(panelHeight(tester), closeTo(header + content, 1));
     expect(panelHeight(tester), lessThan(screen * 0.95));
+  });
+
+  testWidgets('复制消息链接写入 flutterrustdemo 深链', (tester) async {
+    final calls = <MethodCall>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      calls.add(call);
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await openPanel(tester);
+    await tester.ensureVisible(find.text('复制消息链接'));
+    await tester.tap(find.text('复制消息链接'));
+    await tester.pumpAndSettle();
+
+    final setData = calls.where((c) => c.method == 'Clipboard.setData').last;
+    final args = setData.arguments as Map<Object?, Object?>;
+    expect(args['text'], 'flutterrustdemo:///chat/sg_test?message=m1');
+    expect(find.text('消息链接已复制'), findsOneWidget);
+  });
+
+  testWidgets('工具面板把「Pin」收敛成已实现的「置顶消息」，不再重复占位', (tester) async {
+    await openPanel(tester, withPin: true);
+
+    expect(find.text('置顶消息'), findsOneWidget);
+    expect(find.text('Pin'), findsNothing, reason: 'Pin 占位已删除，语义并入「置顶消息」');
   });
 }

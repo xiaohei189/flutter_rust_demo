@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import '../../../previews/app_theme_preview.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../../data/services/emoji_store.dart';
+import 'composer_panel_metrics.dart';
 
 /// 底部 Tab 栏的设计高度（可用空间不足时会按可用高度收敛）。
 const double kTabBarHeight = 48;
-
-/// 表情面板的设计高度：输入区按它（与键盘高度取较大者）给面板占位。
-const double kEmojiPanelHeight = 300;
 
 /// 表情面板 Tab
 enum EmojiTab { recent, emoji, favorite, gif }

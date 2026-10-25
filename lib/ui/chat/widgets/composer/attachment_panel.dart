@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../previews/app_theme_preview.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_icon_colors.dart';
-
-/// 附件面板的设计高度：输入区按它（与键盘高度取较大者）给面板占位。
-const double kAttachmentPanelHeight = 320;
+import 'composer_panel_metrics.dart';
 
 /// 附件面板项定义
 class AttachmentItem {

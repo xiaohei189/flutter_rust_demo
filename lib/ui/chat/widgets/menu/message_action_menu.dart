@@ -46,6 +46,7 @@ class MessageActions {
 /// 弹层高度可用手往上拖（0.5 → 0.92 两档吸附），「⋯」切换到完整表情界面。
 void showMessageToolPanel({
   required BuildContext context,
+  required String conversationId,
   required ChatMessage message,
   required String currentUserId,
   required MessageActions actions,
@@ -71,6 +72,7 @@ void showMessageToolPanel({
         ),
       ),
       child: MessageToolPanel(
+        conversationId: conversationId,
         message: message,
         currentUserId: currentUserId,
         actions: actions,

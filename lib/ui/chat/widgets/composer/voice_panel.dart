@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
-
-/// 语音面板的设计高度：输入区按它（与键盘高度取较大者）给面板占位。
-const double kVoicePanelHeight = 300;
+import 'composer_panel_metrics.dart';
 
 /// 语音输入面板（对齐飞书）：提示文案 + 大圆「按住说话」按钮。
 ///

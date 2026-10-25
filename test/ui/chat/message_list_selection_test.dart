@@ -21,6 +21,7 @@ void main() {
               width: 800,
               height: 600,
               child: MessageList(
+                conversationId: 'sg_test',
                 messages: messages,
                 otherUser: const User(id: 'user_2', name: '李四'),
                 currentUserId: kPreviewMyUserId,
@@ -61,6 +62,7 @@ void main() {
               width: 800,
               height: 600,
               child: MessageList(
+                conversationId: 'sg_test',
                 messages: messages,
                 otherUser: const User(id: 'user_2', name: '李四'),
                 currentUserId: kPreviewMyUserId,

@@ -10,11 +10,7 @@ import 'package:flutter_rust_demo/ui/chat/widgets/list/message_list.dart';
 /// 未读分割线：「以下为新消息」在进入会话的那一刻定位一次，
 /// 之后即使已读回执把 isRead 翻成 true 也不能消失。
 void main() {
-  ChatMessage message(
-    int seq, {
-    required String sendId,
-    bool isRead = true,
-  }) {
+  ChatMessage message(int seq, {required String sendId, bool isRead = true}) {
     final ms = DateTime.now().millisecondsSinceEpoch;
     return ChatMessage(
       clientMsgId: 'm$seq',
@@ -52,6 +48,7 @@ void main() {
             width: 400,
             height: 800,
             child: MessageList(
+              conversationId: 'sg_test',
               messages: messages,
               otherUser: const User(id: 'other', name: '对方'),
               currentUserId: 'me',
@@ -77,10 +74,7 @@ void main() {
   });
 
   testWidgets('全部已读时不展示分割线', (tester) async {
-    final messages = [
-      message(1, sendId: 'other'),
-      message(2, sendId: 'me'),
-    ];
+    final messages = [message(1, sendId: 'other'), message(2, sendId: 'me')];
     await tester.pumpWidget(host(messages, ScrollController()));
     await tester.pump();
 
@@ -109,10 +103,7 @@ void main() {
     expect(find.text('以下为新消息'), findsOneWidget);
 
     // 进入会话后已读回执照常把消息标为已读：分割线保持不动。
-    final readAll = [
-      message(1, sendId: 'other'),
-      message(2, sendId: 'other'),
-    ];
+    final readAll = [message(1, sendId: 'other'), message(2, sendId: 'other')];
     await tester.pumpWidget(host(readAll, controller));
     await tester.pump();
 
@@ -148,9 +139,7 @@ void main() {
       for (var i = 1; i <= 40; i++)
         message(i, sendId: i == 40 ? 'other' : 'me', isRead: i != 40),
     ];
-    await tester.pumpWidget(
-      host(messages, controller, unreadCountAtOpen: 1),
-    );
+    await tester.pumpWidget(host(messages, controller, unreadCountAtOpen: 1));
     await tester.pump();
     expect(find.text('以下为新消息'), findsOneWidget);
     // 还停在底部：不出现回到底部胶囊

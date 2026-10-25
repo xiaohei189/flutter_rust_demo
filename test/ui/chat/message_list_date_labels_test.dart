@@ -46,6 +46,7 @@ void main() {
             // 视口足够高，保证所有日期分隔符都被渲染出来
             height: 3000,
             child: MessageList(
+              conversationId: 'sg_test',
               messages: messages,
               otherUser: const User(id: 'other', name: '对方'),
               currentUserId: 'me',

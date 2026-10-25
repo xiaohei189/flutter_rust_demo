@@ -59,11 +59,15 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
   /// 从会话列表「@我」筛选进入时，加载后定位到第一条提及我的消息。
   final bool focusAtMe;
 
+  /// 从「复制消息链接」深链进入时，加载后定位到指定消息。
+  final String? initialMessageId;
+
   const ChatDetailScreen({
     super.key,
     required this.conversationId,
     this.preLoaded = false,
     this.focusAtMe = false,
+    this.initialMessageId,
   });
 
   @override
@@ -94,6 +98,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   /// 而「以下为新消息」分割线需要记住进来时的状态（跨端已读时兜底用）。
   int _unreadCountAtOpen = 0;
   ChatDetailViewModel? _viewModel;
+
   /// 缓存的音频服务实例：dispose 阶段不能再触碰 ref。
   late final AudioPlayerService _audioPlayer;
   late final ChatMediaActions _mediaActions;
@@ -237,6 +242,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       .sweepStaleSendingMessages(widget.conversationId);
 
   bool _focusAtMeHandled = false;
+  bool _initialMessageHandled = false;
 
   void _onMessageListChanged() {
     _reportSendError();
@@ -258,6 +264,25 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       });
     }
     _maybeJumpToAtMe();
+    _maybeJumpToInitialMessage();
+  }
+
+  /// 从消息深链进入时，滚动定位到链接里的那条消息。
+  void _maybeJumpToInitialMessage() {
+    final targetId = widget.initialMessageId;
+    if (targetId == null || targetId.isEmpty || _initialMessageHandled) {
+      return;
+    }
+    final messages = ref.read(
+      messagesByConversationProvider(widget.conversationId),
+    );
+    if (messages.isEmpty) return;
+    _initialMessageHandled = true;
+    // 等底部自动滚动结束后再定位，避免被覆盖（与 @我 定位一致）。
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      _locateMessageById(targetId);
+    });
   }
 
   /// 发送失败是「本地先上屏、结果异步返回」，失败原因落在消息列表状态上，

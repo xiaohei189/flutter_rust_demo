@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../mappers/message_display.dart';
+import '../../utils/message_link.dart';
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../core/theme/app_theme.dart';
 import '../composer/emoji_panel.dart' show EmojiPanel;
@@ -9,6 +11,7 @@ import 'message_action_menu.dart' show MessageActions, kMessageQuickReactions;
 class MessageToolPanel extends StatefulWidget {
   const MessageToolPanel({
     super.key,
+    required this.conversationId,
     required this.message,
     required this.currentUserId,
     required this.actions,
@@ -18,6 +21,7 @@ class MessageToolPanel extends StatefulWidget {
     required this.onClose,
   });
 
+  final String conversationId;
   final ChatMessage message;
   final String currentUserId;
   final MessageActions actions;
@@ -179,7 +183,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
 
   /// 面板主体（对齐飞书稿）：
   /// ① 快捷表情行 ② 四宫格（回复/转发/创建话题/复制）
-  /// ③ 撤回/多选 ④ 标记/Pin/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
+  /// ③ 撤回/多选 ④ 标记/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
   List<Widget> _buildMenuView(BuildContext context, AppColors colors) {
     return [
       _buildReactionRow(colors),
@@ -316,7 +320,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       ),
   ];
 
-  /// 标记 / Pin / 置顶消息 / 复制消息链接 / 翻译 / 飞书内搜索 / 网页搜索 / 删除
+  /// 标记 / 置顶消息 / 复制消息链接 / 翻译 / 飞书内搜索 / 网页搜索 / 删除
   List<_MessageToolAction> _secondGroupActions() => [
     _MessageToolAction(
       icon: Icons.flag_outlined,
@@ -324,11 +328,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       enabled: widget.actions.onFlag != null,
       onTap: () => _runAction(widget.actions.onFlag ?? (_) {}),
     ),
-    _MessageToolAction(
-      icon: Icons.push_pin_outlined,
-      label: 'Pin',
-      onTap: () => _runAction((_) => _notSupported('Pin')),
-    ),
+    // 「Pin」与「置顶消息」语义重复（都是把消息钉到会话顶部），只保留已实现的后者。
     if (widget.actions.onPin != null)
       _MessageToolAction(
         icon: Icons.vertical_align_top_rounded,
@@ -341,7 +341,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     _MessageToolAction(
       icon: Icons.link,
       label: '复制消息链接',
-      onTap: () => _runAction((_) => _notSupported('复制消息链接')),
+      onTap: _copyMessageLink,
     ),
     _MessageToolAction(
       icon: Icons.translate,
@@ -384,9 +384,30 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   void _notSupported(String label) {
     ScaffoldMessenger.of(widget.rootContext).showSnackBar(
       SnackBar(
-        content: Text('「$label」暂未开放'),
+        content: Text('「$label」功能开发中，敬请期待'),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
+        duration: const Duration(milliseconds: 1600),
+      ),
+    );
+  }
+
+  /// 复制消息深链：`flutterrustdemo:///chat/<会话>?message=<clientMsgId>`。
+  Future<void> _copyMessageLink() async {
+    await Clipboard.setData(
+      ClipboardData(
+        text: buildMessageLink(
+          conversationId: widget.conversationId,
+          clientMsgId: widget.message.clientMsgId,
+        ),
+      ),
+    );
+    widget.onClose();
+    if (!widget.rootContext.mounted) return;
+    ScaffoldMessenger.of(widget.rootContext).showSnackBar(
+      const SnackBar(
+        content: Text('消息链接已复制'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(milliseconds: 1200),
       ),
     );
   }
