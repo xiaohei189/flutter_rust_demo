@@ -512,7 +512,19 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                   color: context.appColors.textSecondary,
                 ),
                 tooltip: '群二维码',
-                onPressed: () => _notSupported('群二维码'),
+                onPressed: () {
+                  final groupId = conversation?.groupId ?? '';
+                  if (groupId.isEmpty) {
+                    _notSupported('群二维码');
+                    return;
+                  }
+                  AppRouter.goToQrCode(
+                    context,
+                    title: '群二维码',
+                    data: groupId,
+                    subtitle: conversation?.showName,
+                  );
+                },
               ),
               IconButton(
                 padding: EdgeInsets.zero,
@@ -637,9 +649,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   void _notSupported(String label) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('「$label」暂未开放'),
+        content: Text('「$label」功能开发中，敬请期待'),
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(milliseconds: 1200),
+        duration: const Duration(milliseconds: 1600),
       ),
     );
   }

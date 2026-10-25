@@ -42,9 +42,9 @@
 | 列表「外部/智能体/机器人」胶囊 | 已删除假数据（P0-4），改为展示真实分组名 | `lib/ui/chat/widgets/list/chat_list_item_content.dart` |
 | 分组面板筛选图标 | 已补齐（P0-3）：打开分组管理页 | `lib/ui/chat/widgets/list/group_filter_panel.dart` |
 | 自定义分组 | 已补齐（P0-3）：支持重命名与拖动排序，仍只存本地 | `lib/ui/chat/providers/conversation_folder_provider.dart` |
-| 会话搜索 | 全局搜索只有「消息/联系人/群组」，无会话维度与搜索历史 | `lib/ui/shared/views/search_screen.dart` |
+| 会话搜索 | 已补齐（2026-10-25）：新增「会话」分类（按会话名/群 ID/用户 ID 匹配本地会话，展示最近消息预览）与「最近搜索」（去重、最多 10 条、SharedPreferences 持久化、可清空） | `lib/ui/shared/views/search_screen.dart`、`lib/ui/shared/view_models/search_view_model.dart` |
 | 全部已读 | 已补齐（P0-2）：工作台应用宫格入口 + 二次确认 | `lib/ui/workbench/views/workbench_screen.dart` |
-| 设置页占位项 | 分享、添加标签页、群机器人、@所有人消息不提示、添加到标记、单聊「+ 添加成员」仍为占位；群二维码只有聊天设置页仍是 `_notSupported` 占位，群信息页的二维码入口已可用（`lib/ui/shared/views/qr_code_screen.dart`） | `lib/ui/chat/views/chat_settings_screen.dart` |
+| 设置页占位项 | 分享、举报、翻译助手、添加标签页、群机器人、@所有人消息不提示、添加到标记、单聊「+ 添加成员」、任务/Pin/群成员日历/云文档等仍为占位，点按统一提示「功能开发中，敬请期待」；群二维码已接通（聊天设置页与群信息页都可查看） | `lib/ui/chat/views/chat_settings_screen.dart` |
 
 ### 3.2 消息详情
 
@@ -237,7 +237,7 @@
 
 ## 7. 风险与待确认
 
-1. 群已读成员详情依赖服务端接口，当前 Rust HTTP 层没有 reader list 封装，需先确认。
+1. 群已读成员详情依赖服务端接口。已查本地 `open-im-server` 源码：只有 `GetHasReadSeqs` / `GetConversationsHasReadAndMaxSeq`（按用户查已读 seq），**没有「按消息查已读成员列表」的 API**；实时回执通知只覆盖在线期间。结论：当前服务端版本做不了可靠的已读成员详情，需先向服务端提需求或升级后再评估。
 2. 消息级 Pin 是否有服务端支持待确认；无则走自定义消息广播。
 3. `editMessage` 当前实现是「发新消息 + MQ 广播」，不是原子编辑，需要确认对端展示与撤回交互是否可接受。
 4. 会话标签与分组存在语义重叠，需先确定「标签 = 分组」还是「标签另建体系」，否则会出现两套相似的本地数据。
