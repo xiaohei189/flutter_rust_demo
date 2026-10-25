@@ -787,6 +787,7 @@ fn server_to_group_member(s: ServerGroupMember) -> GroupMember {
         role_level: normalize_role_level(s.role_level),
         join_time: s.join_time,
         join_source: s.join_source.to_string(),
+        mute_end_time: s.mute_end_time,
     }
 }
 
@@ -1028,6 +1029,7 @@ mod tests {
             join_source: 1,
             operator_user_id: "owner_1".to_string(),
             ex: String::new(),
+            mute_end_time: 1793000000000,
         };
 
         let domain = server_to_group_member(server);
@@ -1035,6 +1037,7 @@ mod tests {
         assert_eq!(domain.user_id, "user_456");
         assert_eq!(domain.nickname, "Test Member");
         assert_eq!(domain.role_level, 3);
+        assert_eq!(domain.mute_end_time, 1793000000000);
     }
 
     #[test]

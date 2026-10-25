@@ -39,6 +39,7 @@ void main() {
           roleLevel: 3,
           joinTime: 0,
           joinSource: '',
+          muteEndTime: 0,
         ),
       );
 
@@ -46,6 +47,27 @@ void main() {
       expect(member.userId, 'u1');
       expect(member.roleLevel, 3);
       expect(member.joinTime, isNull);
+      expect(member.muteEndTime, isNull, reason: '0 表示未禁言，应映射为 null');
+    });
+
+    test('mapMember 保留禁言结束时间', () {
+      final member = GroupRepositoryImpl.mapMember(
+        const GroupMember(
+          groupId: 'g1',
+          userId: 'u1',
+          nickname: '张三',
+          faceUrl: '',
+          roleLevel: 1,
+          joinTime: 0,
+          joinSource: '',
+          muteEndTime: 1792922045375,
+        ),
+      );
+
+      expect(
+        member.muteEndTime,
+        DateTime.fromMillisecondsSinceEpoch(1792922045375),
+      );
     });
 
     test('mapApplication 映射群申请', () {

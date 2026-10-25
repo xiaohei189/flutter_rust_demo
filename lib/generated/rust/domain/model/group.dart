@@ -98,6 +98,9 @@ class GroupMember {
   /// 加入来源
   final String joinSource;
 
+  /// 禁言结束时间（毫秒时间戳，0 表示未禁言）
+  final int muteEndTime;
+
   const GroupMember({
     required this.groupId,
     required this.userId,
@@ -106,6 +109,7 @@ class GroupMember {
     required this.roleLevel,
     required this.joinTime,
     required this.joinSource,
+    required this.muteEndTime,
   });
 
   @override
@@ -116,7 +120,8 @@ class GroupMember {
       faceUrl.hashCode ^
       roleLevel.hashCode ^
       joinTime.hashCode ^
-      joinSource.hashCode;
+      joinSource.hashCode ^
+      muteEndTime.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -129,5 +134,6 @@ class GroupMember {
           faceUrl == other.faceUrl &&
           roleLevel == other.roleLevel &&
           joinTime == other.joinTime &&
-          joinSource == other.joinSource;
+          joinSource == other.joinSource &&
+          muteEndTime == other.muteEndTime;
 }

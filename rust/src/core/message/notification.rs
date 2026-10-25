@@ -477,6 +477,8 @@ impl NotificationHandler {
             role_level: 0,
             join_time: 0,
             join_source: String::new(),
+            // 「成员信息变更」通知只带用户资料，禁言状态以列表接口下发的为准。
+            mute_end_time: 0,
         }
     }
 

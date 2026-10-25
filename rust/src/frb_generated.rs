@@ -7196,6 +7196,7 @@ impl SseDecode for crate::domain::model::group::GroupMember {
         let mut var_roleLevel = <i32>::sse_decode(deserializer);
         let mut var_joinTime = <i64>::sse_decode(deserializer);
         let mut var_joinSource = <String>::sse_decode(deserializer);
+        let mut var_muteEndTime = <i64>::sse_decode(deserializer);
         return crate::domain::model::group::GroupMember {
             group_id: var_groupId,
             user_id: var_userId,
@@ -7204,6 +7205,7 @@ impl SseDecode for crate::domain::model::group::GroupMember {
             role_level: var_roleLevel,
             join_time: var_joinTime,
             join_source: var_joinSource,
+            mute_end_time: var_muteEndTime,
         };
     }
 }
@@ -9145,6 +9147,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::group::GroupMember 
             self.role_level.into_into_dart().into_dart(),
             self.join_time.into_into_dart().into_dart(),
             self.join_source.into_into_dart().into_dart(),
+            self.mute_end_time.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -10346,6 +10349,7 @@ impl SseEncode for crate::domain::model::group::GroupMember {
         <i32>::sse_encode(self.role_level, serializer);
         <i64>::sse_encode(self.join_time, serializer);
         <String>::sse_encode(self.join_source, serializer);
+        <i64>::sse_encode(self.mute_end_time, serializer);
     }
 }
 

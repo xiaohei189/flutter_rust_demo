@@ -40,6 +40,8 @@ pub struct GroupMember {
     pub join_time: i64,
     /// 加入来源
     pub join_source: String,
+    /// 禁言结束时间（毫秒时间戳，0 表示未禁言）
+    pub mute_end_time: i64,
 }
 
 /// 设置群组信息字段（仅设置需要修改的字段）
@@ -67,6 +69,7 @@ mod tests {
             role_level: 1,
             join_time: 1000,
             join_source: "1".to_string(),
+            mute_end_time: 0,
         };
         assert_eq!(member.user_id, "u1");
         assert_eq!(member.role_level, 1);

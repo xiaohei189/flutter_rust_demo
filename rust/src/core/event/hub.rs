@@ -439,6 +439,7 @@ mod tests {
             role_level: 1,
             join_time: 1000,
             join_source: "1".into(),
+            mute_end_time: 0,
         });
         group.on_dismissed(&GroupInfo {
             group_id: "g1".to_string(),

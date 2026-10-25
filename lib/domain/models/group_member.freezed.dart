@@ -25,6 +25,9 @@ mixin _$GroupMember {
   String get joinSource => throw _privateConstructorUsedError;
   DateTime? get joinTime => throw _privateConstructorUsedError;
 
+  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
+  DateTime? get muteEndTime => throw _privateConstructorUsedError;
+
   /// Create a copy of GroupMember
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -47,6 +50,7 @@ abstract class $GroupMemberCopyWith<$Res> {
     int roleLevel,
     String joinSource,
     DateTime? joinTime,
+    DateTime? muteEndTime,
   });
 }
 
@@ -72,6 +76,7 @@ class _$GroupMemberCopyWithImpl<$Res, $Val extends GroupMember>
     Object? roleLevel = null,
     Object? joinSource = null,
     Object? joinTime = freezed,
+    Object? muteEndTime = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -103,6 +108,10 @@ class _$GroupMemberCopyWithImpl<$Res, $Val extends GroupMember>
                 ? _value.joinTime
                 : joinTime // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            muteEndTime: freezed == muteEndTime
+                ? _value.muteEndTime
+                : muteEndTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
           )
           as $Val,
     );
@@ -126,6 +135,7 @@ abstract class _$$GroupMemberImplCopyWith<$Res>
     int roleLevel,
     String joinSource,
     DateTime? joinTime,
+    DateTime? muteEndTime,
   });
 }
 
@@ -150,6 +160,7 @@ class __$$GroupMemberImplCopyWithImpl<$Res>
     Object? roleLevel = null,
     Object? joinSource = null,
     Object? joinTime = freezed,
+    Object? muteEndTime = freezed,
   }) {
     return _then(
       _$GroupMemberImpl(
@@ -181,6 +192,10 @@ class __$$GroupMemberImplCopyWithImpl<$Res>
             ? _value.joinTime
             : joinTime // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        muteEndTime: freezed == muteEndTime
+            ? _value.muteEndTime
+            : muteEndTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
       ),
     );
   }
@@ -197,6 +212,7 @@ class _$GroupMemberImpl implements _GroupMember {
     required this.roleLevel,
     required this.joinSource,
     this.joinTime,
+    this.muteEndTime,
   });
 
   @override
@@ -214,9 +230,13 @@ class _$GroupMemberImpl implements _GroupMember {
   @override
   final DateTime? joinTime;
 
+  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
+  @override
+  final DateTime? muteEndTime;
+
   @override
   String toString() {
-    return 'GroupMember(groupId: $groupId, userId: $userId, nickname: $nickname, faceUrl: $faceUrl, roleLevel: $roleLevel, joinSource: $joinSource, joinTime: $joinTime)';
+    return 'GroupMember(groupId: $groupId, userId: $userId, nickname: $nickname, faceUrl: $faceUrl, roleLevel: $roleLevel, joinSource: $joinSource, joinTime: $joinTime, muteEndTime: $muteEndTime)';
   }
 
   @override
@@ -234,7 +254,9 @@ class _$GroupMemberImpl implements _GroupMember {
             (identical(other.joinSource, joinSource) ||
                 other.joinSource == joinSource) &&
             (identical(other.joinTime, joinTime) ||
-                other.joinTime == joinTime));
+                other.joinTime == joinTime) &&
+            (identical(other.muteEndTime, muteEndTime) ||
+                other.muteEndTime == muteEndTime));
   }
 
   @override
@@ -247,6 +269,7 @@ class _$GroupMemberImpl implements _GroupMember {
     roleLevel,
     joinSource,
     joinTime,
+    muteEndTime,
   );
 
   /// Create a copy of GroupMember
@@ -267,6 +290,7 @@ abstract class _GroupMember implements GroupMember {
     required final int roleLevel,
     required final String joinSource,
     final DateTime? joinTime,
+    final DateTime? muteEndTime,
   }) = _$GroupMemberImpl;
 
   @override
@@ -283,6 +307,10 @@ abstract class _GroupMember implements GroupMember {
   String get joinSource;
   @override
   DateTime? get joinTime;
+
+  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
+  @override
+  DateTime? get muteEndTime;
 
   /// Create a copy of GroupMember
   /// with the given fields replaced by the non-null parameter values.

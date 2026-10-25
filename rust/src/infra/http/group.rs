@@ -172,6 +172,9 @@ pub struct ServerGroupMember {
     #[serde(rename = "operatorUserID")]
     pub operator_user_id: String,
     pub ex: String,
+    /// 禁言结束时间（毫秒时间戳，0 表示未禁言）；服务端始终下发，缺失时按未禁言处理
+    #[serde(rename = "muteEndTime", default)]
+    pub mute_end_time: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

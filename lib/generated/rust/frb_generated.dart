@@ -9125,8 +9125,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   GroupMember dco_decode_group_member(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return GroupMember(
       groupId: dco_decode_String(arr[0]),
       userId: dco_decode_String(arr[1]),
@@ -9135,6 +9135,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       roleLevel: dco_decode_i_32(arr[4]),
       joinTime: dco_decode_CastedPrimitive_i_64(arr[5]),
       joinSource: dco_decode_String(arr[6]),
+      muteEndTime: dco_decode_CastedPrimitive_i_64(arr[7]),
     );
   }
 
@@ -10805,6 +10806,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_roleLevel = sse_decode_i_32(deserializer);
     var var_joinTime = sse_decode_CastedPrimitive_i_64(deserializer);
     var var_joinSource = sse_decode_String(deserializer);
+    var var_muteEndTime = sse_decode_CastedPrimitive_i_64(deserializer);
     return GroupMember(
       groupId: var_groupId,
       userId: var_userId,
@@ -10813,6 +10815,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       roleLevel: var_roleLevel,
       joinTime: var_joinTime,
       joinSource: var_joinSource,
+      muteEndTime: var_muteEndTime,
     );
   }
 
@@ -12967,6 +12970,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.roleLevel, serializer);
     sse_encode_CastedPrimitive_i_64(self.joinTime, serializer);
     sse_encode_String(self.joinSource, serializer);
+    sse_encode_CastedPrimitive_i_64(self.muteEndTime, serializer);
   }
 
   @protected

@@ -46,6 +46,8 @@ class GroupMemberSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // 成员行的禁言状态按「当前时间」判定：到期后徽标自动消失。
+    final now = DateTime.now();
     return CardLayout(
       children: [
         ListRow(
@@ -99,10 +101,20 @@ class GroupMemberSection extends StatelessWidget {
                 ),
                 radius: 18,
               ),
-              title: Text(
-                m.nickname.isNotEmpty ? m.nickname : m.userId,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              title: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      m.nickname.isNotEmpty ? m.nickname : m.userId,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (m.isMutedAt(now)) ...[
+                    const SizedBox(width: 6),
+                    MuteBadge(remaining: m.muteRemainingAt(now)!),
+                  ],
+                ],
               ),
               subtitle: Text(
                 _roleName(m.roleLevel),
@@ -144,6 +156,39 @@ class GroupMemberSection extends StatelessWidget {
 }
 
 // ==================== 预览 ====================
+
+/// 禁言中徽标，例如 `禁言中 · 剩 12 分钟`。
+///
+/// 单独成组件便于在群成员行与后续的成员详情处复用，也方便组件测试直接断言。
+class MuteBadge extends StatelessWidget {
+  const MuteBadge({super.key, required this.remaining});
+
+  /// 距离解除禁言的剩余时长（应大于 0）。
+  final Duration remaining;
+
+  static String formatRemaining(Duration remaining) {
+    if (remaining.inMinutes < 1) return '不到 1 分钟';
+    if (remaining.inHours < 1) return '${remaining.inMinutes} 分钟';
+    if (remaining.inDays < 1) return '${remaining.inHours} 小时';
+    return '${remaining.inDays} 天';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: colors.warning.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Text(
+        '禁言中 · 剩 ${formatRemaining(remaining)}',
+        style: TextStyle(fontSize: 11, color: colors.warning),
+      ),
+    );
+  }
+}
 
 @AppThemePreview(name: '群成员分区', group: 'GroupMemberSection')
 Widget groupMemberSectionPreview() {

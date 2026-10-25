@@ -322,6 +322,7 @@ class GroupRepositoryImpl implements GroupRepository {
       roleLevel: item.roleLevel,
       joinSource: item.joinSource,
       joinTime: _epochOrNull(item.joinTime.toInt()),
+      muteEndTime: _epochOrNull(item.muteEndTime.toInt()),
     );
   }
 
