@@ -51,8 +51,8 @@
 | 功能 | 现状 | 位置 |
 |---|---|---|
 | 工具面板 9 项占位 | 创建话题、标记、Pin、复制消息链接、翻译、飞书内搜索、网页搜索、添加任务、导出到文档 | `lib/ui/chat/widgets/menu/message_tool_panel.dart` |
-| 表情回复 / 置顶消息 | 表情回复已本地持久化（`MessageExtrasStore`）并按 emoji 分组渲染，重启后仍在；置顶消息仍无入口，也不发给对端 | `lib/ui/chat/views/chat_detail_screen.dart`、`lib/data/services/message_extras_store.dart` |
-| 置顶消息栏 | 无顶部置顶消息栏与列表 | 同上 |
+| 表情回复 / 置顶消息 | 表情回复与置顶都已本地持久化（`MessageExtrasStore`）：表情按 emoji 分组渲染、置顶可在消息操作里开关，重启后仍在；但都**不发给对端**（跨端不可见），置顶也没有「全部置顶消息」列表页 | `lib/ui/chat/views/chat_detail_screen.dart`、`lib/data/services/message_extras_store.dart` |
+| 置顶消息栏 | 已实现（`PinnedMessageBar`）：顶部展示最近一条置顶、点击定位、右侧取消置顶；仅本地状态，无跨端同步 | `lib/ui/chat/widgets/list/pinned_message_bar.dart` |
 | 位置消息 | 只有经纬度弹窗，无地图与导航 | `lib/ui/chat/widgets/menu/chat_dialogs.dart` |
 | 群已读 | 只有「已读 n/m」文本，无已读/未读成员详情 | `lib/ui/chat/widgets/bubble/message_bubble.dart` |
 | 语音播放 | 已实现：播放中显示停止图标与进度条，带播放状态判定 | `lib/ui/chat/widgets/bubble/parts/media_message_content.dart` |
