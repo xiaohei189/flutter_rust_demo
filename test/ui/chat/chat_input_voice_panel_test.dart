@@ -47,6 +47,42 @@ void main() {
     expect(find.text('按住 说话'), findsNothing, reason: '再点一次应收起面板');
   });
 
+  testWidgets('横屏小高度下语音面板等比缩小且不溢出', (tester) async {
+    // 真机横屏时输入区只给语音面板 ~160dp（设计高度 300dp），内容必须自适应
+    tester.view.physicalSize = const Size(360, 160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: SizedBox(
+            width: 360,
+            height: 160,
+            child: VoicePanel(onRecordStart: (_) {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      tester.takeException(),
+      isNull,
+      reason: '小高度下不应 RenderFlex overflow',
+    );
+    final button = find.byKey(const ValueKey('voice_panel_record_button'));
+    expect(button, findsOneWidget);
+    expect(
+      tester.getRect(button).height,
+      lessThanOrEqualTo(160),
+      reason: '录音按钮应缩放到可用高度内',
+    );
+    expect(find.text('按住 说话'), findsOneWidget);
+  });
+
   testWidgets('语音面板里的大圆按钮存在且可长按（不抛异常）', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
