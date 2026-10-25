@@ -348,6 +348,8 @@ impl ConnectionApi for OpenIMClient {
             if let Err(e) = self.message_syncer.sync_after_reconnect().await {
                 warn!("[SDK] 网络变化消息同步失败: {}", e);
             }
+            // 同 on_connected 兜底：离线补拉的群解散通知会经会话消息通道建出本地会话
+            self.group.reconcile_group_conversations(CleanupSource::Sync).await;
             self.message_processor.publish_total_unread_count_changed().await;
         } else {
             info!("[SDK] 网络状态变化，当前未连接，等待重连循环处理");
@@ -363,6 +365,7 @@ impl OpenIMClient {
         let message_syncer = self.message_syncer.clone();
         let notification_handler = self.notification_handler.clone();
         let conversation_syncer = self.conversation_syncer.clone();
+        let group_service = self.group.clone();
         let repositories = self.context.repositories.clone();
         let cancel_token = self.context.cancel_token.clone();
         let online_status = self.online_status.clone();
@@ -374,6 +377,7 @@ impl OpenIMClient {
             let mh = message_processor.clone();
             let ms = message_syncer.clone();
             let cs = conversation_syncer.clone();
+            let gs = group_service.clone();
             let repos = repositories.clone();
             let ct = cancel_token.clone();
             let os = online_status.clone();
@@ -381,6 +385,7 @@ impl OpenIMClient {
                 let mh = mh.clone();
                 let ms = ms.clone();
                 let cs = cs.clone();
+                let gs = gs.clone();
                 let repos = repos.clone();
                 let ct = ct.clone();
                 let os = os.clone();
@@ -404,6 +409,9 @@ impl OpenIMClient {
                         let _ = cs.sync_full().await;
                     }
                     let _ = ms.sync_after_reconnect().await;
+                    // 离线补拉的群解散通知（1511）经「会话消息」通道建出本地会话，
+                    // 不经过通知处理器；消息同步收尾再对一次账，清掉这类孤儿会话。
+                    gs.reconcile_group_conversations(CleanupSource::Sync).await;
                     mh.publish_total_unread_count_changed().await;
                 });
             }

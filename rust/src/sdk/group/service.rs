@@ -10,9 +10,10 @@ use crate::domain::model::UserId;
 use crate::sdk::client::context::Repositories;
 use crate::infra::http::group::*;
 use crate::infra::http::Pagination;
+use crate::domain::constant::types::group_status;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 // ========== 增量同步类型 ==========
 
@@ -222,6 +223,12 @@ impl GroupService {
         // 服务端群资料落库：会话列表/群设置页的群名、头像由本地 group 表补全，
         // 不落库会出现「改完群名，会话列表与设置页还是旧名」。
         for group in &groups {
+            // 已解散的群不能落库：落库后「我的群组」会列出进不去的群，
+            // 对账也会把它当成仍有效的群而放过孤儿会话。
+            if group.status == group_status::DISMISSED {
+                debug!("跳过落库已解散群: group={}", group.group_id);
+                continue;
+            }
             self.persist_group_info(group).await;
         }
 
@@ -391,15 +398,46 @@ impl GroupService {
         }
     }
 
-    /// 群同步成功后对齐「群集合 → 会话集合」（清理服务端未推送删除的孤儿群会话）。
+    /// 对齐「群集合 → 会话集合」（清理服务端未推送删除的孤儿群会话）。
     ///
-    /// 只在群同步成功后调用：此时内存群列表就是服务端返回的全集，否则可能误删尚未同步下来的群会话。
+    /// 调用时机有两个：群全量/增量同步成功后；以及消息同步结束后的兜底——离线补拉的
+    /// 群解散通知（1511）走的是「会话消息」通道，会为已解散的群建出本地会话且不经过
+    /// 通知处理器，只靠群同步时机的对账清不掉。
+    ///
+    /// 内存群列表为空时直接跳过：此时群同步尚未完成（或确实没有群），继续做对账会把
+    /// 所有 `sg_*` 会话误判成孤儿。
     /// 用内存列表而不是 DB 群表：全量同步只 upsert 不删行，群表可能残留过期群。
-    async fn reconcile_group_conversations(&self, source: CleanupSource) {
+    pub(crate) async fn reconcile_group_conversations(&self, source: CleanupSource) {
         let Some(conversation_service) = &self.conversation_service else {
             return;
         };
-        let valid_group_ids: Vec<String> = self.groups.read().await.iter().map(|g| g.group_id.clone()).collect();
+        // 先快照，避免持读锁期间再取写锁做清理
+        let groups = self.groups.read().await.clone();
+        if groups.is_empty() {
+            debug!("群会话对账跳过: cleanup_source={}, 内存群列表为空", source.as_str());
+            return;
+        }
+
+        // 已解散（status=2）的群可能由旧版本「群资料落库」残留，按群失效统一清理：
+        // 群资料、成员缓存与会话一起删，会话删除仍走 ConversationService 并广播事件。
+        let dismissed: Vec<String> = groups
+            .iter()
+            .filter(|g| g.status == group_status::DISMISSED)
+            .map(|g| g.group_id.clone())
+            .collect();
+        for group_id in &dismissed {
+            info!("已解散群对齐本地状态: cleanup_source={}, group_id={}", source.as_str(), group_id);
+            self.remove_local_group_state(group_id, source).await;
+        }
+
+        let valid_group_ids: Vec<String> = self
+            .groups
+            .read()
+            .await
+            .iter()
+            .filter(|g| g.status != group_status::DISMISSED)
+            .map(|g| g.group_id.clone())
+            .collect();
         match conversation_service.reconcile_group_conversations(&valid_group_ids, source).await {
             Ok(removed) if removed > 0 => info!("群会话对账完成: cleanup_source={}, removed={}", source.as_str(), removed),
             Ok(_) => {}
@@ -992,6 +1030,80 @@ mod tests {
             other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
         }
         assert!(conv_rx.try_recv().is_err(), "删除分支与对账不应重复广播同一条会话删除");
+    }
+
+    /// 内存群列表为空（群同步未完成）时不做对账：否则会把所有 `sg_*` 会话误判成孤儿删掉。
+    #[tokio::test]
+    async fn test_reconcile_skips_when_group_list_empty() {
+        let pool = crate::infra::db::pool::create_pool_memory().await.unwrap();
+        let repositories = Repositories::new(&pool);
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
+        let service = GroupService::new(
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![] }),
+            repositories.clone(),
+            UserId::new("test_user"),
+            hub.clone(),
+        )
+        .with_conversation_service(conversation_service.clone());
+
+        conversation_service.upsert_conversation(group_conversation("group_1")).await.unwrap();
+        let _ = conv_rx.try_recv();
+
+        service.reconcile_group_conversations(CleanupSource::Sync).await;
+
+        assert!(
+            conversation_service.get_conversation("sg_group_1").await.unwrap().is_some(),
+            "群列表为空时对账必须跳过，不能删掉群会话"
+        );
+        assert!(conv_rx.try_recv().is_err(), "跳过对账时不应广播删除事件");
+    }
+
+    /// 已解散（status=2）的群即便残留在内存/群表里，也要清群资料、成员缓存与会话。
+    /// 现实中它来自旧版本「群资料落库」：`get_groups_info` 会把 status=2 的群写回群表。
+    #[tokio::test]
+    async fn test_reconcile_cleans_dismissed_group_left_in_local_state() {
+        let pool = crate::infra::db::pool::create_pool_memory().await.unwrap();
+        let repositories = Repositories::new(&pool);
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
+        let service = GroupService::new(
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![] }),
+            repositories.clone(),
+            UserId::new("test_user"),
+            hub.clone(),
+        )
+        .with_conversation_service(conversation_service.clone());
+
+        repositories.group_repo.upsert_group(&local_group("group_dead")).await.unwrap();
+        conversation_service.upsert_conversation(group_conversation("group_dead")).await.unwrap();
+        let _ = conv_rx.try_recv();
+        service.groups.write().await.push(GroupInfo {
+            group_id: "group_dead".to_string(),
+            group_name: "已解散群".to_string(),
+            face_url: String::new(),
+            introduction: String::new(),
+            notification: String::new(),
+            owner_user_id: String::new(),
+            create_time: 0,
+            member_count: 0,
+            status: group_status::DISMISSED,
+        });
+
+        service.reconcile_group_conversations(CleanupSource::Sync).await;
+
+        assert!(repositories.group_repo.get_group("group_dead").await.unwrap().is_none(), "已解散群的群资料必须清理");
+        assert!(conversation_service.get_conversation("sg_group_dead").await.unwrap().is_none(), "已解散群的会话必须清理");
+        assert!(
+            service.groups.read().await.iter().all(|g| g.group_id != "group_dead"),
+            "内存群列表不应残留已解散群"
+        );
+        match conv_rx.try_recv().expect("应广播会话删除事件") {
+            ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["sg_group_dead".to_string()]),
+            other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
+        }
     }
 
     #[test]
