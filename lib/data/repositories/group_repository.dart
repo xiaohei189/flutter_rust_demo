@@ -33,6 +33,14 @@ abstract class GroupRepository {
   });
 
   Future<List<GroupMember>> loadMembers(String groupId);
+
+  /// 本地群表里是否还存在该群（读 SDK 内存，不发网络请求）。
+  ///
+  /// 用于「群已解散 / 已退群」后跳过后继请求：这类群再拉成员，
+  /// 服务端只会返回 `NoPermissionError`，日志噪音会掩盖真实错误。
+  /// 本地群列表尚未就绪（为空）时返回 `true`，避免误拦截正常加载。
+  Future<bool> hasLocalGroup(String groupId);
+
   Future<void> inviteMembers(String groupId, List<String> memberIds);
   Future<void> kickMembers(String groupId, List<String> memberIds);
   Future<void> muteMember(String groupId, String userId, int mutedSeconds);
@@ -158,6 +166,15 @@ class GroupRepositoryImpl implements GroupRepository {
       groupId: groupId,
     );
     return members.map(mapMember).toList(growable: false);
+  }
+
+  @override
+  Future<bool> hasLocalGroup(String groupId) async {
+    final client = _requireClient();
+    final groups = await _groupService.getGroupList(client);
+    // 本地群列表还没加载出来时不做判断，避免把正常加载误拦成「群不存在」
+    if (groups.isEmpty) return true;
+    return groups.any((g) => g.groupId == groupId);
   }
 
   @override

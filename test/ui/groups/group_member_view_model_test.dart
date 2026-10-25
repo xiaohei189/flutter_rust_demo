@@ -6,10 +6,15 @@ import 'package:flutter_rust_demo/ui/groups/view_models/group_member_view_model.
 import '../../support/fakes/fake_group_repository.dart';
 
 class FakeGroupRepository extends BaseFakeGroupRepository {
-  FakeGroupRepository({this.members = const [], this.shouldFail = false});
+  FakeGroupRepository({
+    this.members = const [],
+    this.shouldFail = false,
+    this.groupExistsLocally = true,
+  });
 
   final List<GroupMember> members;
   final bool shouldFail;
+  final bool groupExistsLocally;
   final List<String> kickedUserIds = [];
   final List<String> transferredUserIds = [];
   int loadCount = 0;
@@ -22,6 +27,9 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
     }
     return members;
   }
+
+  @override
+  Future<bool> hasLocalGroup(String groupId) async => groupExistsLocally;
 
   @override
   Future<void> kickMembers(String groupId, List<String> memberIds) async {
@@ -80,6 +88,25 @@ void main() {
       await viewModel.loadMembers();
 
       expect(viewModel.state.error, contains('加载群成员失败'));
+    });
+
+    test('群已解散/已退群（本地群表已无该群）时不再请求成员', () async {
+      final repository = FakeGroupRepository(
+        members: [_member],
+        groupExistsLocally: false,
+      );
+      final viewModel = buildViewModel(repository, 'g1');
+
+      await viewModel.loadMembers();
+
+      expect(
+        repository.loadCount,
+        0,
+        reason: '群已不在本地群表，再拉成员只会拿到 NoPermissionError',
+      );
+      expect(viewModel.state.members, isEmpty);
+      expect(viewModel.state.error, isNull);
+      expect(viewModel.state.isLoading, isFalse);
     });
 
     test('kickMembers 成功后重新加载成员列表', () async {

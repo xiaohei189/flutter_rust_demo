@@ -53,6 +53,9 @@ class BaseFakeGroupRepository implements GroupRepository {
   }
 
   @override
+  Future<bool> hasLocalGroup(String groupId) async => true;
+
+  @override
   Future<void> inviteMembers(String groupId, List<String> memberIds) async {
     throw UnimplementedError();
   }

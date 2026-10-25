@@ -43,12 +43,27 @@ class GroupMemberViewModel extends FamilyNotifier<GroupMemberState, String> {
   GroupRepository get _repository => ref.read(groupRepositoryProvider);
 
   Future<void> loadMembers() async {
+    // 群被解散 / 自己已退群后，群资料与会话都已清理，页面可能还在卸载动画里；
+    // 此时再向服务端要成员只会拿到 NoPermissionError，属于无意义噪音，直接短路。
+    if (!await _hasLocalGroup()) {
+      state = const GroupMemberState();
+      return;
+    }
     state = state.copyWith(isLoading: true, error: null);
     try {
       final members = await _repository.loadMembers(arg);
       state = state.copyWith(members: members, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: '加载群成员失败: $e');
+    }
+  }
+
+  Future<bool> _hasLocalGroup() async {
+    try {
+      return await _repository.hasLocalGroup(arg);
+    } catch (_) {
+      // 本地判断失败不应阻塞正常加载
+      return true;
     }
   }
 
