@@ -114,6 +114,27 @@
 
 ## 6. 运维与校验命令
 
+### 6.0 开发链路重连与本地状态排查
+
+```powershell
+# 宿主重启 / USB 抖动 / USB 调试授权丢失后：等待设备授权并重放 adb reverse
+powershell -ExecutionPolicy Bypass -File scripts\dev-connect.ps1
+# 常驻监听：设备一上线或转发规则丢失就自动恢复（只在状态变化时打印）
+powershell -ExecutionPolicy Bypass -File scripts\dev-connect.ps1 -Watch
+# 多设备时只处理指定设备
+powershell -ExecutionPolicy Bypass -File scripts\dev-connect.ps1 -Serial 849f6987
+
+# 只读排查：本地群表 / 群会话 vs 服务端群状态（会同时拉取 -wal/-shm）
+powershell -ExecutionPolicy Bypass -File scripts\check-local-state.ps1 -Serial 849f6987
+# 设备上存在多个账号数据库时指定 userID；-KeepFiles 保留拉下来的库文件
+powershell -ExecutionPolicy Bypass -File scripts\check-local-state.ps1 -UserId 2006526104 -KeepFiles
+```
+
+- `adb reverse` 是**一次性规则**：宿主重启、USB 重连、授权丢失都会清空，App 会表现为连不上 `127.0.0.1`（一直 connecting / 网络错误）。重跑 `dev-connect.ps1` 即可恢复，日志里会出现 `连接状态变化: connected`。
+- 设备显示 `unauthorized` 时脚本会提示解锁手机并点「允许 USB 调试」。
+- `check-local-state.ps1` 只读：输出本地群表 status 分布、`sg_*` 会话、孤儿会话，以及每个本地群在服务端的状态。出现孤儿会话或状态不一致时，通常下次登录/重连的群会话对账会自动清掉已解散群。
+- 两个脚本都是 UTF-8 BOM 编码（Windows PowerShell 5.1 读取中文必需），编辑时请保持。
+
 ### 6.1 造演示数据（会为目标账号补联系人 + 会话 + 消息）
 
 ```powershell
