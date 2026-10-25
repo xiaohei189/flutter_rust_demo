@@ -175,6 +175,10 @@ impl GroupService {
             if let Err(e) = self.repositories.group_repo.upsert_group(&local).await {
                 warn!("增量插入群组数据库操作失败: {}", e);
             }
+            // 服务端会为群成员预建 `sg_<groupID>` 会话，但客户端只在收到群通知
+            // 或会话同步时才落库；通知丢失/离线补拉失败时成员端就没有该群的会话。
+            // 群同步新增分支是最终兜底：确保本地会话存在（已存在时不动本地字段）。
+            self.ensure_group_conversation(&group_info).await;
             self.groups.write().await.push(group_info);
         }
 
@@ -297,35 +301,9 @@ impl GroupService {
         if let Err(e) = self.repositories.group_repo.upsert_group(&group_info_to_local(&group)).await {
             warn!("创建群后写入本地群组失败: {}", e);
         }
-        let local_conversation = LocalConversation {
-            conversation_id: format!("sg_{}", group.group_id),
-            conversation_type: 3,
-            user_id: String::new(),
-            group_id: group.group_id.clone(),
-            show_name: group.group_name.clone(),
-            face_url: group.face_url.clone(),
-            latest_msg: String::new(),
-            latest_msg_send_time: chrono::Utc::now().timestamp_millis(),
-            unread_count: 0,
-            recv_msg_opt: 0,
-            is_pinned: false,
-            is_private_chat: false,
-            burn_duration: 0,
-            group_at_type: 0,
-            is_not_in_group: false,
-            update_unread_count_time: 0,
-            attached_info: String::new(),
-            ex: String::new(),
-            draft_text: String::new(),
-            draft_text_time: 0,
-            max_seq: 0,
-            min_seq: 0,
-            is_msg_destruct: false,
-            msg_destruct_time: 0,
-        };
-        if let Err(e) = self.repositories.conversation_repo.upsert(&local_conversation).await {
-            warn!("创建群后写入本地会话失败: {}", e);
-        }
+        // 统一走 ConversationService：落库并广播 Changed，UI 立即刷新。
+        // 不再直接写 conversation_repo（那条路径不发事件）。
+        self.ensure_group_conversation(&group).await;
 
         info!("群组已创建: {}", group.group_id);
         Ok(group)
@@ -374,6 +352,59 @@ impl GroupService {
 
         info!("群组已解散: {}", group_id);
         Ok(())
+    }
+
+    /// 确保群有一个本地 `sg_<groupID>` 会话（无消息的群也要能在会话列表看到）。
+    ///
+    /// 服务端会为群成员预建会话，但客户端只在收到群通知（1501/1502）或会话同步时
+    /// 落库；通知丢失、离线补拉失败时，成员端就只剩「通讯录 → 我的群组」入口。
+    /// 这里在「群同步新增」与「本端建群」两个入口兜底创建。
+    ///
+    /// 已存在时直接返回，不覆盖本地未读/草稿/置顶等字段，重复调用安全。
+    async fn ensure_group_conversation(&self, group: &GroupInfo) {
+        let Some(conversation_service) = &self.conversation_service else {
+            return;
+        };
+        let conversation_id = format!("sg_{}", group.group_id);
+        match conversation_service.get_conversation(&conversation_id).await {
+            Ok(Some(_)) => return,
+            Ok(None) => {}
+            Err(e) => {
+                warn!("检查群会话失败: group={}, err={}", group.group_id, e);
+                return;
+            }
+        }
+        let conversation = LocalConversation {
+            conversation_id,
+            conversation_type: 3,
+            user_id: String::new(),
+            group_id: group.group_id.clone(),
+            show_name: group.group_name.clone(),
+            face_url: group.face_url.clone(),
+            latest_msg: String::new(),
+            latest_msg_send_time: chrono::Utc::now().timestamp_millis(),
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        };
+        if let Err(e) = conversation_service.upsert_conversation(conversation).await {
+            warn!("补建群会话失败: group={}, err={}", group.group_id, e);
+        } else {
+            info!("补建群会话: group_id={}", group.group_id);
+        }
     }
 
     /// 退出/解散群后清理本地群资料与群会话。
@@ -902,6 +933,7 @@ mod tests {
     /// 只关心「增量同步返回 delete=[...]」的服务端桩；其余接口不该被调用
     struct IncrementalDeleteGroupApi {
         deleted_group_ids: Vec<String>,
+        inserted_groups: Vec<ServerGroupInfo>,
     }
 
     #[async_trait::async_trait]
@@ -912,7 +944,7 @@ mod tests {
                 version_id: "v2".to_string(),
                 full: false,
                 delete: self.deleted_group_ids.clone(),
-                insert: Vec::new(),
+                insert: self.inserted_groups.clone(),
                 update: Vec::new(),
                 sort_version: 0,
             })
@@ -1000,6 +1032,23 @@ mod tests {
         }
     }
 
+    fn server_group(group_id: &str) -> ServerGroupInfo {
+        ServerGroupInfo {
+            group_id: group_id.to_string(),
+            group_name: format!("群 {}", group_id),
+            face_url: String::new(),
+            notification: String::new(),
+            introduction: String::new(),
+            owner_user_id: "owner_1".to_string(),
+            create_time: 1000,
+            member_count: 2,
+            status: group_status::OK,
+            creator_user_id: "owner_1".to_string(),
+            group_type: 2,
+            ex: String::new(),
+        }
+    }
+
     /// 增量同步删除分支：群资料与会话都要清理，且会话删除只广播一次（走 ConversationService）
     #[tokio::test]
     async fn test_sync_incremental_delete_cleans_group_conversation_once() {
@@ -1009,7 +1058,7 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec!["group_1".to_string()] }),
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec!["group_1".to_string()], inserted_groups: vec![] }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),
@@ -1032,6 +1081,45 @@ mod tests {
         assert!(conv_rx.try_recv().is_err(), "删除分支与对账不应重复广播同一条会话删除");
     }
 
+    /// 增量同步新增群时补建本地会话（覆盖「群通知丢失/离线补拉失败」的成员端），重复执行幂等。
+    #[tokio::test]
+    async fn test_sync_incremental_insert_creates_group_conversation() {
+        let pool = crate::infra::db::pool::create_pool_memory().await.unwrap();
+        let repositories = Repositories::new(&pool);
+        let hub = EventHub::new();
+        let mut conv_rx = hub.take_conv_rx().unwrap();
+        let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
+        let service = GroupService::new(
+            Arc::new(IncrementalDeleteGroupApi {
+                deleted_group_ids: vec![],
+                inserted_groups: vec![server_group("group_new")],
+            }),
+            repositories.clone(),
+            UserId::new("test_user"),
+            hub.clone(),
+        )
+        .with_conversation_service(conversation_service.clone());
+
+        service.sync_groups_incremental().await.unwrap();
+
+        let conv = conversation_service
+            .get_conversation("sg_group_new")
+            .await
+            .unwrap()
+            .expect("无消息新群也应有本地会话");
+        assert_eq!(conv.conversation_type, 3);
+        assert_eq!(conv.group_id, "group_new");
+        assert!(conv.latest_msg.is_empty(), "无消息新群不应伪造消息预览");
+        match conv_rx.try_recv().expect("应广播会话新增事件") {
+            ConversationEvent::Changed(list) => assert_eq!(list.len(), 1),
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+
+        // 同一个新增再来一次：会话已存在，不应重复广播
+        service.sync_groups_incremental().await.unwrap();
+        assert!(conv_rx.try_recv().is_err(), "会话已存在时不应再次广播");
+    }
+
     /// 内存群列表为空（群同步未完成）时不做对账：否则会把所有 `sg_*` 会话误判成孤儿删掉。
     #[tokio::test]
     async fn test_reconcile_skips_when_group_list_empty() {
@@ -1041,7 +1129,7 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![] }),
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![], inserted_groups: vec![] }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),
@@ -1070,7 +1158,7 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![] }),
+            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![], inserted_groups: vec![] }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),

@@ -106,7 +106,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
     );
     final l10n = AppLocalizations.of(context);
 
-    if (conversation == null) {
+    if (conversation == null && groupInfo.groupMissing) {
       return Scaffold(
         backgroundColor: context.appColors.background,
         appBar: AppBar(

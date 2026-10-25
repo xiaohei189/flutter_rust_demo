@@ -34,9 +34,10 @@ class FakeMediaUploadService implements MediaUploadService {
 }
 
 class FakeGroupRepository extends BaseFakeGroupRepository {
-  FakeGroupRepository({this.shouldFail = false});
+  FakeGroupRepository({this.shouldFail = false, this.serverGroups = const []});
 
   bool shouldFail;
+  final List<Group> serverGroups;
   final List<String> groupNameUpdates = [];
   final List<String> descriptionUpdates = [];
   final List<String> avatarUpdates = [];
@@ -48,6 +49,10 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
   @override
   Future<List<Group>> loadGroups({int offset = 0, int count = 50}) async =>
       const [];
+
+  @override
+  Future<List<Group>> getGroupsInfo(List<String> groupIds) async =>
+      serverGroups.where((g) => groupIds.contains(g.groupId)).toList();
 
   @override
   Future<void> setGroupInfo(
@@ -73,11 +78,12 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
 class FakeConversationListNotifier extends ConversationListNotifier {
   FakeConversationListNotifier(this.conversation);
 
-  final Conversation conversation;
+  final Conversation? conversation;
 
   @override
-  ConversationListState build() =>
-      ConversationListState(conversations: [conversation]);
+  ConversationListState build() => ConversationListState(
+    conversations: conversation == null ? const [] : [conversation!],
+  );
 }
 
 Conversation _makeGroupConversation() => const Conversation(
@@ -110,20 +116,35 @@ Conversation _makeGroupConversation() => const Conversation(
 GroupInfoViewModel buildViewModel(
   FakeGroupRepository repository, {
   MediaUploadService? uploadService,
+  bool hasConversation = true,
+  String conversationId = 'conv1',
 }) {
   final container = ProviderContainer(
     overrides: [
       groupRepositoryProvider.overrideWithValue(repository),
       conversationListProvider.overrideWith(
-        () => FakeConversationListNotifier(_makeGroupConversation()),
+        () => FakeConversationListNotifier(
+          hasConversation ? _makeGroupConversation() : null,
+        ),
       ),
       if (uploadService != null)
         mediaUploadServiceProvider.overrideWithValue(uploadService),
     ],
   );
   addTearDown(container.dispose);
-  return container.read(groupInfoViewModelProvider('conv1').notifier);
+  return container.read(groupInfoViewModelProvider(conversationId).notifier);
 }
+
+Group _makeGroup() => const Group(
+  groupId: 'g1',
+  groupName: '服务端群名',
+  faceUrl: '',
+  introduction: '服务端描述',
+  notification: '',
+  ownerUserId: 'u1',
+  memberCount: 2,
+  status: 0,
+);
 
 void main() {
   group('GroupInfoViewModel', () {
@@ -135,6 +156,34 @@ void main() {
       expect(viewModel.currentState.groupName, '测试群');
       expect(viewModel.currentState.groupDescription, '暂无描述');
       expect(viewModel.groupId, 'g1');
+    });
+
+    test('本地无会话但服务端有群：不判为不存在，改用服务端资料', () async {
+      final repository = FakeGroupRepository(serverGroups: [_makeGroup()]);
+      final viewModel = buildViewModel(
+        repository,
+        hasConversation: false,
+        conversationId: 'sg_g1',
+      );
+
+      await viewModel.load();
+
+      expect(viewModel.groupId, 'g1', reason: 'sg_ 前缀应从会话 id 中剥离');
+      expect(viewModel.currentState.groupMissing, isFalse);
+      expect(viewModel.currentState.groupName, '服务端群名');
+      expect(viewModel.currentState.groupDescription, '服务端描述');
+    });
+
+    test('本地无会话且服务端也没有该群：标记群组不存在', () async {
+      final viewModel = buildViewModel(
+        FakeGroupRepository(),
+        hasConversation: false,
+        conversationId: 'sg_not_exist',
+      );
+
+      await viewModel.load();
+
+      expect(viewModel.currentState.groupMissing, isTrue);
     });
 
     test('updateGroupName 成功时更新状态并调用仓库', () async {
@@ -180,14 +229,8 @@ void main() {
       expect(repository.avatarUpdates, ['http://example.com/new.png']);
       // 本地头像带时间戳缓存穿透参数，且 groupUser 优先展示本地值
       expect(viewModel.currentState.localAvatarUrl, isNotNull);
-      expect(
-        viewModel.currentState.localAvatarUrl,
-        contains('_t='),
-      );
-      expect(
-        viewModel.groupUser.avatar,
-        viewModel.currentState.localAvatarUrl,
-      );
+      expect(viewModel.currentState.localAvatarUrl, contains('_t='));
+      expect(viewModel.groupUser.avatar, viewModel.currentState.localAvatarUrl);
     });
 
     test('未更新头像时 groupUser 回退到会话 faceUrl', () {

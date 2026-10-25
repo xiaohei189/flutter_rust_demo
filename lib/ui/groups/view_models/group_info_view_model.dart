@@ -15,9 +15,13 @@ class GroupInfoState {
   final bool isLoading;
   final String groupName;
   final String groupDescription;
+
   /// 本地乐观更新的头像 URL（含缓存穿透参数），优先于会话数据展示
   final String? localAvatarUrl;
   final String? error;
+
+  /// 本地无会话且服务端也查不到该群：页面展示「群组不存在」。
+  final bool groupMissing;
 
   const GroupInfoState({
     this.initialized = false,
@@ -26,6 +30,7 @@ class GroupInfoState {
     this.groupDescription = '暂无描述',
     this.localAvatarUrl,
     this.error,
+    this.groupMissing = false,
   });
 
   GroupInfoState copyWith({
@@ -37,6 +42,7 @@ class GroupInfoState {
     bool clearLocalAvatarUrl = false,
     String? error,
     bool clearError = false,
+    bool? groupMissing,
   }) {
     return GroupInfoState(
       initialized: initialized ?? this.initialized,
@@ -47,6 +53,7 @@ class GroupInfoState {
           ? null
           : (localAvatarUrl ?? this.localAvatarUrl),
       error: clearError ? null : (error ?? this.error),
+      groupMissing: groupMissing ?? this.groupMissing,
     );
   }
 }
@@ -70,8 +77,10 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
 
   String get groupId {
     final conv = conversation;
-    if (conv == null) return arg;
-    return conv.groupId.isNotEmpty ? conv.groupId : arg;
+    if (conv != null && conv.groupId.isNotEmpty) return conv.groupId;
+    // 本地没有会话时 arg 可能是 `sg_<groupID>`（从我的群组/通知进入），需要剥前缀
+    final raw = conv?.conversationId ?? arg;
+    return raw.startsWith('sg_') ? raw.substring(3) : raw;
   }
 
   User get groupUser {
@@ -82,11 +91,7 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
     if (conv == null) {
       return User(id: arg, name: '未知群组', avatar: avatar);
     }
-    return User(
-      id: groupId,
-      name: state.groupName,
-      avatar: avatar,
-    );
+    return User(id: groupId, name: state.groupName, avatar: avatar);
   }
 
   List<GroupMember> get members =>
@@ -115,10 +120,14 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
       groupName: conv?.showName.isNotEmpty == true ? conv!.showName : '群聊',
       groupDescription: '暂无描述',
     );
-    if (conv != null) {
-      await loadMembers();
-      await loadServerGroupInfo();
+    // 本地没有会话（例如新群还没人发言、或历史数据缺会话）也要继续：
+    // 以服务端群资料为准判断群是否真实存在，并从「通讯录 → 我的群组」进入时正常展示。
+    final found = await loadServerGroupInfo();
+    if (found == false && conv == null) {
+      state = state.copyWith(groupMissing: true);
+      return;
     }
+    await loadMembers();
   }
 
   Future<void> loadMembers() {
@@ -129,21 +138,26 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
   ///
   /// 本地会话缓存的群名与描述可能落后于服务端（例如其他端改过群资料），
   /// 因此进入页面时以服务端为准刷新一次，避免描述永远显示「暂无描述」。
-  Future<void> loadServerGroupInfo() async {
+  /// 返回 `true` 表示服务端查到群、`false` 表示服务端确认不存在、`null` 表示请求失败。
+  Future<bool?> loadServerGroupInfo() async {
     try {
-      final groups = await ref
-          .read(groupRepositoryProvider)
-          .getGroupsInfo([groupId]);
+      final groups = await ref.read(groupRepositoryProvider).getGroupsInfo([
+        groupId,
+      ]);
       final group = groups.where((g) => g.groupId == groupId).firstOrNull;
-      if (group == null) return;
+      if (group == null) return false;
       state = state.copyWith(
-        groupName: group.groupName.isNotEmpty ? group.groupName : state.groupName,
+        groupName: group.groupName.isNotEmpty
+            ? group.groupName
+            : state.groupName,
         groupDescription: group.introduction.isEmpty
             ? '暂无描述'
             : group.introduction,
       );
+      return true;
     } catch (e) {
       appLog.w('[GroupInfo] 拉取群资料失败: $e');
+      return null;
     }
   }
 
@@ -263,7 +277,9 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
       // 解散后本地群列表/会话列表都要同步清理；刷新失败不改变解散结果。
       try {
         await ref.read(groupListProvider.notifier).loadGroups();
-        await ref.read(conversationListProvider.notifier).refreshConversations();
+        await ref
+            .read(conversationListProvider.notifier)
+            .refreshConversations();
       } catch (_) {}
     }
     return ok;
