@@ -9,48 +9,68 @@ import '../mappers/message_display.dart';
 import '../providers/message_extras_provider.dart';
 import '../providers/message_provider.dart';
 
-/// 会话内「标记消息」列表（底部弹层）。
+/// 消息本地扩展列表的两种视角：标记（收藏）/ 置顶。
+enum MessageExtrasKind { flagged, pinned }
+
+/// 会话内消息扩展列表（底部弹层）。
 ///
-/// 数据来自本地扩展（`MessageExtras.flagged`）；只列当前已加载的消息，
-/// 更早历史里的标记消息会提示「加载更多」逐页取回。
-class MarkedMessagesSheet extends ConsumerStatefulWidget {
-  const MarkedMessagesSheet({
+/// 数据来自本地扩展（`MessageExtras`）：只列当前已加载的消息，
+/// 更早历史里的条目会提示「加载更多」逐页取回。
+class MessageExtrasSheet extends ConsumerStatefulWidget {
+  const MessageExtrasSheet({
     super.key,
+    required this.kind,
     required this.conversationId,
     this.onMessageTap,
   });
 
+  final MessageExtrasKind kind;
   final String conversationId;
   final ValueChanged<String>? onMessageTap;
 
   @override
-  ConsumerState<MarkedMessagesSheet> createState() =>
-      _MarkedMessagesSheetState();
+  ConsumerState<MessageExtrasSheet> createState() => _MessageExtrasSheetState();
 }
 
-class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
+class _MessageExtrasSheetState extends ConsumerState<MessageExtrasSheet> {
   bool _loadingMore = false;
+
+  bool get _isPinned => widget.kind == MessageExtrasKind.pinned;
+
+  String get _title => _isPinned ? '置顶消息' : '标记消息';
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    // 订阅整表（条目很少）以在标记变化时刷新；具体查询用 read。
+    // 订阅整表（条目很少）以在标记/置顶变化时刷新；具体查询用 read。
     ref.watch(messageExtrasProvider);
-    final flaggedIds = ref
-        .read(messageExtrasProvider.notifier)
-        .flaggedMessageIds(widget.conversationId);
+    final extras = ref.read(messageExtrasProvider.notifier);
     final messages = ref.watch(
       messagesByConversationProvider(widget.conversationId),
     );
-    // 新 → 旧
-    final marked = [
-      for (final message in messages.reversed)
-        if (flaggedIds.contains(message.clientMsgId)) message,
-    ];
-    final loadedIds = {for (final message in marked) message.clientMsgId};
-    final missingCount = flaggedIds
-        .where((id) => !loadedIds.contains(id))
-        .length;
+
+    // 置顶按置顶时间从新到旧；标记按会话内消息顺序从新到旧。
+    final List<String> ids;
+    final List<ChatMessage> items;
+    if (_isPinned) {
+      ids = extras.pinnedMessageIds(widget.conversationId);
+      final byId = {
+        for (final message in messages) message.clientMsgId: message,
+      };
+      items = [
+        for (final id in ids)
+          if (byId[id] != null) byId[id]!,
+      ];
+    } else {
+      final flaggedIds = extras.flaggedMessageIds(widget.conversationId);
+      ids = flaggedIds.toList();
+      items = [
+        for (final message in messages.reversed)
+          if (flaggedIds.contains(message.clientMsgId)) message,
+      ];
+    }
+    final loadedIds = {for (final message in items) message.clientMsgId};
+    final missingCount = ids.where((id) => !loadedIds.contains(id)).length;
 
     // 自带 Material：弹层在 App 里由 showModalBottomSheet 提供 Material，
     // 但组件独立可测/可复用时不该依赖这一点。
@@ -65,7 +85,7 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
               child: Row(
                 children: [
                   Text(
-                    '标记消息',
+                    _title,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -73,9 +93,9 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (flaggedIds.isNotEmpty)
+                  if (ids.isNotEmpty)
                     Text(
-                      '${flaggedIds.length} 条',
+                      '${ids.length} 条',
                       style: TextStyle(
                         fontSize: 13,
                         color: colors.textSecondary,
@@ -91,33 +111,33 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
               ),
             ),
             Divider(height: 1, color: colors.divider.withValues(alpha: 0.6)),
-            Expanded(child: _buildBody(marked, missingCount)),
+            Expanded(child: _buildBody(items, missingCount)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody(List<ChatMessage> marked, int missingCount) {
+  Widget _buildBody(List<ChatMessage> items, int missingCount) {
     final colors = context.appColors;
-    if (marked.isEmpty && missingCount == 0) {
+    if (items.isEmpty && missingCount == 0) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.flag_outlined,
+              _isPinned ? Icons.push_pin_outlined : Icons.flag_outlined,
               size: 48,
               color: colors.textSecondary.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             Text(
-              '还没有标记的消息',
+              _isPinned ? '还没有置顶的消息' : '还没有标记的消息',
               style: TextStyle(fontSize: 15, color: colors.textSecondary),
             ),
             const SizedBox(height: 6),
             Text(
-              '长按消息选择「标记」即可收藏',
+              _isPinned ? '长按消息选择「置顶消息」即可置顶' : '长按消息选择「标记」即可收藏',
               style: TextStyle(
                 fontSize: 12,
                 color: colors.textSecondary.withValues(alpha: 0.8),
@@ -130,12 +150,12 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: marked.length + (missingCount > 0 ? 1 : 0),
+      itemCount: items.length + (missingCount > 0 ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index >= marked.length) {
+        if (index >= items.length) {
           return _buildLoadMore(missingCount);
         }
-        return _buildRow(marked[index]);
+        return _buildRow(items[index]);
       },
     );
   }
@@ -167,11 +187,20 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
         style: TextStyle(fontSize: 12, color: colors.textSecondary),
       ),
       trailing: IconButton(
-        icon: const Icon(Icons.flag, size: 18),
-        tooltip: '取消标记',
-        onPressed: () => ref
-            .read(messageExtrasProvider.notifier)
-            .toggleFlagged(widget.conversationId, message.clientMsgId),
+        icon: Icon(_isPinned ? Icons.push_pin : Icons.flag, size: 18),
+        tooltip: _isPinned ? '取消置顶' : '取消标记',
+        onPressed: () {
+          final notifier = ref.read(messageExtrasProvider.notifier);
+          if (_isPinned) {
+            notifier.setPinned(
+              widget.conversationId,
+              message.clientMsgId,
+              false,
+            );
+          } else {
+            notifier.toggleFlagged(widget.conversationId, message.clientMsgId);
+          }
+        },
       ),
       onTap: () {
         Navigator.of(context).pop();
@@ -180,7 +209,7 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
     );
   }
 
-  /// 更早历史里还有标记消息：给一个「加载更多」出口，逐页取回。
+  /// 更早历史里还有条目：给一个「加载更多」出口，逐页取回。
   Widget _buildLoadMore(int missingCount) {
     final colors = context.appColors;
     return Padding(
@@ -189,7 +218,7 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
         children: [
           Expanded(
             child: Text(
-              '还有 $missingCount 条更早的标记消息',
+              '还有 $missingCount 条更早的${_isPinned ? '置顶' : '标记'}消息',
               style: TextStyle(fontSize: 13, color: colors.textSecondary),
             ),
           ),
@@ -228,5 +257,47 @@ class _MarkedMessagesSheetState extends ConsumerState<MarkedMessagesSheet> {
     final text = message.displayText.trim();
     if (text.isEmpty) return '[消息]';
     return text.replaceAll('\n', ' ');
+  }
+}
+
+/// 会话内「标记消息」列表（底部弹层）。
+class MarkedMessagesSheet extends StatelessWidget {
+  const MarkedMessagesSheet({
+    super.key,
+    required this.conversationId,
+    this.onMessageTap,
+  });
+
+  final String conversationId;
+  final ValueChanged<String>? onMessageTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MessageExtrasSheet(
+      kind: MessageExtrasKind.flagged,
+      conversationId: conversationId,
+      onMessageTap: onMessageTap,
+    );
+  }
+}
+
+/// 会话内「置顶消息」列表（底部弹层）。
+class PinnedMessagesSheet extends StatelessWidget {
+  const PinnedMessagesSheet({
+    super.key,
+    required this.conversationId,
+    this.onMessageTap,
+  });
+
+  final String conversationId;
+  final ValueChanged<String>? onMessageTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return MessageExtrasSheet(
+      kind: MessageExtrasKind.pinned,
+      conversationId: conversationId,
+      onMessageTap: onMessageTap,
+    );
   }
 }

@@ -44,7 +44,7 @@
 | 自定义分组 | 已补齐（P0-3）：支持重命名与拖动排序，仍只存本地 | `lib/ui/chat/providers/conversation_folder_provider.dart` |
 | 会话搜索 | 已补齐（2026-10-25）：新增「会话」分类（按会话名/群 ID/用户 ID 匹配本地会话，展示最近消息预览）与「最近搜索」（去重、最多 10 条、SharedPreferences 持久化、可清空） | `lib/ui/shared/views/search_screen.dart`、`lib/ui/shared/view_models/search_view_model.dart` |
 | 全部已读 | 已补齐（P0-2）：工作台应用宫格入口 + 二次确认 | `lib/ui/workbench/views/workbench_screen.dart` |
-| 设置页占位项 | 分享、举报、翻译助手、添加标签页、群机器人、@所有人消息不提示、添加到标记、单聊「+ 添加成员」、任务/Pin/群成员日历/云文档等仍为占位，点按统一提示「功能开发中，敬请期待」；群二维码已接通（聊天设置页与群信息页都可查看） | `lib/ui/chat/views/chat_settings_screen.dart` |
+| 设置页占位项 | 分享、举报、翻译助手、添加标签页、群机器人、@所有人消息不提示、添加到标记、单聊「+ 添加成员」、任务/群成员日历/云文档等仍为占位，点按统一提示「功能开发中，敬请期待」；群二维码已接通（聊天设置页与群信息页都可查看）；「置顶消息」已接通本会话置顶列表（2026-10-26） | `lib/ui/chat/views/chat_settings_screen.dart` |
 
 ### 3.2 消息详情
 
@@ -52,7 +52,7 @@
 |---|---|---|
 | 工具面板占位 | 复制消息链接已接通（2026-10-26：写剪贴板 + 深链定位）；标记/取消标记已本地持久化；与「置顶消息」语义重复的「Pin」占位已删除（保留已实现的置顶）；其余创建话题、翻译、飞书内搜索、网页搜索、添加任务、导出到文档仍为占位，点按统一提示「功能开发中，敬请期待」 | `lib/ui/chat/widgets/menu/message_tool_panel.dart` |
 | 表情回复 / 置顶消息 | 表情回复与置顶都已本地持久化（`MessageExtrasStore`）：表情按 emoji 分组渲染、置顶可在消息操作里开关，重启后仍在；但都**不发给对端**（跨端不可见），置顶也没有「全部置顶消息」列表页 | `lib/ui/chat/views/chat_detail_screen.dart`、`lib/data/services/message_extras_store.dart` |
-| 置顶消息栏 | 已实现（`PinnedMessageBar`）：顶部展示最近一条置顶、点击定位、右侧取消置顶；仅本地状态，无跨端同步 | `lib/ui/chat/widgets/list/pinned_message_bar.dart` |
+| 置顶消息栏 | 已实现（`PinnedMessageBar`）：顶部展示最近一条置顶、点击定位、右侧取消置顶；会话设置页「置顶消息」可看全部置顶（按置顶时间倒序、可取消置顶、点选回会话定位）；仅本地状态，无跨端同步 | `lib/ui/chat/widgets/list/pinned_message_bar.dart`、`lib/ui/chat/widgets/message_extras_sheet.dart` |
 | 位置消息 | 只有经纬度弹窗，无地图与导航 | `lib/ui/chat/widgets/menu/chat_dialogs.dart` |
 | 群已读 | 只有「已读 n/m」文本，无已读/未读成员详情 | `lib/ui/chat/widgets/bubble/message_bubble.dart` |
 | 语音播放 | 已实现：播放中显示停止图标与进度条，带播放状态判定 | `lib/ui/chat/widgets/bubble/parts/media_message_content.dart` |
@@ -132,11 +132,17 @@
   - 链路：`lib/router/chat_routes.dart` 读 `?message=` → `ChatDetailScreen.initialMessageId` → 消息加载后延迟 120ms 调用 `_locateMessageById`（与「@我」定位同一套语义）；消息不在当前视图内时提示「该消息不在当前视图内，向上滚动可继续查找」。
   - Android 侧 `android/app/src/main/AndroidManifest.xml` 给 MainActivity 补 `flutterrustdemo` 的 `VIEW`/`BROWSABLE` intent-filter；iOS 未配置（当前只维护 Android 真机链路）。
   - 顺带收敛：工具面板其余占位统一为 1.6s「「xxx」功能开发中，敬请期待」；语音/表情/附件面板高度常量收敛到 `lib/ui/chat/widgets/composer/composer_panel_metrics.dart`。
-  - 顺带收敛：删除工具面板里与「置顶消息」语义重复的「Pin」占位（`test/ui/chat/message_tool_panel_test.dart` 补断言）；会话设置页的「Pin」入口仍为占位，语义是「本会话置顶消息列表」，列入后续。
+  - 顺带收敛：删除工具面板里与「置顶消息」语义重复的「Pin」占位（`test/ui/chat/message_tool_panel_test.dart` 补断言）；会话设置页的「Pin」入口改为本会话置顶列表，见 P1-7。
   - 测试：`test/ui/chat/message_link_test.dart`（生成/解析/非法链接），`test/ui/chat/message_tool_panel_test.dart` 补剪贴板断言。
   - 待办（真机验证）：设备被其他场景占用，未执行；恢复后跑
     `adb shell am start -a android.intent.action.VIEW -d "flutterrustdemo:///chat/<conversationId>?message=<clientMsgId>"`，
     预期直接进入该群聊并定位到消息。
+- [x] P1-7 会话设置页「置顶消息」入口（2026-10-26）：把原来的「Pin」占位换成「置顶消息」，打开本会话置顶列表。
+  - 列表按**置顶时间倒序**（`MessageExtrasStore.pinnedAt`），展示预览/发送人/时间，可逐条「取消置顶」，空态引导「长按消息选择「置顶消息」即可置顶」；更早历史里的置顶会提示条数并支持「加载更多」。
+  - 「标记消息」与「置顶消息」收敛到同一个弹层组件 `MessageExtrasSheet`（`lib/ui/chat/widgets/message_extras_sheet.dart`），`MarkedMessagesSheet` / `PinnedMessagesSheet` 只做语义包装，避免两份重复代码。
+  - 点选某条后：弹层关闭 → 设置页带 `clientMsgId` 出栈（`AppRouter.pushChatSettings` 等待返回值）→ 会话页 `_locateMessageById` 定位；不在当前视图时仍提示「该消息不在当前视图内，向上滚动可继续查找」。
+  - 顺带修复：设置页「搜索会话内容」点搜索结果原来只是关掉弹层（无反应），现在同样回到会话定位该消息。
+  - 测试：`test/ui/chat/pinned_messages_sheet_test.dart`（置顶过滤 / 倒序 / 点选回调 / 取消置顶回空态 / 空态文案）；`marked_messages_sheet_test.dart` 沿用原用例验证重构未回归。
 
 ### 4.3 P2：需新方案（单独立项）
 
@@ -159,7 +165,7 @@
 - [ ] P2-2 音视频通话：LiveKit 接入（权限、来电弹窗、通话页），独立模块。
 - [ ] P2-3 翻译 / 网页搜索 / 飞书内搜索：依赖第三方服务与「选中文本」上下文能力，先出方案。
 - [ ] P2-4 云文档、任务、日程、定时消息、边写边译、群机器人、举报：均依赖外部系统，OpenIM 无对应协议；建议**从 UI 摘除**或保留占位并明确标注未排期。
-- [ ] P2-5 置顶消息跨端同步：确认服务端是否支持消息级 Pin；不支持则用自定义消息（`content_type` 110）广播，与 P1-1 解耦。
+- [ ] P2-5 置顶消息跨端同步：确认服务端是否支持消息级 Pin；不支持则用自定义消息（`content_type` 110）广播，与 P1-1 解耦。本地侧已闭环（置顶栏 + 会话设置页置顶列表，见 P1-7），只差跨端可见。
 
 ## 5. 群管理真机回归（2026-10-24）
 

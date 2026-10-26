@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_rust_demo/domain/models/conversation.dart';
@@ -69,25 +70,33 @@ Conversation _makeConversation() {
 }
 
 void main() {
-  testWidgets('ChatSettingsScreen 单聊挂载', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          currentUserIdProvider.overrideWith(() => _FakeCurrentUserNotifier()),
-          messageRepositoryProvider.overrideWithValue(_FakeMessageRepository()),
-          conversationListProvider.overrideWith(
-            () => _FakeConversationListNotifier(_makeConversation()),
-          ),
-          messageServiceProvider.overrideWith(
-            () => _FakeMessageServiceNotifier(),
-          ),
-        ],
-        child: const MaterialApp(
-          home: ChatSettingsScreen(conversationId: 'conv1'),
-        ),
+  Widget host() => ProviderScope(
+    overrides: [
+      currentUserIdProvider.overrideWith(() => _FakeCurrentUserNotifier()),
+      messageRepositoryProvider.overrideWithValue(_FakeMessageRepository()),
+      conversationListProvider.overrideWith(
+        () => _FakeConversationListNotifier(_makeConversation()),
       ),
-    );
+      messageServiceProvider.overrideWith(() => _FakeMessageServiceNotifier()),
+    ],
+    child: const MaterialApp(home: ChatSettingsScreen(conversationId: 'conv1')),
+  );
+
+  testWidgets('ChatSettingsScreen 单聊挂载', (tester) async {
+    await tester.pumpWidget(host());
     await tester.pump();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('点「置顶消息」打开本会话置顶列表（空态）', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(host());
+    await tester.pump();
+
+    await tester.tap(find.text('置顶消息'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('还没有置顶的消息'), findsOneWidget);
+    expect(find.text('长按消息选择「置顶消息」即可置顶'), findsOneWidget);
   });
 }

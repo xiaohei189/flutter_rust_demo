@@ -127,6 +127,17 @@ class AppRouter {
     context.push(AppPaths.chatSettingsOf(conversationId));
   }
 
+  /// 打开聊天设置页，并等待它返回「用户选中的消息 id」。
+  ///
+  /// 设置页里的置顶/搜索列表点选某条后会带着 id 返回，
+  /// 会话页据此定位到该消息。
+  static Future<String?> pushChatSettings(
+    BuildContext context,
+    String conversationId,
+  ) {
+    return context.push<String>(AppPaths.chatSettingsOf(conversationId));
+  }
+
   /// 导航到群组信息页
   static void goToGroupInfo(BuildContext context, Conversation conversation) {
     context.push(AppPaths.groupInfoOf(conversation.conversationId));

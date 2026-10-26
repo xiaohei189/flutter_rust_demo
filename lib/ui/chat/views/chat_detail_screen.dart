@@ -37,7 +37,7 @@ import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/menu/chat_message_actions.dart';
 import '../widgets/menu/chat_detail_selection_top_bar.dart';
 import '../widgets/chat_message_search_sheet.dart';
-import '../widgets/marked_messages_sheet.dart';
+import '../widgets/message_extras_sheet.dart';
 import '../widgets/menu/message_action_menu.dart';
 import '../widgets/composer/group_member_picker.dart'
     show insertAtMention, showGroupMemberPicker;
@@ -508,6 +508,16 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     );
   }
 
+  /// 打开会话设置页；设置页里选中置顶/搜索到的消息会带回 id，回到会话后定位。
+  Future<void> _openSettings(Conversation conversation) async {
+    final messageId = await AppRouter.pushChatSettings(
+      context,
+      conversation.conversationId,
+    );
+    if (!mounted || messageId == null || messageId.isEmpty) return;
+    _locateMessageById(messageId);
+  }
+
   /// 按 clientMsgId 定位消息；不在当前视图内时给出提示（不静默失败）。
   void _locateMessageById(String clientMsgId) {
     final found =
@@ -849,7 +859,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           Navigator.of(context).pop();
         },
         onOpenSettings: () {
-          AppRouter.goToChatSettings(context, conversation);
+          unawaited(_openSettings(conversation));
         },
         onSearch: _showMessageSearch,
         onOpenMarkedMessages: _showMarkedMessages,

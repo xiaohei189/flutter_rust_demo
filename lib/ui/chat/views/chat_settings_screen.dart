@@ -17,6 +17,7 @@ import '../view_models/chat_settings_view_model.dart';
 import '../widgets/settings_components.dart';
 import '../widgets/settings_dialogs.dart';
 import '../widgets/chat_message_search_sheet.dart';
+import '../widgets/message_extras_sheet.dart';
 import 'conversation_folder_manage_screen.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
@@ -135,9 +136,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                     ),
                     _buildAppIcon(
                       Icons.push_pin_outlined,
-                      'Pin',
+                      '置顶消息',
                       AppIconColors.green,
-                      onTap: () => _notSupported('Pin'),
+                      onTap: _showPinnedMessages,
                     ),
                     if (isGroup)
                       _buildAppIcon(
@@ -678,9 +679,38 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       ),
       builder: (_) => ChatMessageSearchSheet(
         conversationId: widget.conversationId,
-        onMessageTap: (_) => Navigator.of(context).pop(),
+        onMessageTap: (result) => _returnToChatWithMessage(result.clientMsgId),
       ),
     );
+  }
+
+  /// 打开会话内「置顶消息」列表；点某条回到会话并定位。
+  void _showPinnedMessages() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
+      ),
+      builder: (_) => PinnedMessagesSheet(
+        conversationId: widget.conversationId,
+        onMessageTap: _returnToChatWithMessage,
+      ),
+    );
+  }
+
+  /// 弹层里选中消息后：退出设置页，把消息 id 交回会话页定位。
+  ///
+  /// 弹层自己会先 pop，这里等它出栈后再退一层设置页，
+  /// 返回值由 `AppRouter.pushChatSettings` 接收。
+  void _returnToChatWithMessage(String clientMsgId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pop(clientMsgId);
+    });
   }
 
   void _showError(String? message) {

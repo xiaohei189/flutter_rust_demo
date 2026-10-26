@@ -8,7 +8,7 @@ import 'package:flutter_rust_demo/domain/models/chat_message.dart'
 import 'package:flutter_rust_demo/domain/models/message_extras.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_extras_provider.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_provider.dart';
-import 'package:flutter_rust_demo/ui/chat/widgets/marked_messages_sheet.dart';
+import 'package:flutter_rust_demo/ui/chat/widgets/message_extras_sheet.dart';
 
 ChatMessage _message(String id, String text) {
   final now = DateTime.now().millisecondsSinceEpoch;
@@ -42,7 +42,8 @@ class _FakeExtras extends MessageExtrasNotifier {
   final Map<String, MessageExtras> _initial;
 
   @override
-  Map<String, MessageExtras> build() => Map<String, MessageExtras>.from(_initial);
+  Map<String, MessageExtras> build() =>
+      Map<String, MessageExtras>.from(_initial);
 }
 
 void main() {
@@ -86,13 +87,8 @@ void main() {
     final tapped = <String>[];
     await tester.pumpWidget(
       host(
-        extras: {
-          extrasKey: const MessageExtras(flagged: true),
-        },
-        messages: [
-          _message('m1', '这条被标记了'),
-          _message('m2', '这条没有标记'),
-        ],
+        extras: {extrasKey: const MessageExtras(flagged: true)},
+        messages: [_message('m1', '这条被标记了'), _message('m2', '这条没有标记')],
         onMessageTap: tapped.add,
       ),
     );
@@ -112,9 +108,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(
       host(
-        extras: {
-          extrasKey: const MessageExtras(flagged: true),
-        },
+        extras: {extrasKey: const MessageExtras(flagged: true)},
         messages: [_message('m1', '这条被标记了')],
       ),
     );
@@ -131,10 +125,7 @@ void main() {
   testWidgets('没有标记消息时展示空态与引导文案', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(
-      host(
-        extras: const {},
-        messages: [_message('m1', '普通消息')],
-      ),
+      host(extras: const {}, messages: [_message('m1', '普通消息')]),
     );
     await tester.pumpAndSettle();
 
