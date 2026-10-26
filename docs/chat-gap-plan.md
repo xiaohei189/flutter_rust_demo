@@ -23,7 +23,7 @@
 |---|---|---|
 | A. 零协议改动 | SDK/服务端能力已具备，只差 UI 接线 | 取消归档、全部已读、长按菜单缺项、分组管理、未读分割线 |
 | B. SDK 已有，差 Repository/UI 接通 | `editMessage`、`setMessageLocalEx` 已 FFI 暴露到 Dart，`lib/data` 未使用 | 消息编辑、表情回复与置顶消息本地持久化、消息收藏 |
-| C. 需新增协议或第三方 | 先定方案再动手 | 音视频通话、翻译、群已读成员详情、置顶消息跨端同步、云文档/任务/日程/定时消息/群机器人 |
+| C. 需新增协议或第三方 | 先定方案再动手 | 音视频通话、翻译、群已读成员详情、置顶消息跨端同步、云文档/任务/日程/群机器人（定时消息已按「本地定时 + 应用内派发」落地，见 P1-8） |
 
 关键事实：
 
@@ -59,7 +59,7 @@
 | 音视频通话 | 全项目无通话代码，顶栏仅搜索/设置 | `lib/ui/chat/widgets/shared/chat_detail_app_bar.dart` |
 | @所有人 | 已实现（P2-1，2026-10-19）：选择器置顶「所有人」，发送为 contentType=106 且带 `AtAllTag` | `lib/ui/chat/widgets/composer/group_member_picker.dart` |
 | 未读分割线 / 回到底部 | 已实现（P0-5，2026-10-10）：进入会话快照未读边界，「以下为新消息」分割线 + 「N 条新消息」回到底部胶囊 | `lib/ui/chat/widgets/list/message_list.dart` |
-| 附件面板占位 | 云文档、日程、定时消息、任务、开启边写边译、更多 | `lib/ui/chat/widgets/composer/chat_input.dart` |
+| 附件面板 | 已收敛（2026-10-26）：云文档/日程/任务/边写边译/更多从面板摘除（OpenIM 无协议支撑），只保留文件、位置、个人名片、定时消息；定时消息已本地可用（见 P1-8） | `lib/ui/chat/widgets/composer/chat_input.dart` |
 
 ## 4. 工作项清单
 
@@ -143,6 +143,15 @@
   - 点选某条后：弹层关闭 → 设置页带 `clientMsgId` 出栈（`AppRouter.pushChatSettings` 等待返回值）→ 会话页 `_locateMessageById` 定位；不在当前视图时仍提示「该消息不在当前视图内，向上滚动可继续查找」。
   - 顺带修复：设置页「搜索会话内容」点搜索结果原来只是关掉弹层（无反应），现在同样回到会话定位该消息。
   - 测试：`test/ui/chat/pinned_messages_sheet_test.dart`（置顶过滤 / 倒序 / 点选回调 / 取消置顶回空态 / 空态文案）；`marked_messages_sheet_test.dart` 沿用原用例验证重构未回归。
+- [x] P1-8 定时消息（本地，2026-10-26）：附件面板「定时消息」不再占位，取当前输入框内容选发送时间，落本地待发送列表。
+  - 时间选择：10 分钟后 / 30 分钟后 / 1 小时后 / 自定义（日期 + 时间）；选早于当前时间会拒绝。
+  - 弹层里同时列出本会话已定时消息（含时间与内容预览），可逐条「取消定时」。
+  - 数据层：`ScheduledMessage`（domain）+ `ScheduledMessageStore`（SharedPreferences `scheduled_messages_v1`）+ `scheduledMessagesProvider`；加载与写入按 id 合并，避免冷启动加载把刚新建的覆盖掉。
+  - 派发：应用级 `ScheduledMessageRunner`（`lib/ui/chat/widgets/scheduled_message_runner.dart`，挂在 `main.dart` 的 `MaterialApp.builder`）前台每 10s 轮询 + 回到前台立即补一次；到点走 `messageListProvider(conversationId).sendTextMessage`，与手动发送同一条链路（本地先上屏、失败可重发），发完（无论成败）清掉定时项，避免每轮重复发送。
+  - 边界：应用进程不在时不会触发（不做系统闹钟/后台任务）；关闭/离线期间到点的消息在下次启动登录后补发，弹层里已明确提示。
+  - 顺带：`Conversation.sessionType` 扩展从 `lib/ui/core/extensions` 挪到 `lib/domain/models/conversation_extensions.dart`（原先 application 层反向依赖 ui），发送目标推导抽到 `lib/domain/models/chat_send_target.dart` 供会话页与派发器共用。
+  - 测试：`test/ui/chat/scheduled_message_test.dart`（排序/过滤/到期/取消/重启恢复/弹层选时与取消）、`scheduled_message_runner_test.dart`（到点发一次、不重复、已落盘）、`chat_input_panels_test.dart`（附件面板只保留真实入口）。
+  - 待办（真机验证）：设备被占用，未执行；恢复后验证「输入文字 → + → 定时消息 → 10 分钟后」后弹层关闭、输入框清空，到点消息出现在会话里。
 
 ### 4.3 P2：需新方案（单独立项）
 
@@ -164,7 +173,7 @@
   - 同批修复：全局客户端持有者由 `OnceLock` 改为可替换 `RwLock`。热重启/重登后 `sendMessage` 仍走旧客户端，表现为「服务端已收到、本地气泡不上屏」。
 - [ ] P2-2 音视频通话：LiveKit 接入（权限、来电弹窗、通话页），独立模块。
 - [ ] P2-3 翻译 / 网页搜索 / 飞书内搜索：依赖第三方服务与「选中文本」上下文能力，先出方案。
-- [ ] P2-4 云文档、任务、日程、定时消息、边写边译、群机器人、举报：均依赖外部系统，OpenIM 无对应协议；建议**从 UI 摘除**或保留占位并明确标注未排期。
+- [ ] P2-4 云文档、任务、日程、边写边译、群机器人、举报：均依赖外部系统，OpenIM 无对应协议；附件面板里的云文档/日程/任务/边写边译**已摘除**（2026-10-26），会话设置页与工具面板的剩余占位待按同一原则收敛。
 - [ ] P2-5 置顶消息跨端同步：确认服务端是否支持消息级 Pin；不支持则用自定义消息（`content_type` 110）广播，与 P1-1 解耦。本地侧已闭环（置顶栏 + 会话设置页置顶列表，见 P1-7），只差跨端可见。
 
 ## 5. 群管理真机回归（2026-10-24）

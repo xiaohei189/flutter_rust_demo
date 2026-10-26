@@ -6,14 +6,13 @@ import '../../../core/utils/app_logger.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/conversation_draft.dart';
 import '../../../domain/models/friend.dart';
-import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
+import '../../../domain/models/chat_send_target.dart';
 import '../../../domain/models/message_search_result.dart'
     show MessageSearchResult;
 import '../../../domain/models/chat_message.dart' show ChatMessage;
 import '../../../domain/models/message_extras.dart' show MessageExtras;
 import '../../../providers/chat_aux_provider.dart';
 import '../../../providers/current_user_provider.dart';
-import '../../../ui/core/extensions/conversation_extensions.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/conversation_provider.dart';
@@ -25,11 +24,7 @@ import 'chat_detail_forward_mixin.dart';
 import 'chat_detail_send_controller.dart';
 import 'chat_detail_selection_mixin.dart';
 
-typedef ChatSendTarget = ({
-  String recvId,
-  ChatSessionType sessionType,
-  String groupId,
-});
+export '../../../domain/models/chat_send_target.dart' show ChatSendTarget;
 
 /// 聊天详情页业务状态
 class ChatDetailState {
@@ -38,6 +33,7 @@ class ChatDetailState {
   final ChatMessage? quotedMessage;
   final bool selectMode;
   final List<ChatMessage> selectedMessages;
+
   /// [selectedMessages] 的派生集合（clientMsgId），用于 O(1) 命中。
   ///
   /// 由 [copyWith] 统一维护：选中列表没变时直接复用上一个集合，变了才重建，
@@ -86,7 +82,8 @@ class ChatDetailState {
           : (quotedMessage ?? this.quotedMessage),
       selectMode: selectMode ?? this.selectMode,
       selectedMessages: nextSelectedMessages,
-      selectedClientMsgIds: identical(nextSelectedMessages, this.selectedMessages)
+      selectedClientMsgIds:
+          identical(nextSelectedMessages, this.selectedMessages)
           ? selectedClientMsgIds
           : nextSelectedMessages.map((m) => m.clientMsgId).toSet(),
       atUserIds: atUserIds ?? this.atUserIds,
@@ -160,41 +157,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
   ChatSendTarget? get sendTarget {
     final conv = conversation;
     if (conv == null) return null;
-    final cid = conv.conversationId;
-    final type = conv.conversationType;
-    final myId = currentUserId;
-    String recvId;
-    switch (type) {
-      case 1:
-        recvId = conv.userId;
-        if (recvId.isEmpty && cid.startsWith('si_')) {
-          final parts = cid.split('_');
-          if (parts.length >= 3) {
-            recvId = parts[1] == myId ? parts[2] : parts[1];
-          }
-        }
-      case 2:
-        recvId = cid.startsWith('g_') ? cid.substring(2) : conv.groupId;
-      case 3:
-        recvId = cid.startsWith('sg_') ? cid.substring(3) : conv.groupId;
-      default:
-        recvId = '';
-    }
-    if (recvId.isEmpty) return null;
-
-    final sessionType = conv.sessionType;
-    final groupId =
-        (sessionType == ChatSessionType.writeGroupChat ||
-            sessionType == ChatSessionType.readGroupChat)
-        ? (conv.groupId.isNotEmpty
-              ? conv.groupId
-              : cid.startsWith('sg_')
-              ? cid.substring(3)
-              : cid.startsWith('g_')
-              ? cid.substring(2)
-              : '')
-        : '';
-    return (recvId: recvId, sessionType: sessionType, groupId: groupId);
+    return chatSendTargetOf(conv, currentUserId);
   }
 
   Future<void> loadMessages({bool isLoadMore = false}) async {
@@ -323,6 +286,7 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     stopTyping();
     return ok;
   }
+
   Future<bool> sendImage(String filePath) => _send.sendImage(filePath);
   Future<bool> sendGif(String url) => _send.sendGif(url);
   Future<bool> sendVideo({
@@ -375,9 +339,10 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
   /// 加/取消表情回复；返回操作后是否处于「已加」状态。
   Future<bool> toggleReaction(ChatMessage message, String emoji) async {
     final notifier = ref.read(messageExtrasProvider.notifier);
-    final had = notifier.extrasOf(arg, message.clientMsgId).reactions.contains(
-      emoji,
-    );
+    final had = notifier
+        .extrasOf(arg, message.clientMsgId)
+        .reactions
+        .contains(emoji);
     await notifier.toggleReaction(arg, message.clientMsgId, emoji);
     return !had;
   }

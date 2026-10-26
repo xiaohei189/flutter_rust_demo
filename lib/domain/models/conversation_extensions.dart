@@ -1,5 +1,5 @@
-import '../../../domain/models/conversation.dart';
-import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
+import 'chat_session_type.dart' show ChatSessionType;
+import 'conversation.dart';
 
 extension ConversationX on Conversation {
   ChatSessionType get sessionType {

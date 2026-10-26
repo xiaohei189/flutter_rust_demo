@@ -114,18 +114,18 @@ Widget attachmentPanelPreview() {
           color: AppIconColors.orange,
         ),
         AttachmentItem(
-          icon: Icons.calendar_today_outlined,
-          label: '日程',
-          color: AppIconColors.orange,
-        ),
-        AttachmentItem(
           icon: Icons.location_on,
           label: '位置',
           color: AppIconColors.blue,
         ),
         AttachmentItem(
-          icon: Icons.photo_library_outlined,
-          label: '相册',
+          icon: Icons.contact_page_outlined,
+          label: '个人名片',
+          color: AppIconColors.blue,
+        ),
+        AttachmentItem(
+          icon: Icons.schedule_send_outlined,
+          label: '定时消息',
           color: AppIconColors.blue,
         ),
       ],

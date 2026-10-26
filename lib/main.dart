@@ -20,6 +20,7 @@ import 'l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'ui/core/theme/app_theme.dart';
 import 'ui/core/widgets/app_lock_gate.dart';
+import 'ui/chat/widgets/scheduled_message_runner.dart';
 
 /// WebSocket 地址
 String get kWsUrl => 'ws://${getHostAddress()}:10001';
@@ -123,7 +124,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ],
           builder: (context, child) => MediaQuery.withClampedTextScaling(
             maxScaleFactor: 1.3,
-            child: AppLockGate(child: child ?? const SizedBox.shrink()),
+            child: ScheduledMessageRunner(
+              child: AppLockGate(child: child ?? const SizedBox.shrink()),
+            ),
           ),
           routerConfig: router,
         ),

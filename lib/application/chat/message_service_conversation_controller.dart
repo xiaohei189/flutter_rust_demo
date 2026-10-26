@@ -7,7 +7,7 @@ import '../../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../../generated/rust/domain/constant/enums.dart' show SessionType;
 import '../../../generated/rust/core/event/events/conversation.dart';
 import '../../../domain/models/chat_message.dart' show ChatMessage;
-import '../../../ui/core/extensions/conversation_extensions.dart';
+import '../../domain/models/conversation_extensions.dart';
 import '../../../core/utils/app_logger.dart';
 import 'message_service_notifier.dart';
 

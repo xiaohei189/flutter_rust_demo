@@ -19,6 +19,7 @@ import 'input_toolbar_icon.dart';
 import 'markdown_format_bar.dart';
 import 'message_composer_sheet.dart';
 import 'recording_overlay.dart';
+import 'schedule_message_sheet.dart';
 import 'voice_panel.dart';
 import 'voice_recorder_controller.dart';
 
@@ -39,11 +40,16 @@ class ChatInput extends StatefulWidget {
   final VoidCallback? onVideoPick;
   final Function(int duration, String filePath)? onVoiceRecord;
   final VoidCallback? onCardSend;
+  final Future<bool> Function(String text, DateTime scheduledAt)?
+  onScheduleMessage;
   final VoidCallback? onAtMention;
   final ValueChanged<String>? onGifSelected;
   final List<GroupMember>? atMembers;
   final ValueChanged<String>? onAtMemberSelected;
   final bool isGroupChat;
+
+  /// 当前会话 ID：定时消息需要按会话落库与展示待发送列表。
+  final String? conversationId;
 
   /// 展开编辑抽屉的占位文案（如「发送给 张三」）
   final String? sendToLabel;
@@ -75,11 +81,13 @@ class ChatInput extends StatefulWidget {
     this.onVideoPick,
     this.onVoiceRecord,
     this.onCardSend,
+    this.onScheduleMessage,
     this.onAtMention,
     this.onGifSelected,
     this.atMembers,
     this.onAtMemberSelected,
     this.isGroupChat = false,
+    this.conversationId,
     this.sendToLabel,
     this.heightNotifier,
     // 必传：漏传会让输入行停在屏幕底部被键盘挡住（真机出过这个事故）。
@@ -188,20 +196,12 @@ class _ChatInputState extends State<ChatInput> {
   }
 
   void _initAttachmentItems() {
-    // 严格对齐飞书稿：文件 / 云文档 / 日程 / 位置 / 个人名片 / 定时消息 / 任务 / 开启边写边译 / 更多
-    // 图标色板集中在共享装饰色板 AppIconColors（不随主题切换）
+    // 只保留有真实链路的入口：文件 / 位置 / 个人名片 / 定时消息。
+    // 云文档、日程、任务、边写边译、更多在 OpenIM 侧没有协议支撑，已从面板摘除
+    // （见 docs/chat-gap-plan.md，避免占位项挤占真实功能）。
+    // 图标色板集中在共享装饰色板 AppIconColors（不随主题切换）。
     const blue = AppIconColors.blue;
     const orange = AppIconColors.orange;
-    const purple = AppIconColors.purple;
-    const green = AppIconColors.green;
-    void notSupported(String label) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$label 暂未开放'),
-          duration: const Duration(milliseconds: 1200),
-        ),
-      );
-    }
 
     _cachedAttachmentItems = [
       AttachmentItem(
@@ -209,18 +209,6 @@ class _ChatInputState extends State<ChatInput> {
         label: '文件',
         color: orange,
         onTap: widget.onFilePick,
-      ),
-      AttachmentItem(
-        icon: Icons.description_outlined,
-        label: '云文档',
-        color: blue,
-        onTap: () => notSupported('云文档'),
-      ),
-      AttachmentItem(
-        icon: Icons.calendar_today_outlined,
-        label: '日程',
-        color: orange,
-        onTap: () => notSupported('日程'),
       ),
       AttachmentItem(
         icon: Icons.location_on,
@@ -238,27 +226,48 @@ class _ChatInputState extends State<ChatInput> {
         icon: Icons.schedule_send_outlined,
         label: '定时消息',
         color: blue,
-        onTap: () => notSupported('定时消息'),
-      ),
-      AttachmentItem(
-        icon: Icons.task_alt,
-        label: '任务',
-        color: purple,
-        onTap: () => notSupported('任务'),
-      ),
-      AttachmentItem(
-        icon: Icons.translate,
-        label: '开启边写边译',
-        color: green,
-        onTap: () => notSupported('边写边译'),
-      ),
-      AttachmentItem(
-        icon: Icons.more_horiz,
-        label: '更多',
-        color: AppIconColors.grey,
-        onTap: () => notSupported('更多'),
+        onTap: widget.conversationId == null || widget.onScheduleMessage == null
+            ? null
+            : _openScheduleSheet,
       ),
     ];
+  }
+
+  /// 定时消息：取当前输入框内容，选时间后落本地待发送列表。
+  void _openScheduleSheet() {
+    final conversationId = widget.conversationId;
+    final onSchedule = widget.onScheduleMessage;
+    if (conversationId == null || onSchedule == null) return;
+    final text = widget.controller.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('先输入内容，再选择发送时间'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(milliseconds: 1600),
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.appColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTheme.radiusSheet),
+        ),
+      ),
+      builder: (_) => ScheduleMessageSheet(
+        conversationId: conversationId,
+        text: text,
+        onSchedule: (at) async {
+          final ok = await onSchedule(text, at);
+          if (ok) widget.controller.clear();
+          return ok;
+        },
+      ),
+    );
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {

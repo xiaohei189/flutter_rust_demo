@@ -88,4 +88,22 @@ void main() {
     expect(panelInTree, findsOneWidget, reason: '收起后仍常驻树中保留状态');
     expect(panelCollapsed(tester), isTrue, reason: '切到附件面板后表情面板应收起');
   });
+
+  testWidgets('附件面板只保留有真实链路的入口', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(host(controller));
+    await tester.pump();
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+
+    for (final label in ['文件', '位置', '个人名片', '定时消息']) {
+      expect(find.text(label), findsOneWidget, reason: '保留 $label 入口');
+    }
+    // 无 OpenIM 协议支撑的占位项已摘除，避免挤占真实功能
+    for (final label in ['云文档', '日程', '任务', '开启边写边译']) {
+      expect(find.text(label), findsNothing, reason: '$label 占位应已摘除');
+    }
+  });
 }

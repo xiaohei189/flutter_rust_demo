@@ -28,10 +28,13 @@ import '../providers/conversation_provider.dart';
 import '../providers/message_provider.dart';
 import '../providers/message_service_provider.dart';
 import '../providers/message_extras_provider.dart';
+import '../providers/scheduled_message_provider.dart';
 import '../providers/message_revision_provider.dart'
     show loginUserProfileProvider;
 import '../view_models/chat_detail_view_model.dart';
 import '../widgets/composer/chat_input.dart' show ChatInput;
+import '../widgets/composer/schedule_message_sheet.dart'
+    show formatScheduledTime;
 import '../widgets/message_content_type.dart' show MessageContentType;
 import '../widgets/menu/chat_media_actions.dart';
 import '../widgets/menu/chat_message_actions.dart';
@@ -518,6 +521,27 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     _locateMessageById(messageId);
   }
 
+  /// 定时消息：落本地待发送列表，由应用级 runner 到点走普通发送链路。
+  Future<bool> _scheduleMessage(String text, DateTime scheduledAt) async {
+    await ref
+        .read(scheduledMessagesProvider.notifier)
+        .schedule(
+          conversationId: widget.conversationId,
+          text: text,
+          scheduledAt: scheduledAt,
+        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('已定时：${formatScheduledTime(scheduledAt)} 发送'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(milliseconds: 1600),
+        ),
+      );
+    }
+    return true;
+  }
+
   /// 按 clientMsgId 定位消息；不在当前视图内时给出提示（不静默失败）。
   void _locateMessageById(String clientMsgId) {
     final found =
@@ -695,12 +719,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
       onFilePick: _pickFile,
       onVideoPick: _pickVideo,
       onCardSend: _sendCardMessage,
+      onScheduleMessage: _scheduleMessage,
       onVoiceRecord: _sendVoiceMessage,
       onAtMention: _showAtMentionPicker,
       onGifSelected: _sendGif,
       atMembers: _atMembers,
       onAtMemberSelected: _onAtMemberSelected,
       isGroupChat: _isGroup,
+      conversationId: widget.conversationId,
       sendToLabel: '发送给 ${user.name}',
       heightNotifier: _inputAreaHeight,
       // 必须传：ChatInput 靠它把输入行浮到键盘之上、并把面板留在原位被键盘覆盖。
