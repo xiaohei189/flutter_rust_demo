@@ -6,12 +6,14 @@ import '../../core/utils/app_logger.dart';
 class LoginStorage {
   static const _keyUserId = 'im_user_id';
   static const _keyImToken = 'im_token';
+  static const _keyChatToken = 'chat_token';
   static const _keyAreaCode = 'login_area_code';
   static const _keyPhoneNumber = 'login_phone_number';
 
   static Future<void> saveCredentials({
     required String userId,
     required String imToken,
+    String chatToken = '',
     String areaCode = '+86',
     String phoneNumber = '',
   }) async {
@@ -20,6 +22,7 @@ class LoginStorage {
     appLog.i('[LoginStorage] SharedPreferences.getInstance 完成');
     await prefs.setString(_keyUserId, userId);
     await prefs.setString(_keyImToken, imToken);
+    await prefs.setString(_keyChatToken, chatToken);
     await prefs.setString(_keyAreaCode, areaCode);
     await prefs.setString(_keyPhoneNumber, phoneNumber);
     appLog.i('[LoginStorage] saveCredentials 完成');
@@ -38,6 +41,7 @@ class LoginStorage {
     return LoginCredentials(
       userId: userId,
       imToken: imToken,
+      chatToken: prefs.getString(_keyChatToken) ?? '',
       areaCode: prefs.getString(_keyAreaCode) ?? '+86',
       phoneNumber: prefs.getString(_keyPhoneNumber) ?? '',
     );
@@ -47,6 +51,7 @@ class LoginStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyUserId);
     await prefs.remove(_keyImToken);
+    await prefs.remove(_keyChatToken);
     await prefs.remove(_keyAreaCode);
     await prefs.remove(_keyPhoneNumber);
   }
@@ -55,12 +60,14 @@ class LoginStorage {
 class LoginCredentials {
   final String userId;
   final String imToken;
+  final String chatToken;
   final String areaCode;
   final String phoneNumber;
 
-  LoginCredentials({
+  const LoginCredentials({
     required this.userId,
     required this.imToken,
+    this.chatToken = '',
     this.areaCode = '+86',
     this.phoneNumber = '',
   });

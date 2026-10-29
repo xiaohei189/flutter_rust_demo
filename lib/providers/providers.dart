@@ -3,6 +3,7 @@
 library;
 
 export 'connection_provider.dart';
+export 'account_profile_provider.dart';
 export 'current_user_provider.dart';
 export 'im_providers.dart';
 export 'online_status_provider.dart';

@@ -22,6 +22,8 @@ mixin _$UserProfile {
   String get faceUrl => throw _privateConstructorUsedError;
   int get gender => throw _privateConstructorUsedError;
   String get telephone => throw _privateConstructorUsedError;
+  String get areaCode => throw _privateConstructorUsedError;
+  String get phoneNumber => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
   String get remark => throw _privateConstructorUsedError;
   int get globalRecvMsgOpt => throw _privateConstructorUsedError;
@@ -46,6 +48,8 @@ abstract class $UserProfileCopyWith<$Res> {
     String faceUrl,
     int gender,
     String telephone,
+    String areaCode,
+    String phoneNumber,
     String email,
     String remark,
     int globalRecvMsgOpt,
@@ -72,6 +76,8 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? faceUrl = null,
     Object? gender = null,
     Object? telephone = null,
+    Object? areaCode = null,
+    Object? phoneNumber = null,
     Object? email = null,
     Object? remark = null,
     Object? globalRecvMsgOpt = null,
@@ -97,6 +103,14 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
             telephone: null == telephone
                 ? _value.telephone
                 : telephone // ignore: cast_nullable_to_non_nullable
+                      as String,
+            areaCode: null == areaCode
+                ? _value.areaCode
+                : areaCode // ignore: cast_nullable_to_non_nullable
+                      as String,
+            phoneNumber: null == phoneNumber
+                ? _value.phoneNumber
+                : phoneNumber // ignore: cast_nullable_to_non_nullable
                       as String,
             email: null == email
                 ? _value.email
@@ -131,6 +145,8 @@ abstract class _$$UserProfileImplCopyWith<$Res>
     String faceUrl,
     int gender,
     String telephone,
+    String areaCode,
+    String phoneNumber,
     String email,
     String remark,
     int globalRecvMsgOpt,
@@ -156,6 +172,8 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? faceUrl = null,
     Object? gender = null,
     Object? telephone = null,
+    Object? areaCode = null,
+    Object? phoneNumber = null,
     Object? email = null,
     Object? remark = null,
     Object? globalRecvMsgOpt = null,
@@ -181,6 +199,14 @@ class __$$UserProfileImplCopyWithImpl<$Res>
         telephone: null == telephone
             ? _value.telephone
             : telephone // ignore: cast_nullable_to_non_nullable
+                  as String,
+        areaCode: null == areaCode
+            ? _value.areaCode
+            : areaCode // ignore: cast_nullable_to_non_nullable
+                  as String,
+        phoneNumber: null == phoneNumber
+            ? _value.phoneNumber
+            : phoneNumber // ignore: cast_nullable_to_non_nullable
                   as String,
         email: null == email
             ? _value.email
@@ -208,6 +234,8 @@ class _$UserProfileImpl implements _UserProfile {
     required this.faceUrl,
     required this.gender,
     required this.telephone,
+    this.areaCode = '',
+    this.phoneNumber = '',
     required this.email,
     required this.remark,
     required this.globalRecvMsgOpt,
@@ -224,6 +252,12 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   final String telephone;
   @override
+  @JsonKey()
+  final String areaCode;
+  @override
+  @JsonKey()
+  final String phoneNumber;
+  @override
   final String email;
   @override
   final String remark;
@@ -232,7 +266,7 @@ class _$UserProfileImpl implements _UserProfile {
 
   @override
   String toString() {
-    return 'UserProfile(userId: $userId, nickname: $nickname, faceUrl: $faceUrl, gender: $gender, telephone: $telephone, email: $email, remark: $remark, globalRecvMsgOpt: $globalRecvMsgOpt)';
+    return 'UserProfile(userId: $userId, nickname: $nickname, faceUrl: $faceUrl, gender: $gender, telephone: $telephone, areaCode: $areaCode, phoneNumber: $phoneNumber, email: $email, remark: $remark, globalRecvMsgOpt: $globalRecvMsgOpt)';
   }
 
   @override
@@ -247,6 +281,10 @@ class _$UserProfileImpl implements _UserProfile {
             (identical(other.gender, gender) || other.gender == gender) &&
             (identical(other.telephone, telephone) ||
                 other.telephone == telephone) &&
+            (identical(other.areaCode, areaCode) ||
+                other.areaCode == areaCode) &&
+            (identical(other.phoneNumber, phoneNumber) ||
+                other.phoneNumber == phoneNumber) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.remark, remark) || other.remark == remark) &&
             (identical(other.globalRecvMsgOpt, globalRecvMsgOpt) ||
@@ -261,6 +299,8 @@ class _$UserProfileImpl implements _UserProfile {
     faceUrl,
     gender,
     telephone,
+    areaCode,
+    phoneNumber,
     email,
     remark,
     globalRecvMsgOpt,
@@ -282,6 +322,8 @@ abstract class _UserProfile implements UserProfile {
     required final String faceUrl,
     required final int gender,
     required final String telephone,
+    final String areaCode,
+    final String phoneNumber,
     required final String email,
     required final String remark,
     required final int globalRecvMsgOpt,
@@ -297,6 +339,10 @@ abstract class _UserProfile implements UserProfile {
   int get gender;
   @override
   String get telephone;
+  @override
+  String get areaCode;
+  @override
+  String get phoneNumber;
   @override
   String get email;
   @override

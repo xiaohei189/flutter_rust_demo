@@ -194,8 +194,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           // 手机号
                           ListRow(
                             label: '手机号',
-                            value: state.profile?.telephone.isNotEmpty == true
-                                ? state.profile!.telephone
+                            value: state.displayPhoneNumber.isNotEmpty
+                                ? state.displayPhoneNumber
                                 : '未绑定',
                             valueColor: colors.textSecondary,
                             onTap: null,

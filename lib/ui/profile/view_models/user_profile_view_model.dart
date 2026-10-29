@@ -53,6 +53,17 @@ class UserProfileState {
     );
   }
 
+  /// 个人信息页展示手机号：优先账号服务手机号，旧数据回退到 telephone。
+  String get displayPhoneNumber {
+    final phone = profile?.phoneNumber.trim() ?? '';
+    if (phone.isNotEmpty) {
+      final area = profile?.areaCode.trim() ?? '';
+      if (area.isEmpty || phone.startsWith('+')) return phone;
+      return '$area $phone';
+    }
+    return profile?.telephone.trim() ?? '';
+  }
+
   /// 由服务端资料构造展示状态；本地头像路径作为覆盖值叠加。
   factory UserProfileState.fromServerProfile(
     UserProfile profile, {

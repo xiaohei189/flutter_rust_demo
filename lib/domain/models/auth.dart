@@ -14,6 +14,15 @@ enum VerificationCodeUsage {
 class AuthSession {
   final String userId;
   final String imToken;
+  final String chatToken;
+  final String areaCode;
+  final String phoneNumber;
 
-  const AuthSession({required this.userId, required this.imToken});
+  const AuthSession({
+    required this.userId,
+    required this.imToken,
+    this.chatToken = '',
+    this.areaCode = '+86',
+    this.phoneNumber = '',
+  });
 }

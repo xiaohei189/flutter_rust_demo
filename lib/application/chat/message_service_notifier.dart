@@ -20,6 +20,7 @@ import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart'
 import 'package:flutter_rust_demo/generated/rust/core/event/events/user.dart';
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
+import 'package:flutter_rust_demo/providers/account_profile_provider.dart';
 import 'package:flutter_rust_demo/providers/im_providers.dart';
 import 'package:flutter_rust_demo/ui/chat/providers/message_service_provider.dart';
 import 'message_event_applier.dart';
@@ -153,6 +154,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
         this,
         ref.read(imClientProvider),
         repository,
+        ref.read(accountProfileRepositoryProvider),
       );
 
   Future<UserProfile?> refreshLoginUserProfile() =>
@@ -523,8 +525,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       conversationController.loadConversations();
 
   /// 同步失败后的手动重试。
-  Future<void> retrySyncConversations() =>
-      conversationController.retrySync();
+  Future<void> retrySyncConversations() => conversationController.retrySync();
 
   Future<void> refreshConversations() =>
       conversationController.refreshConversations();

@@ -10,6 +10,8 @@ class UserProfile with _$UserProfile {
     required String faceUrl,
     required int gender,
     required String telephone,
+    @Default('') String areaCode,
+    @Default('') String phoneNumber,
     required String email,
     required String remark,
     required int globalRecvMsgOpt,

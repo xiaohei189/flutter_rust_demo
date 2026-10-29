@@ -1,4 +1,5 @@
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
+import 'package:flutter_rust_demo/data/repositories/account_profile_repository.dart';
 import 'package:flutter_rust_demo/data/services/im_client.dart';
 import 'package:flutter_rust_demo/data/services/login_storage.dart';
 import 'package:flutter_rust_demo/domain/models/user_profile.dart'
@@ -9,11 +10,17 @@ import 'message_service_notifier.dart';
 
 /// 当前登录用户资料：拉取、批量预加载与更新。
 class MessageUserProfileController {
-  MessageUserProfileController(this.service, this.imClient, this.repository);
+  MessageUserProfileController(
+    this.service,
+    this.imClient,
+    this.repository,
+    this.accountProfileRepository,
+  );
 
   final MessageServiceNotifier service;
   final ImClient imClient;
   final MessageRepository repository;
+  final AccountProfileRepository accountProfileRepository;
 
   bool get _isClientReady => imClient.isInitialized;
 
@@ -23,8 +30,17 @@ class MessageUserProfileController {
     if (!_isClientReady || state.currentUserId.isEmpty) return null;
     try {
       final list = await repository.getUsersInfo([state.currentUserId]);
-      final profile = list.isNotEmpty ? list.first : null;
+      var profile = list.isNotEmpty ? list.first : null;
       if (profile != null) {
+        final phone = await accountProfileRepository.resolveCurrentUserPhone(
+          userId: profile.userId,
+        );
+        if (phone != null) {
+          profile = profile.copyWith(
+            areaCode: phone.areaCode,
+            phoneNumber: phone.phoneNumber,
+          );
+        }
         final newUserProfiles = Map<String, UserProfile>.from(
           state.userProfiles,
         );

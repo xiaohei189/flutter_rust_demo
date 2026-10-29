@@ -51,11 +51,12 @@ class FakeAuthRepository implements AuthRepository {
   bool failSendCode = false;
   bool failLogin = false;
   bool failRegister = false;
-  AuthSession? loginSession = const AuthSession(userId: 'u1', imToken: 't1');
-  AuthSession? registerSession = const AuthSession(
-    userId: 'u2',
-    imToken: 't2',
+  AuthSession? loginSession = const AuthSession(
+    userId: 'u1',
+    imToken: 't1',
+    chatToken: 'chat-1',
   );
+  AuthSession? registerSession = const AuthSession(userId: 'u2', imToken: 't2');
   LoginCredentials? storedCredentials;
   final List<VerificationCodeUsage> sendCodeUsages = [];
   final List<Map<String, String?>> savedCredentials = [];
@@ -112,12 +113,14 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> saveCredentials({
     required String userId,
     required String imToken,
+    String chatToken = '',
     String areaCode = '+86',
     String phoneNumber = '',
   }) async {
     savedCredentials.add({
       'userId': userId,
       'imToken': imToken,
+      'chatToken': chatToken,
       'areaCode': areaCode,
       'phoneNumber': phoneNumber,
     });
@@ -199,6 +202,7 @@ void main() {
       expect(state().isLoading, isFalse);
       expect(repository.savedCredentials.single['userId'], 'u1');
       expect(repository.savedCredentials.single['imToken'], 't1');
+      expect(repository.savedCredentials.single['chatToken'], 'chat-1');
       expect(
         messageService.initializeCalls.single,
         containsPair('userId', 'u1'),
@@ -306,7 +310,7 @@ void main() {
     });
 
     test('有本地凭证时初始化 SDK 并设置当前用户', () async {
-      repository.storedCredentials = LoginCredentials(
+      repository.storedCredentials = const LoginCredentials(
         userId: 'u1',
         imToken: 't1',
         areaCode: '+86',
@@ -322,7 +326,7 @@ void main() {
     });
 
     test('logout 清除凭证与当前用户', () async {
-      repository.storedCredentials = LoginCredentials(
+      repository.storedCredentials = const LoginCredentials(
         userId: 'u1',
         imToken: 't1',
       );

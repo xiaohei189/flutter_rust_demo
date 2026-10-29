@@ -39,6 +39,7 @@ abstract class AuthRepository {
   Future<void> saveCredentials({
     required String userId,
     required String imToken,
+    String chatToken = '',
     String areaCode = '+86',
     String phoneNumber = '',
   });
@@ -80,7 +81,13 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
       platform: platform,
     );
-    return AuthSession(userId: result.userId, imToken: result.imToken);
+    return AuthSession(
+      userId: result.userId,
+      imToken: result.imToken,
+      chatToken: result.chatToken,
+      areaCode: areaCode,
+      phoneNumber: phoneNumber,
+    );
   }
 
   @override
@@ -96,7 +103,13 @@ class AuthRepositoryImpl implements AuthRepository {
       verifyCode: verifyCode,
       platform: platform,
     );
-    return AuthSession(userId: result.userId, imToken: result.imToken);
+    return AuthSession(
+      userId: result.userId,
+      imToken: result.imToken,
+      chatToken: result.chatToken,
+      areaCode: areaCode,
+      phoneNumber: phoneNumber,
+    );
   }
 
   @override
@@ -114,19 +127,27 @@ class AuthRepositoryImpl implements AuthRepository {
       verifyCode: verifyCode,
       platform: platform,
     );
-    return AuthSession(userId: result.userId, imToken: result.imToken);
+    return AuthSession(
+      userId: result.userId,
+      imToken: result.imToken,
+      chatToken: result.chatToken,
+      areaCode: areaCode,
+      phoneNumber: phoneNumber,
+    );
   }
 
   @override
   Future<void> saveCredentials({
     required String userId,
     required String imToken,
+    String chatToken = '',
     String areaCode = '+86',
     String phoneNumber = '',
   }) {
     return LoginStorage.saveCredentials(
       userId: userId,
       imToken: imToken,
+      chatToken: chatToken,
       areaCode: areaCode,
       phoneNumber: phoneNumber,
     );

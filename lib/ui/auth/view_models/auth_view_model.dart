@@ -116,6 +116,7 @@ class AuthViewModel extends Notifier<AuthState> {
       return await _completeAuth(
         userId: session.userId,
         imToken: session.imToken,
+        chatToken: session.chatToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -143,16 +144,16 @@ class AuthViewModel extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, errorText: null);
     try {
       appLog.i('[登录] 验证码登录开始');
-      final session = await _authRepository
-          .loginWithVerifyCode(
-            areaCode: areaCode,
-            phoneNumber: phoneNumber,
-            verifyCode: verifyCode,
-            platform: 5,
-          );
+      final session = await _authRepository.loginWithVerifyCode(
+        areaCode: areaCode,
+        phoneNumber: phoneNumber,
+        verifyCode: verifyCode,
+        platform: 5,
+      );
       return await _completeAuth(
         userId: session.userId,
         imToken: session.imToken,
+        chatToken: session.chatToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -193,6 +194,7 @@ class AuthViewModel extends Notifier<AuthState> {
       return await _completeAuth(
         userId: session.userId,
         imToken: session.imToken,
+        chatToken: session.chatToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
         wsUrl: wsUrl,
@@ -288,6 +290,7 @@ class AuthViewModel extends Notifier<AuthState> {
   Future<bool> _completeAuth({
     required String userId,
     required String imToken,
+    required String chatToken,
     required String areaCode,
     required String phoneNumber,
     required String wsUrl,
@@ -297,6 +300,7 @@ class AuthViewModel extends Notifier<AuthState> {
       await _authRepository.saveCredentials(
         userId: userId,
         imToken: imToken,
+        chatToken: chatToken,
         areaCode: areaCode,
         phoneNumber: phoneNumber,
       );
