@@ -181,9 +181,9 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     setState(() => _heightFactor = target);
   }
 
-  /// 面板主体（对齐飞书稿）：
-  /// ① 快捷表情行 ② 四宫格（回复/转发/创建话题/复制）
-  /// ③ 撤回/多选 ④ 标记/置顶消息/复制消息链接/翻译/搜索/删除 ⑤ 添加任务/导出到文档
+  /// 面板主体：
+  /// ① 快捷表情行 ② 回复/转发/复制
+  /// ③ 撤回/多选 ④ 标记/置顶消息/复制消息链接/翻译/网页搜索/删除
   List<Widget> _buildMenuView(BuildContext context, AppColors colors) {
     return [
       _buildReactionRow(colors),
@@ -203,8 +203,6 @@ class MessageToolPanelState extends State<MessageToolPanel> {
         const SizedBox(height: 8),
         _buildCard(_secondGroupActions()),
       ],
-      const SizedBox(height: 8),
-      _buildCard(_thirdGroupActions()),
     ];
   }
 
@@ -238,7 +236,21 @@ class MessageToolPanelState extends State<MessageToolPanel> {
   }
 
   /// 切到完整表情界面（对齐飞书稿）：只换内容，弹层高度保持不变
-  void _openEmojiView() => setState(() => _emojiOpen = true);
+  void _openEmojiView() {
+    // 菜单视图高度 = min(目标高度, 内容高度)，可能比 _heightFactor 算出的
+    // 目标高度矮；切表情界面时按当前**实际渲染高度**锁住，避免抽屉突然变高。
+    final renderedHeight = context.size?.height;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    setState(() {
+      _emojiOpen = true;
+      if (renderedHeight != null && screenHeight > 0) {
+        _heightFactor = (renderedHeight / screenHeight).clamp(
+          MessageToolPanel.minHeightFactor,
+          MessageToolPanel.maxHeightFactor,
+        );
+      }
+    });
+  }
 
   /// 分组卡片：白底圆角 + 行间细分割线
   Widget _buildCard(List<_MessageToolAction> actions) {
@@ -269,7 +281,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     );
   }
 
-  /// 四宫格：回复 / 转发 / 创建话题 / 复制（稿子里的第一组）
+  /// 一级动作：回复 / 转发 / 复制
   List<_MessageToolAction> _primaryActions() => [
     _MessageToolAction(
       icon: Icons.reply_rounded,
@@ -280,11 +292,6 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       icon: Icons.forward_rounded,
       label: '转发',
       onTap: () => _runAction(widget.actions.onForward),
-    ),
-    _MessageToolAction(
-      icon: Icons.chat_bubble_outline,
-      label: '创建话题',
-      onTap: () => _runAction((_) => _notSupported('创建话题')),
     ),
     _MessageToolAction(
       icon: Icons.copy_rounded,
@@ -320,7 +327,7 @@ class MessageToolPanelState extends State<MessageToolPanel> {
       ),
   ];
 
-  /// 标记 / 置顶消息 / 复制消息链接 / 翻译 / 飞书内搜索 / 网页搜索 / 删除
+  /// 标记 / 置顶消息 / 复制消息链接 / 翻译 / 网页搜索 / 删除
   List<_MessageToolAction> _secondGroupActions() => [
     _MessageToolAction(
       icon: Icons.flag_outlined,
@@ -346,17 +353,12 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     _MessageToolAction(
       icon: Icons.translate,
       label: '翻译',
-      onTap: () => _runAction((_) => _notSupported('翻译')),
-    ),
-    _MessageToolAction(
-      icon: Icons.search,
-      label: '飞书内搜索',
-      onTap: () => _runAction((_) => _notSupported('飞书内搜索')),
+      onTap: () => _runAction((_) => _notScheduled('翻译')),
     ),
     _MessageToolAction(
       icon: Icons.public,
       label: '网页搜索',
-      onTap: () => _runAction((_) => _notSupported('网页搜索')),
+      onTap: () => _runAction((_) => _notScheduled('网页搜索')),
     ),
     _MessageToolAction(
       icon: Icons.delete_outline_rounded,
@@ -366,25 +368,11 @@ class MessageToolPanelState extends State<MessageToolPanel> {
     ),
   ];
 
-  /// 添加任务 / 导出到文档
-  List<_MessageToolAction> _thirdGroupActions() => [
-    _MessageToolAction(
-      icon: Icons.done_all_rounded,
-      label: '添加任务',
-      onTap: () => _runAction((_) => _notSupported('添加任务')),
-    ),
-    _MessageToolAction(
-      icon: Icons.description_outlined,
-      label: '导出到文档',
-      onTap: () => _runAction((_) => _notSupported('导出到文档')),
-    ),
-  ];
-
-  /// 未开放功能占位提示（与设置页一致）
-  void _notSupported(String label) {
+  /// 依赖第三方服务、尚未排期的功能提示。
+  void _notScheduled(String label) {
     ScaffoldMessenger.of(widget.rootContext).showSnackBar(
       SnackBar(
-        content: Text('「$label」功能开发中，敬请期待'),
+        content: Text('「$label」依赖第三方服务，暂未排期'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(milliseconds: 1600),
       ),

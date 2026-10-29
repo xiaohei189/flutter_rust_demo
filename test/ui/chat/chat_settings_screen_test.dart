@@ -86,6 +86,10 @@ void main() {
     await tester.pumpWidget(host());
     await tester.pump();
     expect(tester.takeException(), isNull);
+    expect(find.text('置顶消息'), findsOneWidget);
+    expect(find.text('任务'), findsNothing, reason: '无协议支撑的占位已摘除');
+    expect(find.text('云文档'), findsNothing);
+    expect(find.text('添加成员'), findsNothing);
   });
 
   testWidgets('点「置顶消息」打开本会话置顶列表（空态）', (tester) async {

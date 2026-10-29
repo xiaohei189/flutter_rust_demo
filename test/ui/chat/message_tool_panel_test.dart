@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,25 +91,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('首次弹出约占屏幕一半，拖把手往上才能加高', (tester) async {
+  testWidgets('首次弹出取半屏与内容高度的较小值，拖把手在两档之间变化', (tester) async {
     await openPanel(tester);
 
+    final screen = screenHeight(tester);
+    final maxContent =
+        tester
+            .getSize(find.byKey(const ValueKey('message_tool_sheet_header')))
+            .height +
+        tester
+            .getSize(find.byKey(const ValueKey('message_tool_menu_content')))
+            .height;
     final initial = panelHeight(tester);
-    expect(initial, closeTo(screenHeight(tester) * 0.5, 1));
+    expect(initial, closeTo(math.min(screen * 0.5, maxContent), 1));
 
-    // 往上拖 → 接近全屏（0.95）
+    // 往上拖 → 最多到全屏 0.95，内容更矮时就停在内容高度
     await dragHandle(tester, -400);
-    final expanded = panelHeight(tester);
-    expect(expanded, greaterThan(initial));
-    expect(expanded, closeTo(screenHeight(tester) * 0.95, 1));
+    expect(
+      panelHeight(tester),
+      closeTo(math.min(screen * 0.95, maxContent), 1),
+    );
 
-    // 往下拖一点 → 吸附回首屏一半
+    // 往下拖一点 → 吸附回首屏一半（内容更矮时同样以内容为准）
     await dragHandle(tester, 250);
-    expect(panelHeight(tester), closeTo(screenHeight(tester) * 0.5, 1));
+    expect(panelHeight(tester), closeTo(math.min(screen * 0.5, maxContent), 1));
 
     // 一直往下拖 → 落到最小档（小窗）
     await dragHandle(tester, 400);
-    expect(panelHeight(tester), closeTo(screenHeight(tester) * 0.3, 1));
+    expect(panelHeight(tester), closeTo(math.min(screen * 0.3, maxContent), 1));
   });
 
   testWidgets('「⋯」切到完整表情界面，弹层高度保持原样', (tester) async {
@@ -179,5 +190,18 @@ void main() {
 
     expect(find.text('置顶消息'), findsOneWidget);
     expect(find.text('Pin'), findsNothing, reason: 'Pin 占位已删除，语义并入「置顶消息」');
+  });
+
+  testWidgets('工具面板摘除无协议占位，第三方功能标注未排期', (tester) async {
+    await openPanel(tester);
+
+    for (final label in ['创建话题', '飞书内搜索', '添加任务', '导出到文档']) {
+      expect(find.text(label), findsNothing, reason: '$label 占位应已摘除');
+    }
+
+    await tester.ensureVisible(find.text('翻译'));
+    await tester.tap(find.text('翻译'));
+    await tester.pumpAndSettle();
+    expect(find.text('「翻译」依赖第三方服务，暂未排期'), findsOneWidget);
   });
 }

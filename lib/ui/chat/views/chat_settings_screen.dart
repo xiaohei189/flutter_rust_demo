@@ -88,13 +88,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => AppRouter.goBack(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share, size: 20),
-            tooltip: '分享',
-            onPressed: () => _notSupported('分享'),
-          ),
-        ],
       ),
       body: ListView(
         children: [
@@ -112,7 +105,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
             ],
           ),
 
-          // ---- 应用（对齐飞书稿：任务 / Pin；群聊另有群公告、群成员日历）----
+          // ---- 应用：只保留有真实链路的入口（群公告 / 置顶消息） ----
           const SizedBox(height: 8),
           SettingsGroup(
             children: [
@@ -129,28 +122,13 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                         onTap: _editGroupAnnouncement,
                       ),
                     _buildAppIcon(
-                      Icons.task_alt,
-                      '任务',
-                      AppIconColors.purple,
-                      onTap: () => _notSupported('任务'),
-                    ),
-                    _buildAppIcon(
                       Icons.push_pin_outlined,
                       '置顶消息',
                       AppIconColors.green,
                       onTap: _showPinnedMessages,
                     ),
-                    if (isGroup)
-                      _buildAppIcon(
-                        Icons.calendar_month_outlined,
-                        '群成员日历',
-                        AppIconColors.orange,
-                        onTap: () => _notSupported('群成员日历'),
-                      )
-                    else ...[
-                      const Spacer(),
-                      const Spacer(),
-                    ],
+                    const Spacer(),
+                    const Spacer(),
                   ],
                 ),
               ),
@@ -180,12 +158,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                       onTap: _showMessageSearch,
                     ),
                     _buildAppIcon(
-                      Icons.description_outlined,
-                      '云文档',
-                      context.appColors.textPrimary,
-                      onTap: () => _notSupported('云文档'),
-                    ),
-                    _buildAppIcon(
                       Icons.folder_outlined,
                       '文件',
                       context.appColors.textPrimary,
@@ -208,29 +180,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SettingsGroup(
-            children: [
-              SettingsNavRow(
-                title: '添加标签页',
-                onTap: () => _notSupported('添加标签页'),
-              ),
-            ],
-          ),
-
-          // ---- 群机器人（仅群聊，占位） ----
-          if (isGroup) ...[
-            const SizedBox(height: 8),
-            SettingsGroup(
-              children: [
-                SettingsNavRow(
-                  title: '群机器人',
-                  onTap: () => _notSupported('群机器人'),
-                ),
-              ],
-            ),
-          ],
-
           // ---- 开关组（对齐飞书稿：免打扰 / 置顶会话 / 标签 / 添加到标记） ----
           const SizedBox(height: 8),
           SettingsGroup(
@@ -246,13 +195,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 value: settings.muteNotification,
                 onChanged: _setMuteNotification,
               ),
-              if (isGroup) ...[
-                SettingsSwitchRow(
-                  title: '@所有人的消息不提示',
-                  value: false,
-                  onChanged: (_) => _notSupported('@所有人的消息不提示'),
-                ),
-              ],
               SettingsSwitchRow(
                 title: l10n?.pinChat ?? '置顶会话',
                 value: settings.pinChat,
@@ -268,14 +210,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 value: settings.privateChat,
                 onChanged: _setPrivateChat,
               ),
-            ],
-          ),
-
-          // ---- 翻译助手（对齐飞书稿，占位） ----
-          const SizedBox(height: 8),
-          SettingsGroup(
-            children: [
-              SettingsNavRow(title: '翻译助手', onTap: () => _notSupported('翻译助手')),
             ],
           ),
 
@@ -316,26 +250,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
 
           // ---- 会话 ID ----
           const SizedBox(height: 16),
-          // ---- 举报（对齐飞书稿，占位） ----
-          if (isGroup)
-            Center(
-              child: TextButton.icon(
-                onPressed: () => _notSupported('举报'),
-                icon: Icon(
-                  Icons.error_outline,
-                  size: 16,
-                  color: context.appColors.textSecondary,
-                ),
-                label: Text(
-                  '举报',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: context.appColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 8),
           Center(
             child: GestureDetector(
               onTap: () {
@@ -379,7 +293,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
     );
   }
 
-  /// 单聊顶部：头像 + 名字（名字在头像下方）+「+」添加成员（对齐飞书稿）
+  /// 单聊顶部：头像 + 名字（名字在头像下方）
   List<Widget> _buildSingleHeader() {
     final conversation = _viewModel.conversation;
     return [
@@ -403,8 +317,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                 }
               },
             ),
-            const SizedBox(width: 24),
-            _buildAddMemberTile(onTap: () => _notSupported('添加成员')),
           ],
         ),
       ),
@@ -444,23 +356,6 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   /// 设置页顶部的「+」块：添加成员 / 邀请
-  Widget _buildAddMemberTile({required VoidCallback onTap}) {
-    final colors = context.appColors;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: colors.divider),
-        ),
-        child: Icon(Icons.add, size: 26, color: colors.textSecondary),
-      ),
-    );
-  }
-
   List<Widget> _buildGroupHeader() {
     final conversation = _viewModel.conversation;
 
