@@ -134,15 +134,15 @@
   - 顺带收敛：工具面板其余占位统一为 1.6s「「xxx」功能开发中，敬请期待」；语音/表情/附件面板高度常量收敛到 `lib/ui/chat/widgets/composer/composer_panel_metrics.dart`。
   - 顺带收敛：删除工具面板里与「置顶消息」语义重复的「Pin」占位（`test/ui/chat/message_tool_panel_test.dart` 补断言）；会话设置页的「Pin」入口改为本会话置顶列表，见 P1-7。
   - 测试：`test/ui/chat/message_link_test.dart`（生成/解析/非法链接），`test/ui/chat/message_tool_panel_test.dart` 补剪贴板断言。
-  - 待办（真机验证）：设备被其他场景占用，未执行；恢复后跑
-    `adb shell am start -a android.intent.action.VIEW -d "flutterrustdemo:///chat/<conversationId>?message=<clientMsgId>"`，
-    预期直接进入该群聊并定位到消息。
+  - 真机验证（2026-10-29，Mi 10 Pro，Android）：`adb shell am start -a android.intent.action.VIEW -d "flutterrustdemo:///chat/si_2006526104_2772835353?message=<clientMsgId>"` 被投递到运行中的实例并进入该会话；目标消息已在视图内时定位成功，不在视图内时给出提示。
+  - 真机发现并修复：首次进入会话时列表尚未完成首帧构建，目标消息的 `GlobalKey` 还没注册，`scrollToMessage` 会误报「不在当前视图内」。`_locateMessageById` 改为最多重试 3 次（每次 150ms）后再提示，深链/置顶/搜索定位共用该修复。
 - [x] P1-7 会话设置页「置顶消息」入口（2026-10-26）：把原来的「Pin」占位换成「置顶消息」，打开本会话置顶列表。
   - 列表按**置顶时间倒序**（`MessageExtrasStore.pinnedAt`），展示预览/发送人/时间，可逐条「取消置顶」，空态引导「长按消息选择「置顶消息」即可置顶」；更早历史里的置顶会提示条数并支持「加载更多」。
   - 「标记消息」与「置顶消息」收敛到同一个弹层组件 `MessageExtrasSheet`（`lib/ui/chat/widgets/message_extras_sheet.dart`），`MarkedMessagesSheet` / `PinnedMessagesSheet` 只做语义包装，避免两份重复代码。
   - 点选某条后：弹层关闭 → 设置页带 `clientMsgId` 出栈（`AppRouter.pushChatSettings` 等待返回值）→ 会话页 `_locateMessageById` 定位；不在当前视图时仍提示「该消息不在当前视图内，向上滚动可继续查找」。
   - 顺带修复：设置页「搜索会话内容」点搜索结果原来只是关掉弹层（无反应），现在同样回到会话定位该消息。
   - 测试：`test/ui/chat/pinned_messages_sheet_test.dart`（置顶过滤 / 倒序 / 点选回调 / 取消置顶回空态 / 空态文案）；`marked_messages_sheet_test.dart` 沿用原用例验证重构未回归。
+  - 真机验证（2026-10-29）：长按消息 → 工具面板（「置顶消息」「复制消息链接」都在，无重复 Pin）→ 置顶后顶部出现置顶栏；设置 → 置顶消息 → 显示「1 条 / 摸摸弄 / 我 10月19日 23:30」→ 点条目返回会话并触发定位。
 - [x] P1-8 定时消息（本地，2026-10-26）：附件面板「定时消息」不再占位，取当前输入框内容选发送时间，落本地待发送列表。
   - 时间选择：10 分钟后 / 30 分钟后 / 1 小时后 / 自定义（日期 + 时间）；选早于当前时间会拒绝。
   - 弹层里同时列出本会话已定时消息（含时间与内容预览），可逐条「取消定时」。
@@ -151,7 +151,7 @@
   - 边界：应用进程不在时不会触发（不做系统闹钟/后台任务）；关闭/离线期间到点的消息在下次启动登录后补发，弹层里已明确提示。
   - 顺带：`Conversation.sessionType` 扩展从 `lib/ui/core/extensions` 挪到 `lib/domain/models/conversation_extensions.dart`（原先 application 层反向依赖 ui），发送目标推导抽到 `lib/domain/models/chat_send_target.dart` 供会话页与派发器共用。
   - 测试：`test/ui/chat/scheduled_message_test.dart`（排序/过滤/到期/取消/重启恢复/弹层选时与取消）、`scheduled_message_runner_test.dart`（到点发一次、不重复、已落盘）、`chat_input_panels_test.dart`（附件面板只保留真实入口）。
-  - 待办（真机验证）：设备被占用，未执行；恢复后验证「输入文字 → + → 定时消息 → 10 分钟后」后弹层关闭、输入框清空，到点消息出现在会话里。
+  - 真机验证（2026-10-29，23:47 建、23:57 到点）：「输入 schedule-test → + → 定时消息 → 10 分钟后」后弹层关闭、输入框清空、`scheduled_messages_v1` 落库；到点后消息自动出现在会话里并带已发送勾，runner 端到端生效。附件面板真机确认只剩「文件/位置/个人名片/定时消息」四项。
 
 ### 4.3 P2：需新方案（单独立项）
 

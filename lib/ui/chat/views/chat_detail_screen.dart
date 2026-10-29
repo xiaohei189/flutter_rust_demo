@@ -544,9 +544,21 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
 
   /// 按 clientMsgId 定位消息；不在当前视图内时给出提示（不静默失败）。
   void _locateMessageById(String clientMsgId) {
-    final found =
-        _messageListKey.currentState?.scrollToMessage(clientMsgId) ?? false;
-    if (!found) _showError('该消息不在当前视图内，向上滚动可继续查找');
+    unawaited(_locateMessageByIdWithRetry(clientMsgId));
+  }
+
+  /// 定位重试：首次进页/从设置页返回时列表可能还没完成首帧构建，
+  /// 目标消息的 key 尚未注册，直接判定会误报「不在当前视图内」。
+  Future<void> _locateMessageByIdWithRetry(String clientMsgId) async {
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (!mounted) return;
+      final found =
+          _messageListKey.currentState?.scrollToMessage(clientMsgId) ?? false;
+      if (found) return;
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    }
+    if (!mounted) return;
+    _showError('该消息不在当前视图内，向上滚动可继续查找');
   }
 
   void _locateMessage(MessageSearchResult log) {
