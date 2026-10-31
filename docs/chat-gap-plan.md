@@ -158,6 +158,7 @@
   - 数据链路复用本地库已有的 `messageTypes` 条件，**未改 Rust/FFI**；Dart 侧从 Repository → Service → UseCase → ViewModel → Sheet 逐层透传。
   - 测试：`test/ui/chat/message_search_filter_test.dart`（类型白名单/链接匹配/文件过滤）、`test/application/chat/search_messages_use_case_test.dart` 补「空关键字+类型」用例。
   - 真机验证（MCP driver）：设置 →「文件」打开后 hint 为「搜索文件」、文件 chip 选中；切「图片视频」列出 6+ 条图片消息（含发送人与时间）；切「链接」正常显示空态，无报错。
+  - UI 重做（2026-10-31，真机反馈默认 FilterChip 风格不搭）：标题栏改为「搜索 · 本会话 · 关闭」，搜索框统一圆角 + `colors.background` 填充，类型切换改用与消息列表同款的 `SegmentedToggle`（全部/图片视频/文件/链接），空态改为图标 + 主副文案，结果行与「标记/置顶消息」弹层一致；按键盘剩余高度收敛面板高度。
 
 ### 4.3 P2：需新方案（单独立项）
 
