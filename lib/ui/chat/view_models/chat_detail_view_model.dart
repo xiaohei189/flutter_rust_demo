@@ -416,8 +416,16 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     messageService: _messageService,
   );
 
-  Future<List<MessageSearchResult>> searchLocalMessages(String keyword) =>
-      _searchUseCase.search(arg, keyword);
+  Future<List<MessageSearchResult>> searchLocalMessages(
+    String keyword, {
+    List<int> messageTypes = const [],
+    int count = 50,
+  }) => _searchUseCase.search(
+    arg,
+    keyword,
+    messageTypes: messageTypes,
+    count: count,
+  );
 
   void reset() {
     state = const ChatDetailState();

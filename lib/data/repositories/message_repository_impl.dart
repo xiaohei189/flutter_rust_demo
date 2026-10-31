@@ -6,14 +6,14 @@ import '../../domain/models/chat_message.dart' show MessageHistoryPage;
 import '../../domain/models/chat_session_type.dart' show ChatSessionType;
 import '../../domain/models/message_search_result.dart'
     show MessageSearchResult;
-import '../../domain/models/user_profile.dart'
-    show UserProfile;
+import '../../domain/models/user_profile.dart' show UserProfile;
 import '../mappers/conversation_mapper.dart';
 import '../mappers/message_mapper.dart';
 import '../mappers/user_profile_mapper.dart';
 import '../../generated/rust/sdk/client.dart';
 import '../../generated/rust/domain/constant/enums.dart' show SessionType;
-import '../../generated/rust/api/ffi/message_advanced.dart' as ffi_message_advanced;
+import '../../generated/rust/api/ffi/message_advanced.dart'
+    as ffi_message_advanced;
 import '../../generated/rust/api/ffi/client.dart';
 
 import 'message_repository.dart';
@@ -88,13 +88,14 @@ class MessageRepositoryImpl
     required String keyword,
     int offset = 0,
     int count = 50,
+    List<int> messageTypes = const [],
   }) async {
     final raw = await client.searchLocalMessages(
       req: SearchMessagesReq(
         conversationId: conversationId,
         keyword: keyword.trim(),
         senderUserIds: const [],
-        messageTypes: Int32List(0),
+        messageTypes: Int32List.fromList(messageTypes),
         startTime: 0,
         endTime: 0,
         offset: offset,
@@ -107,9 +108,7 @@ class MessageRepositoryImpl
   @override
   Future<List<Conversation>> getConversations() async {
     final conversations = await client.getConversations();
-    return conversations
-        .map(ConversationMapper.fromLocalConversation)
-        .toList();
+    return conversations.map(ConversationMapper.fromLocalConversation).toList();
   }
 
   @override

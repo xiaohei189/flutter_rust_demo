@@ -17,8 +17,9 @@ class _FakeService extends MessageServiceNotifier {
     required String keyword,
     int offset = 0,
     int count = 50,
+    List<int> messageTypes = const [],
   }) async {
-    calls.add('$conversationId:$keyword');
+    calls.add('$conversationId:$keyword:${messageTypes.join(",")}');
     return [
       MessageSearchResult(
         conversationId: conversationId,
@@ -60,7 +61,15 @@ void main() {
     final service = _FakeService();
     final useCase = SearchMessagesUseCase(messageService: service);
     final result = await useCase.search('c1', 'hello');
-    expect(service.calls, ['c1:hello']);
+    expect(service.calls, ['c1:hello:']);
+    expect(result, hasLength(1));
+  });
+
+  test('空关键字但带类型过滤时同样委托（类型浏览）', () async {
+    final service = _FakeService();
+    final useCase = SearchMessagesUseCase(messageService: service);
+    final result = await useCase.search('c1', '', messageTypes: [102, 104]);
+    expect(service.calls, ['c1::102,104']);
     expect(result, hasLength(1));
   });
 }

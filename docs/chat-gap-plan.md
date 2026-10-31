@@ -44,7 +44,7 @@
 | 自定义分组 | 已补齐（P0-3）：支持重命名与拖动排序，仍只存本地 | `lib/ui/chat/providers/conversation_folder_provider.dart` |
 | 会话搜索 | 已补齐（2026-10-25）：新增「会话」分类（按会话名/群 ID/用户 ID 匹配本地会话，展示最近消息预览）与「最近搜索」（去重、最多 10 条、SharedPreferences 持久化、可清空） | `lib/ui/shared/views/search_screen.dart`、`lib/ui/shared/view_models/search_view_model.dart` |
 | 全部已读 | 已补齐（P0-2）：工作台应用宫格入口 + 二次确认 | `lib/ui/workbench/views/workbench_screen.dart` |
-| 设置页占位项 | 已收敛（2026-10-30）：分享、举报、翻译助手、添加标签页、群机器人、@所有人消息不提示、单聊「+ 添加成员」、任务/群成员日历/云文档从设置页摘除；保留「群公告」「置顶消息」「消息/文件/图片视频/链接搜索」「消息免打扰/置顶会话/标签/阅后即焚」「群二维码」等有真实链路的入口 | `lib/ui/chat/views/chat_settings_screen.dart` |
+| 设置页占位项 | 已收敛（2026-10-30）：分享、举报、翻译助手、添加标签页、群机器人、@所有人消息不提示、单聊「+ 添加成员」、任务/群成员日历/云文档从设置页摘除；「消息/文件/图片视频/链接」已全部接通类型搜索（2026-10-31），另有群公告、置顶消息、免打扰/置顶会话/标签/阅后即焚、群二维码等真实入口 | `lib/ui/chat/views/chat_settings_screen.dart` |
 
 ### 3.2 消息详情
 
@@ -152,6 +152,12 @@
   - 顺带：`Conversation.sessionType` 扩展从 `lib/ui/core/extensions` 挪到 `lib/domain/models/conversation_extensions.dart`（原先 application 层反向依赖 ui），发送目标推导抽到 `lib/domain/models/chat_send_target.dart` 供会话页与派发器共用。
   - 测试：`test/ui/chat/scheduled_message_test.dart`（排序/过滤/到期/取消/重启恢复/弹层选时与取消）、`scheduled_message_runner_test.dart`（到点发一次、不重复、已落盘）、`chat_input_panels_test.dart`（附件面板只保留真实入口）。
   - 真机验证（2026-10-29，23:47 建、23:57 到点）：「输入 schedule-test → + → 定时消息 → 10 分钟后」后弹层关闭、输入框清空、`scheduled_messages_v1` 落库；到点后消息自动出现在会话里并带已发送勾，runner 端到端生效。附件面板真机确认只剩「文件/位置/个人名片/定时消息」四项。
+- [x] P1-9 会话内按消息类型搜索（2026-10-31）：设置页「文件 / 图片视频 / 链接」不再是占位，打开搜索面板时按类型过滤。
+  - 图片视频下推 `content_type IN (102,104)`，文件下推 `(105)`；链接没有独立类型，先取文本类（101/106/113/114/115/117/118），再按内容是否含 `http(s)://` 二次过滤。
+  - 搜索面板加「全部 / 图片视频 / 文件 / 链接」chips，纯类型浏览允许空关键字（各取最近 200 条），普通关键字搜索仍走原逻辑（50 条）。
+  - 数据链路复用本地库已有的 `messageTypes` 条件，**未改 Rust/FFI**；Dart 侧从 Repository → Service → UseCase → ViewModel → Sheet 逐层透传。
+  - 测试：`test/ui/chat/message_search_filter_test.dart`（类型白名单/链接匹配/文件过滤）、`test/application/chat/search_messages_use_case_test.dart` 补「空关键字+类型」用例。
+  - 真机验证（MCP driver）：设置 →「文件」打开后 hint 为「搜索文件」、文件 chip 选中；切「图片视频」列出 6+ 条图片消息（含发送人与时间）；切「链接」正常显示空态，无报错。
 
 ### 4.3 P2：需新方案（单独立项）
 

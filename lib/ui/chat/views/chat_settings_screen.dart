@@ -18,6 +18,7 @@ import '../widgets/settings_components.dart';
 import '../widgets/settings_dialogs.dart';
 import '../widgets/chat_message_search_sheet.dart';
 import '../widgets/message_extras_sheet.dart';
+import '../widgets/message_search_filter.dart';
 import 'conversation_folder_manage_screen.dart';
 
 /// 聊天设置页面：单聊 / 群聊 分别展示不同内容
@@ -161,19 +162,25 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
                       Icons.folder_outlined,
                       '文件',
                       context.appColors.textPrimary,
-                      onTap: () => _notSupported('文件'),
+                      onTap: () => _showMessageSearch(
+                        filter: ChatMessageSearchFilter.files,
+                      ),
                     ),
                     _buildAppIcon(
                       Icons.image_outlined,
                       '图片/视频',
                       context.appColors.textPrimary,
-                      onTap: () => _notSupported('图片/视频'),
+                      onTap: () => _showMessageSearch(
+                        filter: ChatMessageSearchFilter.media,
+                      ),
                     ),
                     _buildAppIcon(
                       Icons.link,
                       '链接',
                       context.appColors.textPrimary,
-                      onTap: () => _notSupported('链接'),
+                      onTap: () => _showMessageSearch(
+                        filter: ChatMessageSearchFilter.links,
+                      ),
                     ),
                   ],
                 ),
@@ -562,7 +569,9 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
   }
 
   /// 打开会话内消息搜索（搜索会话内容 → 消息）
-  void _showMessageSearch() {
+  void _showMessageSearch({
+    ChatMessageSearchFilter filter = ChatMessageSearchFilter.all,
+  }) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -574,6 +583,7 @@ class _ChatSettingsScreenState extends ConsumerState<ChatSettingsScreen> {
       ),
       builder: (_) => ChatMessageSearchSheet(
         conversationId: widget.conversationId,
+        initialFilter: filter,
         onMessageTap: (result) => _returnToChatWithMessage(result.clientMsgId),
       ),
     );

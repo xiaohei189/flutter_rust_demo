@@ -238,11 +238,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String keyword,
     int offset = 0,
     int count = 50,
+    List<int> messageTypes = const [],
   }) => sendController.searchLocalMessages(
     conversationId: conversationId,
     keyword: keyword,
     offset: offset,
     count: count,
+    messageTypes: messageTypes,
   );
 
   /// 转发消息（按 clientMsgId 原样转发，对齐 Go SDK ForwardMessage）

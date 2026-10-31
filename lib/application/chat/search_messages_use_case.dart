@@ -3,7 +3,7 @@ import 'package:flutter_rust_demo/domain/models/message_search_result.dart'
 
 import 'message_service_notifier.dart';
 
-/// 会话内本地消息搜索：空关键字短路 + 委托 MessageService。
+/// 会话内本地消息搜索：空关键字（且无类型过滤）短路 + 委托 MessageService。
 class SearchMessagesUseCase {
   SearchMessagesUseCase({required this.messageService});
 
@@ -11,12 +11,18 @@ class SearchMessagesUseCase {
 
   Future<List<MessageSearchResult>> search(
     String conversationId,
-    String keyword,
-  ) {
-    if (keyword.trim().isEmpty) return Future.value(const []);
+    String keyword, {
+    List<int> messageTypes = const [],
+    int count = 50,
+  }) {
+    if (keyword.trim().isEmpty && messageTypes.isEmpty) {
+      return Future.value(const []);
+    }
     return messageService.searchLocalMessages(
       conversationId: conversationId,
       keyword: keyword,
+      messageTypes: messageTypes,
+      count: count,
     );
   }
 }

@@ -10,6 +10,7 @@ import '../../../../domain/models/message_search_result.dart'
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_avatar.dart';
 import '../providers/chat_detail_provider.dart';
+import 'message_search_filter.dart';
 
 /// 会话内消息搜索底部面板
 class ChatMessageSearchSheet extends ConsumerStatefulWidget {
@@ -17,10 +18,12 @@ class ChatMessageSearchSheet extends ConsumerStatefulWidget {
     super.key,
     required this.conversationId,
     this.onMessageTap,
+    this.initialFilter = ChatMessageSearchFilter.all,
   });
 
   final String conversationId;
   final ValueChanged<MessageSearchResult>? onMessageTap;
+  final ChatMessageSearchFilter initialFilter;
 
   @override
   ConsumerState<ChatMessageSearchSheet> createState() =>
@@ -34,6 +37,7 @@ class _ChatMessageSearchSheetState
   List<MessageSearchResult> _results = const [];
   bool _searching = false;
   String? _error;
+  late ChatMessageSearchFilter _filter = widget.initialFilter;
 
   @override
   void dispose() {
@@ -44,7 +48,7 @@ class _ChatMessageSearchSheetState
 
   void _onChanged(String keyword) {
     _debounce?.cancel();
-    if (keyword.trim().isEmpty) {
+    if (keyword.trim().isEmpty && _filter == ChatMessageSearchFilter.all) {
       setState(() {
         _results = const [];
         _error = null;
@@ -52,20 +56,46 @@ class _ChatMessageSearchSheetState
       });
       return;
     }
+    setState(() {});
     _debounce = Timer(const Duration(milliseconds: 300), () {
       _search(keyword);
     });
   }
 
+  void _onFilterChanged(ChatMessageSearchFilter filter) {
+    if (filter == _filter) return;
+    _debounce?.cancel();
+    setState(() => _filter = filter);
+    _search(_controller.text);
+  }
+
   Future<void> _search(String keyword) async {
+    final trimmed = keyword.trim();
+    if (trimmed.isEmpty && _filter == ChatMessageSearchFilter.all) {
+      if (!mounted) return;
+      setState(() {
+        _results = const [];
+        _error = null;
+        _searching = false;
+      });
+      return;
+    }
     setState(() {
       _searching = true;
       _error = null;
     });
     try {
-      final results = await ref
+      final raw = await ref
           .read(chatDetailViewModelProvider(widget.conversationId).notifier)
-          .searchLocalMessages(keyword);
+          .searchLocalMessages(
+            trimmed,
+            messageTypes: _filter.messageTypes,
+            // 纯类型浏览页多取一些，避免只看到最近的几条
+            count: _filter == ChatMessageSearchFilter.all ? 50 : 200,
+          );
+      final results = _filter.needsLocalMatch
+          ? raw.where(_filter.matches).toList(growable: false)
+          : raw;
       if (!mounted) return;
       setState(() => _results = results);
     } catch (e) {
@@ -93,7 +123,7 @@ class _ChatMessageSearchSheetState
                 autofocus: true,
                 onChanged: _onChanged,
                 decoration: InputDecoration(
-                  hintText: '搜索聊天记录',
+                  hintText: _filter.hint,
                   prefixIcon: const Icon(Icons.search, size: 20),
                   suffixIcon: _controller.text.isNotEmpty
                       ? IconButton(
@@ -111,6 +141,25 @@ class _ChatMessageSearchSheetState
                     borderSide: BorderSide.none,
                   ),
                 ),
+              ),
+            ),
+            SizedBox(
+              height: 44,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final filter in ChatMessageSearchFilter.values)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FilterChip(
+                        label: Text(filter.label),
+                        selected: filter == _filter,
+                        showCheckmark: false,
+                        onSelected: (_) => _onFilterChanged(filter),
+                      ),
+                    ),
+                ],
               ),
             ),
             const Divider(height: 1),
@@ -135,7 +184,10 @@ class _ChatMessageSearchSheetState
       );
     }
     if (_results.isEmpty) {
-      return const Center(child: Text('没有找到相关消息'));
+      final idle =
+          _filter == ChatMessageSearchFilter.all &&
+          _controller.text.trim().isEmpty;
+      return Center(child: Text(idle ? '输入关键字搜索聊天记录' : '没有找到相关消息'));
     }
     return ListView.separated(
       itemCount: _results.length,

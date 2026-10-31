@@ -30,14 +30,17 @@ class MessageSendController {
     required String keyword,
     int offset = 0,
     int count = 50,
+    List<int> messageTypes = const [],
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
-    if (keyword.trim().isEmpty) return const [];
+    // 纯类型浏览（如「文件」页）允许空关键字；普通搜索仍需关键字。
+    if (keyword.trim().isEmpty && messageTypes.isEmpty) return const [];
     return repository.searchLocalMessages(
       conversationId: conversationId,
       keyword: keyword,
       offset: offset,
       count: count,
+      messageTypes: messageTypes,
     );
   }
 

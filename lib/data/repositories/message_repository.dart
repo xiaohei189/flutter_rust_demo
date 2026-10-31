@@ -105,6 +105,7 @@ abstract class MessageRepository {
     required String keyword,
     int offset = 0,
     int count = 50,
+    List<int> messageTypes = const [],
   });
 
   Future<void> forwardMessage({
