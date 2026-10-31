@@ -31,10 +31,13 @@ class MessageSendController {
     int offset = 0,
     int count = 50,
     List<int> messageTypes = const [],
+    bool allowEmptyKeyword = false,
   }) async {
     if (!_isClientReady) throw StateError('客户端未初始化');
-    // 纯类型浏览（如「文件」页）允许空关键字；普通搜索仍需关键字。
-    if (keyword.trim().isEmpty && messageTypes.isEmpty) return const [];
+    // 纯类型浏览 / 会话内浏览允许空关键字；全局搜索等调用方保持默认拒绝。
+    if (keyword.trim().isEmpty && messageTypes.isEmpty && !allowEmptyKeyword) {
+      return const [];
+    }
     return repository.searchLocalMessages(
       conversationId: conversationId,
       keyword: keyword,

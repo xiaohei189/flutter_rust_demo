@@ -14,8 +14,9 @@ class SearchMessagesUseCase {
     String keyword, {
     List<int> messageTypes = const [],
     int count = 50,
+    bool allowEmptyKeyword = false,
   }) {
-    if (keyword.trim().isEmpty && messageTypes.isEmpty) {
+    if (keyword.trim().isEmpty && messageTypes.isEmpty && !allowEmptyKeyword) {
       return Future.value(const []);
     }
     return messageService.searchLocalMessages(
@@ -23,6 +24,7 @@ class SearchMessagesUseCase {
       keyword: keyword,
       messageTypes: messageTypes,
       count: count,
+      allowEmptyKeyword: allowEmptyKeyword,
     );
   }
 }

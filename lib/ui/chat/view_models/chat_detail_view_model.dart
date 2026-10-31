@@ -420,11 +420,13 @@ class ChatDetailViewModel extends FamilyNotifier<ChatDetailState, String>
     String keyword, {
     List<int> messageTypes = const [],
     int count = 50,
+    bool allowEmptyKeyword = false,
   }) => _searchUseCase.search(
     arg,
     keyword,
     messageTypes: messageTypes,
     count: count,
+    allowEmptyKeyword: allowEmptyKeyword,
   );
 
   void reset() {

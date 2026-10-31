@@ -45,6 +45,17 @@ class _ChatMessageSearchSheetState
   late ChatMessageSearchFilter _filter = widget.initialFilter;
 
   @override
+  void initState() {
+    super.initState();
+    // 打开即展示当前分类的最近消息（「全部」/图片/文件/链接都一样），
+    // 输入关键字后再收窄结果。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _search(_controller.text);
+    });
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
@@ -53,12 +64,9 @@ class _ChatMessageSearchSheetState
 
   void _onChanged(String keyword) {
     _debounce?.cancel();
-    if (keyword.trim().isEmpty && _filter == ChatMessageSearchFilter.all) {
-      setState(() {
-        _results = const [];
-        _error = null;
-        _searching = false;
-      });
+    if (keyword.trim().isEmpty) {
+      // 清空关键字＝回到该分类的浏览列表（含「全部」）。
+      _search('');
       return;
     }
     setState(() {});
@@ -76,15 +84,6 @@ class _ChatMessageSearchSheetState
 
   Future<void> _search(String keyword) async {
     final trimmed = keyword.trim();
-    if (trimmed.isEmpty && _filter == ChatMessageSearchFilter.all) {
-      if (!mounted) return;
-      setState(() {
-        _results = const [];
-        _error = null;
-        _searching = false;
-      });
-      return;
-    }
     setState(() {
       _searching = true;
       _error = null;
@@ -96,7 +95,11 @@ class _ChatMessageSearchSheetState
             trimmed,
             messageTypes: _filter.messageTypes,
             // 纯类型浏览页多取一些，避免只看到最近的几条
-            count: _filter == ChatMessageSearchFilter.all ? 50 : 200,
+            count: _filter == ChatMessageSearchFilter.all
+                ? (trimmed.isEmpty ? 100 : 50)
+                : 200,
+            // 「全部」+ 空关键字时浏览最近消息；输入关键字后按内容搜索。
+            allowEmptyKeyword: true,
           );
       final results = _filter.needsLocalMatch
           ? raw.where(_filter.matches).toList(growable: false)
@@ -278,7 +281,7 @@ class _ChatMessageSearchSheetState
   }
 
   Widget _buildEmpty(AppColors colors) {
-    final idle =
+    final emptyConversation =
         _filter == ChatMessageSearchFilter.all &&
         _controller.text.trim().isEmpty;
     final icon = switch (_filter) {
@@ -298,12 +301,12 @@ class _ChatMessageSearchSheetState
           ),
           const SizedBox(height: 12),
           Text(
-            idle ? '输入关键字搜索聊天记录' : '没有找到相关消息',
+            emptyConversation ? '本会话还没有消息' : '没有找到相关消息',
             style: TextStyle(fontSize: 15, color: colors.textSecondary),
           ),
           const SizedBox(height: 6),
           Text(
-            idle ? '可按图片视频、文件、链接筛选' : '换个关键字或筛选条件再试试',
+            emptyConversation ? '发送第一条消息后就能在这里看到' : '换个关键字或筛选条件再试试',
             style: TextStyle(
               fontSize: 12,
               color: colors.textSecondary.withValues(alpha: 0.8),

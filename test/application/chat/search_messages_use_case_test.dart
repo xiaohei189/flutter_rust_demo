@@ -18,8 +18,11 @@ class _FakeService extends MessageServiceNotifier {
     int offset = 0,
     int count = 50,
     List<int> messageTypes = const [],
+    bool allowEmptyKeyword = false,
   }) async {
-    calls.add('$conversationId:$keyword:${messageTypes.join(",")}');
+    calls.add(
+      '$conversationId:$keyword:${messageTypes.join(",")}:$allowEmptyKeyword',
+    );
     return [
       MessageSearchResult(
         conversationId: conversationId,
@@ -61,7 +64,7 @@ void main() {
     final service = _FakeService();
     final useCase = SearchMessagesUseCase(messageService: service);
     final result = await useCase.search('c1', 'hello');
-    expect(service.calls, ['c1:hello:']);
+    expect(service.calls, ['c1:hello::false']);
     expect(result, hasLength(1));
   });
 
@@ -69,7 +72,15 @@ void main() {
     final service = _FakeService();
     final useCase = SearchMessagesUseCase(messageService: service);
     final result = await useCase.search('c1', '', messageTypes: [102, 104]);
-    expect(service.calls, ['c1::102,104']);
+    expect(service.calls, ['c1::102,104:false']);
+    expect(result, hasLength(1));
+  });
+
+  test('允许空关键字时浏览最近消息（全部）', () async {
+    final service = _FakeService();
+    final useCase = SearchMessagesUseCase(messageService: service);
+    final result = await useCase.search('c1', '', allowEmptyKeyword: true);
+    expect(service.calls, ['c1:::true']);
     expect(result, hasLength(1));
   });
 }
