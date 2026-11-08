@@ -61,6 +61,7 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) async {
     if (shouldFail) throw Exception('更新失败');
     if (groupName != null) groupNameUpdates.add(groupName);

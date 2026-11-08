@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
@@ -6,6 +7,9 @@ import 'package:flutter_rust_demo/domain/models/chat_session_type.dart'
     show ChatSessionType;
 import 'package:flutter_rust_demo/domain/models/message_search_result.dart'
     show MessageSearchResult;
+import 'package:flutter_rust_demo/domain/models/topic_links.dart'
+    show buildTopicLink;
+import 'package:flutter_rust_demo/domain/models/topic_notification.dart';
 import 'package:flutter_rust_demo/data/repositories/message_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_demo/domain/models/user_profile.dart'
@@ -17,6 +21,8 @@ import 'package:flutter_rust_demo/generated/rust/core/event/events/conversation.
 import 'package:flutter_rust_demo/generated/rust/core/event/events/friend.dart';
 import 'package:flutter_rust_demo/generated/rust/core/event/events/group.dart';
 import 'package:flutter_rust_demo/generated/rust/core/event/events/message.dart';
+import 'package:flutter_rust_demo/generated/rust/domain/model/message.dart'
+    show MessageInfo;
 import 'package:flutter_rust_demo/generated/rust/core/event/events/user.dart';
 import 'package:flutter_rust_demo/core/utils/app_logger.dart';
 import 'package:flutter_rust_demo/providers/online_status_provider.dart';
@@ -33,6 +39,8 @@ import 'message_service_conversation_controller.dart';
 import 'message_send_controller.dart';
 import 'message_send_pipeline.dart';
 import 'message_service_social_controller.dart';
+import '../topics/topic_notification_controller.dart';
+import 'topic_event_revision_provider.dart';
 
 /// MessageService 的 Notifier
 class MessageServiceNotifier extends Notifier<MessageServiceState> {
@@ -191,11 +199,143 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
+    String topicId = '',
   }) => sendPipeline.sendText(
     conversationId: conversationId,
     sourceId: _sourceId(recvId, groupId),
     sessionType: sessionType,
     text: text,
+    topicId: topicId,
+  );
+
+  Future<PendingSend> sendTopicRootText({
+    required String groupId,
+    required String text,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootText(
+    conversationId: conversationId,
+    groupId: groupId,
+    text: text,
+  );
+
+  Future<PendingSend> sendTopicRootMarkdown({
+    required String groupId,
+    required String text,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootMarkdown(
+    conversationId: conversationId,
+    groupId: groupId,
+    text: text,
+  );
+
+  Future<PendingSend> sendTopicRootAtText({
+    required String groupId,
+    required String text,
+    required List<String> atUserIds,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootAtText(
+    conversationId: conversationId,
+    groupId: groupId,
+    text: text,
+    atUserIds: atUserIds,
+  );
+
+  Future<PendingSend> sendTopicRootImage({
+    required String groupId,
+    required String filePath,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootImage(
+    conversationId: conversationId,
+    groupId: groupId,
+    filePath: filePath,
+  );
+
+  Future<PendingSend> sendTopicRootImageFromUrl({
+    required String groupId,
+    required String sourceUrl,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootImageFromUrl(
+    conversationId: conversationId,
+    groupId: groupId,
+    sourceUrl: sourceUrl,
+  );
+
+  Future<PendingSend> sendTopicRootVideo({
+    required String groupId,
+    required String videoPath,
+    required String snapshotPath,
+    required int duration,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootVideo(
+    conversationId: conversationId,
+    groupId: groupId,
+    videoPath: videoPath,
+    snapshotPath: snapshotPath,
+    duration: duration,
+  );
+
+  Future<PendingSend> sendTopicRootSound({
+    required String groupId,
+    required String filePath,
+    required int duration,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootSound(
+    conversationId: conversationId,
+    groupId: groupId,
+    filePath: filePath,
+    duration: duration,
+  );
+
+  Future<PendingSend> sendTopicRootFile({
+    required String groupId,
+    required String filePath,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootFile(
+    conversationId: conversationId,
+    groupId: groupId,
+    filePath: filePath,
+  );
+
+  Future<PendingSend> sendTopicRootLocation({
+    required String groupId,
+    required String description,
+    required double latitude,
+    required double longitude,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootLocation(
+    conversationId: conversationId,
+    groupId: groupId,
+    description: description,
+    latitude: latitude,
+    longitude: longitude,
+  );
+
+  Future<PendingSend> sendTopicRootCard({
+    required String groupId,
+    required String userId,
+    required String nickname,
+    required String faceUrl,
+    required String ex,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootCard(
+    conversationId: conversationId,
+    groupId: groupId,
+    userId: userId,
+    nickname: nickname,
+    faceUrl: faceUrl,
+    ex: ex,
+  );
+
+  Future<PendingSend> sendTopicRootQuote({
+    required String groupId,
+    required String text,
+    required ChatMessage quoted,
+    required String conversationId,
+  }) => sendPipeline.sendTopicRootQuote(
+    conversationId: conversationId,
+    groupId: groupId,
+    text: text,
+    quoted: quoted,
   );
 
   /// 会话目标 ID：群聊取 groupId，单聊取 recvId（与 SDK sourceId 语义一致）
@@ -209,11 +349,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
+    String topicId = '',
   }) => sendPipeline.sendMarkdown(
     conversationId: conversationId,
     sourceId: _sourceId(recvId, groupId),
     sessionType: sessionType,
     text: text,
+    topicId: topicId,
   );
 
   /// 发送 @ 提及消息
@@ -224,12 +366,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required String conversationId,
     String groupId = '',
+    String topicId = '',
   }) => sendPipeline.sendAtText(
     conversationId: conversationId,
     sourceId: _sourceId(recvId, groupId),
     sessionType: sessionType,
     text: text,
     atUserIds: atUserIds,
+    topicId: topicId,
   );
 
   /// 搜索当前会话的本地消息
@@ -266,11 +410,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendImage(
     conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送 URL 图片（如 GIF，内容已上传，不走 OSS）
@@ -279,11 +425,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendImageFromUrl(
     conversationId: conversationId,
     sourceUrl: sourceUrl,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送视频消息
@@ -294,6 +442,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required int duration,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendVideo(
     conversationId: conversationId,
     videoPath: videoPath,
@@ -301,6 +450,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     sourceId: sourceId,
     sessionType: sessionType,
     duration: duration,
+    topicId: topicId,
   );
 
   /// 发送语音消息
@@ -310,12 +460,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required int duration,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendSound(
     conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
     duration: duration,
+    topicId: topicId,
   );
 
   /// 发送文件消息
@@ -324,11 +476,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendFile(
     conversationId: conversationId,
     filePath: filePath,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送位置消息
@@ -339,6 +493,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendLocation(
     conversationId: conversationId,
     description: description,
@@ -346,6 +501,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     longitude: longitude,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送表情消息
@@ -355,12 +511,14 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendFace(
     conversationId: conversationId,
     index: index,
     data: data,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送名片消息
@@ -372,6 +530,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required String sourceId,
     required ChatSessionType sessionType,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendCard(
     conversationId: conversationId,
     userId: userId,
@@ -380,6 +539,7 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     ex: ex,
     sourceId: sourceId,
     sessionType: sessionType,
+    topicId: topicId,
   );
 
   /// 发送引用消息
@@ -389,12 +549,32 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     required ChatSessionType sessionType,
     required ChatMessage quoted,
     required String conversationId,
+    String topicId = '',
   }) => sendPipeline.sendQuote(
     conversationId: conversationId,
     text: text,
     sourceId: sourceId,
     sessionType: sessionType,
     quoted: quoted,
+    topicId: topicId,
+  );
+
+  Future<PendingSend> sendCustomMessage({
+    required String data,
+    required String extension,
+    required String description,
+    required String sourceId,
+    required ChatSessionType sessionType,
+    required String conversationId,
+    String topicId = '',
+  }) => sendPipeline.sendCustom(
+    conversationId: conversationId,
+    sourceId: sourceId,
+    sessionType: sessionType,
+    data: data,
+    extension: extension,
+    description: description,
+    topicId: topicId,
   );
 
   /// 发送正在输入状态
@@ -464,13 +644,13 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
     appLog.i('[MsgSvc] messageEvent: ${event.runtimeType}');
     event.when(
       newMessage: (conversationId, message) {
-        eventApplier.appendIncomingMessage(conversationId, message);
+        _appendIncoming(conversationId, message);
       },
       offlineNewMessage: (conversationId, message) {
-        eventApplier.appendIncomingMessage(conversationId, message);
+        _appendIncoming(conversationId, message);
       },
       onlineOnlyMessage: (conversationId, message) {
-        eventApplier.appendIncomingMessage(conversationId, message);
+        _appendIncoming(conversationId, message);
       },
       revoked:
           (
@@ -503,6 +683,196 @@ class MessageServiceNotifier extends Notifier<MessageServiceState> {
       uploadProgress: (clientMsgId, progress, totalSize, uploadedSize) =>
           eventApplier.applyUploadProgress(clientMsgId, progress),
     );
+  }
+
+  void _appendIncoming(String conversationId, MessageInfo message) {
+    if (message.contentType == 120 &&
+        message.content.contains('openim.topic.event')) {
+      final event = _topicEventData(message.content);
+      final action = event?['action']?.toString() ?? '';
+      final targetUserID = event?['targetUserID']?.toString() ?? '';
+      final currentUserID = currentState.currentUserId;
+      if (targetUserID.isNotEmpty &&
+          currentUserID.isNotEmpty &&
+          targetUserID != currentUserID) {
+        return;
+      }
+      _recordTopicControlNotification(event);
+      if (action == 'topic_read_changed' || action == 'group_topics_read') {
+        ref.read(topicReadRevisionProvider.notifier).state++;
+      } else {
+        ref.read(topicEventRevisionProvider.notifier).state++;
+      }
+      return;
+    }
+    _recordTopicMessageNotification(message);
+    eventApplier.appendIncomingMessage(conversationId, message);
+  }
+
+  void _recordTopicMessageNotification(MessageInfo message) {
+    if (message.topicId.isEmpty) return;
+    final currentUserID = currentState.currentUserId;
+    if (message.sendId == currentUserID) return;
+    final isRoot = message.topicId == message.clientMsgId;
+    final isMention = _isTopicMention(message, currentUserID);
+    final sender = message.senderNickname.isEmpty
+        ? '群成员'
+        : message.senderNickname;
+    final body = _messageNotificationText(message);
+    final type = isMention
+        ? TopicNotificationType.mention
+        : isRoot
+        ? TopicNotificationType.newTopic
+        : TopicNotificationType.reply;
+    unawaited(
+      ref
+          .read(topicNotificationsProvider.notifier)
+          .record(
+            TopicNotification(
+              id:
+                  '${message.topicId}:${message.clientMsgId}:'
+                  '$currentUserID:${type.wireValue}',
+              groupId: message.groupId,
+              topicId: message.topicId,
+              actorId: message.sendId,
+              actorName: sender,
+              title: isMention
+                  ? '$sender 在话题中提到了你'
+                  : isRoot
+                  ? '$sender 发布了话题'
+                  : '$sender 回复了话题',
+              body: body.isEmpty
+                  ? isRoot
+                        ? '有新话题，打开查看详情'
+                        : '话题有新回复，打开查看详情'
+                  : body,
+              type: type,
+              createdAt: message.sendTime > 0
+                  ? message.sendTime
+                  : DateTime.now().millisecondsSinceEpoch,
+            ),
+          ),
+    );
+  }
+
+  bool _isTopicMention(MessageInfo message, String currentUserId) {
+    if (currentUserId.isEmpty) return false;
+    try {
+      final content = jsonDecode(message.content);
+      if (content is! Map) return false;
+      final atUserList = content['atUserList'];
+      if (atUserList is! List) return false;
+      return atUserList.any(
+        (value) =>
+            value.toString() == currentUserId || value.toString() == 'AtAllTag',
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _messageNotificationText(MessageInfo message) {
+    try {
+      final content = jsonDecode(message.content);
+      if (content is Map) {
+        final text =
+            content['content']?.toString() ?? content['text']?.toString() ?? '';
+        return text.trim();
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  void _recordTopicControlNotification(Map<String, dynamic>? event) {
+    if (event == null) return;
+    final action = event['action']?.toString() ?? '';
+    final groupID = event['groupID']?.toString() ?? '';
+    final topicID = event['topicID']?.toString() ?? '';
+    if (groupID.isEmpty || topicID.isEmpty) return;
+    final occurredAt =
+        (event['occurredAt'] as num?)?.toInt() ??
+        DateTime.now().millisecondsSinceEpoch;
+    final actorID = event['operatorID']?.toString() ?? '';
+    final title = switch (action) {
+      'topic_task_assigned' => '你收到一个话题任务',
+      'topic_task_changed' => '话题任务状态已更新',
+      'topic_state_changed' => '话题状态已更新',
+      'topic_root_edited' => '话题内容已编辑',
+      _ => '',
+    };
+    if (title.isEmpty) return;
+    final type = switch (action) {
+      'topic_task_assigned' => TopicNotificationType.taskAssigned,
+      'topic_task_changed' => TopicNotificationType.taskChanged,
+      'topic_state_changed' => TopicNotificationType.stateChanged,
+      'topic_root_edited' => TopicNotificationType.rootEdited,
+      _ => TopicNotificationType.stateChanged,
+    };
+    final currentUserID = currentState.currentUserId;
+    final targetUserID = event['targetUserID']?.toString() ?? '';
+    if (targetUserID.isNotEmpty &&
+        currentUserID.isNotEmpty &&
+        targetUserID != currentUserID) {
+      return;
+    }
+    final recipientIDs = event['recipientIDs'];
+    if (recipientIDs is List &&
+        recipientIDs.isNotEmpty &&
+        currentUserID.isNotEmpty &&
+        !recipientIDs.any((value) => value.toString() == currentUserID)) {
+      return;
+    }
+    final version = (event['version'] as num?)?.toInt() ?? occurredAt;
+    final taskID = event['taskID']?.toString() ?? '';
+    final notificationID = switch (action) {
+      'topic_task_assigned' || 'topic_task_changed' =>
+        '$topicID:$taskID:$version:$currentUserID:${type.wireValue}',
+      _ => '$topicID:$action:$version:$currentUserID:${type.wireValue}',
+    };
+    final body = event['title']?.toString().trim().isNotEmpty == true
+        ? event['title'].toString()
+        : '打开话题查看最新状态';
+    unawaited(
+      ref
+          .read(topicNotificationsProvider.notifier)
+          .record(
+            TopicNotification(
+              id: notificationID,
+              groupId: groupID,
+              topicId: topicID,
+              actorId: actorID,
+              actorName: '',
+              title: title,
+              body: body,
+              type: type,
+              createdAt: occurredAt,
+            ),
+          ),
+    );
+    if (ref.read(appLifecycleServiceProvider).isBackground.value) {
+      unawaited(
+        ref
+            .read(localNotificationServiceProvider)
+            .showMessageNotification(
+              title: title,
+              body: body,
+              payload: buildTopicLink(groupId: groupID, topicId: topicID),
+            ),
+      );
+    }
+  }
+
+  Map<String, dynamic>? _topicEventData(String content) {
+    try {
+      final outer = jsonDecode(content);
+      if (outer is! Map) return null;
+      final raw = outer['data'];
+      if (raw is! String) return null;
+      final event = jsonDecode(raw);
+      return event is Map ? Map<String, dynamic>.from(event) : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// 重发一条发送失败的消息（沿用原 clientMsgId，不新增气泡）。

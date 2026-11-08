@@ -15,6 +15,13 @@ analyzer:
     - lib/generated/rust/**
     # Cargokit 独立子包，有自身 pubspec，根目录分析会缺依赖
     - rust_builder/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   language:
     strict-casts: true
     strict-raw-types: true

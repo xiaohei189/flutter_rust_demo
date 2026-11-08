@@ -31,6 +31,7 @@ abstract class GroupService {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   });
 
   Future<void> setGroupInfo(
@@ -40,6 +41,7 @@ abstract class GroupService {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   });
 
   Future<void> dismissGroup(

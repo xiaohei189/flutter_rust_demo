@@ -91,7 +91,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1795987318;
+  int get rustContentHash => -1414579700;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -161,6 +161,7 @@ abstract class RustLibApi extends BaseApi {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   });
 
   Future<void> crateApiFfiClientOpenImBridgeClientDeleteConversation({
@@ -665,6 +666,7 @@ abstract class RustLibApi extends BaseApi {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   });
 
   Future<void> crateApiFfiClientOpenImBridgeClientSetGroupMemberInfo({
@@ -1091,6 +1093,11 @@ abstract class RustLibApi extends BaseApi {
     required String conversationId,
     required String clientMsgId,
     required String localEx,
+  });
+
+  Future<MsgStruct> crateApiFfiMessageBuilderSetMessageTopicId({
+    required MsgStruct message,
+    required String topicId,
   });
 
   Future<void> crateApiFfiGlobalUnInitSdk();
@@ -1542,6 +1549,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -1554,6 +1562,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_String(groupName, serializer);
           sse_encode_i_32(groupType, serializer);
           sse_encode_list_String(memberIds, serializer);
+          sse_encode_opt_String(ex, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -1566,7 +1575,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiFfiClientOpenImBridgeClientCreateGroupConstMeta,
-        argValues: [that, groupName, groupType, memberIds],
+        argValues: [that, groupName, groupType, memberIds, ex],
         apiImpl: this,
       ),
     );
@@ -1575,7 +1584,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiFfiClientOpenImBridgeClientCreateGroupConstMeta =>
       const TaskConstMeta(
         debugName: "OpenImBridgeClient_create_group",
-        argNames: ["that", "groupName", "groupType", "memberIds"],
+        argNames: ["that", "groupName", "groupType", "memberIds", "ex"],
       );
 
   @override
@@ -5155,6 +5164,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -5169,6 +5179,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_opt_String(faceUrl, serializer);
           sse_encode_opt_String(introduction, serializer);
           sse_encode_opt_String(notification, serializer);
+          sse_encode_opt_String(ex, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -5188,6 +5199,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           faceUrl,
           introduction,
           notification,
+          ex,
         ],
         apiImpl: this,
       ),
@@ -5204,6 +5216,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           "faceUrl",
           "introduction",
           "notification",
+          "ex",
         ],
       );
 
@@ -8258,6 +8271,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<MsgStruct> crateApiFfiMessageBuilderSetMessageTopicId({
+    required MsgStruct message,
+    required String topicId,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_msg_struct(message, serializer);
+          sse_encode_String(topicId, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 179,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_msg_struct,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiFfiMessageBuilderSetMessageTopicIdConstMeta,
+        argValues: [message, topicId],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiFfiMessageBuilderSetMessageTopicIdConstMeta =>
+      const TaskConstMeta(
+        debugName: "set_message_topic_id",
+        argNames: ["message", "topicId"],
+      );
+
+  @override
   Future<void> crateApiFfiGlobalUnInitSdk() {
     return handler.executeNormal(
       NormalTask(
@@ -8266,7 +8314,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 179,
+            funcId: 180,
             port: port_,
           );
         },
@@ -8298,7 +8346,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 180,
+            funcId: 181,
             port: port_,
           );
         },
@@ -8333,7 +8381,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 181,
+            funcId: 182,
             port: port_,
           );
         },
@@ -8371,7 +8419,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 182,
+              funcId: 183,
               port: port_,
             );
           },
@@ -9106,8 +9154,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   GroupInfo dco_decode_group_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return GroupInfo(
       groupId: dco_decode_String(arr[0]),
       groupName: dco_decode_String(arr[1]),
@@ -9118,6 +9166,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createTime: dco_decode_CastedPrimitive_i_64(arr[6]),
       memberCount: dco_decode_u_32(arr[7]),
       status: dco_decode_i_32(arr[8]),
+      ex: dco_decode_String(arr[9]),
     );
   }
 
@@ -9303,8 +9352,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   LocalChatLog dco_decode_local_chat_log(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 21)
-      throw Exception('unexpected arr length: expect 21 but see ${arr.length}');
+    if (arr.length != 22)
+      throw Exception('unexpected arr length: expect 22 but see ${arr.length}');
     return LocalChatLog(
       conversationId: dco_decode_String(arr[0]),
       clientMsgId: dco_decode_String(arr[1]),
@@ -9325,8 +9374,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createTime: dco_decode_CastedPrimitive_i_64(arr[16]),
       attachedInfo: dco_decode_String(arr[17]),
       ex: dco_decode_String(arr[18]),
-      localEx: dco_decode_String(arr[19]),
-      groupId: dco_decode_String(arr[20]),
+      topicId: dco_decode_String(arr[19]),
+      localEx: dco_decode_String(arr[20]),
+      groupId: dco_decode_String(arr[21]),
     );
   }
 
@@ -9512,8 +9562,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MessageInfo dco_decode_message_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 19)
-      throw Exception('unexpected arr length: expect 19 but see ${arr.length}');
+    if (arr.length != 20)
+      throw Exception('unexpected arr length: expect 20 but see ${arr.length}');
     return MessageInfo(
       clientMsgId: dco_decode_String(arr[0]),
       serverMsgId: dco_decode_String(arr[1]),
@@ -9534,6 +9584,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isRead: dco_decode_bool(arr[16]),
       attachedInfo: dco_decode_String(arr[17]),
       ex: dco_decode_String(arr[18]),
+      topicId: dco_decode_String(arr[19]),
     );
   }
 
@@ -9555,8 +9606,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MsgStruct dco_decode_msg_struct(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 35)
-      throw Exception('unexpected arr length: expect 35 but see ${arr.length}');
+    if (arr.length != 36)
+      throw Exception('unexpected arr length: expect 36 but see ${arr.length}');
     return MsgStruct(
       clientMsgId: dco_decode_String(arr[0]),
       serverMsgId: dco_decode_String(arr[1]),
@@ -9577,22 +9628,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       status: dco_decode_i_32(arr[16]),
       attachedInfo: dco_decode_String(arr[17]),
       ex: dco_decode_String(arr[18]),
-      localEx: dco_decode_String(arr[19]),
-      textElem: dco_decode_opt_box_autoadd_text_elem(arr[20]),
-      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[21]),
-      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[22]),
-      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[23]),
-      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[24]),
-      atTextElem: dco_decode_opt_box_autoadd_at_text_elem(arr[25]),
-      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[26]),
-      mergeElem: dco_decode_opt_box_autoadd_merge_elem(arr[27]),
-      cardElem: dco_decode_opt_box_autoadd_card_elem(arr[28]),
-      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[29]),
-      faceElem: dco_decode_opt_box_autoadd_face_elem(arr[30]),
-      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[31]),
-      advancedTextElem: dco_decode_opt_box_autoadd_advanced_text_elem(arr[32]),
-      markdownTextElem: dco_decode_opt_box_autoadd_markdown_text_elem(arr[33]),
-      offlinePush: dco_decode_opt_box_autoadd_offline_push_info(arr[34]),
+      topicId: dco_decode_String(arr[19]),
+      localEx: dco_decode_String(arr[20]),
+      textElem: dco_decode_opt_box_autoadd_text_elem(arr[21]),
+      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[22]),
+      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[23]),
+      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[24]),
+      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[25]),
+      atTextElem: dco_decode_opt_box_autoadd_at_text_elem(arr[26]),
+      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[27]),
+      mergeElem: dco_decode_opt_box_autoadd_merge_elem(arr[28]),
+      cardElem: dco_decode_opt_box_autoadd_card_elem(arr[29]),
+      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[30]),
+      faceElem: dco_decode_opt_box_autoadd_face_elem(arr[31]),
+      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[32]),
+      advancedTextElem: dco_decode_opt_box_autoadd_advanced_text_elem(arr[33]),
+      markdownTextElem: dco_decode_opt_box_autoadd_markdown_text_elem(arr[34]),
+      offlinePush: dco_decode_opt_box_autoadd_offline_push_info(arr[35]),
     );
   }
 
@@ -10783,6 +10835,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_createTime = sse_decode_CastedPrimitive_i_64(deserializer);
     var var_memberCount = sse_decode_u_32(deserializer);
     var var_status = sse_decode_i_32(deserializer);
+    var var_ex = sse_decode_String(deserializer);
     return GroupInfo(
       groupId: var_groupId,
       groupName: var_groupName,
@@ -10793,6 +10846,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createTime: var_createTime,
       memberCount: var_memberCount,
       status: var_status,
+      ex: var_ex,
     );
   }
 
@@ -11148,6 +11202,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_createTime = sse_decode_CastedPrimitive_i_64(deserializer);
     var var_attachedInfo = sse_decode_String(deserializer);
     var var_ex = sse_decode_String(deserializer);
+    var var_topicId = sse_decode_String(deserializer);
     var var_localEx = sse_decode_String(deserializer);
     var var_groupId = sse_decode_String(deserializer);
     return LocalChatLog(
@@ -11170,6 +11225,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createTime: var_createTime,
       attachedInfo: var_attachedInfo,
       ex: var_ex,
+      topicId: var_topicId,
       localEx: var_localEx,
       groupId: var_groupId,
     );
@@ -11439,6 +11495,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_isRead = sse_decode_bool(deserializer);
     var var_attachedInfo = sse_decode_String(deserializer);
     var var_ex = sse_decode_String(deserializer);
+    var var_topicId = sse_decode_String(deserializer);
     return MessageInfo(
       clientMsgId: var_clientMsgId,
       serverMsgId: var_serverMsgId,
@@ -11459,6 +11516,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       isRead: var_isRead,
       attachedInfo: var_attachedInfo,
       ex: var_ex,
+      topicId: var_topicId,
     );
   }
 
@@ -11499,6 +11557,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_status = sse_decode_i_32(deserializer);
     var var_attachedInfo = sse_decode_String(deserializer);
     var var_ex = sse_decode_String(deserializer);
+    var var_topicId = sse_decode_String(deserializer);
     var var_localEx = sse_decode_String(deserializer);
     var var_textElem = sse_decode_opt_box_autoadd_text_elem(deserializer);
     var var_pictureElem = sse_decode_opt_box_autoadd_picture_elem(deserializer);
@@ -11543,6 +11602,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       status: var_status,
       attachedInfo: var_attachedInfo,
       ex: var_ex,
+      topicId: var_topicId,
       localEx: var_localEx,
       textElem: var_textElem,
       pictureElem: var_pictureElem,
@@ -12958,6 +13018,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_CastedPrimitive_i_64(self.createTime, serializer);
     sse_encode_u_32(self.memberCount, serializer);
     sse_encode_i_32(self.status, serializer);
+    sse_encode_String(self.ex, serializer);
   }
 
   @protected
@@ -13275,6 +13336,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_CastedPrimitive_i_64(self.createTime, serializer);
     sse_encode_String(self.attachedInfo, serializer);
     sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.topicId, serializer);
     sse_encode_String(self.localEx, serializer);
     sse_encode_String(self.groupId, serializer);
   }
@@ -13478,6 +13540,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.isRead, serializer);
     sse_encode_String(self.attachedInfo, serializer);
     sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.topicId, serializer);
   }
 
   @protected
@@ -13514,6 +13577,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.status, serializer);
     sse_encode_String(self.attachedInfo, serializer);
     sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.topicId, serializer);
     sse_encode_String(self.localEx, serializer);
     sse_encode_opt_box_autoadd_text_elem(self.textElem, serializer);
     sse_encode_opt_box_autoadd_picture_elem(self.pictureElem, serializer);
@@ -14102,11 +14166,13 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) => RustLib.instance.api.crateApiFfiClientOpenImBridgeClientCreateGroup(
     that: this,
     groupName: groupName,
     groupType: groupType,
     memberIds: memberIds,
+    ex: ex,
   );
 
   Future<void> deleteConversation({required String conversationId}) => RustLib
@@ -14803,6 +14869,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) => RustLib.instance.api.crateApiFfiClientOpenImBridgeClientSetGroupInfo(
     that: this,
     groupId: groupId,
@@ -14810,6 +14877,7 @@ class OpenImBridgeClientImpl extends RustOpaque implements OpenImBridgeClient {
     faceUrl: faceUrl,
     introduction: introduction,
     notification: notification,
+    ex: ex,
   );
 
   /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）

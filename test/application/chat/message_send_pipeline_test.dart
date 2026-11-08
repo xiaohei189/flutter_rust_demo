@@ -42,10 +42,9 @@ class _FakeService extends MessageServiceNotifier {
       );
 
   /// 模拟 SDK 的 `MessageEvent.sendFailed`
-  void emitSendFailed(String conversationId, String clientMsgId) =>
-      updateState(
-        MessageServiceReducer.applySendFailed(currentState, clientMsgId),
-      );
+  void emitSendFailed(String conversationId, String clientMsgId) => updateState(
+    MessageServiceReducer.applySendFailed(currentState, clientMsgId),
+  );
 
   @override
   void applySendStatus(String conversationId, String clientMsgId, int status) =>
@@ -57,7 +56,6 @@ class _FakeService extends MessageServiceNotifier {
           status,
         ),
       );
-
 }
 
 /// 本地构造返回 clientMsgId=m1 的文本消息；发送结果由测试用 Completer 控制。
@@ -69,6 +67,16 @@ class _FakeRepo implements MessageRepository {
   Future<MsgStruct> createTextMessage({required String text}) async {
     calls.add('create:$text');
     return _localMessage(text: text);
+  }
+
+  @override
+  Future<MsgStruct> createCustomMessage({
+    required String data,
+    required String extension,
+    required String description,
+  }) async {
+    calls.add('createCustom:$extension:$description:$data');
+    return _localMessage(text: description);
   }
 
   @override
@@ -117,6 +125,7 @@ MsgStruct _localMessage({required String text, String clientMsgId = 'm1'}) =>
       status: MessageSendStatus.sending.value,
       attachedInfo: '',
       ex: '',
+      topicId: '',
       localEx: '',
     );
 
@@ -205,6 +214,28 @@ void main() {
     expect(list.single.status, MessageSendStatus.sendSuccess.value);
     expect(list.single.seq, 7);
     expect(list.single.serverMsgId, 'srv-1');
+  });
+
+  test('自定义话题分享卡片走统一发送管线', () async {
+    final repo = _FakeRepo();
+    final service = _FakeService();
+    final pending = await _pipeline(service, repo).sendCustom(
+      conversationId: 'c1',
+      sourceId: 'u2',
+      sessionType: ChatSessionType.singleChat,
+      data: '{"type":"openim_topic_card"}',
+      extension: 'openim_topic',
+      description: '项目群: 发布计划',
+    );
+
+    expect(
+      repo.calls,
+      [
+        'createCustom:openim_topic:项目群: 发布计划:{"type":"openim_topic_card"}',
+        'send:m1:u2:singleChat',
+      ],
+    );
+    expect(pending.message.clientMsgId, 'm1');
   });
 
   test('发送失败：SDK sendFailed 事件标红，重发沿用同一 clientMsgId', () async {

@@ -2,14 +2,14 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::sdk::client::OpenIMClient;
-use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::message::MessageEvent;
-use crate::infra::file::upload::ProgressCallback;
-use crate::infra::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalChatLog;
 use crate::domain::model::msg_struct::MsgStruct;
+use crate::infra::file::upload::ProgressCallback;
+use crate::infra::http::message::{DeleteMessagesReq, MarkMessagesAsReadReq, RevokeMessageReq};
+use crate::sdk::client::OpenIMClient;
+use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult, SearchMessagesReq};
 use async_trait::async_trait;
 use openim_protocol::sdkws::{OfflinePushInfo, UserSendMsgResp};
 use std::sync::Arc;
@@ -21,7 +21,13 @@ pub trait MessageApi: Send + Sync {
     async fn send_msg_online_only(&self, mut msg: MsgStruct, source_id: &str) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_text_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_markdown_message(&self, text: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
-    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
+    async fn send_advanced_text_message(
+        &self,
+        text: &str,
+        entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_image_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_image_message_with_progress(&self, file_path: &str, source_id: &str, session_type: i32, progress: &Arc<dyn Fn(u8) + Send + Sync>) -> std::result::Result<MsgStruct, SdkError>;
     async fn send_file_message(&self, file_path: &str, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError>;
@@ -148,7 +154,13 @@ impl MessageApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(source_id = %source_id, session_type = %session_type))]
-    async fn send_advanced_text_message(&self, text: &str, entities: Vec<crate::domain::model::msg_struct::MessageEntity>, source_id: &str, session_type: i32) -> std::result::Result<MsgStruct, SdkError> {
+    async fn send_advanced_text_message(
+        &self,
+        text: &str,
+        entities: Vec<crate::domain::model::msg_struct::MessageEntity>,
+        source_id: &str,
+        session_type: i32,
+    ) -> std::result::Result<MsgStruct, SdkError> {
         self.sender.send_advanced_text_message(text, entities, source_id, session_type).await
     }
 

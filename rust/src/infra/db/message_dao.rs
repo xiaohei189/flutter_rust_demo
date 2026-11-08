@@ -17,7 +17,7 @@ impl MessageDao {
         debug!("[DB] batch_insert: count={}", logs.len());
         for log in logs {
             sqlx::query(
-                "INSERT OR IGNORE INTO local_chat_logs (conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id, sender_nick_name, sender_face_url, session_type, msg_from, content_type, content, is_read, status, seq, send_time, create_time, attached_info, ex, local_ex, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT OR IGNORE INTO local_chat_logs (conversation_id, client_msg_id, server_msg_id, send_id, recv_id, sender_platform_id, sender_nick_name, sender_face_url, session_type, msg_from, content_type, content, is_read, status, seq, send_time, create_time, attached_info, ex, topic_id, local_ex, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(&log.conversation_id)
             .bind(&log.client_msg_id)
@@ -38,6 +38,7 @@ impl MessageDao {
             .bind(log.create_time)
             .bind(&log.attached_info)
             .bind(&log.ex)
+            .bind(&log.topic_id)
             .bind(&log.local_ex)
             .bind(&log.group_id)
             .execute(&self.pool)
@@ -794,6 +795,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: "topic_1".into(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -801,6 +803,8 @@ mod tests {
         dao.batch_insert(&[msg]).await.unwrap();
         let seq = dao.get_max_seq("conv_1").await.unwrap();
         assert_eq!(seq, 1);
+        let messages = dao.get_by_conversation("conv_1", 0, 100).await.unwrap();
+        assert_eq!(messages[0].topic_id, "topic_1");
     }
 
     #[tokio::test]
@@ -828,6 +832,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -863,6 +868,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };

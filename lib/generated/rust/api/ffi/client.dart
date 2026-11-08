@@ -62,6 +62,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   });
 
   Future<void> deleteConversation({required String conversationId});
@@ -422,6 +423,7 @@ abstract class OpenImBridgeClient implements RustOpaqueInterface {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   });
 
   /// 设置群成员信息（对齐 Go SDK `SetGroupMemberInfo`）

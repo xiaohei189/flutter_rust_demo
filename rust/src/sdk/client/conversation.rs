@@ -2,11 +2,11 @@
 //!
 //! 由 OpenIMClient 实现，pi/ 层依赖组合特征 SdkApi。
 
-use crate::sdk::client::OpenIMClient;
 use crate::domain::constant::SessionType;
+use crate::sdk::client::OpenIMClient;
 
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::ConversationEvent;
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalConversation;
 use async_trait::async_trait;
 

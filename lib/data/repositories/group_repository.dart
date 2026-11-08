@@ -30,6 +30,7 @@ abstract class GroupRepository {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   });
 
   Future<List<GroupMember>> loadMembers(String groupId);
@@ -62,6 +63,7 @@ abstract class GroupRepository {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   });
   Future<void> quitGroup(String groupId);
   Future<void> joinGroup(String groupId, String reqMsg);
@@ -147,6 +149,7 @@ class GroupRepositoryImpl implements GroupRepository {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) async {
     final client = _requireClient();
     final group = await _groupService.createGroup(
@@ -154,6 +157,7 @@ class GroupRepositoryImpl implements GroupRepository {
       groupName: groupName,
       groupType: groupType,
       memberIds: memberIds,
+      ex: ex,
     );
     return mapGroup(group);
   }
@@ -272,6 +276,7 @@ class GroupRepositoryImpl implements GroupRepository {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) async {
     final client = _requireClient();
     await _groupService.setGroupInfo(
@@ -281,6 +286,7 @@ class GroupRepositoryImpl implements GroupRepository {
       faceUrl: faceUrl,
       introduction: introduction,
       notification: notification,
+      ex: ex,
     );
   }
 
@@ -314,6 +320,7 @@ class GroupRepositoryImpl implements GroupRepository {
       ownerUserId: item.ownerUserId,
       memberCount: item.memberCount,
       status: item.status,
+      ex: item.ex,
       createdTime: _epochOrNull(item.createTime.toInt()),
     );
   }

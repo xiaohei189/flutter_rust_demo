@@ -12,9 +12,9 @@
 
 use crate::core::connection::sync_server::SyncServerApi;
 use crate::domain::constant::{msg_status, pull_msg_num};
-use crate::infra::db::{ConversationRepository, MessageRepository};
 use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalChatLog;
+use crate::infra::db::{ConversationRepository, MessageRepository};
 use openim_protocol::msg::{ConversationSeqs, GetSeqMessageReq, GetSeqMessageResp};
 use openim_protocol::sdkws::PullOrder;
 use std::collections::{HashMap, HashSet};
@@ -458,6 +458,7 @@ mod tests {
             create_time: send_time,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

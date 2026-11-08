@@ -35,6 +35,9 @@ class ChatListItem extends StatelessWidget {
   /// 已缓存的最近消息预览与展示时间，避免列表项重复解析。
   final String? previewText;
   final String? timeText;
+  final String? topicPreviewText;
+  final int? topicUnreadCount;
+  final int? topicActivityAt;
 
   /// 多选管理模式：显示复选框，点击切换选中。
   final bool isSelectionMode;
@@ -70,6 +73,9 @@ class ChatListItem extends StatelessWidget {
     this.currentUserLocalAvatarPath,
     this.previewText,
     this.timeText,
+    this.topicPreviewText,
+    this.topicUnreadCount,
+    this.topicActivityAt,
     this.isSelectionMode = false,
     this.typingText,
     this.hasSendFailure = false,
@@ -85,6 +91,9 @@ class ChatListItem extends StatelessWidget {
       cachedUserProfile: cachedUserProfile,
       previewText: previewText,
       timeText: timeText,
+      topicPreviewText: topicPreviewText,
+      topicUnreadCount: topicUnreadCount,
+      topicActivityAt: topicActivityAt,
       isSelectionMode: isSelectionMode,
       typingText: typingText,
       hasSendFailure: hasSendFailure,
@@ -116,7 +125,10 @@ class ChatListItem extends StatelessWidget {
 
   List<SwipeAction> _swipeActions(BuildContext context) {
     final colors = context.appColors;
-    final hasUnread = ChatListViewModel.effectiveUnreadCount(conversation) > 0;
+    final hasUnread =
+        (topicUnreadCount ??
+            ChatListViewModel.effectiveUnreadCount(conversation)) >
+        0;
     return [
       if (hasUnread && onMarkRead != null)
         SwipeAction(

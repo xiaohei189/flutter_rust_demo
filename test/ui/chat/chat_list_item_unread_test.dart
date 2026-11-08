@@ -37,6 +37,8 @@ Future<void> _pump(
   WidgetTester tester, {
   required int unreadCount,
   int recvMsgOpt = 0,
+  int? topicUnreadCount,
+  String? topicPreviewText,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -52,6 +54,8 @@ Future<void> _pump(
           onLongPress: (_) {},
           timeText: '12:30',
           previewText: '最新一条消息',
+          topicUnreadCount: topicUnreadCount,
+          topicPreviewText: topicPreviewText,
         ),
       ),
     ),
@@ -86,6 +90,36 @@ void main() {
     expect(tester.widget<Text>(find.text('12:30')).style?.color, primary);
 
     await _pump(tester, unreadCount: 0);
-    expect(tester.widget<Text>(find.text('12:30')).style?.color, isNot(primary));
+    expect(
+      tester.widget<Text>(find.text('12:30')).style?.color,
+      isNot(primary),
+    );
+  });
+
+  testWidgets('话题群使用话题未读数和最新话题摘要覆盖群消息摘要', (tester) async {
+    await _pump(
+      tester,
+      unreadCount: 8,
+      topicUnreadCount: 2,
+      topicPreviewText: '小萌: 今晚完成验证',
+    );
+
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('8'), findsNothing);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('小萌: 今晚完成验证'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText && widget.text.toPlainText().contains('最新一条消息'),
+      ),
+      findsNothing,
+    );
   });
 }

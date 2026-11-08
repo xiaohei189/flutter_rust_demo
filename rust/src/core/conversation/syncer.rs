@@ -2,8 +2,8 @@
 
 use crate::core::context::Repositories;
 use crate::core::conversation::enrich::batch_add_face_url_and_name;
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalConversation;
 use crate::domain::model::UserId;
 
@@ -387,14 +387,14 @@ impl ConversationSyncer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infra::db::pool::create_pool_memory;
-    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::core::event::events::conversation::ConversationEvent;
     use crate::core::event::hub::EventHub;
-    use crate::infra::http::client::HttpApiClient;
-    use crate::infra::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
     use crate::core::message::MaxSeqRecorder;
     use crate::domain::model::UserId;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+    use crate::infra::http::client::HttpApiClient;
+    use crate::infra::http::conversation::{GetFullConversationIDsResp, GetIncrementalConversationResp, MockConversationApi, ServerConversation};
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
         Arc::new(Repositories {

@@ -17,12 +17,14 @@ void main() {
           createTime: 1700000000000,
           memberCount: 3,
           status: 0,
+          ex: '{"openim_topic":{"mode":2,"version":1}}',
         ),
       );
 
       expect(group.groupId, 'g1');
       expect(group.groupName, '测试群');
       expect(group.memberCount, 3);
+      expect(group.mode.name, 'topic');
       expect(
         group.createdTime,
         DateTime.fromMillisecondsSinceEpoch(1700000000000),

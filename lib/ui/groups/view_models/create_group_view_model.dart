@@ -86,6 +86,7 @@ class CreateGroupViewModel extends Notifier<CreateGroupState> {
         groupName: groupName,
         groupType: groupType,
         memberIds: state.selectedMemberIds,
+        ex: state.mode.encodeEx(),
       );
       state = state.copyWith(
         isCreating: false,

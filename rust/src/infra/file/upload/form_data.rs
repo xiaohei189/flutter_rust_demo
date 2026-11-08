@@ -12,7 +12,14 @@ use tracing::info;
 // ============================================================================
 
 impl FileUploader {
-    pub(crate) async fn upload_file_form_data(&self, file_path: &str, name: &str, content_type: &str, file_size: i64, cb: Option<&dyn UploadFileCallback>) -> crate::domain::error::Result<UploadResult> {
+    pub(crate) async fn upload_file_form_data(
+        &self,
+        file_path: &str,
+        name: &str,
+        content_type: &str,
+        file_size: i64,
+        cb: Option<&dyn UploadFileCallback>,
+    ) -> crate::domain::error::Result<UploadResult> {
         let cb_ref = cb.unwrap_or(&EmptyUploadCallback);
         cb_ref.open(file_size);
 

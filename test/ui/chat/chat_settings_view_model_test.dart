@@ -124,6 +124,7 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) async {
     if (shouldFail) throw Exception('更新公告失败');
     setInfoGroupIds.add(groupId);

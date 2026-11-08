@@ -23,6 +23,9 @@ class ChatListItemContent extends StatelessWidget {
     this.cachedUserProfile,
     this.previewText,
     this.timeText,
+    this.topicPreviewText,
+    this.topicUnreadCount,
+    this.topicActivityAt,
     this.isSelectionMode = false,
     this.typingText,
     this.hasSendFailure = false,
@@ -39,6 +42,9 @@ class ChatListItemContent extends StatelessWidget {
   final UserProfile? cachedUserProfile;
   final String? previewText;
   final String? timeText;
+  final String? topicPreviewText;
+  final int? topicUnreadCount;
+  final int? topicActivityAt;
 
   /// 多选管理模式：显示复选框，点击由外层处理。
   final bool isSelectionMode;
@@ -190,6 +196,9 @@ class ChatListItemContent extends StatelessWidget {
 
   /// 展示时间：取草稿时间和最新消息时间中较新的
   int get _displayTime {
+    if (topicActivityAt != null && topicActivityAt! > 0) {
+      return topicActivityAt!;
+    }
     final draftTime = conversation.draftTextTime;
     final msgTime = conversation.latestMsgSendTime;
     if (draftTime > msgTime) return draftTime;
@@ -202,6 +211,9 @@ class ChatListItemContent extends StatelessWidget {
       // 非 JSON 纯文本直接展示；JSON 但无有效 text key 时回退最新消息。
       if (draft != null) return draft;
     }
+    if (topicPreviewText != null && topicPreviewText!.isNotEmpty) {
+      return topicPreviewText!;
+    }
     final preview = previewText ?? latestMessagePreview(conversation.latestMsg);
     return preview;
   }
@@ -212,7 +224,9 @@ class ChatListItemContent extends StatelessWidget {
   bool get _isMuted => conversation.recvMsgOpt == 1;
 
   /// 有未读（未读数为 -1 表示不显示，对齐 OpenIM 约定）
-  bool get _hasUnread => conversation.unreadCount > 0;
+  int get _unreadCount => topicUnreadCount ?? conversation.unreadCount;
+
+  bool get _hasUnread => _unreadCount > 0;
 
   bool get _isGroup =>
       conversation.conversationType == 2 || conversation.conversationType == 3;
@@ -357,9 +371,7 @@ class ChatListItemContent extends StatelessWidget {
         ),
       );
     }
-    final text = conversation.unreadCount > 99
-        ? '99+'
-        : '${conversation.unreadCount}';
+    final text = _unreadCount > 99 ? '99+' : '$_unreadCount';
     return Container(
       // 高度不超过预览文字行高，避免把会话行撑高造成溢出
       constraints: const BoxConstraints(minWidth: 15),
@@ -389,9 +401,7 @@ class ChatListItemContent extends StatelessWidget {
     // 会话所属的自定义分组（真实数据，取代此前的伪随机占位胶囊）。
     final folderLabel = this.folderLabel;
     if (folderLabel != null && folderLabel.isNotEmpty) {
-      tags.add(
-        _TagLabel(text: folderLabel, color: AppIconColors.blue),
-      );
+      tags.add(_TagLabel(text: folderLabel, color: AppIconColors.blue));
     }
     if (conversation.isNotInGroup) {
       tags.add(_TagLabel(text: '不在群内', color: colors.danger));

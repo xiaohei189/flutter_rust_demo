@@ -1,16 +1,15 @@
 use crate::sdk::client::builder::OpenIMClientBuilder;
 
-use crate::sdk::client::{ConnectionApi, MessageApi};
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::conversation::syncer::ConversationSyncer;
-use crate::sdk::friend::service::FriendService;
-use crate::sdk::group::service::GroupService;
 use crate::core::message::send::MessageSender;
 use crate::core::message::MessageProcessor;
+use crate::sdk::client::{ConnectionApi, MessageApi};
+use crate::sdk::friend::service::FriendService;
+use crate::sdk::group::service::GroupService;
 use async_trait::async_trait;
 
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::connection::ConnectionEvent;
 use crate::core::event::hub::EventHub;
 use crate::core::message::notification::NotificationHandler;
@@ -18,6 +17,7 @@ use crate::core::message::MessageService;
 use crate::core::message::MessageSyncer;
 use crate::core::user::online::service::OnlineStatusService;
 use crate::core::user::service::UserService;
+use crate::domain::error::{Result, SdkError};
 
 use crate::sdk::client::context::RuntimeContext;
 

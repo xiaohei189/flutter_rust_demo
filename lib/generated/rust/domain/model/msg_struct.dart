@@ -316,6 +316,7 @@ class MsgStruct {
   final int status;
   final String attachedInfo;
   final String ex;
+  final String topicId;
   final String localEx;
   final TextElem? textElem;
   final PictureElem? pictureElem;
@@ -353,6 +354,7 @@ class MsgStruct {
     required this.status,
     required this.attachedInfo,
     required this.ex,
+    required this.topicId,
     required this.localEx,
     this.textElem,
     this.pictureElem,
@@ -392,6 +394,7 @@ class MsgStruct {
       status.hashCode ^
       attachedInfo.hashCode ^
       ex.hashCode ^
+      topicId.hashCode ^
       localEx.hashCode ^
       textElem.hashCode ^
       pictureElem.hashCode ^
@@ -433,6 +436,7 @@ class MsgStruct {
           status == other.status &&
           attachedInfo == other.attachedInfo &&
           ex == other.ex &&
+          topicId == other.topicId &&
           localEx == other.localEx &&
           textElem == other.textElem &&
           pictureElem == other.pictureElem &&

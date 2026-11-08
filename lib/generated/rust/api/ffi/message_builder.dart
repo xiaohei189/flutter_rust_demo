@@ -218,6 +218,15 @@ Future<MsgStruct> createFaceMessage({
   data: data,
 );
 
+/// 给已构建的消息附加话题 ID。
+Future<MsgStruct> setMessageTopicId({
+  required MsgStruct message,
+  required String topicId,
+}) => RustLib.instance.api.crateApiFfiMessageBuilderSetMessageTopicId(
+  message: message,
+  topicId: topicId,
+);
+
 /// 获取 @所有人 标签（对齐 Go SDK `GetAtAllTag`，返回常量 "@All"）
 Future<String> getAtAllTag() =>
     RustLib.instance.api.crateApiFfiMessageBuilderGetAtAllTag();

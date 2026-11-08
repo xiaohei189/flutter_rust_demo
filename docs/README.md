@@ -70,6 +70,8 @@
 | [docs/demo-accounts.md](./demo-accounts.md) | ✅ 现行 | **演示账号与关系图**（真机/模拟器联调账号、好友、群成员、seed 与 admin 命令） |
 | [docs/ui-optimization-plan.md](./ui-optimization-plan.md) | 📌 参考 | UI 与目录组织优化计划（已大部分落地） |
 | [docs/create-group-plan.md](./create-group-plan.md) | 📌 分析稿 | 创建群组 / 群模式（对话·话题）功能与交互设计分析（待评审） |
+| [docs/topic-group-product-spec.md](./topic-group-product-spec.md) | 📌 产品基线 | 话题群完整产品功能、交互、权限与验收标准（竞品事实和待实测项已分层） |
+| [docs/topic-group-implementation-assessment.md](./topic-group-implementation-assessment.md) | ✅ 核心闭环 | 话题群已落地收发、媒体、任务、分享深链、跨端状态同步与真实服务端验证；生产化补强项见文内清单 |
 | [rust/tests/README.md](../rust/tests/README.md) | ✅ 现行 | Rust 测试说明 |
 
 ## 🔬 专项实现说明（docs/ 下）

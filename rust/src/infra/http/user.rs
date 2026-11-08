@@ -16,8 +16,9 @@ pub struct GetUsersInfoReq {
 pub struct ServerUserInfo {
     #[serde(rename = "userID")]
     pub user_id: String,
+    #[serde(default)]
     pub nickname: String,
-    #[serde(rename = "faceURL")]
+    #[serde(rename = "faceURL", default)]
     pub face_url: String,
     #[serde(default)]
     pub gender: i32,
@@ -139,5 +140,17 @@ mod tests {
         assert!(json.contains("\"ex\""));
         assert!(json.contains("alias"));
         assert!(!json.contains("\"email\""));
+    }
+
+    #[test]
+    fn test_get_users_info_deserializes_omitted_optional_fields() {
+        let resp: GetUsersInfoResp = serde_json::from_value(serde_json::json!({
+            "usersInfo": [{"userID": "user_1", "nickname": "Alice"}]
+        }))
+        .expect("server may omit empty optional fields");
+
+        assert_eq!(resp.users_info[0].face_url, "");
+        assert_eq!(resp.users_info[0].telephone, "");
+        assert_eq!(resp.users_info[0].ex, "");
     }
 }

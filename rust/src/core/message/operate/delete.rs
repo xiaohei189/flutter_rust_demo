@@ -1,8 +1,8 @@
 //! 消息删除逻辑
 
 use super::MessageService;
-use crate::domain::error::Result;
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt};
+use crate::domain::error::Result;
 use crate::infra::http::message::DeleteMessagesReq;
 
 use tracing::info;
@@ -53,15 +53,15 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::core::context::Repositories;
-    use crate::domain::constant::msg_status;
-    use crate::infra::db::pool::create_pool_memory;
-    use crate::infra::db::*;
-    use crate::domain::error::SdkError;
     use crate::core::event::events::message::MessageEvent;
     use crate::core::event::hub::EventHub;
-    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
+    use crate::domain::constant::msg_status;
+    use crate::domain::error::SdkError;
     use crate::domain::model::local::LocalChatLog;
     use crate::domain::model::UserId;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::*;
+    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use async_trait::async_trait;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
@@ -146,6 +146,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

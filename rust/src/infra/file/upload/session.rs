@@ -1,9 +1,9 @@
 use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalUpload;
 use crate::infra::file::bitmap::Bitmap;
 use crate::infra::file::upload::dto::{AuthSignPartsResp, AuthSignReq, AuthSignResp};
 use crate::infra::http::client::HttpApiClient;
 use crate::infra::http::routes::AUTH_SIGN;
-use crate::domain::model::local::LocalUpload;
 use std::sync::Arc;
 
 // ============================================================================

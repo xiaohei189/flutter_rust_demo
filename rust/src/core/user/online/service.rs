@@ -1,11 +1,11 @@
 use crate::core::connection::manager::ConnectionManager;
+use crate::core::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::domain::constant::ws_push_identifier::WS_SUB_USER_ONLINE_STATUS;
 use crate::domain::error::Result;
-use crate::core::event::events::user::{UserEvent, UserListener, UserListenerExt};
 use crate::infra::http::OnlineStatusServerApi;
 
-use crate::infra::http::online::*;
 use crate::domain::model::UserId;
+use crate::infra::http::online::*;
 use async_trait::async_trait;
 use openim_protocol::sdkws::{SubUserOnlineStatus, SubUserOnlineStatusTips};
 use std::collections::HashSet;
@@ -280,8 +280,8 @@ impl OnlineStatusService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::error::SdkError;
     use crate::core::event::events::user::UserListener;
+    use crate::domain::error::SdkError;
     use openim_protocol::sdkws::SubUserOnlineStatusElem;
     use std::sync::Mutex as StdMutex;
 

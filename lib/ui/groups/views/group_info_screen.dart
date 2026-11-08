@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/models/conversation.dart';
 import '../../../../providers/im_providers.dart';
 import '../../../../domain/models/group_member.dart';
+import '../../../../domain/models/group_mode.dart';
 import '../../../../domain/models/user.dart';
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -147,6 +148,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
         .where((m) => m.userId == currentUserId)
         .firstOrNull;
     final isOwner = currentMember?.roleLevel == 3;
+    final canManage = currentMember != null && currentMember.roleLevel >= 2;
 
     return Scaffold(
       // 与「消息」列表同一套语汇：白底铺行，分组靠留白
@@ -214,6 +216,18 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                       : groupInfo.groupDescription,
                   onSave: _saveGroupDescription,
                 ),
+              ),
+              ListRow(
+                key: const ValueKey('group_info_mode'),
+                label: '群模式',
+                trailing: Text(
+                  groupInfo.mode.isTopic ? '话题' : '对话',
+                  style: TextStyle(
+                    color: context.appColors.textSecondary,
+                    fontSize: AppTheme.fontSizeBody,
+                  ),
+                ),
+                onTap: canManage ? () => _showGroupModeSheet(groupInfo.mode) : null,
               ),
             ],
           ),
@@ -450,6 +464,46 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
       );
     } else {
       _showError(_viewModel.currentState.error ?? '群描述更新失败');
+    }
+  }
+
+  Future<void> _showGroupModeSheet(GroupMode current) async {
+    final selected = await showModalBottomSheet<GroupMode>(
+      context: context,
+      backgroundColor: context.appColors.surface,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('群模式', style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            ListTile(
+              title: const Text('对话'),
+              subtitle: const Text('根据发送的先后顺序展现信息内容'),
+              trailing: current == GroupMode.chat
+                  ? Icon(Icons.check, color: context.appColors.primary)
+                  : null,
+              onTap: () => Navigator.of(sheetContext).pop(GroupMode.chat),
+            ),
+            ListTile(
+              title: const Text('话题'),
+              subtitle: const Text('发布话题，在群内开展讨论'),
+              trailing: current == GroupMode.topic
+                  ? Icon(Icons.check, color: context.appColors.primary)
+                  : null,
+              onTap: () => Navigator.of(sheetContext).pop(GroupMode.topic),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || selected == current) return;
+    final ok = await _viewModel.updateGroupMode(selected);
+    if (!mounted) return;
+    if (!ok) {
+      _showError(_viewModel.currentState.error ?? '群模式切换失败');
     }
   }
 }

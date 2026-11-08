@@ -15,6 +15,7 @@ class FakeGroupRepository extends BaseFakeGroupRepository {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) async {
     if (shouldFail) {
       throw Exception('创建失败');

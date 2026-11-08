@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +11,9 @@ class LocalNotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  Uri? _initialTapUri;
+  final StreamController<Uri> _tapController =
+      StreamController<Uri>.broadcast();
   static const _enabledKey = 'local_notifications_enabled';
 
   LocalNotificationService._internal();
@@ -28,7 +33,17 @@ class LocalNotificationService {
         guid: '9B2B9A1A-9C3E-4C4A-9B7D-2A2B2C2D2E2F',
       ),
     );
-    await _plugin.initialize(settings: settings);
+    await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: (response) {
+        final uri = Uri.tryParse(response.payload ?? '');
+        if (uri != null) _tapController.add(uri);
+      },
+    );
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      _initialTapUri = Uri.tryParse(launch?.notificationResponse?.payload ?? '');
+    }
     if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<
@@ -52,6 +67,7 @@ class LocalNotificationService {
   Future<void> showMessageNotification({
     required String title,
     required String body,
+    String? payload,
   }) async {
     if (!_initialized || !await isEnabled()) return;
     const details = NotificationDetails(
@@ -70,7 +86,16 @@ class LocalNotificationService {
       id: id,
       title: title,
       body: body,
+      payload: payload,
       notificationDetails: details,
     );
   }
+
+  Uri? takeInitialTapUri() {
+    final uri = _initialTapUri;
+    _initialTapUri = null;
+    return uri;
+  }
+
+  Stream<Uri> get notificationTaps => _tapController.stream;
 }

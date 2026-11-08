@@ -64,6 +64,7 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
 
   /// 从「复制消息链接」深链进入时，加载后定位到指定消息。
   final String? initialMessageId;
+  final bool readOnly;
 
   const ChatDetailScreen({
     super.key,
@@ -71,6 +72,7 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
     this.preLoaded = false,
     this.focusAtMe = false,
     this.initialMessageId,
+    this.readOnly = false,
   });
 
   @override
@@ -812,22 +814,23 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
               // 输入区作为覆盖层贴在底部：它不占 body 的布局空间，
               // 因此键盘升降不会牵动消息列表（列表内容不位移）。
               // 对齐飞书实机录屏测得的行为：键盘直接盖在列表之上。
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: maxInputHeight),
-                  // 键盘高度只在这个 Builder 的 element 上注册依赖：键盘升降期间
-                  // 只重建输入区，不再每帧重建整页（AppBar、消息区骨架、用户对象构造）。
-                  child: Builder(
-                    builder: (context) => _buildChatInput(
-                      user,
-                      MediaQuery.viewInsetsOf(context).bottom,
+              if (!widget.readOnly)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: maxInputHeight),
+                    // 键盘高度只在这个 Builder 的 element 上注册依赖：键盘升降期间
+                    // 只重建输入区，不再每帧重建整页（AppBar、消息区骨架、用户对象构造）。
+                    child: Builder(
+                      builder: (context) => _buildChatInput(
+                        user,
+                        MediaQuery.viewInsetsOf(context).bottom,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           )
         : ColoredBox(

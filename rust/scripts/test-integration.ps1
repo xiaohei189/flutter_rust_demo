@@ -13,6 +13,7 @@ $suites = @(
     "friend_tests",
     "group_tests",
     "message_tests",
+    "topic_tests",
     "negative_tests",
     "user_tests"
 )

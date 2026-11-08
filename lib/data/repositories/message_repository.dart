@@ -33,6 +33,11 @@ abstract class MessageRepository {
     required SessionType sessionType,
   });
 
+  Future<MsgStruct> attachTopicId({
+    required MsgStruct message,
+    required String topicId,
+  });
+
   /// 触发一次会话增量同步（登录同步失败后的手动重试）。
   /// 默认空实现，测试替身无需关心；真实实现见 MessageRepositoryImpl。
   Future<void> resyncConversations() async {}
@@ -99,6 +104,14 @@ abstract class MessageRepository {
     required String text,
     required ChatMessage quoted,
   });
+
+  Future<MsgStruct> createCustomMessage({
+    required String data,
+    required String extension,
+    required String description,
+  }) {
+    throw UnimplementedError('createCustomMessage');
+  }
 
   Future<List<MessageSearchResult>> searchLocalMessages({
     required String conversationId,

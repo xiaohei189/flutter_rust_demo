@@ -429,6 +429,7 @@ mod tests {
             create_time: 0,
             member_count: 0,
             status: 0,
+            ex: String::new(),
         });
         group.on_application_deleted("application_json");
         group.on_member_info_changed(&crate::domain::model::group::GroupMember {
@@ -451,6 +452,7 @@ mod tests {
             create_time: 0,
             member_count: 0,
             status: 0,
+            ex: String::new(),
         });
         user.on_user_status_changed("u1", 1, &[]);
         msg.on_new_message(
@@ -475,6 +477,7 @@ mod tests {
                 is_read: false,
                 attached_info: String::new(),
                 ex: String::new(),
+                topic_id: String::new(),
             },
         );
 

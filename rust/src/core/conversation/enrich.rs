@@ -22,11 +22,7 @@ pub async fn batch_add_face_url_and_name(repositories: &Arc<Repositories>, login
         // 单聊/群聊判定对齐 Go SDK `batchAddFaceURLAndName`：以 conversation_id 前缀为主
         // （服务端可能不下发 conversation_type），conversation_type 仅作兜底
         let is_single = conv.conversation_type == 1 || conv.conversation_id.starts_with("si_");
-        let is_group = !is_single
-            && (conv.conversation_type == 2
-                || conv.conversation_type == 3
-                || conv.conversation_id.starts_with("g_")
-                || conv.conversation_id.starts_with("sg_"));
+        let is_group = !is_single && (conv.conversation_type == 2 || conv.conversation_type == 3 || conv.conversation_id.starts_with("g_") || conv.conversation_id.starts_with("sg_"));
         // 单聊：好友备注 > 好友昵称 > 用户昵称
         if is_single {
             // user_id 缺失时从会话 ID 解析对方（si_{a}_{b}）

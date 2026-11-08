@@ -10,9 +10,9 @@
 use crate::core::connection::message_batcher::MessageBatcher;
 use crate::core::connection::ws::GzipCompressor;
 use crate::core::connection::ws::OpenIMResp;
-use crate::domain::error::Result;
 use crate::core::event::events::connection::{ConnectionEvent, ConnectionListener, ConnectionListenerExt};
 use crate::core::event::events::user::UserEvent;
+use crate::domain::error::Result;
 use futures_util::stream::SplitSink;
 use futures_util::SinkExt;
 use openim_protocol::sdkws::PushMessages;

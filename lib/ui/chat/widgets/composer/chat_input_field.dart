@@ -11,6 +11,7 @@ class ChatInputField extends StatelessWidget {
     required this.isMarkdownMode,
     required this.onOpenComposer,
     required this.onSubmitted,
+    this.hintText = '输入消息...',
   });
 
   final TextEditingController controller;
@@ -18,6 +19,7 @@ class ChatInputField extends StatelessWidget {
   final bool isMarkdownMode;
   final VoidCallback onOpenComposer;
   final VoidCallback onSubmitted;
+  final String hintText;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,7 @@ class ChatInputField extends StatelessWidget {
         fontFamily: isMarkdownMode ? 'monospace' : null,
       ),
       decoration: InputDecoration(
-        hintText: '输入消息...',
+        hintText: hintText,
         hintStyle: TextStyle(
           color: context.appColors.textSecondary,
           fontSize: 16,

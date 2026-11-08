@@ -3,14 +3,14 @@
 //! 对齐 Go SDK `internal/conversation_msg/msg_sync.go`
 
 use super::processor::MessageProcessor;
-use crate::core::context::Repositories;
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::connection::sync_server::SyncServerApi;
-use crate::domain::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
-use crate::domain::error::{Result, SdkError};
+use crate::core::context::Repositories;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::message::notification::NotificationHandler;
 use crate::core::message::receive::checker::MessageChecker;
+use crate::domain::constant::{msg_status, pull_msg_num, sync_flag, ws_req_identifier};
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::LocalNotificationSeq;
 use crate::domain::model::UserId;
 use async_trait::async_trait;
@@ -681,6 +681,7 @@ impl MessageSyncer {
                     create_time: m.create_time,
                     attached_info: String::new(),
                     ex: String::new(),
+                    topic_id: m.topic_id.clone(),
                     local_ex: String::new(),
                     group_id: m.group_id.clone(),
                 })
@@ -825,9 +826,9 @@ fn split_seq_ranges(seq_map: &HashMap<String, (i64, i64)>, pull_num: i64) -> Vec
 mod tests {
     use super::*;
     use crate::core::context::Repositories;
+    use crate::domain::model::UserId;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::domain::model::UserId;
     use prost::Message;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -988,6 +989,7 @@ mod tests {
             create_time: seq * 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

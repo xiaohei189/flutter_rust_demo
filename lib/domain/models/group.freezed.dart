@@ -25,6 +25,7 @@ mixin _$Group {
   String get ownerUserId => throw _privateConstructorUsedError;
   int get memberCount => throw _privateConstructorUsedError;
   int get status => throw _privateConstructorUsedError;
+  String get ex => throw _privateConstructorUsedError;
   DateTime? get createdTime => throw _privateConstructorUsedError;
 
   /// Create a copy of Group
@@ -47,6 +48,7 @@ abstract class $GroupCopyWith<$Res> {
     String ownerUserId,
     int memberCount,
     int status,
+    String ex,
     DateTime? createdTime,
   });
 }
@@ -74,6 +76,7 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
     Object? ownerUserId = null,
     Object? memberCount = null,
     Object? status = null,
+    Object? ex = null,
     Object? createdTime = freezed,
   }) {
     return _then(
@@ -110,6 +113,10 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                       as int,
+            ex: null == ex
+                ? _value.ex
+                : ex // ignore: cast_nullable_to_non_nullable
+                      as String,
             createdTime: freezed == createdTime
                 ? _value.createdTime
                 : createdTime // ignore: cast_nullable_to_non_nullable
@@ -137,6 +144,7 @@ abstract class _$$GroupImplCopyWith<$Res> implements $GroupCopyWith<$Res> {
     String ownerUserId,
     int memberCount,
     int status,
+    String ex,
     DateTime? createdTime,
   });
 }
@@ -163,6 +171,7 @@ class __$$GroupImplCopyWithImpl<$Res>
     Object? ownerUserId = null,
     Object? memberCount = null,
     Object? status = null,
+    Object? ex = null,
     Object? createdTime = freezed,
   }) {
     return _then(
@@ -199,6 +208,10 @@ class __$$GroupImplCopyWithImpl<$Res>
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
                   as int,
+        ex: null == ex
+            ? _value.ex
+            : ex // ignore: cast_nullable_to_non_nullable
+                  as String,
         createdTime: freezed == createdTime
             ? _value.createdTime
             : createdTime // ignore: cast_nullable_to_non_nullable
@@ -210,7 +223,7 @@ class __$$GroupImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$GroupImpl implements _Group {
+class _$GroupImpl extends _Group {
   const _$GroupImpl({
     required this.groupId,
     required this.groupName,
@@ -220,8 +233,9 @@ class _$GroupImpl implements _Group {
     required this.ownerUserId,
     required this.memberCount,
     required this.status,
+    this.ex = '',
     this.createdTime,
-  });
+  }) : super._();
 
   @override
   final String groupId;
@@ -240,11 +254,14 @@ class _$GroupImpl implements _Group {
   @override
   final int status;
   @override
+  @JsonKey()
+  final String ex;
+  @override
   final DateTime? createdTime;
 
   @override
   String toString() {
-    return 'Group(groupId: $groupId, groupName: $groupName, faceUrl: $faceUrl, introduction: $introduction, notification: $notification, ownerUserId: $ownerUserId, memberCount: $memberCount, status: $status, createdTime: $createdTime)';
+    return 'Group(groupId: $groupId, groupName: $groupName, faceUrl: $faceUrl, introduction: $introduction, notification: $notification, ownerUserId: $ownerUserId, memberCount: $memberCount, status: $status, ex: $ex, createdTime: $createdTime)';
   }
 
   @override
@@ -265,6 +282,7 @@ class _$GroupImpl implements _Group {
             (identical(other.memberCount, memberCount) ||
                 other.memberCount == memberCount) &&
             (identical(other.status, status) || other.status == status) &&
+            (identical(other.ex, ex) || other.ex == ex) &&
             (identical(other.createdTime, createdTime) ||
                 other.createdTime == createdTime));
   }
@@ -280,6 +298,7 @@ class _$GroupImpl implements _Group {
     ownerUserId,
     memberCount,
     status,
+    ex,
     createdTime,
   );
 
@@ -292,7 +311,7 @@ class _$GroupImpl implements _Group {
       __$$GroupImplCopyWithImpl<_$GroupImpl>(this, _$identity);
 }
 
-abstract class _Group implements Group {
+abstract class _Group extends Group {
   const factory _Group({
     required final String groupId,
     required final String groupName,
@@ -302,8 +321,10 @@ abstract class _Group implements Group {
     required final String ownerUserId,
     required final int memberCount,
     required final int status,
+    final String ex,
     final DateTime? createdTime,
   }) = _$GroupImpl;
+  const _Group._() : super._();
 
   @override
   String get groupId;
@@ -321,6 +342,8 @@ abstract class _Group implements Group {
   int get memberCount;
   @override
   int get status;
+  @override
+  String get ex;
   @override
   DateTime? get createdTime;
 

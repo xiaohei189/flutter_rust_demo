@@ -7,6 +7,8 @@ import 'package:flutter_rust_demo/data/services/app_lifecycle_service.dart';
 import 'package:flutter_rust_demo/data/services/local_notification_service.dart';
 import 'package:flutter_rust_demo/domain/models/chat_message.dart'
     show ChatMessage;
+import 'package:flutter_rust_demo/domain/models/topic_links.dart'
+    show buildTopicLink;
 import 'package:flutter_rust_demo/generated/rust/domain/model/local.dart'
     show LocalConversation;
 import 'package:flutter_rust_demo/generated/rust/domain/model/message.dart'
@@ -102,12 +104,25 @@ class MessageEventApplier {
         chatMessage.sendId.isNotEmpty &&
         chatMessage.sendId == service.currentState.currentUserId;
     if (!isFromMe && appLifecycleService.isBackground.value) {
+      final topicId = chatMessage.topicId;
+      final isTopicMessage =
+          topicId.isNotEmpty && chatMessage.groupId.isNotEmpty;
+      final isRootTopic = isTopicMessage && topicId == chatMessage.clientMsgId;
       unawaited(
         localNotificationService.showMessageNotification(
-          title: chatMessage.senderNickname.isNotEmpty
+          title: isTopicMessage
+              ? '${chatMessage.senderNickname.isEmpty ? '成员' : chatMessage.senderNickname}'
+                    '${isRootTopic ? ' 发布新话题' : ' 回复了话题'}'
+              : chatMessage.senderNickname.isNotEmpty
               ? message.senderNickname
               : '新消息',
           body: notificationText(chatMessage),
+          payload: isTopicMessage
+              ? buildTopicLink(
+                  groupId: chatMessage.groupId,
+                  topicId: topicId,
+                )
+              : null,
         ),
       );
     }

@@ -26,6 +26,7 @@ class LocalChatLog {
   final int createTime;
   final String attachedInfo;
   final String ex;
+  final String topicId;
   final String localEx;
   final String groupId;
 
@@ -49,6 +50,7 @@ class LocalChatLog {
     required this.createTime,
     required this.attachedInfo,
     required this.ex,
+    required this.topicId,
     required this.localEx,
     required this.groupId,
   });
@@ -74,6 +76,7 @@ class LocalChatLog {
       createTime.hashCode ^
       attachedInfo.hashCode ^
       ex.hashCode ^
+      topicId.hashCode ^
       localEx.hashCode ^
       groupId.hashCode;
 
@@ -101,6 +104,7 @@ class LocalChatLog {
           createTime == other.createTime &&
           attachedInfo == other.attachedInfo &&
           ex == other.ex &&
+          topicId == other.topicId &&
           localEx == other.localEx &&
           groupId == other.groupId;
 }

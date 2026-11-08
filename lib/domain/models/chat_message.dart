@@ -19,6 +19,7 @@ class ChatMessage {
   final bool isRead;
   final String attachedInfo;
   final String ex;
+  final String topicId;
 
   const ChatMessage({
     required this.clientMsgId,
@@ -40,6 +41,7 @@ class ChatMessage {
     required this.isRead,
     required this.attachedInfo,
     required this.ex,
+    this.topicId = '',
   });
 
   ChatMessage copyWith({
@@ -62,6 +64,7 @@ class ChatMessage {
     bool? isRead,
     String? attachedInfo,
     String? ex,
+    String? topicId,
   }) {
     return ChatMessage(
       clientMsgId: clientMsgId ?? this.clientMsgId,
@@ -83,6 +86,7 @@ class ChatMessage {
       isRead: isRead ?? this.isRead,
       attachedInfo: attachedInfo ?? this.attachedInfo,
       ex: ex ?? this.ex,
+      topicId: topicId ?? this.topicId,
     );
   }
 
@@ -109,7 +113,8 @@ class ChatMessage {
           status == other.status &&
           isRead == other.isRead &&
           attachedInfo == other.attachedInfo &&
-          ex == other.ex;
+          ex == other.ex &&
+          topicId == other.topicId;
 
   @override
   int get hashCode =>
@@ -131,7 +136,8 @@ class ChatMessage {
       status.hashCode ^
       isRead.hashCode ^
       attachedInfo.hashCode ^
-      ex.hashCode;
+      ex.hashCode ^
+      topicId.hashCode;
 }
 
 /// 历史消息分页结果（Repository 边界返回给 Domain 层的类型）

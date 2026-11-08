@@ -27,6 +27,7 @@ pub struct LocalChatLog {
     pub create_time: i64,
     pub attached_info: String,
     pub ex: String,
+    pub topic_id: String,
     pub local_ex: String,
     pub group_id: String,
 }
@@ -66,6 +67,7 @@ impl LocalChatLog {
             create_time: msg.create_time,
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
+            topic_id: msg.topic_id.clone(),
             local_ex: String::new(),
             group_id: msg.group_id.clone(),
         }
@@ -256,8 +258,10 @@ mod tests {
         let mut msg = make_msg(session_type::SINGLE_CHAT, 0);
         msg.attached_info = "attached".into();
         msg.ex = "ex_value".into();
+        msg.topic_id = "topic_1".into();
         let log = LocalChatLog::from_msg_data("conv", &msg);
         assert_eq!(log.attached_info, "attached");
         assert_eq!(log.ex, "ex_value");
+        assert_eq!(log.topic_id, "topic_1");
     }
 }

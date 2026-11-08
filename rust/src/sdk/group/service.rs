@@ -1,16 +1,16 @@
-use crate::domain::error::Result;
 use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
+use crate::domain::error::Result;
 
-use crate::infra::http::GroupServerApi;
 use crate::domain::model::group::{GroupInfo, GroupMember, SetGroupInfoFields};
 use crate::domain::model::local::{LocalConversation, LocalGroup};
 use crate::domain::model::UserId;
+use crate::infra::http::GroupServerApi;
 
-use crate::sdk::client::context::Repositories;
+use crate::domain::constant::types::group_status;
 use crate::infra::http::group::*;
 use crate::infra::http::Pagination;
-use crate::domain::constant::types::group_status;
+use crate::sdk::client::context::Repositories;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info, warn};
@@ -270,6 +270,7 @@ impl GroupService {
         member_user_ids: Vec<String>,
         admin_user_ids: Vec<String>,
         owner_user_id: String,
+        ex: Option<String>,
     ) -> Result<GroupInfo> {
         // 服务端会自动把 ownerUserID 追加为成员，成员/管理员列表里不能重复包含群主。
         let member_user_ids = member_user_ids.into_iter().filter(|id| id != &owner_user_id).collect::<Vec<_>>();
@@ -281,7 +282,7 @@ impl GroupService {
                 introduction,
                 notification,
                 group_type: 2, // 2 = 普通群（与 Go SDK 一致）
-                ex: None,
+                ex,
                 creator_user_id: owner_user_id.clone(),
             },
             member_user_ids,
@@ -422,7 +423,13 @@ impl GroupService {
         match &self.conversation_service {
             Some(conversation_service) => {
                 if let Err(e) = conversation_service.delete_conversation_with_source(&conversation_id, source).await {
-                    warn!("清理本地群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}", source.as_str(), group_id, conversation_id, e);
+                    warn!(
+                        "清理本地群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}",
+                        source.as_str(),
+                        group_id,
+                        conversation_id,
+                        e
+                    );
                 }
             }
             None => warn!("会话服务未注入，跳过本地群会话清理: group_id={}, conversation_id={}", group_id, conversation_id),
@@ -451,32 +458,16 @@ impl GroupService {
 
         // 已解散（status=2）的群可能由旧版本「群资料落库」残留，按群失效统一清理：
         // 群资料、成员缓存与会话一起删，会话删除仍走 ConversationService 并广播事件。
-        let dismissed: Vec<String> = groups
-            .iter()
-            .filter(|g| g.status == group_status::DISMISSED)
-            .map(|g| g.group_id.clone())
-            .collect();
+        let dismissed: Vec<String> = groups.iter().filter(|g| g.status == group_status::DISMISSED).map(|g| g.group_id.clone()).collect();
         if !dismissed.is_empty() {
             // 一次对账可能清掉多个已解散群：日志聚合为一行，避免刷屏
-            info!(
-                "已解散群对齐本地状态: cleanup_source={}, count={}, groups={}",
-                source.as_str(),
-                dismissed.len(),
-                dismissed.join(",")
-            );
+            info!("已解散群对齐本地状态: cleanup_source={}, count={}, groups={}", source.as_str(), dismissed.len(), dismissed.join(","));
         }
         for group_id in &dismissed {
             self.remove_local_group_state(group_id, source).await;
         }
 
-        let valid_group_ids: Vec<String> = self
-            .groups
-            .read()
-            .await
-            .iter()
-            .filter(|g| g.status != group_status::DISMISSED)
-            .map(|g| g.group_id.clone())
-            .collect();
+        let valid_group_ids: Vec<String> = self.groups.read().await.iter().filter(|g| g.status != group_status::DISMISSED).map(|g| g.group_id.clone()).collect();
         match conversation_service.reconcile_group_conversations(&valid_group_ids, source).await {
             Ok(removed) if removed > 0 => info!("群会话对账完成: cleanup_source={}, removed={}", source.as_str(), removed),
             Ok(_) => {}
@@ -852,6 +843,7 @@ fn server_to_group_info(s: ServerGroupInfo) -> GroupInfo {
         create_time: s.create_time,
         member_count: s.member_count,
         status: s.status,
+        ex: s.ex,
     }
 }
 
@@ -907,7 +899,7 @@ fn group_info_to_local(g: &GroupInfo) -> LocalGroup {
         group_type: 0,
         owner_user_id: g.owner_user_id.clone(),
         member_count: g.member_count as i32,
-        ex: String::new(),
+        ex: g.ex.clone(),
         attached_info: String::new(),
         need_verification: 0,
         look_member_info: 0,
@@ -928,6 +920,7 @@ fn local_to_group_info(l: &LocalGroup) -> GroupInfo {
         create_time: l.create_time,
         member_count: l.member_count as u32,
         status: l.status,
+        ex: l.ex.clone(),
     }
 }
 
@@ -1066,7 +1059,10 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec!["group_1".to_string()], inserted_groups: vec![] }),
+            Arc::new(IncrementalDeleteGroupApi {
+                deleted_group_ids: vec!["group_1".to_string()],
+                inserted_groups: vec![],
+            }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),
@@ -1110,11 +1106,7 @@ mod tests {
 
         service.sync_groups_incremental().await.unwrap();
 
-        let conv = conversation_service
-            .get_conversation("sg_group_new")
-            .await
-            .unwrap()
-            .expect("无消息新群也应有本地会话");
+        let conv = conversation_service.get_conversation("sg_group_new").await.unwrap().expect("无消息新群也应有本地会话");
         assert_eq!(conv.conversation_type, 3);
         assert_eq!(conv.group_id, "group_new");
         assert!(conv.latest_msg.is_empty(), "无消息新群不应伪造消息预览");
@@ -1137,7 +1129,10 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![], inserted_groups: vec![] }),
+            Arc::new(IncrementalDeleteGroupApi {
+                deleted_group_ids: vec![],
+                inserted_groups: vec![],
+            }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),
@@ -1149,10 +1144,7 @@ mod tests {
 
         service.reconcile_group_conversations(CleanupSource::Sync).await;
 
-        assert!(
-            conversation_service.get_conversation("sg_group_1").await.unwrap().is_some(),
-            "群列表为空时对账必须跳过，不能删掉群会话"
-        );
+        assert!(conversation_service.get_conversation("sg_group_1").await.unwrap().is_some(), "群列表为空时对账必须跳过，不能删掉群会话");
         assert!(conv_rx.try_recv().is_err(), "跳过对账时不应广播删除事件");
     }
 
@@ -1166,7 +1158,10 @@ mod tests {
         let mut conv_rx = hub.take_conv_rx().unwrap();
         let conversation_service = Arc::new(ConversationService::new(repositories.clone(), hub.clone()));
         let service = GroupService::new(
-            Arc::new(IncrementalDeleteGroupApi { deleted_group_ids: vec![], inserted_groups: vec![] }),
+            Arc::new(IncrementalDeleteGroupApi {
+                deleted_group_ids: vec![],
+                inserted_groups: vec![],
+            }),
             repositories.clone(),
             UserId::new("test_user"),
             hub.clone(),
@@ -1186,16 +1181,14 @@ mod tests {
             create_time: 0,
             member_count: 0,
             status: group_status::DISMISSED,
+            ex: String::new(),
         });
 
         service.reconcile_group_conversations(CleanupSource::Sync).await;
 
         assert!(repositories.group_repo.get_group("group_dead").await.unwrap().is_none(), "已解散群的群资料必须清理");
         assert!(conversation_service.get_conversation("sg_group_dead").await.unwrap().is_none(), "已解散群的会话必须清理");
-        assert!(
-            service.groups.read().await.iter().all(|g| g.group_id != "group_dead"),
-            "内存群列表不应残留已解散群"
-        );
+        assert!(service.groups.read().await.iter().all(|g| g.group_id != "group_dead"), "内存群列表不应残留已解散群");
         match conv_rx.try_recv().expect("应广播会话删除事件") {
             ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["sg_group_dead".to_string()]),
             other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),

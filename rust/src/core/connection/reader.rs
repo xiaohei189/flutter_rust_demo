@@ -5,9 +5,9 @@
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::connection::manager::PendingRequest;
 use crate::core::connection::ws::OpenIMResp;
-use crate::domain::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
 use crate::core::event::events::connection::ConnectionListenerExt;
 use crate::core::event::events::user::UserEvent;
+use crate::domain::constant::{req_identifier_name, ws_push_identifier, ws_req_identifier};
 use crate::infra::logger::decode_operation_id;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
@@ -223,8 +223,8 @@ fn parse_online_status_push(data: &[u8]) -> std::result::Result<Vec<UserEvent>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::constant::ws_push_identifier::WS_SUB_USER_ONLINE_STATUS;
     use crate::core::event::events::user::UserEvent;
+    use crate::domain::constant::ws_push_identifier::WS_SUB_USER_ONLINE_STATUS;
     use openim_protocol::sdkws::{SubUserOnlineStatusElem, SubUserOnlineStatusTips};
     use tokio::sync::oneshot;
 

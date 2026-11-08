@@ -36,6 +36,7 @@ ChatMessage messageFromMessageInfo(MessageInfo raw) {
     isRead: raw.isRead,
     attachedInfo: raw.attachedInfo,
     ex: raw.ex,
+    topicId: raw.topicId,
   );
 }
 
@@ -66,7 +67,8 @@ ChatMessage messageFromMsgStruct(MsgStruct raw) {
     status: raw.status,
     isRead: false,
     attachedInfo: '',
-    ex: '',
+    ex: raw.ex,
+    topicId: raw.topicId,
   );
 }
 
@@ -92,6 +94,7 @@ MsgStruct msgStructFromChatMessage(ChatMessage message) {
     status: message.status,
     attachedInfo: message.attachedInfo,
     ex: message.ex,
+    topicId: message.topicId,
     localEx: '',
   );
 }
@@ -117,6 +120,7 @@ MessageInfo messageInfoFromChatMessage(ChatMessage message) {
     isRead: message.isRead,
     attachedInfo: message.attachedInfo,
     ex: message.ex,
+    topicId: message.topicId,
   );
 }
 

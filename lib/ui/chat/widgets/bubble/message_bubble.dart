@@ -42,6 +42,7 @@ class MessageBubble extends StatelessWidget {
   final GroupReadReceipt? groupReadReceipt;
   final void Function(String source)? onPlayAudio;
   final void Function(ChatMessage message)? onRetrySend;
+  final bool flatThread;
 
   const MessageBubble({
     super.key,
@@ -62,6 +63,7 @@ class MessageBubble extends StatelessWidget {
     this.groupReadReceipt,
     this.onPlayAudio,
     this.onRetrySend,
+    this.flatThread = false,
   });
 
   User _buildSenderUser() {
@@ -128,6 +130,9 @@ class MessageBubble extends StatelessWidget {
     // 否则气泡只有窗口宽的 42%（语音轨道/时长会被挤，文字也会过早换行）。
     final bubbleMaxWidth =
         maxBubbleWidth ?? MediaQuery.sizeOf(context).width * 0.65;
+    if (flatThread) {
+      return _buildFlatThread(context, senderUser, bubbleMaxWidth);
+    }
 
     // 图片与合并转发消息不使用外层气泡背景：图片直接展示，合并转发自带卡片背景，避免两层颜色重叠
     final isPlainContent =
@@ -306,6 +311,100 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildFlatThread(
+    BuildContext context,
+    User senderUser,
+    double maxContentWidth,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => _navigateToProfile(context, senderUser, _isFromMe),
+            child: UserAvatar.fromUser(user: senderUser, radius: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        senderUser.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: context.appColors.textPrimary,
+                          fontSize: AppTheme.fontSizeBody,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatThreadTime(message.sendTime),
+                      style: TextStyle(
+                        color: context.appColors.textSecondary,
+                        fontSize: AppTheme.fontSizeSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap != null ? () => onTap!(message) : null,
+                  onLongPress: onLongPress != null
+                      ? () => onLongPress!(message)
+                      : null,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: buildMessageContent(
+                      message: message,
+                      isFromMe: false,
+                      uploadProgress: uploadProgress,
+                      onPlayAudio: onPlayAudio,
+                      audioPlayback: audioPlayback,
+                    ),
+                  ),
+                ),
+                if (_isFromMe)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: MessageStatusIcon(
+                      message: message,
+                      onRetry: onRetrySend == null
+                          ? null
+                          : () => onRetrySend!(message),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatThreadTime(int milliseconds) {
+    if (milliseconds <= 0) return '';
+    final time = DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    final now = DateTime.now();
+    final clock =
+        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    if (time.year == now.year &&
+        time.month == now.month &&
+        time.day == now.day) {
+      return clock;
+    }
+    if (time.year == now.year) return '${time.month}月${time.day}日 $clock';
+    return '${time.year}年${time.month}月${time.day}日';
   }
 
   void _navigateToProfile(BuildContext context, User user, bool isFromMeHint) {

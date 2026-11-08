@@ -26,6 +26,7 @@ pub struct MessageInfo {
     pub is_read: bool,
     pub attached_info: String,
     pub ex: String,
+    pub topic_id: String,
 }
 
 impl From<MsgData> for MessageInfo {
@@ -50,6 +51,7 @@ impl From<MsgData> for MessageInfo {
             is_read: msg.is_read,
             attached_info: msg.attached_info,
             ex: msg.ex,
+            topic_id: msg.topic_id,
         }
     }
 }
@@ -77,6 +79,7 @@ impl From<&MsgStruct> for MessageInfo {
             is_read: msg.is_read,
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
+            topic_id: msg.topic_id.clone(),
         }
     }
 }
@@ -104,6 +107,7 @@ impl From<&LocalChatLog> for MessageInfo {
             is_read: log.is_read != 0,
             attached_info: log.attached_info.clone(),
             ex: log.ex.clone(),
+            topic_id: log.topic_id.clone(),
         }
     }
 }
@@ -132,6 +136,7 @@ mod tests {
             create_time: 1000,
             is_read: false,
             ex: String::new(),
+            topic_id: String::new(),
             attached_info: String::new(),
             group_id: String::new(),
         };

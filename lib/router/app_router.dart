@@ -6,6 +6,8 @@ import '../domain/models/conversation.dart';
 import '../domain/models/chat_message.dart' show ChatMessage;
 import '../domain/models/group.dart';
 import '../ui/shared/views/route_error_page.dart';
+import '../ui/chat/utils/message_link.dart';
+import '../ui/topics/utils/topic_link.dart';
 import 'app_paths.dart';
 import 'auth_routes.dart';
 import 'chat_routes.dart';
@@ -24,13 +26,15 @@ class AppRouter {
   /// 全局根导航 key，由 AppRouter 唯一持有，确保无 context 导航一致。
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>();
+  static GoRouter? _activeRouter;
+  static Uri? _pendingDeepLink;
 
   /// 构建路由配置
   static GoRouter createRouter({
     required String wsUrl,
     required String apiBaseUrl,
   }) {
-    return GoRouter(
+    final router = GoRouter(
       navigatorKey: rootNavigatorKey,
       initialLocation: AppPaths.splash,
       debugLogDiagnostics: kDebugMode,
@@ -55,6 +59,8 @@ class AppRouter {
         ...buildShellRoutes(),
       ],
     );
+    _activeRouter = router;
+    return router;
   }
 
   // ==================== 导航方法 ====================
@@ -79,6 +85,51 @@ class AppRouter {
   /// 导航到主页面
   static void goToMain(BuildContext context) {
     context.go(AppPaths.main);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      flushPendingDeepLink();
+    });
+  }
+
+  /// 处理来自系统或其他 App 的深链。
+  ///
+  /// 未登录时先挂起，登录进入主框架后再打开，避免绕过启动鉴权。
+  static void handleDeepLink(Uri uri) {
+    final target = _deepLinkTarget(uri);
+    if (target == null) return;
+    final path = _activeRouter?.routerDelegate.currentConfiguration.uri.path;
+    if (path == null || path == AppPaths.splash || path == AppPaths.login) {
+      _pendingDeepLink = uri;
+      return;
+    }
+    _pendingDeepLink = null;
+    _activeRouter?.push(target);
+  }
+
+  static void flushPendingDeepLink() {
+    final uri = _pendingDeepLink;
+    if (uri == null) return;
+    final path = _activeRouter?.routerDelegate.currentConfiguration.uri.path;
+    if (path == null || path == AppPaths.splash || path == AppPaths.login) {
+      return;
+    }
+    final target = _deepLinkTarget(uri);
+    if (target == null) return;
+    _pendingDeepLink = null;
+    _activeRouter?.push(target);
+  }
+
+  static String? _deepLinkTarget(Uri uri) {
+    final topic = parseTopicLink(uri);
+    if (topic != null) {
+      return '${AppPaths.topicDetailOf(topic.topicId)}'
+          '?groupID=${Uri.encodeQueryComponent(topic.groupId)}';
+    }
+    final message = parseMessageLink(uri);
+    if (message != null) {
+      return '${AppPaths.chatDetailOf(message.conversationId)}'
+          '?message=${Uri.encodeQueryComponent(message.clientMsgId)}';
+    }
+    return null;
   }
 
   /// 导航到聊天详情页
@@ -127,6 +178,10 @@ class AppRouter {
     context.push(AppPaths.chatSettingsOf(conversationId));
   }
 
+  static void goToChatHistory(BuildContext context, String conversationId) {
+    context.push(AppPaths.chatHistoryOf(conversationId));
+  }
+
   /// 打开聊天设置页，并等待它返回「用户选中的消息 id」。
   ///
   /// 设置页里的置顶/搜索列表点选某条后会带着 id 返回，
@@ -146,6 +201,38 @@ class AppRouter {
   /// 导航到群组信息页（通过ID）
   static void goToGroupInfoById(BuildContext context, String conversationId) {
     context.push(AppPaths.groupInfoOf(conversationId));
+  }
+
+  static Future<void> goToTopicDetail(
+    BuildContext context, {
+    required String groupId,
+    required String topicId,
+  }) {
+    return context.push<void>(
+      '${AppPaths.topicDetailOf(topicId)}?groupID=${Uri.encodeQueryComponent(groupId)}',
+    );
+  }
+
+  static Future<bool?> goToTopicCompose(
+    BuildContext context, {
+    required String groupId,
+  }) {
+    return context.push<bool>(AppPaths.topicComposeOf(groupId));
+  }
+
+  static Future<void> goToTopicNotifications(BuildContext context) {
+    return context.push<void>(AppPaths.topicNotifications);
+  }
+
+  static Future<void> goToTopicIndexOps(BuildContext context) {
+    return context.push<void>(AppPaths.topicIndexOps);
+  }
+
+  static Future<void> goToTopicSettings(
+    BuildContext context, {
+    required String groupId,
+  }) {
+    return context.push<void>(AppPaths.topicSettingsOf(groupId));
   }
 
   /// 导航到我的个人资料页

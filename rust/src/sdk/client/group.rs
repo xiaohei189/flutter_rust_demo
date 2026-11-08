@@ -4,25 +4,25 @@
 
 use crate::sdk::client::OpenIMClient;
 
+use crate::core::event::events::group::GroupEvent;
 use crate::domain::constant::GroupType;
 use crate::domain::error::{Result, SdkError};
-use crate::core::event::events::group::GroupEvent;
-use crate::infra::http::group::GroupApplyInfo;
 use crate::domain::model::group::{GroupInfo, GroupMember};
+use crate::infra::http::group::GroupApplyInfo;
 use async_trait::async_trait;
 
 #[async_trait]
 pub trait GroupApi: Send + Sync {
     fn take_group_rx(&self) -> std::result::Result<tokio::sync::mpsc::UnboundedReceiver<GroupEvent>, SdkError>;
     async fn get_group_list(&self) -> Vec<GroupInfo>;
-    async fn create_group(&self, group_name: &str, group_type: GroupType, member_ids: &[String]) -> Result<GroupInfo>;
+    async fn create_group(&self, group_name: &str, group_type: GroupType, member_ids: &[String], ex: Option<&str>) -> Result<GroupInfo>;
     async fn join_group(&self, group_id: &str, req_msg: Option<&str>) -> Result<()>;
     async fn quit_group(&self, group_id: &str) -> Result<()>;
     async fn get_group_members(&self, group_id: &str) -> Result<Vec<GroupMember>>;
     async fn invite_group_members(&self, group_id: &str, member_ids: &[String], reason: Option<&str>) -> Result<()>;
     async fn kick_group_members(&self, group_id: &str, member_ids: &[String], reason: Option<&str>) -> Result<()>;
     async fn get_groups_info(&self, group_ids: &[String]) -> std::result::Result<Vec<GroupInfo>, SdkError>;
-    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>) -> Result<()>;
+    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>, ex: Option<&str>) -> Result<()>;
     async fn get_group_members_info(&self, group_id: &str, user_ids: &[String]) -> Result<Vec<GroupMember>>;
     async fn dismiss_group(&self, group_id: &str) -> Result<()>;
     async fn get_group_application_list(&self) -> std::result::Result<Vec<GroupApplyInfo>, SdkError>;
@@ -63,9 +63,11 @@ impl GroupApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(group_name = %group_name))]
-    async fn create_group(&self, group_name: &str, _group_type: GroupType, member_ids: &[String]) -> Result<GroupInfo> {
+    async fn create_group(&self, group_name: &str, _group_type: GroupType, member_ids: &[String], ex: Option<&str>) -> Result<GroupInfo> {
         let user_id = self.context.user_id.get_blocking();
-        self.group.create_group(group_name.to_string(), None, None, None, member_ids.to_vec(), vec![], user_id).await
+        self.group
+            .create_group(group_name.to_string(), None, None, None, member_ids.to_vec(), vec![], user_id, ex.map(str::to_string))
+            .await
     }
 
     #[tracing::instrument(skip_all, fields(group_id = %group_id))]
@@ -99,7 +101,7 @@ impl GroupApi for OpenIMClient {
     }
 
     #[tracing::instrument(skip_all, fields(group_id = %group_id))]
-    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>) -> Result<()> {
+    async fn set_group_info(&self, group_id: &str, group_name: Option<&str>, face_url: Option<&str>, introduction: Option<&str>, notification: Option<&str>, ex: Option<&str>) -> Result<()> {
         self.group
             .set_group_info(crate::domain::model::group::SetGroupInfoFields {
                 group_id: group_id.to_string(),
@@ -107,7 +109,7 @@ impl GroupApi for OpenIMClient {
                 face_url: face_url.map(|s| s.to_string()),
                 introduction: introduction.map(|s| s.to_string()),
                 notification: notification.map(|s| s.to_string()),
-                ex: None,
+                ex: ex.map(|s| s.to_string()),
             })
             .await
     }

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../../domain/models/conversation.dart';
 import '../../../domain/models/group_member.dart';
+import '../../../domain/models/group_mode.dart';
 import '../../../domain/models/user.dart';
 import '../../../providers/current_user_provider.dart';
 import '../../../providers/im_providers.dart';
 import '../../chat/providers/conversation_provider.dart';
+import '../../topics/providers/topic_provider.dart';
 import '../providers/group_provider.dart';
 
 /// 群信息页状态
@@ -15,6 +17,7 @@ class GroupInfoState {
   final bool isLoading;
   final String groupName;
   final String groupDescription;
+  final GroupMode mode;
 
   /// 本地乐观更新的头像 URL（含缓存穿透参数），优先于会话数据展示
   final String? localAvatarUrl;
@@ -28,6 +31,7 @@ class GroupInfoState {
     this.isLoading = false,
     this.groupName = '群聊',
     this.groupDescription = '暂无描述',
+    this.mode = GroupMode.chat,
     this.localAvatarUrl,
     this.error,
     this.groupMissing = false,
@@ -38,6 +42,7 @@ class GroupInfoState {
     bool? isLoading,
     String? groupName,
     String? groupDescription,
+    GroupMode? mode,
     String? localAvatarUrl,
     bool clearLocalAvatarUrl = false,
     String? error,
@@ -49,6 +54,7 @@ class GroupInfoState {
       isLoading: isLoading ?? this.isLoading,
       groupName: groupName ?? this.groupName,
       groupDescription: groupDescription ?? this.groupDescription,
+      mode: mode ?? this.mode,
       localAvatarUrl: clearLocalAvatarUrl
           ? null
           : (localAvatarUrl ?? this.localAvatarUrl),
@@ -153,6 +159,7 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
         groupDescription: group.introduction.isEmpty
             ? '暂无描述'
             : group.introduction,
+        mode: group.mode,
       );
       return true;
     } catch (e) {
@@ -201,6 +208,22 @@ class GroupInfoViewModel extends FamilyNotifier<GroupInfoState, String> {
       return true;
     } catch (e) {
       state = state.copyWith(error: '更新失败: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateGroupMode(GroupMode mode) async {
+    state = state.copyWith(clearError: true);
+    try {
+      await ref
+          .read(topicRepositoryProvider)
+          .setGroupMode(groupId: groupId, mode: mode);
+      state = state.copyWith(mode: mode);
+      await ref.read(groupListProvider.notifier).loadGroups();
+      await ref.read(conversationListProvider.notifier).refreshConversations();
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: '群模式切换失败: $e');
       return false;
     }
   }

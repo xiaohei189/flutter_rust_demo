@@ -11,9 +11,9 @@ mod search;
 use crate::core::context::Repositories;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
 use crate::core::event::events::message::MessageListener;
-use crate::infra::http::message::MessageServerApi;
 use crate::core::message::receive::checker::{MessageChecker, SeqPullContext};
 use crate::domain::model::UserId;
+use crate::infra::http::message::MessageServerApi;
 use std::sync::Arc;
 
 /// 消息服务 — 用户主动发起的消息操作（撤回/删除/标记已读/搜索）
@@ -55,12 +55,12 @@ impl MessageService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sdk::client::{GetHistoryMessagesReq, SearchMessagesReq};
+    use crate::domain::model::local::{LocalChatLog, LocalConversation};
+    use crate::domain::model::UserId;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::infra::http::message::{DeleteMessagesReq, MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
-    use crate::domain::model::local::{LocalChatLog, LocalConversation};
-    use crate::domain::model::UserId;
+    use crate::sdk::client::{GetHistoryMessagesReq, SearchMessagesReq};
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -161,6 +161,7 @@ mod tests {
             create_time: seq * 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

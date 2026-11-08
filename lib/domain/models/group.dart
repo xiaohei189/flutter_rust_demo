@@ -1,9 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'group_mode.dart';
+
 part 'group.freezed.dart';
 
 @freezed
 class Group with _$Group {
+  const Group._();
+
   const factory Group({
     required String groupId,
     required String groupName,
@@ -13,6 +17,9 @@ class Group with _$Group {
     required String ownerUserId,
     required int memberCount,
     required int status,
+    @Default('') String ex,
     DateTime? createdTime,
   }) = _Group;
+
+  GroupMode get mode => GroupMode.fromEx(ex);
 }

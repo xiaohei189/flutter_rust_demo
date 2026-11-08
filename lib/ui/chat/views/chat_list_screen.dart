@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/connection_provider.dart';
 import '../../../providers/current_user_provider.dart';
+import '../../../application/chat/topic_event_revision_provider.dart';
+import '../../../application/topics/topic_notification_controller.dart';
 import '../../../../domain/models/conversation.dart';
+import '../../../../domain/models/group.dart';
+import '../../../../domain/models/topic.dart';
 import '../../../../domain/models/user_profile.dart' show UserProfile;
 import '../../../../router/app_router.dart';
 import '../../../../ui/core/theme/app_theme.dart';
@@ -15,6 +19,8 @@ import '../../../../ui/chat/widgets/list/chat_list_skeleton.dart';
 import '../../../../ui/shared/widgets/app_dropdown_menu.dart';
 import '../../../../ui/profile/views/profile_drawer_screen.dart';
 import '../../profile/providers/user_profile_provider.dart';
+import '../../groups/providers/group_provider.dart';
+import '../../topics/providers/topic_provider.dart';
 import '../../core/view_models/connection_view_model.dart';
 import '../providers/chat_list_provider.dart';
 import '../providers/conversation_folder_provider.dart';
@@ -209,6 +215,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final folderLabels = ref.watch(conversationFolderLabelProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final listState = ref.watch(chatListViewModelProvider);
+    final groupsById = {
+      for (final group in ref.watch(groupListProvider).groups)
+        group.groupId: group,
+    };
+    final topicEventRevision = ref.watch(topicEventRevisionProvider);
+    final topicReadRevision = ref.watch(topicReadRevisionProvider);
     final activeFilter = listState.activeFilter;
     final typingByConversation = conversationState.typingByConversation;
     final failedConversationIds = conversationState.failedConversationIds;
@@ -220,7 +232,31 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final conversations = _viewModel.filteredConversations(
       conversationState.conversations,
     );
-    final totalUnread = conversationState.totalUnreadCount;
+    final topicSummaries = <String, TopicGroupSummary>{};
+    var topicUnreadAdjustment = 0;
+    for (final conversation in conversationState.conversations) {
+      if (groupsById[conversation.groupId]?.mode.isTopic != true) continue;
+      final summary = ref
+          .watch(
+            topicGroupSummaryProvider((
+              groupId: conversation.groupId,
+              revision: Object.hash(
+                conversation.latestMsgSendTime,
+                topicEventRevision,
+                topicReadRevision,
+              ),
+            )),
+          )
+          .value;
+      if (summary == null) continue;
+      topicSummaries[conversation.groupId] = summary;
+      topicUnreadAdjustment +=
+          summary.unreadTopicCount -
+          ChatListViewModel.effectiveUnreadCount(conversation);
+    }
+    final adjustedTotalUnread =
+        conversationState.totalUnreadCount + topicUnreadAdjustment;
+    final totalUnread = adjustedTotalUnread < 0 ? 0 : adjustedTotalUnread;
 
     return Scaffold(
       backgroundColor: colors.surface,
@@ -250,6 +286,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         },
         onSearchTap: () {
           AppRouter.goToSearch(context);
+        },
+        notificationUnreadCount: ref.watch(
+          unreadTopicNotificationCountProvider,
+        ),
+        onNotificationsTap: () {
+          AppRouter.goToTopicNotifications(context);
         },
         onRefresh: _viewModel.refreshConversations,
         onAddTap: _openAddMenu,
@@ -287,6 +329,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 typingByConversation: typingByConversation,
                 failedConversationIds: failedConversationIds,
                 folderLabels: folderLabels,
+                groupsById: groupsById,
+                topicSummaries: topicSummaries,
               ),
             ),
           ),
@@ -308,6 +352,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
     required Map<String, String> folderLabels,
+    required Map<String, Group> groupsById,
+    required Map<String, TopicGroupSummary> topicSummaries,
   }) {
     if (conversationState.isLoading && conversations.isEmpty) {
       return ListView(
@@ -362,6 +408,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             typingByConversation: typingByConversation,
             failedConversationIds: failedConversationIds,
             folderLabels: folderLabels,
+            groupsById: groupsById,
+            topicSummaries: topicSummaries,
             focusAtMe: focusAtMe,
             conversationState: conversationState,
           ),
@@ -406,6 +454,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     required Map<String, String> typingByConversation,
     required Set<String> failedConversationIds,
     required Map<String, String> folderLabels,
+    required Map<String, Group> groupsById,
+    required Map<String, TopicGroupSummary> topicSummaries,
     required bool focusAtMe,
     required ConversationListState conversationState,
   }) {
@@ -426,6 +476,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final hasSendFailure = failedConversationIds.contains(
       conversation.conversationId,
     );
+    final isTopicGroup = groupsById[conversation.groupId]?.mode.isTopic == true;
+    final topicSummary = isTopicGroup
+        ? topicSummaries[conversation.groupId]
+        : null;
 
     return ChatListItem(
       key: ValueKey<String>(conversation.conversationId),
@@ -434,6 +488,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       currentUserLocalAvatarPath: currentUserLocalAvatarPath,
       previewText: conversationState.previews[conversation.conversationId],
       timeText: conversationState.timeTexts[conversation.conversationId],
+      topicPreviewText: topicSummary?.displayPreview,
+      topicUnreadCount: topicSummary?.unreadTopicCount,
+      topicActivityAt: topicSummary?.latestActivityAt,
       currentUserId: currentUserId,
       isSelectionMode: _selectionMode,
       isSelected: _selectedIds.contains(conversation.conversationId),
@@ -464,8 +521,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         conversation.conversationId,
         !conversation.isPinned,
       ),
-      onMarkRead: () =>
-          _viewModel.markConversationAsRead(conversation.conversationId),
+      onMarkRead: () {
+        _markConversationRead(conversation, isTopicGroup: isTopicGroup);
+      },
       onMarkUnread: () =>
           _viewModel.markConversationAsUnread(conversation.conversationId),
       onMuteToggle: () => _viewModel.toggleConversationMute(
@@ -493,6 +551,23 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             .addToFolder(folder, conversation.conversationId);
       },
     );
+  }
+
+  Future<void> _markConversationRead(
+    Conversation conversation, {
+    required bool isTopicGroup,
+  }) async {
+    if (isTopicGroup && conversation.groupId.isNotEmpty) {
+      try {
+        await ref
+            .read(topicRepositoryProvider)
+            .markGroupRead(conversation.groupId);
+        ref.invalidate(topicGroupSummaryProvider);
+      } catch (_) {
+        // The OpenIM conversation read marker below remains the fallback.
+      }
+    }
+    await _viewModel.markConversationAsRead(conversation.conversationId);
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {

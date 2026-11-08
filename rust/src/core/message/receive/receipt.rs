@@ -1,10 +1,10 @@
 //! 已读回执处理（impl MessageProcessor）
 
 use super::processor::MessageProcessor;
-use crate::domain::constant::session_type;
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::ConversationEvent;
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt, MessageReceipt};
+use crate::domain::constant::session_type;
+use crate::domain::error::{Result, SdkError};
 use openim_protocol::sdkws::{MarkAsReadTips, MsgData};
 use prost::Message as ProstMessage;
 use tracing::info;
@@ -191,10 +191,10 @@ mod tests {
     use super::*;
     use crate::core::context::Repositories;
     use crate::domain::constant::notification_type::HAS_READ_RECEIPT;
-    use crate::infra::db::pool::create_pool_memory;
-    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::domain::model::UserId;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use openim_protocol::sdkws::MarkAsReadTips;
     use prost::Message as ProstMessage;
     use std::sync::Arc;
@@ -252,6 +252,7 @@ mod tests {
             create_time: seq * 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

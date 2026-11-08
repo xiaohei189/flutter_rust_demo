@@ -26,15 +26,10 @@ enum DemoMsg {
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn seed_demo_data() {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::INFO).with_target(false).try_init();
 
     // ========== 1. 目标账号（当前登录用户） ==========
-    let target_phone = std::env::var("OPENIM_DEMO_TARGET_PHONE")
-        .ok()
-        .filter(|s| !s.is_empty());
+    let target_phone = std::env::var("OPENIM_DEMO_TARGET_PHONE").ok().filter(|s| !s.is_empty());
     let me = match &target_phone {
         Some(phone) => {
             println!("\n========== 目标账号：当前登录用户 phone={} ==========", phone);
@@ -102,17 +97,44 @@ async fn seed_demo_data() {
     // ========== 5. 单聊会话：我 ↔ 联系人 ==========
     println!("\n========== 单聊消息 ==========");
     let scripts: Vec<(usize, Vec<DemoMsg>, &str)> = vec![
-        (0, vec![DemoMsg::Text("早，昨天的方案我整体看了，没问题"), DemoMsg::Image("https://picsum.photos/seed/zhang/400/300"), DemoMsg::Text("原型图更新了一版，你空了看下")], "收到，我下午看"),
-        (1, vec![DemoMsg::Text("需求评审定在明天下午三点，别忘了"), DemoMsg::Markdown("# 评审议程\n1. 登录流程\n2. 会话列表\n3. 消息收发")], "好，我准时到"),
+        (
+            0,
+            vec![
+                DemoMsg::Text("早，昨天的方案我整体看了，没问题"),
+                DemoMsg::Image("https://picsum.photos/seed/zhang/400/300"),
+                DemoMsg::Text("原型图更新了一版，你空了看下"),
+            ],
+            "收到，我下午看",
+        ),
+        (
+            1,
+            vec![
+                DemoMsg::Text("需求评审定在明天下午三点，别忘了"),
+                DemoMsg::Markdown("# 评审议程\n1. 登录流程\n2. 会话列表\n3. 消息收发"),
+            ],
+            "好，我准时到",
+        ),
         (2, vec![DemoMsg::Text("接口联调文档我放共享盘了"), DemoMsg::Text("有问题随时找我")], "OK，联调有问题我喊你"),
         (3, vec![DemoMsg::Text("这个月的 OKR 更新下哈")], "收到，我今晚更新"),
-        (4, vec![DemoMsg::Text("新版本的测试用例我写好了"), DemoMsg::Image("https://picsum.photos/seed/liuyang/400/300")], "辛苦，我下午跑一遍"),
+        (
+            4,
+            vec![DemoMsg::Text("新版本的测试用例我写好了"), DemoMsg::Image("https://picsum.photos/seed/liuyang/400/300")],
+            "辛苦，我下午跑一遍",
+        ),
         (5, vec![DemoMsg::Text("周报记得今晚提交")], "好的，马上写"),
         (6, vec![DemoMsg::Text("上次说的设计稿改好了吗？")], "改好了，发你邮箱了"),
         (7, vec![DemoMsg::Text("预算审批下来了，可以推进了")], "太好了，我安排排期"),
-        (8, vec![DemoMsg::Text("周末爬山的事定了吗？"), DemoMsg::Image("https://picsum.photos/seed/su/400/300")], "定了，周六早上八点集合"),
+        (
+            8,
+            vec![DemoMsg::Text("周末爬山的事定了吗？"), DemoMsg::Image("https://picsum.photos/seed/su/400/300")],
+            "定了，周六早上八点集合",
+        ),
         (9, vec![DemoMsg::Text("新同事入职流程走完了，欢迎欢迎")], "谢谢！请多关照"),
-        (10, vec![DemoMsg::Text("下周三有个技术分享，你来吗？"), DemoMsg::Markdown("## 主题\nRust 与 Flutter 的性能实践")], "来，我报名"),
+        (
+            10,
+            vec![DemoMsg::Text("下周三有个技术分享，你来吗？"), DemoMsg::Markdown("## 主题\nRust 与 Flutter 的性能实践")],
+            "来，我报名",
+        ),
         (11, vec![DemoMsg::Text("同学聚会定在月底，记得空出时间")], "没问题，我记下了"),
     ];
 
@@ -160,12 +182,7 @@ async fn seed_demo_data() {
         .create_group(
             "周末羽毛球",
             GroupType::Normal,
-            &[
-                others[8].0.user_id.clone(),
-                others[9].0.user_id.clone(),
-                others[10].0.user_id.clone(),
-                others[11].0.user_id.clone(),
-            ],
+            &[others[8].0.user_id.clone(), others[9].0.user_id.clone(), others[10].0.user_id.clone(), others[11].0.user_id.clone()],
         )
         .await
         .expect("创建群2失败");
@@ -179,15 +196,7 @@ async fn seed_demo_data() {
     send_demo_msg(&me_sdk, &g2.group_id, 3, &DemoMsg::Text("带！顺便带两桶球")).await;
 
     let g3 = me_sdk
-        .create_group(
-            "同学聚会",
-            GroupType::Normal,
-            &[
-                others[5].0.user_id.clone(),
-                others[6].0.user_id.clone(),
-                others[11].0.user_id.clone(),
-            ],
-        )
+        .create_group("同学聚会", GroupType::Normal, &[others[5].0.user_id.clone(), others[6].0.user_id.clone(), others[11].0.user_id.clone()])
         .await
         .expect("创建群3失败");
     println!("  群3: {} ({})", g3.group_name, g3.group_id);
@@ -201,12 +210,7 @@ async fn seed_demo_data() {
         .create_group(
             "项目管理群",
             GroupType::Normal,
-            &[
-                others[2].0.user_id.clone(),
-                others[3].0.user_id.clone(),
-                others[7].0.user_id.clone(),
-                others[5].0.user_id.clone(),
-            ],
+            &[others[2].0.user_id.clone(), others[3].0.user_id.clone(), others[7].0.user_id.clone(), others[5].0.user_id.clone()],
         )
         .await
         .expect("创建群4失败");
@@ -234,9 +238,7 @@ async fn send_demo_msg(sdk: &OpenIMClient, target: &str, session_type: i32, msg:
         DemoMsg::Text(t) => sdk.send_text_message(t, target, session_type).await,
         DemoMsg::Markdown(t) => sdk.send_markdown_message(t, target, session_type).await,
         DemoMsg::Image(url) => sdk.send_image_message_from_url(url, target, session_type).await,
-        DemoMsg::At(t, ids) => {
-            sdk.send_at_text_message(t, ids.clone(), target, session_type).await
-        }
+        DemoMsg::At(t, ids) => sdk.send_at_text_message(t, ids.clone(), target, session_type).await,
     };
     if let Err(e) = result {
         println!("  发送失败 target={} err={:?}", target, e);

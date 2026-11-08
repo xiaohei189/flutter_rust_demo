@@ -1,13 +1,13 @@
-use crate::domain::error::Result;
 use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
-use crate::infra::http::FriendServerApi;
+use crate::domain::error::Result;
 use crate::domain::model::friend::FriendInfo;
 use crate::domain::model::local::LocalFriend;
 use crate::domain::model::UserId;
+use crate::infra::http::FriendServerApi;
 
-use crate::sdk::client::context::Repositories;
 use crate::infra::http::friend::*;
 use crate::infra::http::Pagination;
+use crate::sdk::client::context::Repositories;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;

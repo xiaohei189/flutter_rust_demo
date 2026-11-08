@@ -228,6 +228,7 @@ pub struct MsgStruct {
     pub status: i32,
     pub attached_info: String,
     pub ex: String,
+    pub topic_id: String,
     pub local_ex: String,
 
     pub text_elem: Option<TextElem>,
@@ -269,6 +270,7 @@ impl Default for MsgStruct {
             status: 0,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             text_elem: None,
             picture_elem: None,
@@ -668,6 +670,7 @@ impl From<&MsgStruct> for MsgData {
             at_user_id_list: msg.at_text_elem.as_ref().map(|e| e.at_user_list.clone()).unwrap_or_default(),
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
+            topic_id: msg.topic_id.clone(),
         }
     }
 }
@@ -695,6 +698,7 @@ impl From<&MsgData> for MsgStruct {
             is_read: data.is_read,
             attached_info: data.attached_info.clone(),
             ex: data.ex.clone(),
+            topic_id: data.topic_id.clone(),
             offline_push: data.offline_push_info.as_ref().map(|p| OfflinePushInfo {
                 title: p.title.clone(),
                 desc: p.desc.clone(),
@@ -739,6 +743,7 @@ impl From<&MsgStruct> for LocalChatLog {
             create_time: msg.create_time,
             attached_info: msg.attached_info.clone(),
             ex: msg.ex.clone(),
+            topic_id: msg.topic_id.clone(),
             local_ex: msg.local_ex.clone(),
             group_id: msg.group_id.clone(),
         }
@@ -765,6 +770,7 @@ impl From<&LocalChatLog> for MsgStruct {
             is_read: log.is_read != 0,
             attached_info: log.attached_info.clone(),
             ex: log.ex.clone(),
+            topic_id: log.topic_id.clone(),
             local_ex: log.local_ex.clone(),
             sender_platform_id: log.sender_platform_id,
             sender_nickname: log.sender_nick_name.clone(),

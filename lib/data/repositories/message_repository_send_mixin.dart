@@ -37,6 +37,14 @@ mixin MessageRepositorySendMixin on Object {
   Future<MsgStruct> createTextMessage({required String text}) =>
       ffi_message_builder.createTextMessage(text: text);
 
+  Future<MsgStruct> attachTopicId({
+    required MsgStruct message,
+    required String topicId,
+  }) async => ffi_message_builder.setMessageTopicId(
+    message: message,
+    topicId: topicId,
+  );
+
   /// 构造本地 Markdown 消息（对齐 Go `CreateMarkdownMessage`）
   Future<MsgStruct> createMarkdownMessage({required String text}) =>
       ffi_message_builder.createMarkdownMessage(text: text);
@@ -143,6 +151,17 @@ mixin MessageRepositorySendMixin on Object {
   }) => ffi_message_builder.createQuoteMessage(
     text: text,
     quotedMsg: msgStructFromChatMessage(quoted),
+  );
+
+  /// 构造自定义消息（contentType=110）。
+  Future<MsgStruct> createCustomMessage({
+    required String data,
+    required String extension,
+    required String description,
+  }) => ffi_message_builder.createCustomMessage(
+    data: data,
+    extension_: extension,
+    description: description,
   );
 
   /// 发送已构建的本地消息（对齐 Go `SendMessage`）

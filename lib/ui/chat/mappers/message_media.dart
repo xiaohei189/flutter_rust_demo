@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import '../../../../domain/models/chat_message.dart' show ChatMessage;
+import '../../../../domain/models/topic.dart' show TopicShareCard;
 import 'message_parsed.dart' show parsedContentOf;
 
 /// 消息媒体/内容类型的展示 getter。
@@ -155,6 +158,16 @@ extension ChatMessageMediaExt on ChatMessage {
   // ---- 自定义 ----
   String get customData => parsedContentOf(this)['data'] as String? ?? '';
   String get customExtension => parsedContentOf(this)['extension'] as String? ?? '';
+  TopicShareCard? get topicShareCard {
+    if (customData.isEmpty) return null;
+    try {
+      final json = jsonDecode(customData);
+      if (json is! Map || json['type'] != TopicShareCard.type) return null;
+      return TopicShareCard.fromJson(Map<String, dynamic>.from(json));
+    } catch (_) {
+      return null;
+    }
+  }
 
   // ---- 时长/大小格式化 ----
   String _formatDuration(int seconds) {

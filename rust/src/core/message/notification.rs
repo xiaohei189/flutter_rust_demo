@@ -9,17 +9,17 @@
 //! 对齐 Go SDK `UnmarshalNotificationElem`：先解析外层 NotificationElem，
 //! 再解析内层 detail 到目标类型。
 
-use crate::domain::constant::notification_type;
 use crate::core::conversation::service::{CleanupSource, ConversationService};
 use crate::core::conversation::syncer::ConversationSyncer;
 use crate::core::event::events::friend::{FriendEvent, FriendListener, FriendListenerExt};
 use crate::core::event::events::group::{GroupEvent, GroupListener, GroupListenerExt};
 use crate::core::event::events::user::{UserEvent, UserListener, UserListenerExt};
+use crate::core::message::MessageProcessor;
+use crate::core::user::service::UserService;
+use crate::domain::constant::notification_type;
+use crate::domain::model::UserId;
 use crate::sdk::friend::service::FriendService;
 use crate::sdk::group::service::GroupService;
-use crate::core::message::MessageProcessor;
-use crate::domain::model::UserId;
-use crate::core::user::service::UserService;
 use openim_protocol::sdkws::MsgData;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
@@ -503,7 +503,13 @@ impl NotificationHandler {
     async fn cleanup_group_conversation(&self, group_id: &str, source: CleanupSource) {
         let conversation_id = format!("sg_{}", group_id);
         if let Err(e) = self.conversation_service.delete_conversation_with_source(&conversation_id, source).await {
-            warn!("[NOTIFY] 清理群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}", source.as_str(), group_id, conversation_id, e);
+            warn!(
+                "[NOTIFY] 清理群会话失败: cleanup_source={}, group_id={}, conversation_id={}, err={}",
+                source.as_str(),
+                group_id,
+                conversation_id,
+                e
+            );
         }
     }
 
@@ -519,9 +525,9 @@ mod tests {
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;
 
+    use crate::core::event::events::conversation::ConversationEvent;
     use crate::core::event::hub::EventHub;
     use crate::core::event::test_util::*;
-    use crate::core::event::events::conversation::ConversationEvent;
     use crate::infra::http::client::HttpApiClient;
     use crate::infra::http::conversation::ConversationServerApi;
     use crate::infra::http::friend::FriendServerApi;
@@ -613,7 +619,18 @@ mod tests {
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
-        let handler = NotificationHandler::new(friend_service, group_service, user_service, syncer, conversation_service, processor, hub.clone(), hub.clone(), hub.clone(), user_id);
+        let handler = NotificationHandler::new(
+            friend_service,
+            group_service,
+            user_service,
+            syncer,
+            conversation_service,
+            processor,
+            hub.clone(),
+            hub.clone(),
+            hub.clone(),
+            user_id,
+        );
 
         handler.handle_notifications(&[]).await;
     }
@@ -709,7 +726,18 @@ mod tests {
 
         let processor = Arc::new(MessageProcessor::new(repos.clone(), user_id.clone(), hub.clone(), hub.clone()));
 
-        NotificationHandler::new(friend_service, group_service, user_service, syncer, conversation_service, processor, hub.clone(), hub.clone(), hub.clone(), user_id)
+        NotificationHandler::new(
+            friend_service,
+            group_service,
+            user_service,
+            syncer,
+            conversation_service,
+            processor,
+            hub.clone(),
+            hub.clone(),
+            hub.clone(),
+            user_id,
+        )
     }
 
     #[tokio::test]
@@ -848,6 +876,7 @@ mod tests {
                 create_time: 1000,
                 attached_info: String::new(),
                 ex: String::new(),
+                topic_id: String::new(),
                 local_ex: String::new(),
                 group_id: String::new(),
             }])
@@ -905,9 +934,7 @@ mod tests {
 
         let group_api: Arc<dyn GroupServerApi> = Arc::new(crate::infra::http::group_api::HttpGroupApi::new(http.clone()));
         let conversation_service = Arc::new(ConversationService::new(repos.clone(), hub.clone()));
-        let group_service = Arc::new(
-            GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()).with_conversation_service(conversation_service.clone()),
-        );
+        let group_service = Arc::new(GroupService::new(group_api, repos.clone(), user_id.clone(), hub.clone()).with_conversation_service(conversation_service.clone()));
 
         let user_service = Arc::new(UserService::new(Arc::new(crate::infra::http::user_api::HttpUserApi::new(http.clone())), repos.clone(), hub.clone()));
 

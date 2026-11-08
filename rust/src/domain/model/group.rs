@@ -21,6 +21,8 @@ pub struct GroupInfo {
     pub member_count: u32,
     /// 状态 (0:正常, 1:封禁, 2:解散)
     pub status: i32,
+    /// 群扩展 JSON
+    pub ex: String,
 }
 
 /// 群成员信息模型

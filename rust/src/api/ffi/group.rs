@@ -13,9 +13,9 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn create_group(&self, group_name: String, group_type: i32, member_ids: Vec<String>) -> Result<crate::domain::model::group::GroupInfo> {
+    pub async fn create_group(&self, group_name: String, group_type: i32, member_ids: Vec<String>, ex: Option<String>) -> Result<crate::domain::model::group::GroupInfo> {
         self.inner
-            .create_group(&group_name, crate::domain::constant::GroupType::from_i32(group_type), &member_ids)
+            .create_group(&group_name, crate::domain::constant::GroupType::from_i32(group_type), &member_ids, ex.as_deref())
             .await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }
@@ -56,9 +56,17 @@ impl OpenIMBridgeClient {
     }
 
     #[flutter_rust_bridge::frb]
-    pub async fn set_group_info(&self, group_id: String, group_name: Option<String>, face_url: Option<String>, introduction: Option<String>, notification: Option<String>) -> Result<()> {
+    pub async fn set_group_info(
+        &self,
+        group_id: String,
+        group_name: Option<String>,
+        face_url: Option<String>,
+        introduction: Option<String>,
+        notification: Option<String>,
+        ex: Option<String>,
+    ) -> Result<()> {
         self.inner
-            .set_group_info(&group_id, group_name.as_deref(), face_url.as_deref(), introduction.as_deref(), notification.as_deref())
+            .set_group_info(&group_id, group_name.as_deref(), face_url.as_deref(), introduction.as_deref(), notification.as_deref(), ex.as_deref())
             .await
             .map_err(|e| anyhow::anyhow!("{}", e))
     }

@@ -1,9 +1,9 @@
 //! 本地消息搜索
 
 use super::MessageService;
-use crate::sdk::client::SearchMessagesReq;
 use crate::domain::error::Result;
 use crate::domain::model::local::LocalChatLog;
+use crate::sdk::client::SearchMessagesReq;
 use tracing::info;
 
 impl MessageService {

@@ -11,12 +11,14 @@ mixin GroupInfoMixin on Object {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) async {
     try {
       final group = await client.createGroup(
         groupName: groupName,
         groupType: groupType,
         memberIds: memberIds,
+        ex: ex,
       );
       appLog.i('[GroupService] 创建群组成功: ${group.groupId}');
       return group;
@@ -34,6 +36,7 @@ mixin GroupInfoMixin on Object {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) async {
     try {
       await client.setGroupInfo(
@@ -42,6 +45,7 @@ mixin GroupInfoMixin on Object {
         faceUrl: faceUrl,
         introduction: introduction,
         notification: notification,
+        ex: ex,
       );
       appLog.i('[GroupService] 修改群组信息成功: $groupId');
     } catch (e) {

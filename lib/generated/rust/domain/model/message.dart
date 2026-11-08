@@ -27,6 +27,7 @@ class MessageInfo {
   final bool isRead;
   final String attachedInfo;
   final String ex;
+  final String topicId;
 
   const MessageInfo({
     required this.clientMsgId,
@@ -48,6 +49,7 @@ class MessageInfo {
     required this.isRead,
     required this.attachedInfo,
     required this.ex,
+    required this.topicId,
   });
 
   @override
@@ -70,7 +72,8 @@ class MessageInfo {
       status.hashCode ^
       isRead.hashCode ^
       attachedInfo.hashCode ^
-      ex.hashCode;
+      ex.hashCode ^
+      topicId.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -95,5 +98,6 @@ class MessageInfo {
           status == other.status &&
           isRead == other.isRead &&
           attachedInfo == other.attachedInfo &&
-          ex == other.ex;
+          ex == other.ex &&
+          topicId == other.topicId;
 }

@@ -1,10 +1,10 @@
 //! 撤回通知处理（impl MessageProcessor）
 
 use super::processor::MessageProcessor;
-use crate::domain::constant::notification_type::REVOKE;
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::conversation::ConversationEvent;
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt};
+use crate::domain::constant::notification_type::REVOKE;
+use crate::domain::error::{Result, SdkError};
 use openim_protocol::sdkws::RevokeMsgTips;
 use tracing::{info, warn};
 
@@ -81,7 +81,9 @@ impl MessageProcessor {
             revoker_nickname = revoked_msg.sender_nick_name.clone();
         }
         info!("[REVOKE-DEBUG] 最终昵称: '{}', user_id: '{}'", revoker_nickname, tips.revoker_user_id);
-        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT {
+        if revoker_nickname == tips.revoker_user_id && tips.sesstion_type == crate::domain::constant::session_type::WRITE_GROUP_CHAT
+            || tips.sesstion_type == crate::domain::constant::session_type::READ_GROUP_CHAT
+        {
             if let Ok(Some(conv)) = self.repositories.conversation_repo.get_by_id(&tips.conversation_id).await {
                 if let Ok(members) = self.repositories.group_repo.get_members(&conv.group_id).await {
                     if let Some(member) = members.iter().find(|m| m.user_id == tips.revoker_user_id) {
@@ -332,10 +334,10 @@ mod tests {
 
     use crate::core::context::Repositories;
     use crate::domain::constant::notification_type::REVOKE as REVOKE_CT;
-    use crate::infra::db::pool::create_pool_memory;
-    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::domain::model::UserId;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
     use std::sync::Arc;
 
     fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
@@ -394,6 +396,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

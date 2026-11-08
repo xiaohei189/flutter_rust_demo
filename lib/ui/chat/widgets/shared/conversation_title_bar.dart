@@ -24,8 +24,10 @@ class ConversationTitleBar extends StatelessWidget
     this.syncProgress = 0,
     this.onAvatarTap,
     this.onSearchTap,
+    this.onNotificationsTap,
     this.onAddTap,
     this.onRefresh,
+    this.notificationUnreadCount = 0,
   });
 
   final String currentUserId;
@@ -40,8 +42,10 @@ class ConversationTitleBar extends StatelessWidget
   final int syncProgress;
   final VoidCallback? onAvatarTap;
   final VoidCallback? onSearchTap;
+  final VoidCallback? onNotificationsTap;
   final VoidCallback? onAddTap;
   final VoidCallback? onRefresh;
+  final int notificationUnreadCount;
 
   String get _displayName {
     if (nickname != null && nickname!.isNotEmpty) return nickname!;
@@ -154,6 +158,27 @@ class ConversationTitleBar extends StatelessWidget
                 icon: const Icon(Icons.search, size: 30),
                 color: colors.textPrimary,
                 onPressed: onSearchTap,
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(40, 40),
+                ),
+              ),
+            ),
+            Semantics(
+              label: '话题通知',
+              button: true,
+              child: IconButton(
+                icon: Badge(
+                  isLabelVisible: notificationUnreadCount > 0,
+                  label: Text(
+                    notificationUnreadCount > 99
+                        ? '99+'
+                        : '$notificationUnreadCount',
+                  ),
+                  child: const Icon(Icons.notifications_outlined, size: 27),
+                ),
+                color: colors.textPrimary,
+                onPressed: onNotificationsTap,
                 style: IconButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(40, 40),

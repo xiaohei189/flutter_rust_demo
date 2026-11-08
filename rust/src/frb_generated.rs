@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1795987318;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1414579700;
 
 // Section: executor
 
@@ -455,6 +455,7 @@ fn wire__crate__api__ffi__client__OpenImBridgeClient_create_group_impl(
             let api_group_name = <String>::sse_decode(&mut deserializer);
             let api_group_type = <i32>::sse_decode(&mut deserializer);
             let api_member_ids = <Vec<String>>::sse_decode(&mut deserializer);
+            let api_ex = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -468,7 +469,7 @@ fn wire__crate__api__ffi__client__OpenImBridgeClient_create_group_impl(
                             }
                         }
                         let api_that_guard = api_that_guard.unwrap();
-                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids).await?;
+                        let output_ok = crate::api::ffi::client::OpenIMBridgeClient::create_group(&*api_that_guard, api_group_name, api_group_type, api_member_ids, api_ex).await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -3882,6 +3883,7 @@ fn wire__crate__api__ffi__client__OpenImBridgeClient_set_group_info_impl(
             let api_face_url = <Option<String>>::sse_decode(&mut deserializer);
             let api_introduction = <Option<String>>::sse_decode(&mut deserializer);
             let api_notification = <Option<String>>::sse_decode(&mut deserializer);
+            let api_ex = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
@@ -3896,7 +3898,8 @@ fn wire__crate__api__ffi__client__OpenImBridgeClient_set_group_info_impl(
                         }
                         let api_that_guard = api_that_guard.unwrap();
                         let output_ok =
-                            crate::api::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url, api_introduction, api_notification).await?;
+                            crate::api::ffi::client::OpenIMBridgeClient::set_group_info(&*api_that_guard, api_group_id, api_group_name, api_face_url, api_introduction, api_notification, api_ex)
+                                .await?;
                         Ok(output_ok)
                     })()
                     .await,
@@ -6427,6 +6430,33 @@ fn wire__crate__api__ffi__message_advanced__set_message_local_ex_impl(
         },
     )
 }
+fn wire__crate__api__ffi__message_builder__set_message_topic_id_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "set_message_topic_id",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_message = <crate::domain::model::msg_struct::MsgStruct>::sse_decode(&mut deserializer);
+            let api_topic_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok(crate::api::ffi::message_builder::set_message_topic_id(api_message, api_topic_id))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__ffi__global__un_init_sdk_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -7172,6 +7202,7 @@ impl SseDecode for crate::domain::model::group::GroupInfo {
         let mut var_createTime = <i64>::sse_decode(deserializer);
         let mut var_memberCount = <u32>::sse_decode(deserializer);
         let mut var_status = <i32>::sse_decode(deserializer);
+        let mut var_ex = <String>::sse_decode(deserializer);
         return crate::domain::model::group::GroupInfo {
             group_id: var_groupId,
             group_name: var_groupName,
@@ -7182,6 +7213,7 @@ impl SseDecode for crate::domain::model::group::GroupInfo {
             create_time: var_createTime,
             member_count: var_memberCount,
             status: var_status,
+            ex: var_ex,
         };
     }
 }
@@ -7530,6 +7562,7 @@ impl SseDecode for crate::domain::model::local::LocalChatLog {
         let mut var_createTime = <i64>::sse_decode(deserializer);
         let mut var_attachedInfo = <String>::sse_decode(deserializer);
         let mut var_ex = <String>::sse_decode(deserializer);
+        let mut var_topicId = <String>::sse_decode(deserializer);
         let mut var_localEx = <String>::sse_decode(deserializer);
         let mut var_groupId = <String>::sse_decode(deserializer);
         return crate::domain::model::local::LocalChatLog {
@@ -7552,6 +7585,7 @@ impl SseDecode for crate::domain::model::local::LocalChatLog {
             create_time: var_createTime,
             attached_info: var_attachedInfo,
             ex: var_ex,
+            topic_id: var_topicId,
             local_ex: var_localEx,
             group_id: var_groupId,
         };
@@ -7830,6 +7864,7 @@ impl SseDecode for crate::domain::model::message::MessageInfo {
         let mut var_isRead = <bool>::sse_decode(deserializer);
         let mut var_attachedInfo = <String>::sse_decode(deserializer);
         let mut var_ex = <String>::sse_decode(deserializer);
+        let mut var_topicId = <String>::sse_decode(deserializer);
         return crate::domain::model::message::MessageInfo {
             client_msg_id: var_clientMsgId,
             server_msg_id: var_serverMsgId,
@@ -7850,6 +7885,7 @@ impl SseDecode for crate::domain::model::message::MessageInfo {
             is_read: var_isRead,
             attached_info: var_attachedInfo,
             ex: var_ex,
+            topic_id: var_topicId,
         };
     }
 }
@@ -7892,6 +7928,7 @@ impl SseDecode for crate::domain::model::msg_struct::MsgStruct {
         let mut var_status = <i32>::sse_decode(deserializer);
         let mut var_attachedInfo = <String>::sse_decode(deserializer);
         let mut var_ex = <String>::sse_decode(deserializer);
+        let mut var_topicId = <String>::sse_decode(deserializer);
         let mut var_localEx = <String>::sse_decode(deserializer);
         let mut var_textElem = <Option<crate::domain::model::msg_struct::TextElem>>::sse_decode(deserializer);
         let mut var_pictureElem = <Option<crate::domain::model::msg_struct::PictureElem>>::sse_decode(deserializer);
@@ -7928,6 +7965,7 @@ impl SseDecode for crate::domain::model::msg_struct::MsgStruct {
             status: var_status,
             attached_info: var_attachedInfo,
             ex: var_ex,
+            topic_id: var_topicId,
             local_ex: var_localEx,
             text_elem: var_textElem,
             picture_elem: var_pictureElem,
@@ -8685,10 +8723,11 @@ fn pde_ffi_dispatcher_primary_impl(
         176 => wire__crate__api__ffi__ffi_init__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
         177 => wire__crate__api__ffi__ffi_init__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
         178 => wire__crate__api__ffi__message_advanced__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
-        179 => wire__crate__api__ffi__global__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
-        180 => wire__crate__api__ffi__third__update_fcm_token_impl(port, ptr, rust_vec_len, data_len),
-        181 => wire__crate__api__ffi__message_media__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        182 => wire__crate__api__ffi__message_media__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        179 => wire__crate__api__ffi__message_builder__set_message_topic_id_impl(port, ptr, rust_vec_len, data_len),
+        180 => wire__crate__api__ffi__global__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
+        181 => wire__crate__api__ffi__third__update_fcm_token_impl(port, ptr, rust_vec_len, data_len),
+        182 => wire__crate__api__ffi__message_media__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        183 => wire__crate__api__ffi__message_media__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -9126,6 +9165,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::group::GroupInfo {
             self.create_time.into_into_dart().into_dart(),
             self.member_count.into_into_dart().into_dart(),
             self.status.into_into_dart().into_dart(),
+            self.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -9201,6 +9241,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::local::LocalChatLog
             self.create_time.into_into_dart().into_dart(),
             self.attached_info.into_into_dart().into_dart(),
             self.ex.into_into_dart().into_dart(),
+            self.topic_id.into_into_dart().into_dart(),
             self.local_ex.into_into_dart().into_dart(),
             self.group_id.into_into_dart().into_dart(),
         ]
@@ -9455,6 +9496,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::message::MessageInf
             self.is_read.into_into_dart().into_dart(),
             self.attached_info.into_into_dart().into_dart(),
             self.ex.into_into_dart().into_dart(),
+            self.topic_id.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -9506,6 +9548,7 @@ impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MsgStru
             self.status.into_into_dart().into_dart(),
             self.attached_info.into_into_dart().into_dart(),
             self.ex.into_into_dart().into_dart(),
+            self.topic_id.into_into_dart().into_dart(),
             self.local_ex.into_into_dart().into_dart(),
             self.text_elem.into_into_dart().into_dart(),
             self.picture_elem.into_into_dart().into_dart(),
@@ -10336,6 +10379,7 @@ impl SseEncode for crate::domain::model::group::GroupInfo {
         <i64>::sse_encode(self.create_time, serializer);
         <u32>::sse_encode(self.member_count, serializer);
         <i32>::sse_encode(self.status, serializer);
+        <String>::sse_encode(self.ex, serializer);
     }
 }
 
@@ -10621,6 +10665,7 @@ impl SseEncode for crate::domain::model::local::LocalChatLog {
         <i64>::sse_encode(self.create_time, serializer);
         <String>::sse_encode(self.attached_info, serializer);
         <String>::sse_encode(self.ex, serializer);
+        <String>::sse_encode(self.topic_id, serializer);
         <String>::sse_encode(self.local_ex, serializer);
         <String>::sse_encode(self.group_id, serializer);
     }
@@ -10820,6 +10865,7 @@ impl SseEncode for crate::domain::model::message::MessageInfo {
         <bool>::sse_encode(self.is_read, serializer);
         <String>::sse_encode(self.attached_info, serializer);
         <String>::sse_encode(self.ex, serializer);
+        <String>::sse_encode(self.topic_id, serializer);
     }
 }
 
@@ -10855,6 +10901,7 @@ impl SseEncode for crate::domain::model::msg_struct::MsgStruct {
         <i32>::sse_encode(self.status, serializer);
         <String>::sse_encode(self.attached_info, serializer);
         <String>::sse_encode(self.ex, serializer);
+        <String>::sse_encode(self.topic_id, serializer);
         <String>::sse_encode(self.local_ex, serializer);
         <Option<crate::domain::model::msg_struct::TextElem>>::sse_encode(self.text_elem, serializer);
         <Option<crate::domain::model::msg_struct::PictureElem>>::sse_encode(self.picture_elem, serializer);

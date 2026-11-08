@@ -68,11 +68,170 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required String text,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createTextMessage(text: text),
+    topicId: topicId,
+  );
+
+  Future<PendingSend> sendTopicRootText({
+    required String conversationId,
+    required String groupId,
+    required String text,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createTextMessage(text: text),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootMarkdown({
+    required String conversationId,
+    required String groupId,
+    required String text,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createMarkdownMessage(text: text),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootAtText({
+    required String conversationId,
+    required String groupId,
+    required String text,
+    required List<String> atUserIds,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () =>
+        repository.createAtTextMessage(text: text, atUserIds: atUserIds),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootImage({
+    required String conversationId,
+    required String groupId,
+    required String filePath,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createImageMessage(filePath: filePath),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootImageFromUrl({
+    required String conversationId,
+    required String groupId,
+    required String sourceUrl,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createImageMessageFromUrl(sourceUrl: sourceUrl),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootVideo({
+    required String conversationId,
+    required String groupId,
+    required String videoPath,
+    required String snapshotPath,
+    required int duration,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createVideoMessage(
+      videoPath: videoPath,
+      snapshotPath: snapshotPath,
+      duration: duration,
+    ),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootSound({
+    required String conversationId,
+    required String groupId,
+    required String filePath,
+    required int duration,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () =>
+        repository.createSoundMessage(filePath: filePath, duration: duration),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootFile({
+    required String conversationId,
+    required String groupId,
+    required String filePath,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createFileMessage(filePath: filePath),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootLocation({
+    required String conversationId,
+    required String groupId,
+    required String description,
+    required double latitude,
+    required double longitude,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createLocationMessage(
+      description: description,
+      latitude: latitude,
+      longitude: longitude,
+    ),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootCard({
+    required String conversationId,
+    required String groupId,
+    required String userId,
+    required String nickname,
+    required String faceUrl,
+    required String ex,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createCardMessage(
+      userId: userId,
+      nickname: nickname,
+      faceUrl: faceUrl,
+      ex: ex,
+    ),
+    topicRoot: true,
+  );
+
+  Future<PendingSend> sendTopicRootQuote({
+    required String conversationId,
+    required String groupId,
+    required String text,
+    required ChatMessage quoted,
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: groupId,
+    sessionType: ChatSessionType.writeGroupChat,
+    create: () => repository.createQuoteMessage(text: text, quoted: quoted),
+    topicRoot: true,
   );
 
   Future<PendingSend> sendMarkdown({
@@ -80,11 +239,13 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required String text,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createMarkdownMessage(text: text),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendAtText({
@@ -93,12 +254,14 @@ class MessageSendPipeline {
     required ChatSessionType sessionType,
     required String text,
     required List<String> atUserIds,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () =>
         repository.createAtTextMessage(text: text, atUserIds: atUserIds),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendQuote({
@@ -107,11 +270,33 @@ class MessageSendPipeline {
     required ChatSessionType sessionType,
     required String text,
     required ChatMessage quoted,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createQuoteMessage(text: text, quoted: quoted),
+    topicId: topicId,
+  );
+
+  Future<PendingSend> sendCustom({
+    required String conversationId,
+    required String sourceId,
+    required ChatSessionType sessionType,
+    required String data,
+    required String extension,
+    required String description,
+    String topicId = '',
+  }) => _prepare(
+    conversationId: conversationId,
+    sourceId: sourceId,
+    sessionType: sessionType,
+    create: () => repository.createCustomMessage(
+      data: data,
+      extension: extension,
+      description: description,
+    ),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendImage({
@@ -119,11 +304,13 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required String filePath,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createImageMessage(filePath: filePath),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendImageFromUrl({
@@ -131,11 +318,13 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required String sourceUrl,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createImageMessageFromUrl(sourceUrl: sourceUrl),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendVideo({
@@ -145,6 +334,7 @@ class MessageSendPipeline {
     required String videoPath,
     required String snapshotPath,
     required int duration,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
@@ -154,6 +344,7 @@ class MessageSendPipeline {
       snapshotPath: snapshotPath,
       duration: duration,
     ),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendSound({
@@ -162,12 +353,14 @@ class MessageSendPipeline {
     required ChatSessionType sessionType,
     required String filePath,
     required int duration,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () =>
         repository.createSoundMessage(filePath: filePath, duration: duration),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendFile({
@@ -175,11 +368,13 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required String filePath,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createFileMessage(filePath: filePath),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendLocation({
@@ -189,6 +384,7 @@ class MessageSendPipeline {
     required String description,
     required double latitude,
     required double longitude,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
@@ -198,6 +394,7 @@ class MessageSendPipeline {
       latitude: latitude,
       longitude: longitude,
     ),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendFace({
@@ -206,11 +403,13 @@ class MessageSendPipeline {
     required ChatSessionType sessionType,
     required int index,
     required String data,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
     sessionType: sessionType,
     create: () => repository.createFaceMessage(index: index, data: data),
+    topicId: topicId,
   );
 
   Future<PendingSend> sendCard({
@@ -221,6 +420,7 @@ class MessageSendPipeline {
     required String nickname,
     required String faceUrl,
     required String ex,
+    String topicId = '',
   }) => _prepare(
     conversationId: conversationId,
     sourceId: sourceId,
@@ -231,6 +431,7 @@ class MessageSendPipeline {
       faceUrl: faceUrl,
       ex: ex,
     ),
+    topicId: topicId,
   );
 
   /// 重发失败消息（对齐官方 Demo `_sendMessage(message..status = sending, addToUI: false)`）：
@@ -266,9 +467,18 @@ class MessageSendPipeline {
     required String sourceId,
     required ChatSessionType sessionType,
     required Future<MsgStruct> Function() create,
+    String topicId = '',
+    bool topicRoot = false,
   }) async {
     _ensureReady();
-    final local = await create();
+    var local = await create();
+    final resolvedTopicId = topicRoot ? local.clientMsgId : topicId;
+    if (resolvedTopicId.isNotEmpty) {
+      local = await repository.attachTopicId(
+        message: local,
+        topicId: resolvedTopicId,
+      );
+    }
     final message = localMessage(
       local,
       sourceId: sourceId,

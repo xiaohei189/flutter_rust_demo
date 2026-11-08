@@ -67,6 +67,10 @@ const TYPING_STATE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 
 type TypingStates = Arc<RwLock<HashMap<(String, String), HashMap<i32, std::time::Instant>>>>;
 
+fn is_online_only_message(msg: &MsgData) -> bool {
+    msg.content_type == content_type::CUSTOM_MSG_ONLINE_ONLY || msg.options.get("isOnlineOnly").copied().unwrap_or(false)
+}
+
 /// 清理已过期的输入状态，返回需要广播「结束输入」的 (conversation_id, user_id)。
 ///
 /// 对齐 Go SDK entering.go 的 `state.OnEvicted` → `changes()` 语义。
@@ -316,9 +320,11 @@ impl MessageProcessor {
 
         for msg in &normal_messages {
             if processed_ids.contains(&msg.client_msg_id) {
-                let mut local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
-                self.handle_exception_messages(None, &mut local_msg);
-                insert_list.push(local_msg);
+                if ContentTypeUtils::should_store(msg.content_type) {
+                    let mut local_msg: LocalChatLog = LocalChatLog::from_msg_data(conv_id, msg);
+                    self.handle_exception_messages(None, &mut local_msg);
+                    insert_list.push(local_msg);
+                }
                 continue;
             }
             processed_ids.insert(msg.client_msg_id.clone());
@@ -326,8 +332,13 @@ impl MessageProcessor {
             let exists = existing_map.get(&msg.client_msg_id);
             let is_self = msg.send_id == login_user_id;
             let is_store = ContentTypeUtils::should_store(msg.content_type);
+            let is_online_only = is_online_only_message(msg);
 
-            if is_self {
+            if is_self && is_online_only {
+                // online-only messages are not persisted locally, so the server's
+                // sender-sync copy is the only source of the realtime event.
+                to_notify.push(msg.clone());
+            } else if is_self {
                 if let Some(existing) = exists {
                     if existing.seq == 0 && msg.seq > 0 && is_store {
                         batch_update_list.push((existing.client_msg_id.clone(), msg.seq));
@@ -339,7 +350,6 @@ impl MessageProcessor {
                     }
                 }
             } else {
-                let is_online_only = msg.options.get("isOnlineOnly").copied().unwrap_or(false);
                 if exists.is_none() {
                     if is_online_only || !is_store {
                         to_notify.push(msg.clone());
@@ -374,7 +384,7 @@ impl MessageProcessor {
         for msg in &to_notify_cloned {
             let is_conversation_update = ContentTypeUtils::should_update_conversation(msg.content_type);
             let is_self = msg.send_id == login_user_id;
-            let is_online_only = msg.options.get("isOnlineOnly").copied().unwrap_or(false);
+            let is_online_only = is_online_only_message(msg);
             // 会话列表预览存「完整消息信封」而不是裸 content：客户端要靠
             // contentType 渲染「[语音]」「[图片]」等文案（裸 content 缺该字段 →
             // 媒体消息预览退化成「暂无消息」）。
@@ -394,7 +404,11 @@ impl MessageProcessor {
                         conversation_type: msg.session_type,
                         // 单聊会话 user_id 为对方（自己发的消息取 recv_id，否则取 send_id）
                         user_id: if msg.session_type == 1 {
-                            if is_self { msg.recv_id.clone() } else { msg.send_id.clone() }
+                            if is_self {
+                                msg.recv_id.clone()
+                            } else {
+                                msg.send_id.clone()
+                            }
                         } else {
                             String::new()
                         },
@@ -456,7 +470,7 @@ impl MessageProcessor {
         for msg in &to_notify {
             let conversation_id = conv_id.to_string();
             let message = MessageInfo::from(msg.clone());
-            if msg.options.get("isOnlineOnly").copied().unwrap_or(false) {
+            if is_online_only_message(msg) {
                 self.message_listener.emit(MessageEvent::OnlineOnlyMessage { conversation_id, message });
             } else {
                 self.message_listener.emit(MessageEvent::NewMessage { conversation_id, message });
@@ -467,7 +481,7 @@ impl MessageProcessor {
         let offline_msgs: Vec<MsgData> = if is_from_sync && !to_notify.is_empty() {
             to_notify
                 .into_iter()
-                .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING && !m.options.get("isOnlineOnly").copied().unwrap_or(false))
+                .filter(|m| m.send_id != login_user_id && m.content_type != content_type::TYPING && !is_online_only_message(m))
                 .collect()
         } else {
             Vec::new()
@@ -505,15 +519,9 @@ mod tests {
         {
             let mut guard = states.write().await;
             // 已过期
-            guard.insert(
-                ("c1".to_string(), "u1".to_string()),
-                HashMap::from([(5, now - std::time::Duration::from_secs(1))]),
-            );
+            guard.insert(("c1".to_string(), "u1".to_string()), HashMap::from([(5, now - std::time::Duration::from_secs(1))]));
             // 仍未过期
-            guard.insert(
-                ("c2".to_string(), "u2".to_string()),
-                HashMap::from([(5, now + std::time::Duration::from_secs(5))]),
-            );
+            guard.insert(("c2".to_string(), "u2".to_string()), HashMap::from([(5, now + std::time::Duration::from_secs(5))]));
         }
 
         let evicted = sweep_expired(states.clone(), std::time::Instant::now()).await;
@@ -566,6 +574,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }
@@ -1102,6 +1111,7 @@ mod tests {
             create_time: 1000,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -1164,10 +1174,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_self_online_only_message_publishes_event_without_storing() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let message_dao = repositories.message_repo.clone();
+        let hub = crate::core::event::hub::EventHub::new();
+        let handler = MessageProcessor::new(repositories, UserId::new("self_user"), crate::core::event::test_util::noop_conversation_listener(), hub.clone());
+        let mut rx = hub.take_message_rx().unwrap();
+
+        let msgs = vec![{
+            let mut m = msg_with_ct("online_self", "conv_online_self", 1, content_type::CUSTOM_MSG_ONLINE_ONLY);
+            m.send_id = "self_user".into();
+            m
+        }];
+        handler.handle_messages("conv_online_self", msgs).await.unwrap();
+
+        let logs = message_dao.get_by_conversation("conv_online_self", 0, 100).await.unwrap();
+        assert_eq!(logs.len(), 0, "self online_only message should NOT be stored");
+        match rx.try_recv().expect("self online_only message should publish an event") {
+            MessageEvent::OnlineOnlyMessage { conversation_id, message } => {
+                assert_eq!(conversation_id, "conv_online_self");
+                assert_eq!(message.client_msg_id, "online_self");
+            }
+            other => panic!("expected OnlineOnlyMessage, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
     async fn test_typing_event_publishes_user_input_status() {
         let pool = create_pool_memory().await.unwrap();
         let hub = crate::core::event::hub::EventHub::new();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new("self_user"), hub.clone(), crate::core::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new("self_user"),
+            hub.clone(),
+            crate::core::event::test_util::noop_message_listener(),
+        );
         let mut rx = hub.take_conv_rx().unwrap();
 
         let msgs = vec![{
@@ -1199,7 +1241,12 @@ mod tests {
     async fn test_self_typing_ignored() {
         let pool = create_pool_memory().await.unwrap();
         let hub = crate::core::event::hub::EventHub::new();
-        let handler = MessageProcessor::new(make_test_repositories(pool), UserId::new("self_user"), hub.clone(), crate::core::event::test_util::noop_message_listener());
+        let handler = MessageProcessor::new(
+            make_test_repositories(pool),
+            UserId::new("self_user"),
+            hub.clone(),
+            crate::core::event::test_util::noop_message_listener(),
+        );
         let mut rx = hub.take_conv_rx().unwrap();
 
         let msgs = vec![{

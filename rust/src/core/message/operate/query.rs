@@ -4,16 +4,16 @@
 //! 发送中消息清理、群消息本地插入等。只读写本地仓库并发布事件，不依赖门面。
 
 use super::MessageService;
-use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
-use crate::domain::constant::MessageSendStatus;
-use crate::domain::error::{Result, SdkError};
 use crate::core::conversation::enrich::batch_add_face_url_and_name;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt};
 use crate::core::message::receive::checker::SeqPullContext;
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::{LocalChatLog, LocalConversation};
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, MsgStruct};
+use crate::sdk::client::{GetHistoryMessagesReq, GetHistoryMessagesResult};
 use openim_protocol::sdkws::MsgData;
 use tracing::{debug, info, warn};
 
@@ -322,6 +322,7 @@ impl MessageService {
             create_time: now,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -385,6 +386,7 @@ impl MessageService {
             create_time: now,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -415,13 +417,13 @@ impl MessageService {
 mod tests {
     use super::*;
     use crate::core::context::Repositories;
+    use crate::core::event::test_util::*;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::*;
-    use crate::core::event::test_util::*;
 
-    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use crate::domain::model::local::{LocalChatLog, LocalConversation};
     use crate::domain::model::UserId;
+    use crate::infra::http::message::{MarkConversationAsReadReq, MarkMessagesAsReadReq, MessageServerApi, RevokeMessageReq};
     use async_trait::async_trait;
     use std::sync::Arc;
 
@@ -492,6 +494,7 @@ mod tests {
             create_time: send_time,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         }

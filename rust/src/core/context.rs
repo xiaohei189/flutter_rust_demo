@@ -1,13 +1,13 @@
 //! 运行时上下文 — 聚合基础设施与仓储，管理 SDK 生命周期
 
 use crate::core::config::ClientConfig;
+use crate::core::event::hub::EventHub;
+use crate::domain::error::{Result, SdkError};
+use crate::domain::model::UserId;
 use crate::infra::db::pool::create_pool;
 use crate::infra::db::*;
 use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-use crate::domain::error::{Result, SdkError};
-use crate::core::event::hub::EventHub;
 use crate::infra::http::client::HttpApiClient;
-use crate::domain::model::UserId;
 use sqlx::SqlitePool;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -159,41 +159,35 @@ mod tests {
         let _ = std::fs::remove_dir_all(&data_dir);
     }
 }
-    /// 对齐 Go SDK：数据库文件名包含登录用户 ID，账号间数据隔离；close_db 幂等可重复调用
-    #[tokio::test]
-    async fn test_db_file_isolated_by_user_and_close_db_idempotent() {
-        let data_dir = std::env::temp_dir()
-            .join(format!("openim_test_iso_{}", chrono::Utc::now().timestamp_millis()))
-            .to_string_lossy()
-            .to_string();
-        std::fs::create_dir_all(&data_dir).unwrap();
+/// 对齐 Go SDK：数据库文件名包含登录用户 ID，账号间数据隔离；close_db 幂等可重复调用
+#[tokio::test]
+async fn test_db_file_isolated_by_user_and_close_db_idempotent() {
+    let data_dir = std::env::temp_dir()
+        .join(format!("openim_test_iso_{}", chrono::Utc::now().timestamp_millis()))
+        .to_string_lossy()
+        .to_string();
+    std::fs::create_dir_all(&data_dir).unwrap();
 
-        let config = ClientConfig {
-            user_id: "user_iso".to_string(),
-            token: "token123".to_string(),
-            platform_id: 5,
-            ws_url: Some("ws://localhost:10001".to_string()),
-            api_base_url: "http://localhost:10002".to_string(),
-            upload_url: Some("http://localhost:10003".to_string()),
-            data_dir: data_dir.clone(),
-        };
-        let listeners = EventHub::new();
-        let cancel_token = CancellationToken::new();
+    let config = ClientConfig {
+        user_id: "user_iso".to_string(),
+        token: "token123".to_string(),
+        platform_id: 5,
+        ws_url: Some("ws://localhost:10001".to_string()),
+        api_base_url: "http://localhost:10002".to_string(),
+        upload_url: Some("http://localhost:10003".to_string()),
+        data_dir: data_dir.clone(),
+    };
+    let listeners = EventHub::new();
+    let cancel_token = CancellationToken::new();
 
-        let context = RuntimeContext::new(config, listeners, cancel_token).await.unwrap();
-        // 库文件名按用户 ID 生成，而不是按平台 ID
-        assert!(
-            std::path::Path::new(&format!("{}/openim_user_iso.db", data_dir)).exists(),
-            "数据库文件应按用户 ID 隔离命名"
-        );
-        assert!(
-            !std::path::Path::new(&format!("{}/openim_5.db", data_dir)).exists(),
-            "不应再按平台 ID 命名数据库"
-        );
+    let context = RuntimeContext::new(config, listeners, cancel_token).await.unwrap();
+    // 库文件名按用户 ID 生成，而不是按平台 ID
+    assert!(std::path::Path::new(&format!("{}/openim_user_iso.db", data_dir)).exists(), "数据库文件应按用户 ID 隔离命名");
+    assert!(!std::path::Path::new(&format!("{}/openim_5.db", data_dir)).exists(), "不应再按平台 ID 命名数据库");
 
-        // 登出对齐 Go：关闭数据库连接池，且幂等
-        context.close_db().await;
-        context.close_db().await;
+    // 登出对齐 Go：关闭数据库连接池，且幂等
+    context.close_db().await;
+    context.close_db().await;
 
-        let _ = std::fs::remove_dir_all(&data_dir);
-    }
+    let _ = std::fs::remove_dir_all(&data_dir);
+}

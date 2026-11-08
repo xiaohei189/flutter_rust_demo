@@ -96,6 +96,18 @@ class WorkbenchScreen extends ConsumerWidget {
             label: '全部已读',
             onTap: () => _handleMarkAllRead(context, ref),
           ),
+          (
+            icon: Icons.notifications_active_outlined,
+            color: AppIconColors.orange,
+            label: '话题通知',
+            onTap: () => AppRouter.goToTopicNotifications(context),
+          ),
+          (
+            icon: Icons.build_circle_outlined,
+            color: AppIconColors.red,
+            label: '索引运维',
+            onTap: () => AppRouter.goToTopicIndexOps(context),
+          ),
         ];
 
     return Container(

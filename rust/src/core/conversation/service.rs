@@ -852,6 +852,7 @@ mod tests {
             create_time: 8888,
             attached_info: String::new(),
             ex: String::new(),
+            topic_id: String::new(),
             local_ex: String::new(),
             group_id: String::new(),
         };
@@ -1002,10 +1003,7 @@ mod tests {
         let _ = rx.try_recv();
         let _ = rx.try_recv();
 
-        let removed = manager
-            .reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync)
-            .await
-            .unwrap();
+        let removed = manager.reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync).await.unwrap();
         assert_eq!(removed, 1);
         assert!(manager.get_conversation("sg_group_dead").await.unwrap().is_none(), "失效群的会话必须被清理");
         assert!(manager.get_conversation("sg_group_alive").await.unwrap().is_some());
@@ -1015,12 +1013,8 @@ mod tests {
         }
 
         // 重复执行：不报错，也不再广播
-        let removed_again = manager
-            .reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync)
-            .await
-            .unwrap();
+        let removed_again = manager.reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync).await.unwrap();
         assert_eq!(removed_again, 0);
         assert!(rx.try_recv().is_err(), "重复对账不应重复广播删除");
     }
-
 }

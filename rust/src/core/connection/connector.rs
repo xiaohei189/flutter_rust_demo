@@ -4,8 +4,8 @@
 
 use crate::core::connection::manager::ConnectionManager;
 use crate::core::connection::ws::{GzipCompressor, WebSocketConnectResp};
-use crate::domain::error::{Result, SdkError};
 use crate::core::event::events::connection::ConnectionEvent;
+use crate::domain::error::{Result, SdkError};
 use crate::infra::logger::extract_trace_id;
 use futures_util::StreamExt;
 use std::time::Duration;
@@ -62,18 +62,12 @@ impl ConnectionManager {
         let auth_frame = match timeout(self.auth_timeout, read.next()).await {
             Ok(frame) => frame,
             Err(_) => {
-                error!(
-                    "WebSocket auth timeout after {:?}, url={}",
-                    self.auth_timeout, full_url
-                );
+                error!("WebSocket auth timeout after {:?}, url={}", self.auth_timeout, full_url);
                 *self.state.write().await = crate::core::connection::manager::ConnectionState::Disconnected;
                 self.send(ConnectionEvent::ConnectFailed {
                     // 对齐 Go sdkerrs.NetworkError = 10000
                     err_code: 10000,
-                    error: format!(
-                        "WebSocket auth timeout ({}s)",
-                        self.auth_timeout.as_secs()
-                    ),
+                    error: format!("WebSocket auth timeout ({}s)", self.auth_timeout.as_secs()),
                 });
                 return Err(SdkError::timeout("WebSocket auth timeout"));
             }

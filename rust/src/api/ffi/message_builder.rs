@@ -274,6 +274,13 @@ pub fn create_face_message(index: i32, data: String) -> MsgStruct {
     MsgStruct::create_face_message(index, &data)
 }
 
+/// 给已构建的消息附加话题 ID。
+#[flutter_rust_bridge::frb]
+pub fn set_message_topic_id(mut message: MsgStruct, topic_id: String) -> MsgStruct {
+    message.topic_id = topic_id;
+    message
+}
+
 // ============================================================================
 // 工具
 // ============================================================================

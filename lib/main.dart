@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_rust_demo/generated/rust/api/ffi/ffi_init.dart'
     show setLogDirectory;
 import 'package:flutter_rust_demo/generated/rust/frb_generated.dart';
@@ -65,22 +67,48 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _deepLinkSubscription;
+  StreamSubscription<Uri>? _notificationTapSubscription;
+  late final GoRouter _router;
+
   @override
   void initState() {
     super.initState();
+    _router = AppRouter.createRouter(
+      wsUrl: kWsUrl,
+      apiBaseUrl: kApiBaseUrl,
+    );
     WidgetsBinding.instance.addObserver(this);
     _initServices();
+    unawaited(_initDeepLinks());
   }
 
   @override
   void dispose() {
+    unawaited(_deepLinkSubscription?.cancel());
+    unawaited(_notificationTapSubscription?.cancel());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _initDeepLinks() async {
+    final initial = await _appLinks.getInitialLink();
+    if (initial != null) AppRouter.handleDeepLink(initial);
+    _deepLinkSubscription = _appLinks.uriLinkStream.listen(
+      AppRouter.handleDeepLink,
+    );
   }
 
   Future<void> _initServices() async {
     await LocaleService.instance.load();
     await LocalNotificationService.instance.initialize();
+    final initialTap = LocalNotificationService.instance.takeInitialTapUri();
+    if (initialTap != null) AppRouter.handleDeepLink(initialTap);
+    _notificationTapSubscription = LocalNotificationService
+        .instance
+        .notificationTaps
+        .listen(AppRouter.handleDeepLink);
   }
 
   @override
@@ -99,11 +127,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final router = AppRouter.createRouter(
-      wsUrl: kWsUrl,
-      apiBaseUrl: kApiBaseUrl,
-    );
-
     return ProviderScope(
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleService.instance.locale,
@@ -128,7 +151,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               child: AppLockGate(child: child ?? const SizedBox.shrink()),
             ),
           ),
-          routerConfig: router,
+          routerConfig: _router,
         ),
       ),
     );

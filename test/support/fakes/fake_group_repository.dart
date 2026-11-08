@@ -43,6 +43,7 @@ class BaseFakeGroupRepository implements GroupRepository {
     required String groupName,
     required int groupType,
     required List<String> memberIds,
+    String? ex,
   }) async {
     throw UnimplementedError();
   }
@@ -113,6 +114,7 @@ class BaseFakeGroupRepository implements GroupRepository {
     String? faceUrl,
     String? introduction,
     String? notification,
+    String? ex,
   }) async {
     throw UnimplementedError();
   }

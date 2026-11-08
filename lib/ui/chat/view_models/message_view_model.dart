@@ -78,6 +78,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String text,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送消息失败',
     start: () => _messageService.sendTextMessage(
@@ -86,6 +87,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
       sessionType: sessionType,
       conversationId: arg,
       groupId: groupId ?? '',
+      topicId: topicId,
     ),
   );
 
@@ -94,6 +96,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String text,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送 Markdown 消息失败',
     start: () => _messageService.sendMarkdownMessage(
@@ -102,6 +105,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
       sessionType: sessionType,
       conversationId: arg,
       groupId: groupId ?? '',
+      topicId: topicId,
     ),
   );
 
@@ -111,6 +115,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required List<String> atUserIds,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送 @ 消息失败',
     start: () => _messageService.sendAtTextMessage(
@@ -120,6 +125,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
       sessionType: sessionType,
       conversationId: arg,
       groupId: groupId ?? '',
+      topicId: topicId,
     ),
   );
 
@@ -131,12 +137,14 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String filePath,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送图片失败',
     start: () => _messageService.sendImageMessage(
       filePath: filePath,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       conversationId: arg,
     ),
   );
@@ -147,12 +155,14 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String sourceUrl,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送图片失败',
     start: () => _messageService.sendImageMessageFromUrl(
       sourceUrl: sourceUrl,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       conversationId: arg,
     ),
   );
@@ -164,6 +174,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required ChatSessionType sessionType,
     required int duration,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送视频失败',
     start: () => _messageService.sendVideoMessage(
@@ -171,6 +182,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
       snapshotPath: snapshotPath,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       duration: duration,
       conversationId: arg,
     ),
@@ -182,12 +194,14 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required ChatSessionType sessionType,
     required int duration,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送语音失败',
     start: () => _messageService.sendSoundMessage(
       filePath: filePath,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       duration: duration,
       conversationId: arg,
     ),
@@ -198,12 +212,14 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required String filePath,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送文件失败',
     start: () => _messageService.sendFileMessage(
       filePath: filePath,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       conversationId: arg,
     ),
   );
@@ -215,6 +231,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
     required double longitude,
     required ChatSessionType sessionType,
     String? groupId,
+    String topicId = '',
   }) => _dispatch(
     failText: '发送位置失败',
     start: () => _messageService.sendLocationMessage(
@@ -223,6 +240,7 @@ class MessageListNotifier extends FamilyNotifier<MessageListState, String> {
       longitude: longitude,
       sourceId: _sourceId(recvId, groupId),
       sessionType: sessionType,
+      topicId: topicId,
       conversationId: arg,
     ),
   );

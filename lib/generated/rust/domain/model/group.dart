@@ -35,6 +35,9 @@ class GroupInfo {
   /// 状态 (0:正常, 1:封禁, 2:解散)
   final int status;
 
+  /// 群扩展 JSON
+  final String ex;
+
   const GroupInfo({
     required this.groupId,
     required this.groupName,
@@ -45,6 +48,7 @@ class GroupInfo {
     required this.createTime,
     required this.memberCount,
     required this.status,
+    required this.ex,
   });
 
   @override
@@ -57,7 +61,8 @@ class GroupInfo {
       ownerUserId.hashCode ^
       createTime.hashCode ^
       memberCount.hashCode ^
-      status.hashCode;
+      status.hashCode ^
+      ex.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -72,7 +77,8 @@ class GroupInfo {
           ownerUserId == other.ownerUserId &&
           createTime == other.createTime &&
           memberCount == other.memberCount &&
-          status == other.status;
+          status == other.status &&
+          ex == other.ex;
 }
 
 /// 群成员信息模型

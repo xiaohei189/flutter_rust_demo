@@ -247,7 +247,16 @@ class ChatMessageActions {
       case MessageType.location:
         showLocationDetail(message, context);
       case MessageType.custom:
-        showCustomMessageDialog(context, message.displayText);
+        final topic = message.topicShareCard;
+        if (topic != null) {
+          AppRouter.goToTopicDetail(
+            context,
+            groupId: topic.groupId,
+            topicId: topic.topicId,
+          );
+        } else {
+          showCustomMessageDialog(context, message.displayText);
+        }
       default:
         break;
     }

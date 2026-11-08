@@ -4,19 +4,19 @@
 //! 媒体上传+消息构造、发送中消息清理所需的自由函数。
 //! 门面层只保留 `MessageApi` 的薄委托。
 
-use crate::core::context::RuntimeContext;
 use crate::core::connection::manager::ConnectionManager;
-use crate::domain::constant::MessageSendStatus;
-use crate::domain::error::{Result, SdkError};
+use crate::core::context::RuntimeContext;
 use crate::core::event::events::conversation::{ConversationEvent, ConversationListenerExt};
 use crate::core::event::events::message::{MessageEvent, MessageListenerExt};
-use crate::infra::file::upload::{FileUploader, ProgressCallback};
 use crate::core::message::send::queue::MessageSendQueue;
 use crate::core::message::ContentTypeUtils;
+use crate::core::user::service::UserService;
+use crate::domain::constant::MessageSendStatus;
+use crate::domain::error::{Result, SdkError};
 use crate::domain::model::local::{LocalChatLog, LocalSendingMessage};
 use crate::domain::model::message::MessageInfo;
 use crate::domain::model::msg_struct::{get_msg_id, AtInfo, CardElem, MessageEntity, MsgStruct, MSG_STATUS_SENDING};
-use crate::core::user::service::UserService;
+use crate::infra::file::upload::{FileUploader, ProgressCallback};
 use async_trait::async_trait;
 use openim_protocol::sdkws::{MsgData, OfflinePushInfo, UserSendMsgResp};
 use serde_json::{json, Value};
@@ -1046,10 +1046,7 @@ impl MessageSender {
             let conversation_id = conversation_id_for_msg(&msg);
             if let Ok(Some(old_msg)) = self.context.repositories.message_repo.get_by_client_msg_id(&conversation_id, &msg.client_msg_id).await {
                 if old_msg.status == MessageSendStatus::Sending as i32 && now.saturating_sub(old_msg.send_time) >= STALE_SENDING_RETRY_MS {
-                    warn!(
-                        "[SendMsg] 重发僵尸「发送中」消息: client_msg_id={}, send_time={}, now={}",
-                        msg.client_msg_id, old_msg.send_time, now
-                    );
+                    warn!("[SendMsg] 重发僵尸「发送中」消息: client_msg_id={}, send_time={}, now={}", msg.client_msg_id, old_msg.send_time, now);
                 }
                 if !can_resend(old_msg.status, old_msg.send_time, now) {
                     return Err(SdkError::msg_repeated("Only failed messages can be resent"));
@@ -1149,8 +1146,8 @@ impl MessageSender {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::infra::http::client::HttpApiClient;
     use crate::domain::model::msg_struct::MsgStruct;
+    use crate::infra::http::client::HttpApiClient;
 
     /// 创建测试用 FileUploader（不会实际触发上传）
     fn make_uploader() -> Arc<FileUploader> {
@@ -1498,9 +1495,9 @@ mod tests {
     use crate::core::config::ClientConfig;
     use crate::core::context::RuntimeContext;
     use crate::domain::constant::MessageSendStatus;
+    use crate::domain::model::local::LocalChatLog;
     use crate::infra::db::pool::create_pool_memory;
     use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
-    use crate::domain::model::local::LocalChatLog;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tokio_util::sync::CancellationToken;
 

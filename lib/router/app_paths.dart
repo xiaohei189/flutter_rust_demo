@@ -26,6 +26,8 @@ abstract final class AppPaths {
   static String chatDetailOf(String id) => '/chat/$id';
   static const String chatSettings = '/chat/:id/settings';
   static String chatSettingsOf(String id) => '/chat/$id/settings';
+  static const String chatHistory = '/chat/:id/history';
+  static String chatHistoryOf(String id) => '/chat/$id/history';
   static const String mergeMessage = '/merge-message';
   static const String mediaImage = '/media/image';
   static const String mediaVideo = '/media/video';
@@ -36,6 +38,14 @@ abstract final class AppPaths {
   static const String groupList = '/group-list';
   static const String createGroup = '/create-group';
   static const String groupApplications = '/group-applications';
+  static const String topicDetail = '/topic/:id';
+  static String topicDetailOf(String id) => '/topic/$id';
+  static const String topicCompose = '/topic-compose/:groupId';
+  static String topicComposeOf(String groupId) => '/topic-compose/$groupId';
+  static const String topicNotifications = '/topic-notifications';
+  static const String topicIndexOps = '/topic-index-ops';
+  static const String topicSettings = '/topic-settings/:groupId';
+  static String topicSettingsOf(String groupId) => '/topic-settings/$groupId';
 
   // ==================== 联系人 ====================
   static const String friendList = '/friend-list';

@@ -54,6 +54,9 @@ class ChatInput extends StatefulWidget {
   /// 展开编辑抽屉的占位文案（如「发送给 张三」）
   final String? sendToLabel;
 
+  /// 主输入框占位文案。
+  final String? inputHint;
+
   /// 输入区高度上报（输入行 + 已展开的面板）。
   ///
   /// 注意：上报的是**布局占位高度**（输入行 + 面板），**不含键盘让位的那部分**。
@@ -89,6 +92,7 @@ class ChatInput extends StatefulWidget {
     this.isGroupChat = false,
     this.conversationId,
     this.sendToLabel,
+    this.inputHint,
     this.heightNotifier,
     // 必传：漏传会让输入行停在屏幕底部被键盘挡住（真机出过这个事故）。
     // 做成必传参数后，「忘记接线」会在编译期直接失败，而不是运行时静默失效。
@@ -730,6 +734,7 @@ class _ChatInputState extends State<ChatInput> {
       isMarkdownMode: _composer.isMarkdownMode,
       onOpenComposer: _openComposerSheet,
       onSubmitted: _doSend,
+      hintText: widget.inputHint ?? '输入消息...',
     );
   }
 

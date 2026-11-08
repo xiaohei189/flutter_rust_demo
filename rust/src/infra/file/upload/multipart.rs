@@ -1,4 +1,5 @@
 use crate::domain::error::{Result, SdkError};
+use crate::domain::model::local::LocalUpload;
 use crate::infra::file::bitmap::Bitmap;
 use crate::infra::file::callbacks::{EmptyUploadCallback, UploadFileCallback};
 use crate::infra::file::md5::parts_hash;
@@ -9,7 +10,6 @@ use crate::infra::file::upload::dto::{
 use crate::infra::file::upload::session::PartInfo;
 use crate::infra::file::upload::uploader::FileUploader;
 use crate::infra::http::routes::{AUTH_SIGN, COMPLETE_MULTIPART_UPLOAD, INITIATE_MULTIPART_UPLOAD, PART_LIMIT};
-use crate::domain::model::local::LocalUpload;
 use base64::Engine;
 use std::io::Read;
 use tokio::fs;
@@ -348,7 +348,15 @@ impl FileUploader {
     // 上传会话管理（含断点续传恢复，对齐 Go SDK getUpload）
     // ========================================================================
 
-    pub(crate) async fn get_upload(&self, part_md5_val: &str, file_size: i64, part_size: i64, max_parts: i32, name: &str, content_type: &str) -> Result<crate::infra::file::upload::session::UploadSession> {
+    pub(crate) async fn get_upload(
+        &self,
+        part_md5_val: &str,
+        file_size: i64,
+        part_size: i64,
+        max_parts: i32,
+        name: &str,
+        content_type: &str,
+    ) -> Result<crate::infra::file::upload::session::UploadSession> {
         let part_num = ((file_size + part_size - 1) / part_size) as usize;
 
         // 尝试从本地数据库恢复
