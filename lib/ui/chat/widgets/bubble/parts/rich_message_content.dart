@@ -275,9 +275,7 @@ class CustomMessageContent extends StatelessWidget {
         width: 260,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isFromMe
-              ? context.appColors.bubbleMine
-              : context.appColors.surface,
+          color: context.appColors.surface,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           border: Border.all(color: context.appColors.divider),
         ),
@@ -290,9 +288,7 @@ class CustomMessageContent extends StatelessWidget {
                 Icon(
                   Icons.forum_outlined,
                   size: 18,
-                  color: isFromMe
-                      ? context.appColors.onPrimary
-                      : context.appColors.primary,
+                  color: context.appColors.primary,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -301,9 +297,7 @@ class CustomMessageContent extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isFromMe
-                          ? context.appColors.onPrimary
-                          : context.appColors.textSecondary,
+                      color: context.appColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -316,9 +310,7 @@ class CustomMessageContent extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isFromMe
-                    ? context.appColors.onPrimary
-                    : context.appColors.bubbleOtherText,
+                color: context.appColors.textPrimary,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -328,9 +320,7 @@ class CustomMessageContent extends StatelessWidget {
               '${topic.creatorName.isEmpty ? '成员' : topic.creatorName}'
               ' · ${topic.replyCount} 回复',
               style: TextStyle(
-                color: isFromMe
-                    ? context.appColors.onPrimary.withValues(alpha: 0.75)
-                    : context.appColors.textSecondary,
+                color: context.appColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -340,9 +330,7 @@ class CustomMessageContent extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
                 decoration: BoxDecoration(
-                  color: isFromMe
-                      ? context.appColors.onPrimary.withValues(alpha: 0.1)
-                      : context.appColors.surfaceMuted,
+                  color: context.appColors.bubbleOther,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 ),
                 child: Column(
@@ -356,22 +344,22 @@ class CustomMessageContent extends StatelessWidget {
                             children: [
                               TextSpan(
                                 text: '${reply.senderName}: ',
-                                style: const TextStyle(
+                                style: TextStyle(
+                                  color: context.appColors.textPrimary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              TextSpan(text: reply.content),
+                              TextSpan(
+                                text: reply.content,
+                                style: TextStyle(
+                                  color: context.appColors.textSecondary,
+                                ),
+                              ),
                             ],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isFromMe
-                                ? context.appColors.onPrimary
-                                : context.appColors.textSecondary,
-                            fontSize: 12,
-                            height: 1.35,
-                          ),
+                          style: const TextStyle(fontSize: 12, height: 1.35),
                         ),
                       ),
                     if (topic.replies.length > 2)
@@ -381,9 +369,7 @@ class CustomMessageContent extends StatelessWidget {
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(0, 28),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: isFromMe
-                              ? context.appColors.onPrimary
-                              : context.appColors.primary,
+                          foregroundColor: context.appColors.primary,
                         ),
                         child: Text(
                           '查看全部 ${topic.replies.length} 条转发回复',
@@ -395,19 +381,12 @@ class CustomMessageContent extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            Divider(
-              height: 1,
-              color: isFromMe
-                  ? context.appColors.onPrimary.withValues(alpha: 0.25)
-                  : context.appColors.divider,
-            ),
+            Divider(height: 1, color: context.appColors.divider),
             const SizedBox(height: 8),
             Text(
               '打开话题',
               style: TextStyle(
-                color: isFromMe
-                    ? context.appColors.onPrimary
-                    : context.appColors.primary,
+                color: context.appColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),

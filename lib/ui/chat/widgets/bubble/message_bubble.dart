@@ -134,10 +134,11 @@ class MessageBubble extends StatelessWidget {
       return _buildFlatThread(context, senderUser, bubbleMaxWidth);
     }
 
-    // 图片与合并转发消息不使用外层气泡背景：图片直接展示，合并转发自带卡片背景，避免两层颜色重叠
+    // 图片、合并转发与话题转发都自带展示容器，不再套外层气泡，避免两层背景重叠。
     final isPlainContent =
         message.messageType == MessageType.image ||
-        message.messageType == MessageType.merge;
+        message.messageType == MessageType.merge ||
+        message.topicShareCard != null;
 
     // 对齐飞书稿：对方气泡在单聊用浅蓝、群聊用浅灰
     final otherBubbleColor = message.sessionType == 1
