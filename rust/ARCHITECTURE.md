@@ -5,19 +5,19 @@
 
 ## Workspace 边界
 
-```
-rust/
-  Cargo.toml                 # Flutter FFI 适配 crate + workspace
-  src/
-    api/                     # Flutter 专属 FFI 入口
-    frb_generated.rs         # FRB 生成代码
-    core/ domain/ infra/ sdk # 由脚本生成的 FRB mirror 兼容模块
-  im-core/
-    Cargo.toml               # 不依赖 Flutter、NSH 或本地 RPC
-    migrations/              # SQLite migrations 随核心移动
-    src/
-      core/ domain/ infra/ sdk
-  scripts/generate-frb-mirrors.ps1
+```text
+workspace/
+  im-core/                   # 独立 Git/Cargo 项目，不依赖 Flutter、NSH 或本地 RPC
+    Cargo.toml
+    migrations/
+    src/{core,domain,infra,sdk}
+    tests/fixtures/
+  flutter_rust_demo/rust/
+    Cargo.toml                # Flutter FFI 适配 crate
+    src/api/                  # Flutter 专属 FFI 入口
+    src/frb_generated.rs      # FRB 生成代码
+    src/{core,domain,infra,sdk} # 脚本生成的 FRB mirror 兼容模块
+    scripts/generate-frb-mirrors.ps1
 ```
 
 依赖方向固定为：

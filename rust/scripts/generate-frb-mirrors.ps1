@@ -1,6 +1,15 @@
 $ErrorActionPreference = "Stop"
 
 $rustRoot = Split-Path -Parent $PSScriptRoot
+$imCoreRoot = $env:IM_CORE_ROOT
+if (-not $imCoreRoot) {
+    $imCoreRoot = [System.IO.Path]::GetFullPath(
+        (Join-Path (Split-Path -Parent $rustRoot) "..\im-core")
+    )
+}
+if (-not (Test-Path (Join-Path $imCoreRoot "Cargo.toml"))) {
+    throw "im-core Cargo.toml not found under $imCoreRoot"
+}
 
 $typeGroups = @(
     @{ Module = "core::config"; File = "src/core/config.rs"; Names = @("ClientConfig") },
@@ -213,7 +222,7 @@ foreach ($entry in $children.GetEnumerator()) {
 }
 
 foreach ($group in $typeGroups) {
-    $sourcePath = Join-Path (Join-Path $rustRoot "im-core") $group.File
+    $sourcePath = Join-Path $imCoreRoot $group.File
     $source = Get-Content -Raw -Encoding UTF8 $sourcePath
     $lines = [System.Collections.Generic.List[string]]::new()
     $lines.Add("pub use im_core::$($group.Module)::*;")

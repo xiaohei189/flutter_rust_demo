@@ -8,9 +8,9 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 - `lib/generated/rust/` - flutter_rust_bridge 与 Freezed 自动生成代码，禁止手改，由 codegen/build_runner 重新生成。
 - `rust/` - Flutter Rust Bridge 适配 crate。`rust/src/api/` 是 FFI 入口，
   `rust/src/{core,domain,infra,sdk}/` 只包含由脚本生成的 FRB mirror 兼容模块。
-- `rust/im-core/` - 平台无关的 OpenIM Rust 核心，拥有 domain、infra、sdk、SQLite
-  migrations 和业务事件；不得直接依赖 Flutter Rust Bridge、NSH 或 WebSocket RPC。
-  共享 `openim-protocol` 也不得依赖 Flutter、NSH 或桥接实现。
+- `../im-core/` - 独立仓库中的平台无关 OpenIM Rust 核心，拥有 domain、infra、sdk、
+  SQLite migrations 和业务事件；不得直接依赖 Flutter Rust Bridge、NSH 或 WebSocket
+  RPC。共享 `openim-protocol` 也不得依赖 Flutter、NSH 或桥接实现。
 - `rust/tests/` - Rust integration suites and JSON fixtures used by offline mock tests.
 - `test/` and `integration_test/` - Flutter unit/widget and integration tests.
 - `docs/` - Documentation entry point (`docs/README.md`), SDK specs in `docs/sdk-spec/`, and conventions in `docs/conventions.md`.

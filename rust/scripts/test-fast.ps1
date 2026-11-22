@@ -1,6 +1,13 @@
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 
+$imCoreRoot = $env:IM_CORE_ROOT
+if (-not $imCoreRoot) {
+    $imCoreRoot = [System.IO.Path]::GetFullPath(
+        (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) "..\im-core")
+    )
+}
+
 function Invoke-Check([string]$Label, [scriptblock]$Cmd) {
     Write-Host "== $Label =="
     & $Cmd
@@ -9,6 +16,7 @@ function Invoke-Check([string]$Label, [scriptblock]$Cmd) {
     }
 }
 
+Invoke-Check "im-core cargo test --lib" { cargo test --manifest-path (Join-Path $imCoreRoot "Cargo.toml") --lib }
 Invoke-Check "cargo test --workspace --lib" { cargo test --workspace --lib }
 Invoke-Check "cargo test -p rust_lib_flutter_rust_demo --test hermetic_tests" { cargo test -p rust_lib_flutter_rust_demo --test hermetic_tests }
 Invoke-Check "cargo clippy --workspace --all-targets" { cargo clippy --workspace --all-targets -- -D warnings }
