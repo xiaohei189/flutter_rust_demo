@@ -68,6 +68,10 @@ class MessageExtras {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(pinned, pinnedAt, flagged, Object.hashAllUnordered(reactions));
+  int get hashCode => Object.hash(
+    pinned,
+    pinnedAt,
+    flagged,
+    Object.hashAllUnordered(reactions),
+  );
 }

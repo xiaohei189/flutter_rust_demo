@@ -6,7 +6,11 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 
 - `lib/` - Flutter UI and Dart services: screens, widgets, Riverpod providers, and models.
 - `lib/generated/rust/` - flutter_rust_bridge 与 Freezed 自动生成代码，禁止手改，由 codegen/build_runner 重新生成。
-- `rust/` - Rust SDK core（当前为扁平结构：`client/connection/conversation/event/ffi/friend/group/message/user` 等；目标五层 `api/sdk/core/domain/infra` 尚未迁移）。
+- `rust/` - Flutter Rust Bridge 适配 crate。`rust/src/api/` 是 FFI 入口，
+  `rust/src/{core,domain,infra,sdk}/` 只包含由脚本生成的 FRB mirror 兼容模块。
+- `rust/im-core/` - 平台无关的 OpenIM Rust 核心，拥有 domain、infra、sdk、SQLite
+  migrations 和业务事件；不得直接依赖 Flutter Rust Bridge、NSH 或 WebSocket RPC。
+  共享 `openim-protocol` 也不得依赖 Flutter、NSH 或桥接实现。
 - `rust/tests/` - Rust integration suites and JSON fixtures used by offline mock tests.
 - `test/` and `integration_test/` - Flutter unit/widget and integration tests.
 - `docs/` - Documentation entry point (`docs/README.md`), SDK specs in `docs/sdk-spec/`, and conventions in `docs/conventions.md`.
@@ -34,6 +38,9 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
   `scripts/check-codegen.ps1`：它会跑一次 codegen 并校验 `lib/generated` 与
   `rust/src/frb_generated.rs` 无差异。生成代码**禁止手改**，产物有变化时与源码一起提交。
   （历史教训：五层目录迁移漏改 `rust_input` 并手工替换生成文件，导致 codegen 两个月产出空壳。）
+- `im-core` 的 FFI 可见类型变化后，先运行
+  `rust/scripts/generate-frb-mirrors.ps1` 同步 `rust/src/{core,domain,infra,sdk}/`
+  兼容模块，再运行 codegen 和 `dart run build_runner build --delete-conflicting-outputs`。
 
 ## Build, Test, and Development Commands
 

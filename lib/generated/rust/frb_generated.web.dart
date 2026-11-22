@@ -128,6 +128,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AdvancedTextElem dco_decode_box_autoadd_advanced_text_elem(dynamic raw);
 
   @protected
+  AtInfo dco_decode_box_autoadd_at_info(dynamic raw);
+
+  @protected
   AtTextElem dco_decode_box_autoadd_at_text_elem(dynamic raw);
 
   @protected
@@ -137,7 +140,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CardElem dco_decode_box_autoadd_card_elem(dynamic raw);
 
   @protected
+  CheckFriendResult dco_decode_box_autoadd_check_friend_result(dynamic raw);
+
+  @protected
   ClientConfig dco_decode_box_autoadd_client_config(dynamic raw);
+
+  @protected
+  ConnectionEvent dco_decode_box_autoadd_connection_event(dynamic raw);
+
+  @protected
+  ConversationEvent dco_decode_box_autoadd_conversation_event(dynamic raw);
 
   @protected
   CustomElem dco_decode_box_autoadd_custom_elem(dynamic raw);
@@ -152,9 +164,29 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem dco_decode_box_autoadd_file_elem(dynamic raw);
 
   @protected
+  FriendApplyInfo dco_decode_box_autoadd_friend_apply_info(dynamic raw);
+
+  @protected
+  FriendEvent dco_decode_box_autoadd_friend_event(dynamic raw);
+
+  @protected
+  FriendInfo dco_decode_box_autoadd_friend_info(dynamic raw);
+
+  @protected
   GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(
     dynamic raw,
   );
+
+  @protected
+  GetHistoryMessagesResult dco_decode_box_autoadd_get_history_messages_result(
+    dynamic raw,
+  );
+
+  @protected
+  GroupApplyInfo dco_decode_box_autoadd_group_apply_info(dynamic raw);
+
+  @protected
+  GroupEvent dco_decode_box_autoadd_group_event(dynamic raw);
 
   @protected
   GroupInfo dco_decode_box_autoadd_group_info(dynamic raw);
@@ -163,7 +195,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GroupMember dco_decode_box_autoadd_group_member(dynamic raw);
 
   @protected
+  GroupReadReceipt dco_decode_box_autoadd_group_read_receipt(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_i_32(dynamic raw);
+
+  @protected
+  LocalChatLog dco_decode_box_autoadd_local_chat_log(dynamic raw);
 
   @protected
   LocalConversation dco_decode_box_autoadd_local_conversation(dynamic raw);
@@ -186,13 +224,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MergeElem dco_decode_box_autoadd_merge_elem(dynamic raw);
 
   @protected
+  MessageEntity dco_decode_box_autoadd_message_entity(dynamic raw);
+
+  @protected
+  MessageEvent dco_decode_box_autoadd_message_event(dynamic raw);
+
+  @protected
   MessageInfo dco_decode_box_autoadd_message_info(dynamic raw);
+
+  @protected
+  MessageReceipt dco_decode_box_autoadd_message_receipt(dynamic raw);
 
   @protected
   MsgStruct dco_decode_box_autoadd_msg_struct(dynamic raw);
 
   @protected
   OfflinePushInfo dco_decode_box_autoadd_offline_push_info(dynamic raw);
+
+  @protected
+  OnlineStatus dco_decode_box_autoadd_online_status(dynamic raw);
 
   @protected
   PictureBaseInfo dco_decode_box_autoadd_picture_base_info(dynamic raw);
@@ -207,6 +257,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RevokeMessageReq dco_decode_box_autoadd_revoke_message_req(dynamic raw);
 
   @protected
+  SearchFriendItem dco_decode_box_autoadd_search_friend_item(dynamic raw);
+
+  @protected
   SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw);
 
   @protected
@@ -214,6 +267,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TextElem dco_decode_box_autoadd_text_elem(dynamic raw);
+
+  @protected
+  UserEvent dco_decode_box_autoadd_user_event(dynamic raw);
 
   @protected
   UserInfo dco_decode_box_autoadd_user_info(dynamic raw);
@@ -605,6 +661,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  AtInfo sse_decode_box_autoadd_at_info(SseDeserializer deserializer);
+
+  @protected
   AtTextElem sse_decode_box_autoadd_at_text_elem(SseDeserializer deserializer);
 
   @protected
@@ -614,7 +673,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CardElem sse_decode_box_autoadd_card_elem(SseDeserializer deserializer);
 
   @protected
+  CheckFriendResult sse_decode_box_autoadd_check_friend_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ClientConfig sse_decode_box_autoadd_client_config(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ConnectionEvent sse_decode_box_autoadd_connection_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ConversationEvent sse_decode_box_autoadd_conversation_event(
     SseDeserializer deserializer,
   );
 
@@ -633,9 +707,33 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   FileElem sse_decode_box_autoadd_file_elem(SseDeserializer deserializer);
 
   @protected
+  FriendApplyInfo sse_decode_box_autoadd_friend_apply_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  FriendEvent sse_decode_box_autoadd_friend_event(SseDeserializer deserializer);
+
+  @protected
+  FriendInfo sse_decode_box_autoadd_friend_info(SseDeserializer deserializer);
+
+  @protected
   GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(
     SseDeserializer deserializer,
   );
+
+  @protected
+  GetHistoryMessagesResult sse_decode_box_autoadd_get_history_messages_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GroupApplyInfo sse_decode_box_autoadd_group_apply_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  GroupEvent sse_decode_box_autoadd_group_event(SseDeserializer deserializer);
 
   @protected
   GroupInfo sse_decode_box_autoadd_group_info(SseDeserializer deserializer);
@@ -644,7 +742,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   GroupMember sse_decode_box_autoadd_group_member(SseDeserializer deserializer);
 
   @protected
+  GroupReadReceipt sse_decode_box_autoadd_group_read_receipt(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
+
+  @protected
+  LocalChatLog sse_decode_box_autoadd_local_chat_log(
+    SseDeserializer deserializer,
+  );
 
   @protected
   LocalConversation sse_decode_box_autoadd_local_conversation(
@@ -673,13 +781,33 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   MergeElem sse_decode_box_autoadd_merge_elem(SseDeserializer deserializer);
 
   @protected
+  MessageEntity sse_decode_box_autoadd_message_entity(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  MessageEvent sse_decode_box_autoadd_message_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   MessageInfo sse_decode_box_autoadd_message_info(SseDeserializer deserializer);
+
+  @protected
+  MessageReceipt sse_decode_box_autoadd_message_receipt(
+    SseDeserializer deserializer,
+  );
 
   @protected
   MsgStruct sse_decode_box_autoadd_msg_struct(SseDeserializer deserializer);
 
   @protected
   OfflinePushInfo sse_decode_box_autoadd_offline_push_info(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  OnlineStatus sse_decode_box_autoadd_online_status(
     SseDeserializer deserializer,
   );
 
@@ -700,6 +828,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SearchFriendItem sse_decode_box_autoadd_search_friend_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
     SseDeserializer deserializer,
   );
@@ -709,6 +842,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer);
+
+  @protected
+  UserEvent sse_decode_box_autoadd_user_event(SseDeserializer deserializer);
 
   @protected
   UserInfo sse_decode_box_autoadd_user_info(SseDeserializer deserializer);
@@ -1179,6 +1315,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_at_info(AtInfo self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_at_text_elem(
     AtTextElem self,
     SseSerializer serializer,
@@ -1194,8 +1333,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_check_friend_result(
+    CheckFriendResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_client_config(
     ClientConfig self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_connection_event(
+    ConnectionEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_conversation_event(
+    ConversationEvent self,
     SseSerializer serializer,
   );
 
@@ -1224,8 +1381,44 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_friend_apply_info(
+    FriendApplyInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_friend_event(
+    FriendEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_friend_info(
+    FriendInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_get_history_messages_req(
     GetHistoryMessagesReq self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_get_history_messages_result(
+    GetHistoryMessagesResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_group_apply_info(
+    GroupApplyInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_group_event(
+    GroupEvent self,
     SseSerializer serializer,
   );
 
@@ -1242,7 +1435,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_group_read_receipt(
+    GroupReadReceipt self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_local_chat_log(
+    LocalChatLog self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_box_autoadd_local_conversation(
@@ -1281,8 +1486,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_message_entity(
+    MessageEntity self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_message_event(
+    MessageEvent self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_message_info(
     MessageInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_message_receipt(
+    MessageReceipt self,
     SseSerializer serializer,
   );
 
@@ -1295,6 +1518,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_offline_push_info(
     OfflinePushInfo self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_online_status(
+    OnlineStatus self,
     SseSerializer serializer,
   );
 
@@ -1323,6 +1552,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_search_friend_item(
+    SearchFriendItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_search_messages_req(
     SearchMessagesReq self,
     SseSerializer serializer,
@@ -1337,6 +1572,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_text_elem(
     TextElem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_user_event(
+    UserEvent self,
     SseSerializer serializer,
   );
 

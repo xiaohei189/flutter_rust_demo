@@ -10,6 +10,11 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'group.freezed.dart';
 
+Future<void> frbMirrorAnchorGroupEvent({required GroupEvent value}) => RustLib
+    .instance
+    .api
+    .crateCoreEventEventsGroupFrbMirrorAnchorGroupEvent(value: value);
+
 @freezed
 sealed class GroupEvent with _$GroupEvent {
   const GroupEvent._();

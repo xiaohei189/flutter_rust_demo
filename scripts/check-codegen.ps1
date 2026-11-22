@@ -18,10 +18,19 @@ try {
     exit 0
   }
 
+  Write-Host 'Sync FRB mirror modules from im-core...'
+  & powershell -ExecutionPolicy Bypass -File rust\scripts\generate-frb-mirrors.ps1
+
   Write-Host '运行 flutter_rust_bridge_codegen generate ...'
   & flutter_rust_bridge_codegen generate | Out-Null
   if ($LASTEXITCODE -ne 0) {
     Write-Host 'codegen 执行失败' -ForegroundColor Red
+    exit 1
+  }
+
+  & dart format lib/generated/rust | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host '格式化 FRB 生成代码失败' -ForegroundColor Red
     exit 1
   }
 

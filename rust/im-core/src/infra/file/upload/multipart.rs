@@ -320,7 +320,6 @@ impl FileUploader {
     }
 
     #[allow(dead_code)]
-    #[allow(dead_code)]
     async fn auth_sign(&self, upload_id: &str, part_numbers: Vec<i32>) -> Result<AuthSignResp> {
         if part_numbers.is_empty() {
             return Err(SdkError::file_upload("part_numbers 为空"));

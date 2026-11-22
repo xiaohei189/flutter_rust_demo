@@ -6,6 +6,26 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+Future<void> frbMirrorAnchorCheckFriendResult({
+  required CheckFriendResult value,
+}) => RustLib.instance.api.crateInfraHttpFriendFrbMirrorAnchorCheckFriendResult(
+  value: value,
+);
+
+Future<void> frbMirrorAnchorFriendApplyInfo({required FriendApplyInfo value}) =>
+    RustLib.instance.api.crateInfraHttpFriendFrbMirrorAnchorFriendApplyInfo(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorSearchFriendItem({
+  required SearchFriendItem value,
+}) => RustLib.instance.api.crateInfraHttpFriendFrbMirrorAnchorSearchFriendItem(
+  value: value,
+);
+
+/// flutter_rust_bridge:mirror(CheckFriendResult)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class CheckFriendResult {
   final String userId;
   final int result;
@@ -24,6 +44,9 @@ class CheckFriendResult {
           result == other.result;
 }
 
+/// flutter_rust_bridge:mirror(FriendApplyInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class FriendApplyInfo {
   final String userId;
   final String nickname;
@@ -79,6 +102,9 @@ class FriendApplyInfo {
           handleMsg == other.handleMsg;
 }
 
+/// flutter_rust_bridge:mirror(SearchFriendItem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class SearchFriendItem {
   final String friendUserId;
   final String nickname;

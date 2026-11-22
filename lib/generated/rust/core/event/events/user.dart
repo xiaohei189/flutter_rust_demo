@@ -9,6 +9,11 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'user.freezed.dart';
 
+Future<void> frbMirrorAnchorUserEvent({required UserEvent value}) => RustLib
+    .instance
+    .api
+    .crateCoreEventEventsUserFrbMirrorAnchorUserEvent(value: value);
+
 @freezed
 sealed class UserEvent with _$UserEvent {
   const UserEvent._();

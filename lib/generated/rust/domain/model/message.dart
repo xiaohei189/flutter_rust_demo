@@ -6,7 +6,14 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 消息信息（FFI 桥接用，将 protobuf MsgData 转换为 Dart 友好的结构体）
+Future<void> frbMirrorAnchorMessageInfo({required MessageInfo value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMessageFrbMirrorAnchorMessageInfo(value: value);
+
+/// flutter_rust_bridge:mirror(MessageInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MessageInfo {
   final String clientMsgId;
   final String serverMsgId;

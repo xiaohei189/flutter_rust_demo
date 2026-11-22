@@ -1,5 +1,5 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,1996 +9,742 @@ part of 'connection.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// dart format off
 T _$identity<T>(T value) => value;
-
-final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
-
 /// @nodoc
 mixin _$ConnectionEvent {
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ConnectionEvent()';
+}
+
+
 }
 
 /// @nodoc
-abstract class $ConnectionEventCopyWith<$Res> {
-  factory $ConnectionEventCopyWith(
-    ConnectionEvent value,
-    $Res Function(ConnectionEvent) then,
-  ) = _$ConnectionEventCopyWithImpl<$Res, ConnectionEvent>;
+class $ConnectionEventCopyWith<$Res>  {
+$ConnectionEventCopyWith(ConnectionEvent _, $Res Function(ConnectionEvent) __);
 }
 
-/// @nodoc
-class _$ConnectionEventCopyWithImpl<$Res, $Val extends ConnectionEvent>
-    implements $ConnectionEventCopyWith<$Res> {
-  _$ConnectionEventCopyWithImpl(this._value, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+/// Adds pattern-matching-related methods to [ConnectionEvent].
+extension ConnectionEventPatterns on ConnectionEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( ConnectionEvent_Connecting value)?  connecting,TResult Function( ConnectionEvent_Connected value)?  connected,TResult Function( ConnectionEvent_Disconnected value)?  disconnected,TResult Function( ConnectionEvent_ConnectFailed value)?  connectFailed,TResult Function( ConnectionEvent_KickedOffline value)?  kickedOffline,TResult Function( ConnectionEvent_TokenExpired value)?  tokenExpired,TResult Function( ConnectionEvent_TokenInvalid value)?  tokenInvalid,TResult Function( ConnectionEvent_Reconnecting value)?  reconnecting,TResult Function( ConnectionEvent_LoginSuccess value)?  loginSuccess,TResult Function( ConnectionEvent_Logout value)?  logout,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting() when connecting != null:
+return connecting(_that);case ConnectionEvent_Connected() when connected != null:
+return connected(_that);case ConnectionEvent_Disconnected() when disconnected != null:
+return disconnected(_that);case ConnectionEvent_ConnectFailed() when connectFailed != null:
+return connectFailed(_that);case ConnectionEvent_KickedOffline() when kickedOffline != null:
+return kickedOffline(_that);case ConnectionEvent_TokenExpired() when tokenExpired != null:
+return tokenExpired(_that);case ConnectionEvent_TokenInvalid() when tokenInvalid != null:
+return tokenInvalid(_that);case ConnectionEvent_Reconnecting() when reconnecting != null:
+return reconnecting(_that);case ConnectionEvent_LoginSuccess() when loginSuccess != null:
+return loginSuccess(_that);case ConnectionEvent_Logout() when logout != null:
+return logout(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( ConnectionEvent_Connecting value)  connecting,required TResult Function( ConnectionEvent_Connected value)  connected,required TResult Function( ConnectionEvent_Disconnected value)  disconnected,required TResult Function( ConnectionEvent_ConnectFailed value)  connectFailed,required TResult Function( ConnectionEvent_KickedOffline value)  kickedOffline,required TResult Function( ConnectionEvent_TokenExpired value)  tokenExpired,required TResult Function( ConnectionEvent_TokenInvalid value)  tokenInvalid,required TResult Function( ConnectionEvent_Reconnecting value)  reconnecting,required TResult Function( ConnectionEvent_LoginSuccess value)  loginSuccess,required TResult Function( ConnectionEvent_Logout value)  logout,}){
+final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting():
+return connecting(_that);case ConnectionEvent_Connected():
+return connected(_that);case ConnectionEvent_Disconnected():
+return disconnected(_that);case ConnectionEvent_ConnectFailed():
+return connectFailed(_that);case ConnectionEvent_KickedOffline():
+return kickedOffline(_that);case ConnectionEvent_TokenExpired():
+return tokenExpired(_that);case ConnectionEvent_TokenInvalid():
+return tokenInvalid(_that);case ConnectionEvent_Reconnecting():
+return reconnecting(_that);case ConnectionEvent_LoginSuccess():
+return loginSuccess(_that);case ConnectionEvent_Logout():
+return logout(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( ConnectionEvent_Connecting value)?  connecting,TResult? Function( ConnectionEvent_Connected value)?  connected,TResult? Function( ConnectionEvent_Disconnected value)?  disconnected,TResult? Function( ConnectionEvent_ConnectFailed value)?  connectFailed,TResult? Function( ConnectionEvent_KickedOffline value)?  kickedOffline,TResult? Function( ConnectionEvent_TokenExpired value)?  tokenExpired,TResult? Function( ConnectionEvent_TokenInvalid value)?  tokenInvalid,TResult? Function( ConnectionEvent_Reconnecting value)?  reconnecting,TResult? Function( ConnectionEvent_LoginSuccess value)?  loginSuccess,TResult? Function( ConnectionEvent_Logout value)?  logout,}){
+final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting() when connecting != null:
+return connecting(_that);case ConnectionEvent_Connected() when connected != null:
+return connected(_that);case ConnectionEvent_Disconnected() when disconnected != null:
+return disconnected(_that);case ConnectionEvent_ConnectFailed() when connectFailed != null:
+return connectFailed(_that);case ConnectionEvent_KickedOffline() when kickedOffline != null:
+return kickedOffline(_that);case ConnectionEvent_TokenExpired() when tokenExpired != null:
+return tokenExpired(_that);case ConnectionEvent_TokenInvalid() when tokenInvalid != null:
+return tokenInvalid(_that);case ConnectionEvent_Reconnecting() when reconnecting != null:
+return reconnecting(_that);case ConnectionEvent_LoginSuccess() when loginSuccess != null:
+return loginSuccess(_that);case ConnectionEvent_Logout() when logout != null:
+return logout(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  connecting,TResult Function()?  connected,TResult Function( String field0)?  disconnected,TResult Function( int errCode,  String error)?  connectFailed,TResult Function( String field0)?  kickedOffline,TResult Function()?  tokenExpired,TResult Function( String error)?  tokenInvalid,TResult Function( int attempt,  int maxAttempts)?  reconnecting,TResult Function( String field0)?  loginSuccess,TResult Function()?  logout,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting() when connecting != null:
+return connecting();case ConnectionEvent_Connected() when connected != null:
+return connected();case ConnectionEvent_Disconnected() when disconnected != null:
+return disconnected(_that.field0);case ConnectionEvent_ConnectFailed() when connectFailed != null:
+return connectFailed(_that.errCode,_that.error);case ConnectionEvent_KickedOffline() when kickedOffline != null:
+return kickedOffline(_that.field0);case ConnectionEvent_TokenExpired() when tokenExpired != null:
+return tokenExpired();case ConnectionEvent_TokenInvalid() when tokenInvalid != null:
+return tokenInvalid(_that.error);case ConnectionEvent_Reconnecting() when reconnecting != null:
+return reconnecting(_that.attempt,_that.maxAttempts);case ConnectionEvent_LoginSuccess() when loginSuccess != null:
+return loginSuccess(_that.field0);case ConnectionEvent_Logout() when logout != null:
+return logout();case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  connecting,required TResult Function()  connected,required TResult Function( String field0)  disconnected,required TResult Function( int errCode,  String error)  connectFailed,required TResult Function( String field0)  kickedOffline,required TResult Function()  tokenExpired,required TResult Function( String error)  tokenInvalid,required TResult Function( int attempt,  int maxAttempts)  reconnecting,required TResult Function( String field0)  loginSuccess,required TResult Function()  logout,}) {final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting():
+return connecting();case ConnectionEvent_Connected():
+return connected();case ConnectionEvent_Disconnected():
+return disconnected(_that.field0);case ConnectionEvent_ConnectFailed():
+return connectFailed(_that.errCode,_that.error);case ConnectionEvent_KickedOffline():
+return kickedOffline(_that.field0);case ConnectionEvent_TokenExpired():
+return tokenExpired();case ConnectionEvent_TokenInvalid():
+return tokenInvalid(_that.error);case ConnectionEvent_Reconnecting():
+return reconnecting(_that.attempt,_that.maxAttempts);case ConnectionEvent_LoginSuccess():
+return loginSuccess(_that.field0);case ConnectionEvent_Logout():
+return logout();}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  connecting,TResult? Function()?  connected,TResult? Function( String field0)?  disconnected,TResult? Function( int errCode,  String error)?  connectFailed,TResult? Function( String field0)?  kickedOffline,TResult? Function()?  tokenExpired,TResult? Function( String error)?  tokenInvalid,TResult? Function( int attempt,  int maxAttempts)?  reconnecting,TResult? Function( String field0)?  loginSuccess,TResult? Function()?  logout,}) {final _that = this;
+switch (_that) {
+case ConnectionEvent_Connecting() when connecting != null:
+return connecting();case ConnectionEvent_Connected() when connected != null:
+return connected();case ConnectionEvent_Disconnected() when disconnected != null:
+return disconnected(_that.field0);case ConnectionEvent_ConnectFailed() when connectFailed != null:
+return connectFailed(_that.errCode,_that.error);case ConnectionEvent_KickedOffline() when kickedOffline != null:
+return kickedOffline(_that.field0);case ConnectionEvent_TokenExpired() when tokenExpired != null:
+return tokenExpired();case ConnectionEvent_TokenInvalid() when tokenInvalid != null:
+return tokenInvalid(_that.error);case ConnectionEvent_Reconnecting() when reconnecting != null:
+return reconnecting(_that.attempt,_that.maxAttempts);case ConnectionEvent_LoginSuccess() when loginSuccess != null:
+return loginSuccess(_that.field0);case ConnectionEvent_Logout() when logout != null:
+return logout();case _:
+  return null;
+
+}
 }
 
-/// @nodoc
-abstract class _$$ConnectionEvent_ConnectingImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_ConnectingImplCopyWith(
-    _$ConnectionEvent_ConnectingImpl value,
-    $Res Function(_$ConnectionEvent_ConnectingImpl) then,
-  ) = __$$ConnectionEvent_ConnectingImplCopyWithImpl<$Res>;
-}
-
-/// @nodoc
-class __$$ConnectionEvent_ConnectingImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_ConnectingImpl>
-    implements _$$ConnectionEvent_ConnectingImplCopyWith<$Res> {
-  __$$ConnectionEvent_ConnectingImplCopyWithImpl(
-    _$ConnectionEvent_ConnectingImpl _value,
-    $Res Function(_$ConnectionEvent_ConnectingImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-}
-
-/// @nodoc
-
-class _$ConnectionEvent_ConnectingImpl extends ConnectionEvent_Connecting {
-  const _$ConnectionEvent_ConnectingImpl() : super._();
-
-  @override
-  String toString() {
-    return 'ConnectionEvent.connecting()';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_ConnectingImpl);
-  }
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return connecting();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return connecting?.call();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (connecting != null) {
-      return connecting();
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return connecting(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return connecting?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (connecting != null) {
-      return connecting(this);
-    }
-    return orElse();
-  }
-}
-
-abstract class ConnectionEvent_Connecting extends ConnectionEvent {
-  const factory ConnectionEvent_Connecting() = _$ConnectionEvent_ConnectingImpl;
-  const ConnectionEvent_Connecting._() : super._();
-}
-
-/// @nodoc
-abstract class _$$ConnectionEvent_ConnectedImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_ConnectedImplCopyWith(
-    _$ConnectionEvent_ConnectedImpl value,
-    $Res Function(_$ConnectionEvent_ConnectedImpl) then,
-  ) = __$$ConnectionEvent_ConnectedImplCopyWithImpl<$Res>;
-}
-
-/// @nodoc
-class __$$ConnectionEvent_ConnectedImplCopyWithImpl<$Res>
-    extends _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_ConnectedImpl>
-    implements _$$ConnectionEvent_ConnectedImplCopyWith<$Res> {
-  __$$ConnectionEvent_ConnectedImplCopyWithImpl(
-    _$ConnectionEvent_ConnectedImpl _value,
-    $Res Function(_$ConnectionEvent_ConnectedImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_ConnectedImpl extends ConnectionEvent_Connected {
-  const _$ConnectionEvent_ConnectedImpl() : super._();
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.connected()';
-  }
+class ConnectionEvent_Connecting extends ConnectionEvent {
+  const ConnectionEvent_Connecting(): super._();
+  
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_ConnectedImpl);
-  }
 
-  @override
-  int get hashCode => runtimeType.hashCode;
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return connected();
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return connected?.call();
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (connected != null) {
-      return connected();
-    }
-    return orElse();
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return connected(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return connected?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (connected != null) {
-      return connected(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_Connecting);
 }
 
-abstract class ConnectionEvent_Connected extends ConnectionEvent {
-  const factory ConnectionEvent_Connected() = _$ConnectionEvent_ConnectedImpl;
-  const ConnectionEvent_Connected._() : super._();
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ConnectionEvent.connecting()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class ConnectionEvent_Connected extends ConnectionEvent {
+  const ConnectionEvent_Connected(): super._();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_Connected);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ConnectionEvent.connected()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class ConnectionEvent_Disconnected extends ConnectionEvent {
+  const ConnectionEvent_Disconnected(this.field0): super._();
+  
+
+ final  String field0;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_DisconnectedCopyWith<ConnectionEvent_Disconnected> get copyWith => _$ConnectionEvent_DisconnectedCopyWithImpl<ConnectionEvent_Disconnected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_Disconnected&&(identical(other.field0, field0) || other.field0 == field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,field0);
+
+@override
+String toString() {
+  return 'ConnectionEvent.disconnected(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_DisconnectedImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_DisconnectedImplCopyWith(
-    _$ConnectionEvent_DisconnectedImpl value,
-    $Res Function(_$ConnectionEvent_DisconnectedImpl) then,
-  ) = __$$ConnectionEvent_DisconnectedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String field0});
+abstract mixin class $ConnectionEvent_DisconnectedCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_DisconnectedCopyWith(ConnectionEvent_Disconnected value, $Res Function(ConnectionEvent_Disconnected) _then) = _$ConnectionEvent_DisconnectedCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_DisconnectedCopyWithImpl<$Res>
+    implements $ConnectionEvent_DisconnectedCopyWith<$Res> {
+  _$ConnectionEvent_DisconnectedCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_Disconnected _self;
+  final $Res Function(ConnectionEvent_Disconnected) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConnectionEvent_Disconnected(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_DisconnectedImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_DisconnectedImpl>
-    implements _$$ConnectionEvent_DisconnectedImplCopyWith<$Res> {
-  __$$ConnectionEvent_DisconnectedImplCopyWithImpl(
-    _$ConnectionEvent_DisconnectedImpl _value,
-    $Res Function(_$ConnectionEvent_DisconnectedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConnectionEvent_DisconnectedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_DisconnectedImpl extends ConnectionEvent_Disconnected {
-  const _$ConnectionEvent_DisconnectedImpl(this.field0) : super._();
 
-  @override
-  final String field0;
+class ConnectionEvent_ConnectFailed extends ConnectionEvent {
+  const ConnectionEvent_ConnectFailed({required this.errCode, required this.error}): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.disconnected(field0: $field0)';
-  }
+ final  int errCode;
+ final  String error;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_DisconnectedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_ConnectFailedCopyWith<ConnectionEvent_ConnectFailed> get copyWith => _$ConnectionEvent_ConnectFailedCopyWithImpl<ConnectionEvent_ConnectFailed>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_DisconnectedImplCopyWith<
-    _$ConnectionEvent_DisconnectedImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_DisconnectedImplCopyWithImpl<
-        _$ConnectionEvent_DisconnectedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return disconnected(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return disconnected?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (disconnected != null) {
-      return disconnected(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return disconnected(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return disconnected?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (disconnected != null) {
-      return disconnected(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_ConnectFailed&&(identical(other.errCode, errCode) || other.errCode == errCode)&&(identical(other.error, error) || other.error == error));
 }
 
-abstract class ConnectionEvent_Disconnected extends ConnectionEvent {
-  const factory ConnectionEvent_Disconnected(final String field0) =
-      _$ConnectionEvent_DisconnectedImpl;
-  const ConnectionEvent_Disconnected._() : super._();
 
-  String get field0;
+@override
+int get hashCode => Object.hash(runtimeType,errCode,error);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_DisconnectedImplCopyWith<
-    _$ConnectionEvent_DisconnectedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConnectionEvent.connectFailed(errCode: $errCode, error: $error)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_ConnectFailedImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_ConnectFailedImplCopyWith(
-    _$ConnectionEvent_ConnectFailedImpl value,
-    $Res Function(_$ConnectionEvent_ConnectFailedImpl) then,
-  ) = __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({int errCode, String error});
+abstract mixin class $ConnectionEvent_ConnectFailedCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_ConnectFailedCopyWith(ConnectionEvent_ConnectFailed value, $Res Function(ConnectionEvent_ConnectFailed) _then) = _$ConnectionEvent_ConnectFailedCopyWithImpl;
+@useResult
+$Res call({
+ int errCode, String error
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_ConnectFailedCopyWithImpl<$Res>
+    implements $ConnectionEvent_ConnectFailedCopyWith<$Res> {
+  _$ConnectionEvent_ConnectFailedCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_ConnectFailed _self;
+  final $Res Function(ConnectionEvent_ConnectFailed) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? errCode = null,Object? error = null,}) {
+  return _then(ConnectionEvent_ConnectFailed(
+errCode: null == errCode ? _self.errCode : errCode // ignore: cast_nullable_to_non_nullable
+as int,error: null == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_ConnectFailedImpl>
-    implements _$$ConnectionEvent_ConnectFailedImplCopyWith<$Res> {
-  __$$ConnectionEvent_ConnectFailedImplCopyWithImpl(
-    _$ConnectionEvent_ConnectFailedImpl _value,
-    $Res Function(_$ConnectionEvent_ConnectFailedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? errCode = null, Object? error = null}) {
-    return _then(
-      _$ConnectionEvent_ConnectFailedImpl(
-        errCode: null == errCode
-            ? _value.errCode
-            : errCode // ignore: cast_nullable_to_non_nullable
-                  as int,
-        error: null == error
-            ? _value.error
-            : error // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_ConnectFailedImpl
-    extends ConnectionEvent_ConnectFailed {
-  const _$ConnectionEvent_ConnectFailedImpl({
-    required this.errCode,
-    required this.error,
-  }) : super._();
 
-  @override
-  final int errCode;
-  @override
-  final String error;
+class ConnectionEvent_KickedOffline extends ConnectionEvent {
+  const ConnectionEvent_KickedOffline(this.field0): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.connectFailed(errCode: $errCode, error: $error)';
-  }
+ final  String field0;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_ConnectFailedImpl &&
-            (identical(other.errCode, errCode) || other.errCode == errCode) &&
-            (identical(other.error, error) || other.error == error));
-  }
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_KickedOfflineCopyWith<ConnectionEvent_KickedOffline> get copyWith => _$ConnectionEvent_KickedOfflineCopyWithImpl<ConnectionEvent_KickedOffline>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, errCode, error);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_ConnectFailedImplCopyWith<
-    _$ConnectionEvent_ConnectFailedImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_ConnectFailedImplCopyWithImpl<
-        _$ConnectionEvent_ConnectFailedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return connectFailed(errCode, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return connectFailed?.call(errCode, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (connectFailed != null) {
-      return connectFailed(errCode, error);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return connectFailed(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return connectFailed?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (connectFailed != null) {
-      return connectFailed(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_KickedOffline&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
-abstract class ConnectionEvent_ConnectFailed extends ConnectionEvent {
-  const factory ConnectionEvent_ConnectFailed({
-    required final int errCode,
-    required final String error,
-  }) = _$ConnectionEvent_ConnectFailedImpl;
-  const ConnectionEvent_ConnectFailed._() : super._();
 
-  int get errCode;
-  String get error;
+@override
+int get hashCode => Object.hash(runtimeType,field0);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_ConnectFailedImplCopyWith<
-    _$ConnectionEvent_ConnectFailedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConnectionEvent.kickedOffline(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_KickedOfflineImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_KickedOfflineImplCopyWith(
-    _$ConnectionEvent_KickedOfflineImpl value,
-    $Res Function(_$ConnectionEvent_KickedOfflineImpl) then,
-  ) = __$$ConnectionEvent_KickedOfflineImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String field0});
+abstract mixin class $ConnectionEvent_KickedOfflineCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_KickedOfflineCopyWith(ConnectionEvent_KickedOffline value, $Res Function(ConnectionEvent_KickedOffline) _then) = _$ConnectionEvent_KickedOfflineCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_KickedOfflineCopyWithImpl<$Res>
+    implements $ConnectionEvent_KickedOfflineCopyWith<$Res> {
+  _$ConnectionEvent_KickedOfflineCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_KickedOffline _self;
+  final $Res Function(ConnectionEvent_KickedOffline) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConnectionEvent_KickedOffline(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_KickedOfflineImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_KickedOfflineImpl>
-    implements _$$ConnectionEvent_KickedOfflineImplCopyWith<$Res> {
-  __$$ConnectionEvent_KickedOfflineImplCopyWithImpl(
-    _$ConnectionEvent_KickedOfflineImpl _value,
-    $Res Function(_$ConnectionEvent_KickedOfflineImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConnectionEvent_KickedOfflineImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_KickedOfflineImpl
-    extends ConnectionEvent_KickedOffline {
-  const _$ConnectionEvent_KickedOfflineImpl(this.field0) : super._();
 
-  @override
-  final String field0;
+class ConnectionEvent_TokenExpired extends ConnectionEvent {
+  const ConnectionEvent_TokenExpired(): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.kickedOffline(field0: $field0)';
-  }
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_KickedOfflineImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
 
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_KickedOfflineImplCopyWith<
-    _$ConnectionEvent_KickedOfflineImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_KickedOfflineImplCopyWithImpl<
-        _$ConnectionEvent_KickedOfflineImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return kickedOffline(field0);
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return kickedOffline?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (kickedOffline != null) {
-      return kickedOffline(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return kickedOffline(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return kickedOffline?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (kickedOffline != null) {
-      return kickedOffline(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_TokenExpired);
 }
 
-abstract class ConnectionEvent_KickedOffline extends ConnectionEvent {
-  const factory ConnectionEvent_KickedOffline(final String field0) =
-      _$ConnectionEvent_KickedOfflineImpl;
-  const ConnectionEvent_KickedOffline._() : super._();
 
-  String get field0;
+@override
+int get hashCode => runtimeType.hashCode;
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_KickedOfflineImplCopyWith<
-    _$ConnectionEvent_KickedOfflineImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConnectionEvent.tokenExpired()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class ConnectionEvent_TokenInvalid extends ConnectionEvent {
+  const ConnectionEvent_TokenInvalid({required this.error}): super._();
+  
+
+ final  String error;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_TokenInvalidCopyWith<ConnectionEvent_TokenInvalid> get copyWith => _$ConnectionEvent_TokenInvalidCopyWithImpl<ConnectionEvent_TokenInvalid>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_TokenInvalid&&(identical(other.error, error) || other.error == error));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,error);
+
+@override
+String toString() {
+  return 'ConnectionEvent.tokenInvalid(error: $error)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_TokenExpiredImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_TokenExpiredImplCopyWith(
-    _$ConnectionEvent_TokenExpiredImpl value,
-    $Res Function(_$ConnectionEvent_TokenExpiredImpl) then,
-  ) = __$$ConnectionEvent_TokenExpiredImplCopyWithImpl<$Res>;
+abstract mixin class $ConnectionEvent_TokenInvalidCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_TokenInvalidCopyWith(ConnectionEvent_TokenInvalid value, $Res Function(ConnectionEvent_TokenInvalid) _then) = _$ConnectionEvent_TokenInvalidCopyWithImpl;
+@useResult
+$Res call({
+ String error
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_TokenInvalidCopyWithImpl<$Res>
+    implements $ConnectionEvent_TokenInvalidCopyWith<$Res> {
+  _$ConnectionEvent_TokenInvalidCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_TokenInvalid _self;
+  final $Res Function(ConnectionEvent_TokenInvalid) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? error = null,}) {
+  return _then(ConnectionEvent_TokenInvalid(
+error: null == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_TokenExpiredImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_TokenExpiredImpl>
-    implements _$$ConnectionEvent_TokenExpiredImplCopyWith<$Res> {
-  __$$ConnectionEvent_TokenExpiredImplCopyWithImpl(
-    _$ConnectionEvent_TokenExpiredImpl _value,
-    $Res Function(_$ConnectionEvent_TokenExpiredImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_TokenExpiredImpl extends ConnectionEvent_TokenExpired {
-  const _$ConnectionEvent_TokenExpiredImpl() : super._();
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.tokenExpired()';
-  }
+class ConnectionEvent_Reconnecting extends ConnectionEvent {
+  const ConnectionEvent_Reconnecting({required this.attempt, required this.maxAttempts}): super._();
+  
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_TokenExpiredImpl);
-  }
+ final  int attempt;
+ final  int maxAttempts;
 
-  @override
-  int get hashCode => runtimeType.hashCode;
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_ReconnectingCopyWith<ConnectionEvent_Reconnecting> get copyWith => _$ConnectionEvent_ReconnectingCopyWithImpl<ConnectionEvent_Reconnecting>(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return tokenExpired();
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return tokenExpired?.call();
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (tokenExpired != null) {
-      return tokenExpired();
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return tokenExpired(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return tokenExpired?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (tokenExpired != null) {
-      return tokenExpired(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_Reconnecting&&(identical(other.attempt, attempt) || other.attempt == attempt)&&(identical(other.maxAttempts, maxAttempts) || other.maxAttempts == maxAttempts));
 }
 
-abstract class ConnectionEvent_TokenExpired extends ConnectionEvent {
-  const factory ConnectionEvent_TokenExpired() =
-      _$ConnectionEvent_TokenExpiredImpl;
-  const ConnectionEvent_TokenExpired._() : super._();
+
+@override
+int get hashCode => Object.hash(runtimeType,attempt,maxAttempts);
+
+@override
+String toString() {
+  return 'ConnectionEvent.reconnecting(attempt: $attempt, maxAttempts: $maxAttempts)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_TokenInvalidImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_TokenInvalidImplCopyWith(
-    _$ConnectionEvent_TokenInvalidImpl value,
-    $Res Function(_$ConnectionEvent_TokenInvalidImpl) then,
-  ) = __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String error});
+abstract mixin class $ConnectionEvent_ReconnectingCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_ReconnectingCopyWith(ConnectionEvent_Reconnecting value, $Res Function(ConnectionEvent_Reconnecting) _then) = _$ConnectionEvent_ReconnectingCopyWithImpl;
+@useResult
+$Res call({
+ int attempt, int maxAttempts
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_ReconnectingCopyWithImpl<$Res>
+    implements $ConnectionEvent_ReconnectingCopyWith<$Res> {
+  _$ConnectionEvent_ReconnectingCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_Reconnecting _self;
+  final $Res Function(ConnectionEvent_Reconnecting) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? attempt = null,Object? maxAttempts = null,}) {
+  return _then(ConnectionEvent_Reconnecting(
+attempt: null == attempt ? _self.attempt : attempt // ignore: cast_nullable_to_non_nullable
+as int,maxAttempts: null == maxAttempts ? _self.maxAttempts : maxAttempts // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_TokenInvalidImpl>
-    implements _$$ConnectionEvent_TokenInvalidImplCopyWith<$Res> {
-  __$$ConnectionEvent_TokenInvalidImplCopyWithImpl(
-    _$ConnectionEvent_TokenInvalidImpl _value,
-    $Res Function(_$ConnectionEvent_TokenInvalidImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? error = null}) {
-    return _then(
-      _$ConnectionEvent_TokenInvalidImpl(
-        error: null == error
-            ? _value.error
-            : error // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_TokenInvalidImpl extends ConnectionEvent_TokenInvalid {
-  const _$ConnectionEvent_TokenInvalidImpl({required this.error}) : super._();
 
-  @override
-  final String error;
+class ConnectionEvent_LoginSuccess extends ConnectionEvent {
+  const ConnectionEvent_LoginSuccess(this.field0): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.tokenInvalid(error: $error)';
-  }
+ final  String field0;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_TokenInvalidImpl &&
-            (identical(other.error, error) || other.error == error));
-  }
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConnectionEvent_LoginSuccessCopyWith<ConnectionEvent_LoginSuccess> get copyWith => _$ConnectionEvent_LoginSuccessCopyWithImpl<ConnectionEvent_LoginSuccess>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, error);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_TokenInvalidImplCopyWith<
-    _$ConnectionEvent_TokenInvalidImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_TokenInvalidImplCopyWithImpl<
-        _$ConnectionEvent_TokenInvalidImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return tokenInvalid(error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return tokenInvalid?.call(error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (tokenInvalid != null) {
-      return tokenInvalid(error);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return tokenInvalid(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return tokenInvalid?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (tokenInvalid != null) {
-      return tokenInvalid(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_LoginSuccess&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
-abstract class ConnectionEvent_TokenInvalid extends ConnectionEvent {
-  const factory ConnectionEvent_TokenInvalid({required final String error}) =
-      _$ConnectionEvent_TokenInvalidImpl;
-  const ConnectionEvent_TokenInvalid._() : super._();
 
-  String get error;
+@override
+int get hashCode => Object.hash(runtimeType,field0);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_TokenInvalidImplCopyWith<
-    _$ConnectionEvent_TokenInvalidImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConnectionEvent.loginSuccess(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConnectionEvent_ReconnectingImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_ReconnectingImplCopyWith(
-    _$ConnectionEvent_ReconnectingImpl value,
-    $Res Function(_$ConnectionEvent_ReconnectingImpl) then,
-  ) = __$$ConnectionEvent_ReconnectingImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({int attempt, int maxAttempts});
+abstract mixin class $ConnectionEvent_LoginSuccessCopyWith<$Res> implements $ConnectionEventCopyWith<$Res> {
+  factory $ConnectionEvent_LoginSuccessCopyWith(ConnectionEvent_LoginSuccess value, $Res Function(ConnectionEvent_LoginSuccess) _then) = _$ConnectionEvent_LoginSuccessCopyWithImpl;
+@useResult
+$Res call({
+ String field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConnectionEvent_LoginSuccessCopyWithImpl<$Res>
+    implements $ConnectionEvent_LoginSuccessCopyWith<$Res> {
+  _$ConnectionEvent_LoginSuccessCopyWithImpl(this._self, this._then);
+
+  final ConnectionEvent_LoginSuccess _self;
+  final $Res Function(ConnectionEvent_LoginSuccess) _then;
+
+/// Create a copy of ConnectionEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConnectionEvent_LoginSuccess(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConnectionEvent_ReconnectingImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_ReconnectingImpl>
-    implements _$$ConnectionEvent_ReconnectingImplCopyWith<$Res> {
-  __$$ConnectionEvent_ReconnectingImplCopyWithImpl(
-    _$ConnectionEvent_ReconnectingImpl _value,
-    $Res Function(_$ConnectionEvent_ReconnectingImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? attempt = null, Object? maxAttempts = null}) {
-    return _then(
-      _$ConnectionEvent_ReconnectingImpl(
-        attempt: null == attempt
-            ? _value.attempt
-            : attempt // ignore: cast_nullable_to_non_nullable
-                  as int,
-        maxAttempts: null == maxAttempts
-            ? _value.maxAttempts
-            : maxAttempts // ignore: cast_nullable_to_non_nullable
-                  as int,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConnectionEvent_ReconnectingImpl extends ConnectionEvent_Reconnecting {
-  const _$ConnectionEvent_ReconnectingImpl({
-    required this.attempt,
-    required this.maxAttempts,
-  }) : super._();
 
-  @override
-  final int attempt;
-  @override
-  final int maxAttempts;
+class ConnectionEvent_Logout extends ConnectionEvent {
+  const ConnectionEvent_Logout(): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConnectionEvent.reconnecting(attempt: $attempt, maxAttempts: $maxAttempts)';
-  }
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_ReconnectingImpl &&
-            (identical(other.attempt, attempt) || other.attempt == attempt) &&
-            (identical(other.maxAttempts, maxAttempts) ||
-                other.maxAttempts == maxAttempts));
-  }
 
-  @override
-  int get hashCode => Object.hash(runtimeType, attempt, maxAttempts);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_ReconnectingImplCopyWith<
-    _$ConnectionEvent_ReconnectingImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_ReconnectingImplCopyWithImpl<
-        _$ConnectionEvent_ReconnectingImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return reconnecting(attempt, maxAttempts);
-  }
 
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return reconnecting?.call(attempt, maxAttempts);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (reconnecting != null) {
-      return reconnecting(attempt, maxAttempts);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return reconnecting(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return reconnecting?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (reconnecting != null) {
-      return reconnecting(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConnectionEvent_Logout);
 }
 
-abstract class ConnectionEvent_Reconnecting extends ConnectionEvent {
-  const factory ConnectionEvent_Reconnecting({
-    required final int attempt,
-    required final int maxAttempts,
-  }) = _$ConnectionEvent_ReconnectingImpl;
-  const ConnectionEvent_Reconnecting._() : super._();
 
-  int get attempt;
-  int get maxAttempts;
+@override
+int get hashCode => runtimeType.hashCode;
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_ReconnectingImplCopyWith<
-    _$ConnectionEvent_ReconnectingImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConnectionEvent.logout()';
 }
 
-/// @nodoc
-abstract class _$$ConnectionEvent_LoginSuccessImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_LoginSuccessImplCopyWith(
-    _$ConnectionEvent_LoginSuccessImpl value,
-    $Res Function(_$ConnectionEvent_LoginSuccessImpl) then,
-  ) = __$$ConnectionEvent_LoginSuccessImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String field0});
+
 }
 
-/// @nodoc
-class __$$ConnectionEvent_LoginSuccessImplCopyWithImpl<$Res>
-    extends
-        _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_LoginSuccessImpl>
-    implements _$$ConnectionEvent_LoginSuccessImplCopyWith<$Res> {
-  __$$ConnectionEvent_LoginSuccessImplCopyWithImpl(
-    _$ConnectionEvent_LoginSuccessImpl _value,
-    $Res Function(_$ConnectionEvent_LoginSuccessImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConnectionEvent_LoginSuccessImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
-}
 
-/// @nodoc
 
-class _$ConnectionEvent_LoginSuccessImpl extends ConnectionEvent_LoginSuccess {
-  const _$ConnectionEvent_LoginSuccessImpl(this.field0) : super._();
-
-  @override
-  final String field0;
-
-  @override
-  String toString() {
-    return 'ConnectionEvent.loginSuccess(field0: $field0)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_LoginSuccessImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
-
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
-
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConnectionEvent_LoginSuccessImplCopyWith<
-    _$ConnectionEvent_LoginSuccessImpl
-  >
-  get copyWith =>
-      __$$ConnectionEvent_LoginSuccessImplCopyWithImpl<
-        _$ConnectionEvent_LoginSuccessImpl
-      >(this, _$identity);
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return loginSuccess(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return loginSuccess?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (loginSuccess != null) {
-      return loginSuccess(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return loginSuccess(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return loginSuccess?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (loginSuccess != null) {
-      return loginSuccess(this);
-    }
-    return orElse();
-  }
-}
-
-abstract class ConnectionEvent_LoginSuccess extends ConnectionEvent {
-  const factory ConnectionEvent_LoginSuccess(final String field0) =
-      _$ConnectionEvent_LoginSuccessImpl;
-  const ConnectionEvent_LoginSuccess._() : super._();
-
-  String get field0;
-
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConnectionEvent_LoginSuccessImplCopyWith<
-    _$ConnectionEvent_LoginSuccessImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class _$$ConnectionEvent_LogoutImplCopyWith<$Res> {
-  factory _$$ConnectionEvent_LogoutImplCopyWith(
-    _$ConnectionEvent_LogoutImpl value,
-    $Res Function(_$ConnectionEvent_LogoutImpl) then,
-  ) = __$$ConnectionEvent_LogoutImplCopyWithImpl<$Res>;
-}
-
-/// @nodoc
-class __$$ConnectionEvent_LogoutImplCopyWithImpl<$Res>
-    extends _$ConnectionEventCopyWithImpl<$Res, _$ConnectionEvent_LogoutImpl>
-    implements _$$ConnectionEvent_LogoutImplCopyWith<$Res> {
-  __$$ConnectionEvent_LogoutImplCopyWithImpl(
-    _$ConnectionEvent_LogoutImpl _value,
-    $Res Function(_$ConnectionEvent_LogoutImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of ConnectionEvent
-  /// with the given fields replaced by the non-null parameter values.
-}
-
-/// @nodoc
-
-class _$ConnectionEvent_LogoutImpl extends ConnectionEvent_Logout {
-  const _$ConnectionEvent_LogoutImpl() : super._();
-
-  @override
-  String toString() {
-    return 'ConnectionEvent.logout()';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConnectionEvent_LogoutImpl);
-  }
-
-  @override
-  int get hashCode => runtimeType.hashCode;
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function() connecting,
-    required TResult Function() connected,
-    required TResult Function(String field0) disconnected,
-    required TResult Function(int errCode, String error) connectFailed,
-    required TResult Function(String field0) kickedOffline,
-    required TResult Function() tokenExpired,
-    required TResult Function(String error) tokenInvalid,
-    required TResult Function(int attempt, int maxAttempts) reconnecting,
-    required TResult Function(String field0) loginSuccess,
-    required TResult Function() logout,
-  }) {
-    return logout();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? connecting,
-    TResult? Function()? connected,
-    TResult? Function(String field0)? disconnected,
-    TResult? Function(int errCode, String error)? connectFailed,
-    TResult? Function(String field0)? kickedOffline,
-    TResult? Function()? tokenExpired,
-    TResult? Function(String error)? tokenInvalid,
-    TResult? Function(int attempt, int maxAttempts)? reconnecting,
-    TResult? Function(String field0)? loginSuccess,
-    TResult? Function()? logout,
-  }) {
-    return logout?.call();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? connecting,
-    TResult Function()? connected,
-    TResult Function(String field0)? disconnected,
-    TResult Function(int errCode, String error)? connectFailed,
-    TResult Function(String field0)? kickedOffline,
-    TResult Function()? tokenExpired,
-    TResult Function(String error)? tokenInvalid,
-    TResult Function(int attempt, int maxAttempts)? reconnecting,
-    TResult Function(String field0)? loginSuccess,
-    TResult Function()? logout,
-    required TResult orElse(),
-  }) {
-    if (logout != null) {
-      return logout();
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConnectionEvent_Connecting value) connecting,
-    required TResult Function(ConnectionEvent_Connected value) connected,
-    required TResult Function(ConnectionEvent_Disconnected value) disconnected,
-    required TResult Function(ConnectionEvent_ConnectFailed value)
-    connectFailed,
-    required TResult Function(ConnectionEvent_KickedOffline value)
-    kickedOffline,
-    required TResult Function(ConnectionEvent_TokenExpired value) tokenExpired,
-    required TResult Function(ConnectionEvent_TokenInvalid value) tokenInvalid,
-    required TResult Function(ConnectionEvent_Reconnecting value) reconnecting,
-    required TResult Function(ConnectionEvent_LoginSuccess value) loginSuccess,
-    required TResult Function(ConnectionEvent_Logout value) logout,
-  }) {
-    return logout(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConnectionEvent_Connecting value)? connecting,
-    TResult? Function(ConnectionEvent_Connected value)? connected,
-    TResult? Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult? Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult? Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult? Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult? Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult? Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult? Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult? Function(ConnectionEvent_Logout value)? logout,
-  }) {
-    return logout?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConnectionEvent_Connecting value)? connecting,
-    TResult Function(ConnectionEvent_Connected value)? connected,
-    TResult Function(ConnectionEvent_Disconnected value)? disconnected,
-    TResult Function(ConnectionEvent_ConnectFailed value)? connectFailed,
-    TResult Function(ConnectionEvent_KickedOffline value)? kickedOffline,
-    TResult Function(ConnectionEvent_TokenExpired value)? tokenExpired,
-    TResult Function(ConnectionEvent_TokenInvalid value)? tokenInvalid,
-    TResult Function(ConnectionEvent_Reconnecting value)? reconnecting,
-    TResult Function(ConnectionEvent_LoginSuccess value)? loginSuccess,
-    TResult Function(ConnectionEvent_Logout value)? logout,
-    required TResult orElse(),
-  }) {
-    if (logout != null) {
-      return logout(this);
-    }
-    return orElse();
-  }
-}
-
-abstract class ConnectionEvent_Logout extends ConnectionEvent {
-  const factory ConnectionEvent_Logout() = _$ConnectionEvent_LogoutImpl;
-  const ConnectionEvent_Logout._() : super._();
-}
+// dart format on

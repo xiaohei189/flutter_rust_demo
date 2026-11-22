@@ -6,7 +6,19 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 连接状态（SDK 对外可见的连接生命周期状态）
+Future<void> frbMirrorAnchorConnectionState({required ConnectionState value}) =>
+    RustLib.instance.api.crateDomainConstantEnumsFrbMirrorAnchorConnectionState(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorSessionType({required SessionType value}) => RustLib
+    .instance
+    .api
+    .crateDomainConstantEnumsFrbMirrorAnchorSessionType(value: value);
+
+/// flutter_rust_bridge:mirror(ConnectionState)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 enum ConnectionState {
   disconnected,
   connecting,
@@ -15,5 +27,7 @@ enum ConnectionState {
   kicked,
 }
 
-/// 会话类型
+/// flutter_rust_bridge:mirror(SessionType)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 enum SessionType { singleChat, writeGroupChat, readGroupChat, notificationChat }

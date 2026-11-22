@@ -6,7 +6,19 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 群组信息模型
+Future<void> frbMirrorAnchorGroupInfo({required GroupInfo value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelGroupFrbMirrorAnchorGroupInfo(value: value);
+
+Future<void> frbMirrorAnchorGroupMember({required GroupMember value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelGroupFrbMirrorAnchorGroupMember(value: value);
+
+/// flutter_rust_bridge:mirror(GroupInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GroupInfo {
   /// 群组 ID
   final String groupId;
@@ -35,7 +47,7 @@ class GroupInfo {
   /// 状态 (0:正常, 1:封禁, 2:解散)
   final int status;
 
-  /// 群扩展 JSON
+  /// 扩展信息（话题群等）
   final String ex;
 
   const GroupInfo({
@@ -81,7 +93,9 @@ class GroupInfo {
           ex == other.ex;
 }
 
-/// 群成员信息模型
+/// flutter_rust_bridge:mirror(GroupMember)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GroupMember {
   /// 群组 ID
   final String groupId;

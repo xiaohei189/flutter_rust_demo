@@ -1,20 +1,20 @@
 /// 消息类型（与 OpenIM contentType 对齐，参考 rust/src/constant/types.rs）
 enum MessageType {
-  text,         // 101
-  image,        // 102
-  audio,        // 103（语音）
-  video,        // 104
-  file,         // 105
-  at,           // 106
-  merge,        // 107（合并转发）
-  card,         // 108
-  location,     // 109
-  custom,       // 110
-  quote,        // 114
-  face,         // 115
+  text, // 101
+  image, // 102
+  audio, // 103（语音）
+  video, // 104
+  file, // 105
+  at, // 106
+  merge, // 107（合并转发）
+  card, // 108
+  location, // 109
+  custom, // 110
+  quote, // 114
+  face, // 115
   advancedText, // 117
-  markdown,     // 118
-  system,       // 系统提示（撤回等）
+  markdown, // 118
+  system, // 系统提示（撤回等）
 }
 
 /// 将 OpenIM contentType 整数转为 MessageType

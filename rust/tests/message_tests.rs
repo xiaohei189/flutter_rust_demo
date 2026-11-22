@@ -2165,7 +2165,7 @@ async fn test_group_message_flow() {
     // Phase 2: A 创建群组，邀请 B 和 C
     println!("\n========== Phase 2: A 创建群组 ==========");
     let group = sdk_a
-        .create_group("测试群", GroupType::Normal, &[account_b.user_id.clone(), account_c.user_id.clone()])
+        .create_group("测试群", GroupType::Normal, &[account_b.user_id.clone(), account_c.user_id.clone()], None)
         .await
         .expect("创建群组失败");
     println!("群组创建成功: group_id={}, owner={}", group.group_id, group.owner_user_id);

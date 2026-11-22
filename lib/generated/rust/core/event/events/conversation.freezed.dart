@@ -1,5 +1,5 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,2548 +9,900 @@ part of 'conversation.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// dart format off
 T _$identity<T>(T value) => value;
-
-final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
-
 /// @nodoc
 mixin _$ConversationEvent {
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'ConversationEvent()';
+}
+
+
 }
 
 /// @nodoc
-abstract class $ConversationEventCopyWith<$Res> {
-  factory $ConversationEventCopyWith(
-    ConversationEvent value,
-    $Res Function(ConversationEvent) then,
-  ) = _$ConversationEventCopyWithImpl<$Res, ConversationEvent>;
+class $ConversationEventCopyWith<$Res>  {
+$ConversationEventCopyWith(ConversationEvent _, $Res Function(ConversationEvent) __);
 }
 
-/// @nodoc
-class _$ConversationEventCopyWithImpl<$Res, $Val extends ConversationEvent>
-    implements $ConversationEventCopyWith<$Res> {
-  _$ConversationEventCopyWithImpl(this._value, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+/// Adds pattern-matching-related methods to [ConversationEvent].
+extension ConversationEventPatterns on ConversationEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( ConversationEvent_Changed value)?  changed,TResult Function( ConversationEvent_Deleted value)?  deleted,TResult Function( ConversationEvent_New value)?  new_,TResult Function( ConversationEvent_TotalUnreadCountChanged value)?  totalUnreadCountChanged,TResult Function( ConversationEvent_SyncStarted value)?  syncStarted,TResult Function( ConversationEvent_SyncFinished value)?  syncFinished,TResult Function( ConversationEvent_SyncFailed value)?  syncFailed,TResult Function( ConversationEvent_SyncProgress value)?  syncProgress,TResult Function( ConversationEvent_UserInputStatusChanged value)?  userInputStatusChanged,TResult Function( ConversationEvent_UpdateLatestMessageReadState value)?  updateLatestMessageReadState,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case ConversationEvent_Changed() when changed != null:
+return changed(_that);case ConversationEvent_Deleted() when deleted != null:
+return deleted(_that);case ConversationEvent_New() when new_ != null:
+return new_(_that);case ConversationEvent_TotalUnreadCountChanged() when totalUnreadCountChanged != null:
+return totalUnreadCountChanged(_that);case ConversationEvent_SyncStarted() when syncStarted != null:
+return syncStarted(_that);case ConversationEvent_SyncFinished() when syncFinished != null:
+return syncFinished(_that);case ConversationEvent_SyncFailed() when syncFailed != null:
+return syncFailed(_that);case ConversationEvent_SyncProgress() when syncProgress != null:
+return syncProgress(_that);case ConversationEvent_UserInputStatusChanged() when userInputStatusChanged != null:
+return userInputStatusChanged(_that);case ConversationEvent_UpdateLatestMessageReadState() when updateLatestMessageReadState != null:
+return updateLatestMessageReadState(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( ConversationEvent_Changed value)  changed,required TResult Function( ConversationEvent_Deleted value)  deleted,required TResult Function( ConversationEvent_New value)  new_,required TResult Function( ConversationEvent_TotalUnreadCountChanged value)  totalUnreadCountChanged,required TResult Function( ConversationEvent_SyncStarted value)  syncStarted,required TResult Function( ConversationEvent_SyncFinished value)  syncFinished,required TResult Function( ConversationEvent_SyncFailed value)  syncFailed,required TResult Function( ConversationEvent_SyncProgress value)  syncProgress,required TResult Function( ConversationEvent_UserInputStatusChanged value)  userInputStatusChanged,required TResult Function( ConversationEvent_UpdateLatestMessageReadState value)  updateLatestMessageReadState,}){
+final _that = this;
+switch (_that) {
+case ConversationEvent_Changed():
+return changed(_that);case ConversationEvent_Deleted():
+return deleted(_that);case ConversationEvent_New():
+return new_(_that);case ConversationEvent_TotalUnreadCountChanged():
+return totalUnreadCountChanged(_that);case ConversationEvent_SyncStarted():
+return syncStarted(_that);case ConversationEvent_SyncFinished():
+return syncFinished(_that);case ConversationEvent_SyncFailed():
+return syncFailed(_that);case ConversationEvent_SyncProgress():
+return syncProgress(_that);case ConversationEvent_UserInputStatusChanged():
+return userInputStatusChanged(_that);case ConversationEvent_UpdateLatestMessageReadState():
+return updateLatestMessageReadState(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( ConversationEvent_Changed value)?  changed,TResult? Function( ConversationEvent_Deleted value)?  deleted,TResult? Function( ConversationEvent_New value)?  new_,TResult? Function( ConversationEvent_TotalUnreadCountChanged value)?  totalUnreadCountChanged,TResult? Function( ConversationEvent_SyncStarted value)?  syncStarted,TResult? Function( ConversationEvent_SyncFinished value)?  syncFinished,TResult? Function( ConversationEvent_SyncFailed value)?  syncFailed,TResult? Function( ConversationEvent_SyncProgress value)?  syncProgress,TResult? Function( ConversationEvent_UserInputStatusChanged value)?  userInputStatusChanged,TResult? Function( ConversationEvent_UpdateLatestMessageReadState value)?  updateLatestMessageReadState,}){
+final _that = this;
+switch (_that) {
+case ConversationEvent_Changed() when changed != null:
+return changed(_that);case ConversationEvent_Deleted() when deleted != null:
+return deleted(_that);case ConversationEvent_New() when new_ != null:
+return new_(_that);case ConversationEvent_TotalUnreadCountChanged() when totalUnreadCountChanged != null:
+return totalUnreadCountChanged(_that);case ConversationEvent_SyncStarted() when syncStarted != null:
+return syncStarted(_that);case ConversationEvent_SyncFinished() when syncFinished != null:
+return syncFinished(_that);case ConversationEvent_SyncFailed() when syncFailed != null:
+return syncFailed(_that);case ConversationEvent_SyncProgress() when syncProgress != null:
+return syncProgress(_that);case ConversationEvent_UserInputStatusChanged() when userInputStatusChanged != null:
+return userInputStatusChanged(_that);case ConversationEvent_UpdateLatestMessageReadState() when updateLatestMessageReadState != null:
+return updateLatestMessageReadState(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<LocalConversation> field0)?  changed,TResult Function( List<String> field0)?  deleted,TResult Function( List<LocalConversation> field0)?  new_,TResult Function( int field0)?  totalUnreadCountChanged,TResult Function( bool field0)?  syncStarted,TResult Function( bool field0)?  syncFinished,TResult Function( bool reinstalled,  String error)?  syncFailed,TResult Function( int progress,  String message)?  syncProgress,TResult Function( String conversationId,  String userId,  Int32List platformIds)?  userInputStatusChanged,TResult Function( String conversationId)?  updateLatestMessageReadState,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case ConversationEvent_Changed() when changed != null:
+return changed(_that.field0);case ConversationEvent_Deleted() when deleted != null:
+return deleted(_that.field0);case ConversationEvent_New() when new_ != null:
+return new_(_that.field0);case ConversationEvent_TotalUnreadCountChanged() when totalUnreadCountChanged != null:
+return totalUnreadCountChanged(_that.field0);case ConversationEvent_SyncStarted() when syncStarted != null:
+return syncStarted(_that.field0);case ConversationEvent_SyncFinished() when syncFinished != null:
+return syncFinished(_that.field0);case ConversationEvent_SyncFailed() when syncFailed != null:
+return syncFailed(_that.reinstalled,_that.error);case ConversationEvent_SyncProgress() when syncProgress != null:
+return syncProgress(_that.progress,_that.message);case ConversationEvent_UserInputStatusChanged() when userInputStatusChanged != null:
+return userInputStatusChanged(_that.conversationId,_that.userId,_that.platformIds);case ConversationEvent_UpdateLatestMessageReadState() when updateLatestMessageReadState != null:
+return updateLatestMessageReadState(_that.conversationId);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<LocalConversation> field0)  changed,required TResult Function( List<String> field0)  deleted,required TResult Function( List<LocalConversation> field0)  new_,required TResult Function( int field0)  totalUnreadCountChanged,required TResult Function( bool field0)  syncStarted,required TResult Function( bool field0)  syncFinished,required TResult Function( bool reinstalled,  String error)  syncFailed,required TResult Function( int progress,  String message)  syncProgress,required TResult Function( String conversationId,  String userId,  Int32List platformIds)  userInputStatusChanged,required TResult Function( String conversationId)  updateLatestMessageReadState,}) {final _that = this;
+switch (_that) {
+case ConversationEvent_Changed():
+return changed(_that.field0);case ConversationEvent_Deleted():
+return deleted(_that.field0);case ConversationEvent_New():
+return new_(_that.field0);case ConversationEvent_TotalUnreadCountChanged():
+return totalUnreadCountChanged(_that.field0);case ConversationEvent_SyncStarted():
+return syncStarted(_that.field0);case ConversationEvent_SyncFinished():
+return syncFinished(_that.field0);case ConversationEvent_SyncFailed():
+return syncFailed(_that.reinstalled,_that.error);case ConversationEvent_SyncProgress():
+return syncProgress(_that.progress,_that.message);case ConversationEvent_UserInputStatusChanged():
+return userInputStatusChanged(_that.conversationId,_that.userId,_that.platformIds);case ConversationEvent_UpdateLatestMessageReadState():
+return updateLatestMessageReadState(_that.conversationId);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<LocalConversation> field0)?  changed,TResult? Function( List<String> field0)?  deleted,TResult? Function( List<LocalConversation> field0)?  new_,TResult? Function( int field0)?  totalUnreadCountChanged,TResult? Function( bool field0)?  syncStarted,TResult? Function( bool field0)?  syncFinished,TResult? Function( bool reinstalled,  String error)?  syncFailed,TResult? Function( int progress,  String message)?  syncProgress,TResult? Function( String conversationId,  String userId,  Int32List platformIds)?  userInputStatusChanged,TResult? Function( String conversationId)?  updateLatestMessageReadState,}) {final _that = this;
+switch (_that) {
+case ConversationEvent_Changed() when changed != null:
+return changed(_that.field0);case ConversationEvent_Deleted() when deleted != null:
+return deleted(_that.field0);case ConversationEvent_New() when new_ != null:
+return new_(_that.field0);case ConversationEvent_TotalUnreadCountChanged() when totalUnreadCountChanged != null:
+return totalUnreadCountChanged(_that.field0);case ConversationEvent_SyncStarted() when syncStarted != null:
+return syncStarted(_that.field0);case ConversationEvent_SyncFinished() when syncFinished != null:
+return syncFinished(_that.field0);case ConversationEvent_SyncFailed() when syncFailed != null:
+return syncFailed(_that.reinstalled,_that.error);case ConversationEvent_SyncProgress() when syncProgress != null:
+return syncProgress(_that.progress,_that.message);case ConversationEvent_UserInputStatusChanged() when userInputStatusChanged != null:
+return userInputStatusChanged(_that.conversationId,_that.userId,_that.platformIds);case ConversationEvent_UpdateLatestMessageReadState() when updateLatestMessageReadState != null:
+return updateLatestMessageReadState(_that.conversationId);case _:
+  return null;
+
+}
 }
 
-/// @nodoc
-abstract class _$$ConversationEvent_ChangedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_ChangedImplCopyWith(
-    _$ConversationEvent_ChangedImpl value,
-    $Res Function(_$ConversationEvent_ChangedImpl) then,
-  ) = __$$ConversationEvent_ChangedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({List<LocalConversation> field0});
-}
-
-/// @nodoc
-class __$$ConversationEvent_ChangedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<$Res, _$ConversationEvent_ChangedImpl>
-    implements _$$ConversationEvent_ChangedImplCopyWith<$Res> {
-  __$$ConversationEvent_ChangedImplCopyWithImpl(
-    _$ConversationEvent_ChangedImpl _value,
-    $Res Function(_$ConversationEvent_ChangedImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_ChangedImpl(
-        null == field0
-            ? _value._field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as List<LocalConversation>,
-      ),
-    );
-  }
-}
-
-/// @nodoc
-
-class _$ConversationEvent_ChangedImpl extends ConversationEvent_Changed {
-  const _$ConversationEvent_ChangedImpl(final List<LocalConversation> field0)
-    : _field0 = field0,
-      super._();
-
-  final List<LocalConversation> _field0;
-  @override
-  List<LocalConversation> get field0 {
-    if (_field0 is EqualUnmodifiableListView) return _field0;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_field0);
-  }
-
-  @override
-  String toString() {
-    return 'ConversationEvent.changed(field0: $field0)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_ChangedImpl &&
-            const DeepCollectionEquality().equals(other._field0, _field0));
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_field0));
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_ChangedImplCopyWith<_$ConversationEvent_ChangedImpl>
-  get copyWith =>
-      __$$ConversationEvent_ChangedImplCopyWithImpl<
-        _$ConversationEvent_ChangedImpl
-      >(this, _$identity);
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return changed(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return changed?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (changed != null) {
-      return changed(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return changed(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return changed?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (changed != null) {
-      return changed(this);
-    }
-    return orElse();
-  }
-}
-
-abstract class ConversationEvent_Changed extends ConversationEvent {
-  const factory ConversationEvent_Changed(
-    final List<LocalConversation> field0,
-  ) = _$ConversationEvent_ChangedImpl;
-  const ConversationEvent_Changed._() : super._();
-
-  List<LocalConversation> get field0;
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_ChangedImplCopyWith<_$ConversationEvent_ChangedImpl>
-  get copyWith => throw _privateConstructorUsedError;
-}
-
-/// @nodoc
-abstract class _$$ConversationEvent_DeletedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_DeletedImplCopyWith(
-    _$ConversationEvent_DeletedImpl value,
-    $Res Function(_$ConversationEvent_DeletedImpl) then,
-  ) = __$$ConversationEvent_DeletedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({List<String> field0});
-}
-
-/// @nodoc
-class __$$ConversationEvent_DeletedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<$Res, _$ConversationEvent_DeletedImpl>
-    implements _$$ConversationEvent_DeletedImplCopyWith<$Res> {
-  __$$ConversationEvent_DeletedImplCopyWithImpl(
-    _$ConversationEvent_DeletedImpl _value,
-    $Res Function(_$ConversationEvent_DeletedImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_DeletedImpl(
-        null == field0
-            ? _value._field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as List<String>,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_DeletedImpl extends ConversationEvent_Deleted {
-  const _$ConversationEvent_DeletedImpl(final List<String> field0)
-    : _field0 = field0,
-      super._();
 
-  final List<String> _field0;
-  @override
-  List<String> get field0 {
-    if (_field0 is EqualUnmodifiableListView) return _field0;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_field0);
-  }
+class ConversationEvent_Changed extends ConversationEvent {
+  const ConversationEvent_Changed(final  List<LocalConversation> field0): _field0 = field0,super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.deleted(field0: $field0)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_DeletedImpl &&
-            const DeepCollectionEquality().equals(other._field0, _field0));
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_field0));
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_DeletedImplCopyWith<_$ConversationEvent_DeletedImpl>
-  get copyWith =>
-      __$$ConversationEvent_DeletedImplCopyWithImpl<
-        _$ConversationEvent_DeletedImpl
-      >(this, _$identity);
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return deleted(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return deleted?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (deleted != null) {
-      return deleted(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return deleted(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return deleted?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (deleted != null) {
-      return deleted(this);
-    }
-    return orElse();
-  }
+ final  List<LocalConversation> _field0;
+ List<LocalConversation> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
 }
 
-abstract class ConversationEvent_Deleted extends ConversationEvent {
-  const factory ConversationEvent_Deleted(final List<String> field0) =
-      _$ConversationEvent_DeletedImpl;
-  const ConversationEvent_Deleted._() : super._();
 
-  List<String> get field0;
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_ChangedCopyWith<ConversationEvent_Changed> get copyWith => _$ConversationEvent_ChangedCopyWithImpl<ConversationEvent_Changed>(this, _$identity);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_DeletedImplCopyWith<_$ConversationEvent_DeletedImpl>
-  get copyWith => throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_Changed&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'ConversationEvent.changed(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_NewImplCopyWith<$Res> {
-  factory _$$ConversationEvent_NewImplCopyWith(
-    _$ConversationEvent_NewImpl value,
-    $Res Function(_$ConversationEvent_NewImpl) then,
-  ) = __$$ConversationEvent_NewImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({List<LocalConversation> field0});
+abstract mixin class $ConversationEvent_ChangedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_ChangedCopyWith(ConversationEvent_Changed value, $Res Function(ConversationEvent_Changed) _then) = _$ConversationEvent_ChangedCopyWithImpl;
+@useResult
+$Res call({
+ List<LocalConversation> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_ChangedCopyWithImpl<$Res>
+    implements $ConversationEvent_ChangedCopyWith<$Res> {
+  _$ConversationEvent_ChangedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_Changed _self;
+  final $Res Function(ConversationEvent_Changed) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_Changed(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<LocalConversation>,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_NewImplCopyWithImpl<$Res>
-    extends _$ConversationEventCopyWithImpl<$Res, _$ConversationEvent_NewImpl>
-    implements _$$ConversationEvent_NewImplCopyWith<$Res> {
-  __$$ConversationEvent_NewImplCopyWithImpl(
-    _$ConversationEvent_NewImpl _value,
-    $Res Function(_$ConversationEvent_NewImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_NewImpl(
-        null == field0
-            ? _value._field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as List<LocalConversation>,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_NewImpl extends ConversationEvent_New {
-  const _$ConversationEvent_NewImpl(final List<LocalConversation> field0)
-    : _field0 = field0,
-      super._();
 
-  final List<LocalConversation> _field0;
-  @override
-  List<LocalConversation> get field0 {
-    if (_field0 is EqualUnmodifiableListView) return _field0;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_field0);
-  }
+class ConversationEvent_Deleted extends ConversationEvent {
+  const ConversationEvent_Deleted(final  List<String> field0): _field0 = field0,super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.new_(field0: $field0)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_NewImpl &&
-            const DeepCollectionEquality().equals(other._field0, _field0));
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_field0));
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_NewImplCopyWith<_$ConversationEvent_NewImpl>
-  get copyWith =>
-      __$$ConversationEvent_NewImplCopyWithImpl<_$ConversationEvent_NewImpl>(
-        this,
-        _$identity,
-      );
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return new_(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return new_?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (new_ != null) {
-      return new_(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return new_(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return new_?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (new_ != null) {
-      return new_(this);
-    }
-    return orElse();
-  }
+ final  List<String> _field0;
+ List<String> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
 }
 
-abstract class ConversationEvent_New extends ConversationEvent {
-  const factory ConversationEvent_New(final List<LocalConversation> field0) =
-      _$ConversationEvent_NewImpl;
-  const ConversationEvent_New._() : super._();
 
-  List<LocalConversation> get field0;
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_DeletedCopyWith<ConversationEvent_Deleted> get copyWith => _$ConversationEvent_DeletedCopyWithImpl<ConversationEvent_Deleted>(this, _$identity);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_NewImplCopyWith<_$ConversationEvent_NewImpl>
-  get copyWith => throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_Deleted&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'ConversationEvent.deleted(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_TotalUnreadCountChangedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_TotalUnreadCountChangedImplCopyWith(
-    _$ConversationEvent_TotalUnreadCountChangedImpl value,
-    $Res Function(_$ConversationEvent_TotalUnreadCountChangedImpl) then,
-  ) = __$$ConversationEvent_TotalUnreadCountChangedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({int field0});
+abstract mixin class $ConversationEvent_DeletedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_DeletedCopyWith(ConversationEvent_Deleted value, $Res Function(ConversationEvent_Deleted) _then) = _$ConversationEvent_DeletedCopyWithImpl;
+@useResult
+$Res call({
+ List<String> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_DeletedCopyWithImpl<$Res>
+    implements $ConversationEvent_DeletedCopyWith<$Res> {
+  _$ConversationEvent_DeletedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_Deleted _self;
+  final $Res Function(ConversationEvent_Deleted) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_Deleted(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<String>,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_TotalUnreadCountChangedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_TotalUnreadCountChangedImpl
-        >
-    implements _$$ConversationEvent_TotalUnreadCountChangedImplCopyWith<$Res> {
-  __$$ConversationEvent_TotalUnreadCountChangedImplCopyWithImpl(
-    _$ConversationEvent_TotalUnreadCountChangedImpl _value,
-    $Res Function(_$ConversationEvent_TotalUnreadCountChangedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_TotalUnreadCountChangedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as int,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_TotalUnreadCountChangedImpl
-    extends ConversationEvent_TotalUnreadCountChanged {
-  const _$ConversationEvent_TotalUnreadCountChangedImpl(this.field0)
-    : super._();
 
-  @override
-  final int field0;
+class ConversationEvent_New extends ConversationEvent {
+  const ConversationEvent_New(final  List<LocalConversation> field0): _field0 = field0,super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.totalUnreadCountChanged(field0: $field0)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_TotalUnreadCountChangedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
-
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
-
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_TotalUnreadCountChangedImplCopyWith<
-    _$ConversationEvent_TotalUnreadCountChangedImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_TotalUnreadCountChangedImplCopyWithImpl<
-        _$ConversationEvent_TotalUnreadCountChangedImpl
-      >(this, _$identity);
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return totalUnreadCountChanged(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return totalUnreadCountChanged?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (totalUnreadCountChanged != null) {
-      return totalUnreadCountChanged(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return totalUnreadCountChanged(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return totalUnreadCountChanged?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (totalUnreadCountChanged != null) {
-      return totalUnreadCountChanged(this);
-    }
-    return orElse();
-  }
+ final  List<LocalConversation> _field0;
+ List<LocalConversation> get field0 {
+  if (_field0 is EqualUnmodifiableListView) return _field0;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_field0);
 }
 
-abstract class ConversationEvent_TotalUnreadCountChanged
-    extends ConversationEvent {
-  const factory ConversationEvent_TotalUnreadCountChanged(final int field0) =
-      _$ConversationEvent_TotalUnreadCountChangedImpl;
-  const ConversationEvent_TotalUnreadCountChanged._() : super._();
 
-  int get field0;
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_NewCopyWith<ConversationEvent_New> get copyWith => _$ConversationEvent_NewCopyWithImpl<ConversationEvent_New>(this, _$identity);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_TotalUnreadCountChangedImplCopyWith<
-    _$ConversationEvent_TotalUnreadCountChangedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_New&&const DeepCollectionEquality().equals(other._field0, _field0));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_field0));
+
+@override
+String toString() {
+  return 'ConversationEvent.new_(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_SyncStartedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_SyncStartedImplCopyWith(
-    _$ConversationEvent_SyncStartedImpl value,
-    $Res Function(_$ConversationEvent_SyncStartedImpl) then,
-  ) = __$$ConversationEvent_SyncStartedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({bool field0});
+abstract mixin class $ConversationEvent_NewCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_NewCopyWith(ConversationEvent_New value, $Res Function(ConversationEvent_New) _then) = _$ConversationEvent_NewCopyWithImpl;
+@useResult
+$Res call({
+ List<LocalConversation> field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_NewCopyWithImpl<$Res>
+    implements $ConversationEvent_NewCopyWith<$Res> {
+  _$ConversationEvent_NewCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_New _self;
+  final $Res Function(ConversationEvent_New) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_New(
+null == field0 ? _self._field0 : field0 // ignore: cast_nullable_to_non_nullable
+as List<LocalConversation>,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_SyncStartedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_SyncStartedImpl
-        >
-    implements _$$ConversationEvent_SyncStartedImplCopyWith<$Res> {
-  __$$ConversationEvent_SyncStartedImplCopyWithImpl(
-    _$ConversationEvent_SyncStartedImpl _value,
-    $Res Function(_$ConversationEvent_SyncStartedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_SyncStartedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as bool,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_SyncStartedImpl
-    extends ConversationEvent_SyncStarted {
-  const _$ConversationEvent_SyncStartedImpl(this.field0) : super._();
 
-  @override
-  final bool field0;
+class ConversationEvent_TotalUnreadCountChanged extends ConversationEvent {
+  const ConversationEvent_TotalUnreadCountChanged(this.field0): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.syncStarted(field0: $field0)';
-  }
+ final  int field0;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncStartedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_TotalUnreadCountChangedCopyWith<ConversationEvent_TotalUnreadCountChanged> get copyWith => _$ConversationEvent_TotalUnreadCountChangedCopyWithImpl<ConversationEvent_TotalUnreadCountChanged>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_SyncStartedImplCopyWith<
-    _$ConversationEvent_SyncStartedImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_SyncStartedImplCopyWithImpl<
-        _$ConversationEvent_SyncStartedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return syncStarted(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return syncStarted?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncStarted != null) {
-      return syncStarted(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return syncStarted(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return syncStarted?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncStarted != null) {
-      return syncStarted(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_TotalUnreadCountChanged&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
-abstract class ConversationEvent_SyncStarted extends ConversationEvent {
-  const factory ConversationEvent_SyncStarted(final bool field0) =
-      _$ConversationEvent_SyncStartedImpl;
-  const ConversationEvent_SyncStarted._() : super._();
 
-  bool get field0;
+@override
+int get hashCode => Object.hash(runtimeType,field0);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_SyncStartedImplCopyWith<
-    _$ConversationEvent_SyncStartedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.totalUnreadCountChanged(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_SyncFinishedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_SyncFinishedImplCopyWith(
-    _$ConversationEvent_SyncFinishedImpl value,
-    $Res Function(_$ConversationEvent_SyncFinishedImpl) then,
-  ) = __$$ConversationEvent_SyncFinishedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({bool field0});
+abstract mixin class $ConversationEvent_TotalUnreadCountChangedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_TotalUnreadCountChangedCopyWith(ConversationEvent_TotalUnreadCountChanged value, $Res Function(ConversationEvent_TotalUnreadCountChanged) _then) = _$ConversationEvent_TotalUnreadCountChangedCopyWithImpl;
+@useResult
+$Res call({
+ int field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_TotalUnreadCountChangedCopyWithImpl<$Res>
+    implements $ConversationEvent_TotalUnreadCountChangedCopyWith<$Res> {
+  _$ConversationEvent_TotalUnreadCountChangedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_TotalUnreadCountChanged _self;
+  final $Res Function(ConversationEvent_TotalUnreadCountChanged) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_TotalUnreadCountChanged(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_SyncFinishedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_SyncFinishedImpl
-        >
-    implements _$$ConversationEvent_SyncFinishedImplCopyWith<$Res> {
-  __$$ConversationEvent_SyncFinishedImplCopyWithImpl(
-    _$ConversationEvent_SyncFinishedImpl _value,
-    $Res Function(_$ConversationEvent_SyncFinishedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? field0 = null}) {
-    return _then(
-      _$ConversationEvent_SyncFinishedImpl(
-        null == field0
-            ? _value.field0
-            : field0 // ignore: cast_nullable_to_non_nullable
-                  as bool,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_SyncFinishedImpl
-    extends ConversationEvent_SyncFinished {
-  const _$ConversationEvent_SyncFinishedImpl(this.field0) : super._();
 
-  @override
-  final bool field0;
+class ConversationEvent_SyncStarted extends ConversationEvent {
+  const ConversationEvent_SyncStarted(this.field0): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.syncFinished(field0: $field0)';
-  }
+ final  bool field0;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncFinishedImpl &&
-            (identical(other.field0, field0) || other.field0 == field0));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_SyncStartedCopyWith<ConversationEvent_SyncStarted> get copyWith => _$ConversationEvent_SyncStartedCopyWithImpl<ConversationEvent_SyncStarted>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, field0);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_SyncFinishedImplCopyWith<
-    _$ConversationEvent_SyncFinishedImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_SyncFinishedImplCopyWithImpl<
-        _$ConversationEvent_SyncFinishedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return syncFinished(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return syncFinished?.call(field0);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncFinished != null) {
-      return syncFinished(field0);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return syncFinished(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return syncFinished?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncFinished != null) {
-      return syncFinished(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_SyncStarted&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
-abstract class ConversationEvent_SyncFinished extends ConversationEvent {
-  const factory ConversationEvent_SyncFinished(final bool field0) =
-      _$ConversationEvent_SyncFinishedImpl;
-  const ConversationEvent_SyncFinished._() : super._();
 
-  bool get field0;
+@override
+int get hashCode => Object.hash(runtimeType,field0);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_SyncFinishedImplCopyWith<
-    _$ConversationEvent_SyncFinishedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.syncStarted(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_SyncFailedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_SyncFailedImplCopyWith(
-    _$ConversationEvent_SyncFailedImpl value,
-    $Res Function(_$ConversationEvent_SyncFailedImpl) then,
-  ) = __$$ConversationEvent_SyncFailedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({bool reinstalled, String error});
+abstract mixin class $ConversationEvent_SyncStartedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_SyncStartedCopyWith(ConversationEvent_SyncStarted value, $Res Function(ConversationEvent_SyncStarted) _then) = _$ConversationEvent_SyncStartedCopyWithImpl;
+@useResult
+$Res call({
+ bool field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_SyncStartedCopyWithImpl<$Res>
+    implements $ConversationEvent_SyncStartedCopyWith<$Res> {
+  _$ConversationEvent_SyncStartedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_SyncStarted _self;
+  final $Res Function(ConversationEvent_SyncStarted) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_SyncStarted(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_SyncFailedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_SyncFailedImpl
-        >
-    implements _$$ConversationEvent_SyncFailedImplCopyWith<$Res> {
-  __$$ConversationEvent_SyncFailedImplCopyWithImpl(
-    _$ConversationEvent_SyncFailedImpl _value,
-    $Res Function(_$ConversationEvent_SyncFailedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? reinstalled = null, Object? error = null}) {
-    return _then(
-      _$ConversationEvent_SyncFailedImpl(
-        reinstalled: null == reinstalled
-            ? _value.reinstalled
-            : reinstalled // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        error: null == error
-            ? _value.error
-            : error // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_SyncFailedImpl extends ConversationEvent_SyncFailed {
-  const _$ConversationEvent_SyncFailedImpl({
-    required this.reinstalled,
-    required this.error,
-  }) : super._();
 
-  @override
-  final bool reinstalled;
-  @override
-  final String error;
+class ConversationEvent_SyncFinished extends ConversationEvent {
+  const ConversationEvent_SyncFinished(this.field0): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.syncFailed(reinstalled: $reinstalled, error: $error)';
-  }
+ final  bool field0;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncFailedImpl &&
-            (identical(other.reinstalled, reinstalled) ||
-                other.reinstalled == reinstalled) &&
-            (identical(other.error, error) || other.error == error));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_SyncFinishedCopyWith<ConversationEvent_SyncFinished> get copyWith => _$ConversationEvent_SyncFinishedCopyWithImpl<ConversationEvent_SyncFinished>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, reinstalled, error);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_SyncFailedImplCopyWith<
-    _$ConversationEvent_SyncFailedImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_SyncFailedImplCopyWithImpl<
-        _$ConversationEvent_SyncFailedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return syncFailed(reinstalled, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return syncFailed?.call(reinstalled, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncFailed != null) {
-      return syncFailed(reinstalled, error);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return syncFailed(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return syncFailed?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncFailed != null) {
-      return syncFailed(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_SyncFinished&&(identical(other.field0, field0) || other.field0 == field0));
 }
 
-abstract class ConversationEvent_SyncFailed extends ConversationEvent {
-  const factory ConversationEvent_SyncFailed({
-    required final bool reinstalled,
-    required final String error,
-  }) = _$ConversationEvent_SyncFailedImpl;
-  const ConversationEvent_SyncFailed._() : super._();
 
-  bool get reinstalled;
-  String get error;
+@override
+int get hashCode => Object.hash(runtimeType,field0);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_SyncFailedImplCopyWith<
-    _$ConversationEvent_SyncFailedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.syncFinished(field0: $field0)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_SyncProgressImplCopyWith<$Res> {
-  factory _$$ConversationEvent_SyncProgressImplCopyWith(
-    _$ConversationEvent_SyncProgressImpl value,
-    $Res Function(_$ConversationEvent_SyncProgressImpl) then,
-  ) = __$$ConversationEvent_SyncProgressImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({int progress, String message});
+abstract mixin class $ConversationEvent_SyncFinishedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_SyncFinishedCopyWith(ConversationEvent_SyncFinished value, $Res Function(ConversationEvent_SyncFinished) _then) = _$ConversationEvent_SyncFinishedCopyWithImpl;
+@useResult
+$Res call({
+ bool field0
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_SyncFinishedCopyWithImpl<$Res>
+    implements $ConversationEvent_SyncFinishedCopyWith<$Res> {
+  _$ConversationEvent_SyncFinishedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_SyncFinished _self;
+  final $Res Function(ConversationEvent_SyncFinished) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? field0 = null,}) {
+  return _then(ConversationEvent_SyncFinished(
+null == field0 ? _self.field0 : field0 // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_SyncProgressImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_SyncProgressImpl
-        >
-    implements _$$ConversationEvent_SyncProgressImplCopyWith<$Res> {
-  __$$ConversationEvent_SyncProgressImplCopyWithImpl(
-    _$ConversationEvent_SyncProgressImpl _value,
-    $Res Function(_$ConversationEvent_SyncProgressImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? progress = null, Object? message = null}) {
-    return _then(
-      _$ConversationEvent_SyncProgressImpl(
-        progress: null == progress
-            ? _value.progress
-            : progress // ignore: cast_nullable_to_non_nullable
-                  as int,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_SyncProgressImpl
-    extends ConversationEvent_SyncProgress {
-  const _$ConversationEvent_SyncProgressImpl({
-    required this.progress,
-    required this.message,
-  }) : super._();
 
-  @override
-  final int progress;
-  @override
-  final String message;
+class ConversationEvent_SyncFailed extends ConversationEvent {
+  const ConversationEvent_SyncFailed({required this.reinstalled, required this.error}): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.syncProgress(progress: $progress, message: $message)';
-  }
+ final  bool reinstalled;
+ final  String error;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_SyncProgressImpl &&
-            (identical(other.progress, progress) ||
-                other.progress == progress) &&
-            (identical(other.message, message) || other.message == message));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_SyncFailedCopyWith<ConversationEvent_SyncFailed> get copyWith => _$ConversationEvent_SyncFailedCopyWithImpl<ConversationEvent_SyncFailed>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, progress, message);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_SyncProgressImplCopyWith<
-    _$ConversationEvent_SyncProgressImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_SyncProgressImplCopyWithImpl<
-        _$ConversationEvent_SyncProgressImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return syncProgress(progress, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return syncProgress?.call(progress, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncProgress != null) {
-      return syncProgress(progress, message);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return syncProgress(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return syncProgress?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (syncProgress != null) {
-      return syncProgress(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_SyncFailed&&(identical(other.reinstalled, reinstalled) || other.reinstalled == reinstalled)&&(identical(other.error, error) || other.error == error));
 }
 
-abstract class ConversationEvent_SyncProgress extends ConversationEvent {
-  const factory ConversationEvent_SyncProgress({
-    required final int progress,
-    required final String message,
-  }) = _$ConversationEvent_SyncProgressImpl;
-  const ConversationEvent_SyncProgress._() : super._();
 
-  int get progress;
-  String get message;
+@override
+int get hashCode => Object.hash(runtimeType,reinstalled,error);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_SyncProgressImplCopyWith<
-    _$ConversationEvent_SyncProgressImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.syncFailed(reinstalled: $reinstalled, error: $error)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_UserInputStatusChangedImplCopyWith<$Res> {
-  factory _$$ConversationEvent_UserInputStatusChangedImplCopyWith(
-    _$ConversationEvent_UserInputStatusChangedImpl value,
-    $Res Function(_$ConversationEvent_UserInputStatusChangedImpl) then,
-  ) = __$$ConversationEvent_UserInputStatusChangedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId, String userId, Int32List platformIds});
+abstract mixin class $ConversationEvent_SyncFailedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_SyncFailedCopyWith(ConversationEvent_SyncFailed value, $Res Function(ConversationEvent_SyncFailed) _then) = _$ConversationEvent_SyncFailedCopyWithImpl;
+@useResult
+$Res call({
+ bool reinstalled, String error
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_SyncFailedCopyWithImpl<$Res>
+    implements $ConversationEvent_SyncFailedCopyWith<$Res> {
+  _$ConversationEvent_SyncFailedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_SyncFailed _self;
+  final $Res Function(ConversationEvent_SyncFailed) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? reinstalled = null,Object? error = null,}) {
+  return _then(ConversationEvent_SyncFailed(
+reinstalled: null == reinstalled ? _self.reinstalled : reinstalled // ignore: cast_nullable_to_non_nullable
+as bool,error: null == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_UserInputStatusChangedImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_UserInputStatusChangedImpl
-        >
-    implements _$$ConversationEvent_UserInputStatusChangedImplCopyWith<$Res> {
-  __$$ConversationEvent_UserInputStatusChangedImplCopyWithImpl(
-    _$ConversationEvent_UserInputStatusChangedImpl _value,
-    $Res Function(_$ConversationEvent_UserInputStatusChangedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? conversationId = null,
-    Object? userId = null,
-    Object? platformIds = null,
-  }) {
-    return _then(
-      _$ConversationEvent_UserInputStatusChangedImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        userId: null == userId
-            ? _value.userId
-            : userId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        platformIds: null == platformIds
-            ? _value.platformIds
-            : platformIds // ignore: cast_nullable_to_non_nullable
-                  as Int32List,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_UserInputStatusChangedImpl
-    extends ConversationEvent_UserInputStatusChanged {
-  const _$ConversationEvent_UserInputStatusChangedImpl({
-    required this.conversationId,
-    required this.userId,
-    required this.platformIds,
-  }) : super._();
 
-  @override
-  final String conversationId;
-  @override
-  final String userId;
-  @override
-  final Int32List platformIds;
+class ConversationEvent_SyncProgress extends ConversationEvent {
+  const ConversationEvent_SyncProgress({required this.progress, required this.message}): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.userInputStatusChanged(conversationId: $conversationId, userId: $userId, platformIds: $platformIds)';
-  }
+ final  int progress;
+ final  String message;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_UserInputStatusChangedImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            (identical(other.userId, userId) || other.userId == userId) &&
-            const DeepCollectionEquality().equals(
-              other.platformIds,
-              platformIds,
-            ));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_SyncProgressCopyWith<ConversationEvent_SyncProgress> get copyWith => _$ConversationEvent_SyncProgressCopyWithImpl<ConversationEvent_SyncProgress>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    conversationId,
-    userId,
-    const DeepCollectionEquality().hash(platformIds),
-  );
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_UserInputStatusChangedImplCopyWith<
-    _$ConversationEvent_UserInputStatusChangedImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_UserInputStatusChangedImplCopyWithImpl<
-        _$ConversationEvent_UserInputStatusChangedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return userInputStatusChanged(conversationId, userId, platformIds);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return userInputStatusChanged?.call(conversationId, userId, platformIds);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (userInputStatusChanged != null) {
-      return userInputStatusChanged(conversationId, userId, platformIds);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return userInputStatusChanged(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return userInputStatusChanged?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (userInputStatusChanged != null) {
-      return userInputStatusChanged(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_SyncProgress&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.message, message) || other.message == message));
 }
 
-abstract class ConversationEvent_UserInputStatusChanged
-    extends ConversationEvent {
-  const factory ConversationEvent_UserInputStatusChanged({
-    required final String conversationId,
-    required final String userId,
-    required final Int32List platformIds,
-  }) = _$ConversationEvent_UserInputStatusChangedImpl;
-  const ConversationEvent_UserInputStatusChanged._() : super._();
 
-  String get conversationId;
-  String get userId;
-  Int32List get platformIds;
+@override
+int get hashCode => Object.hash(runtimeType,progress,message);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_UserInputStatusChangedImplCopyWith<
-    _$ConversationEvent_UserInputStatusChangedImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.syncProgress(progress: $progress, message: $message)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
-  $Res
-> {
-  factory _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith(
-    _$ConversationEvent_UpdateLatestMessageReadStateImpl value,
-    $Res Function(_$ConversationEvent_UpdateLatestMessageReadStateImpl) then,
-  ) = __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId});
+abstract mixin class $ConversationEvent_SyncProgressCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_SyncProgressCopyWith(ConversationEvent_SyncProgress value, $Res Function(ConversationEvent_SyncProgress) _then) = _$ConversationEvent_SyncProgressCopyWithImpl;
+@useResult
+$Res call({
+ int progress, String message
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_SyncProgressCopyWithImpl<$Res>
+    implements $ConversationEvent_SyncProgressCopyWith<$Res> {
+  _$ConversationEvent_SyncProgressCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_SyncProgress _self;
+  final $Res Function(ConversationEvent_SyncProgress) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? progress = null,Object? message = null,}) {
+  return _then(ConversationEvent_SyncProgress(
+progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as int,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<$Res>
-    extends
-        _$ConversationEventCopyWithImpl<
-          $Res,
-          _$ConversationEvent_UpdateLatestMessageReadStateImpl
-        >
-    implements
-        _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<$Res> {
-  __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl(
-    _$ConversationEvent_UpdateLatestMessageReadStateImpl _value,
-    $Res Function(_$ConversationEvent_UpdateLatestMessageReadStateImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? conversationId = null}) {
-    return _then(
-      _$ConversationEvent_UpdateLatestMessageReadStateImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$ConversationEvent_UpdateLatestMessageReadStateImpl
-    extends ConversationEvent_UpdateLatestMessageReadState {
-  const _$ConversationEvent_UpdateLatestMessageReadStateImpl({
-    required this.conversationId,
-  }) : super._();
 
-  @override
-  final String conversationId;
+class ConversationEvent_UserInputStatusChanged extends ConversationEvent {
+  const ConversationEvent_UserInputStatusChanged({required this.conversationId, required this.userId, required this.platformIds}): super._();
+  
 
-  @override
-  String toString() {
-    return 'ConversationEvent.updateLatestMessageReadState(conversationId: $conversationId)';
-  }
+ final  String conversationId;
+ final  String userId;
+ final  Int32List platformIds;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ConversationEvent_UpdateLatestMessageReadStateImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId));
-  }
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_UserInputStatusChangedCopyWith<ConversationEvent_UserInputStatusChanged> get copyWith => _$ConversationEvent_UserInputStatusChangedCopyWithImpl<ConversationEvent_UserInputStatusChanged>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, conversationId);
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
-    _$ConversationEvent_UpdateLatestMessageReadStateImpl
-  >
-  get copyWith =>
-      __$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWithImpl<
-        _$ConversationEvent_UpdateLatestMessageReadStateImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(List<LocalConversation> field0) changed,
-    required TResult Function(List<String> field0) deleted,
-    required TResult Function(List<LocalConversation> field0) new_,
-    required TResult Function(int field0) totalUnreadCountChanged,
-    required TResult Function(bool field0) syncStarted,
-    required TResult Function(bool field0) syncFinished,
-    required TResult Function(bool reinstalled, String error) syncFailed,
-    required TResult Function(int progress, String message) syncProgress,
-    required TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )
-    userInputStatusChanged,
-    required TResult Function(String conversationId)
-    updateLatestMessageReadState,
-  }) {
-    return updateLatestMessageReadState(conversationId);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(List<LocalConversation> field0)? changed,
-    TResult? Function(List<String> field0)? deleted,
-    TResult? Function(List<LocalConversation> field0)? new_,
-    TResult? Function(int field0)? totalUnreadCountChanged,
-    TResult? Function(bool field0)? syncStarted,
-    TResult? Function(bool field0)? syncFinished,
-    TResult? Function(bool reinstalled, String error)? syncFailed,
-    TResult? Function(int progress, String message)? syncProgress,
-    TResult? Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult? Function(String conversationId)? updateLatestMessageReadState,
-  }) {
-    return updateLatestMessageReadState?.call(conversationId);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(List<LocalConversation> field0)? changed,
-    TResult Function(List<String> field0)? deleted,
-    TResult Function(List<LocalConversation> field0)? new_,
-    TResult Function(int field0)? totalUnreadCountChanged,
-    TResult Function(bool field0)? syncStarted,
-    TResult Function(bool field0)? syncFinished,
-    TResult Function(bool reinstalled, String error)? syncFailed,
-    TResult Function(int progress, String message)? syncProgress,
-    TResult Function(
-      String conversationId,
-      String userId,
-      Int32List platformIds,
-    )?
-    userInputStatusChanged,
-    TResult Function(String conversationId)? updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (updateLatestMessageReadState != null) {
-      return updateLatestMessageReadState(conversationId);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(ConversationEvent_Changed value) changed,
-    required TResult Function(ConversationEvent_Deleted value) deleted,
-    required TResult Function(ConversationEvent_New value) new_,
-    required TResult Function(ConversationEvent_TotalUnreadCountChanged value)
-    totalUnreadCountChanged,
-    required TResult Function(ConversationEvent_SyncStarted value) syncStarted,
-    required TResult Function(ConversationEvent_SyncFinished value)
-    syncFinished,
-    required TResult Function(ConversationEvent_SyncFailed value) syncFailed,
-    required TResult Function(ConversationEvent_SyncProgress value)
-    syncProgress,
-    required TResult Function(ConversationEvent_UserInputStatusChanged value)
-    userInputStatusChanged,
-    required TResult Function(
-      ConversationEvent_UpdateLatestMessageReadState value,
-    )
-    updateLatestMessageReadState,
-  }) {
-    return updateLatestMessageReadState(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(ConversationEvent_Changed value)? changed,
-    TResult? Function(ConversationEvent_Deleted value)? deleted,
-    TResult? Function(ConversationEvent_New value)? new_,
-    TResult? Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult? Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult? Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult? Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult? Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult? Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult? Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-  }) {
-    return updateLatestMessageReadState?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(ConversationEvent_Changed value)? changed,
-    TResult Function(ConversationEvent_Deleted value)? deleted,
-    TResult Function(ConversationEvent_New value)? new_,
-    TResult Function(ConversationEvent_TotalUnreadCountChanged value)?
-    totalUnreadCountChanged,
-    TResult Function(ConversationEvent_SyncStarted value)? syncStarted,
-    TResult Function(ConversationEvent_SyncFinished value)? syncFinished,
-    TResult Function(ConversationEvent_SyncFailed value)? syncFailed,
-    TResult Function(ConversationEvent_SyncProgress value)? syncProgress,
-    TResult Function(ConversationEvent_UserInputStatusChanged value)?
-    userInputStatusChanged,
-    TResult Function(ConversationEvent_UpdateLatestMessageReadState value)?
-    updateLatestMessageReadState,
-    required TResult orElse(),
-  }) {
-    if (updateLatestMessageReadState != null) {
-      return updateLatestMessageReadState(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_UserInputStatusChanged&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other.platformIds, platformIds));
 }
 
-abstract class ConversationEvent_UpdateLatestMessageReadState
-    extends ConversationEvent {
-  const factory ConversationEvent_UpdateLatestMessageReadState({
-    required final String conversationId,
-  }) = _$ConversationEvent_UpdateLatestMessageReadStateImpl;
-  const ConversationEvent_UpdateLatestMessageReadState._() : super._();
 
-  String get conversationId;
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,userId,const DeepCollectionEquality().hash(platformIds));
 
-  /// Create a copy of ConversationEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ConversationEvent_UpdateLatestMessageReadStateImplCopyWith<
-    _$ConversationEvent_UpdateLatestMessageReadStateImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'ConversationEvent.userInputStatusChanged(conversationId: $conversationId, userId: $userId, platformIds: $platformIds)';
 }
+
+
+}
+
+/// @nodoc
+abstract mixin class $ConversationEvent_UserInputStatusChangedCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_UserInputStatusChangedCopyWith(ConversationEvent_UserInputStatusChanged value, $Res Function(ConversationEvent_UserInputStatusChanged) _then) = _$ConversationEvent_UserInputStatusChangedCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, String userId, Int32List platformIds
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_UserInputStatusChangedCopyWithImpl<$Res>
+    implements $ConversationEvent_UserInputStatusChangedCopyWith<$Res> {
+  _$ConversationEvent_UserInputStatusChangedCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_UserInputStatusChanged _self;
+  final $Res Function(ConversationEvent_UserInputStatusChanged) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? userId = null,Object? platformIds = null,}) {
+  return _then(ConversationEvent_UserInputStatusChanged(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,platformIds: null == platformIds ? _self.platformIds : platformIds // ignore: cast_nullable_to_non_nullable
+as Int32List,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class ConversationEvent_UpdateLatestMessageReadState extends ConversationEvent {
+  const ConversationEvent_UpdateLatestMessageReadState({required this.conversationId}): super._();
+  
+
+ final  String conversationId;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ConversationEvent_UpdateLatestMessageReadStateCopyWith<ConversationEvent_UpdateLatestMessageReadState> get copyWith => _$ConversationEvent_UpdateLatestMessageReadStateCopyWithImpl<ConversationEvent_UpdateLatestMessageReadState>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEvent_UpdateLatestMessageReadState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,conversationId);
+
+@override
+String toString() {
+  return 'ConversationEvent.updateLatestMessageReadState(conversationId: $conversationId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $ConversationEvent_UpdateLatestMessageReadStateCopyWith<$Res> implements $ConversationEventCopyWith<$Res> {
+  factory $ConversationEvent_UpdateLatestMessageReadStateCopyWith(ConversationEvent_UpdateLatestMessageReadState value, $Res Function(ConversationEvent_UpdateLatestMessageReadState) _then) = _$ConversationEvent_UpdateLatestMessageReadStateCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId
+});
+
+
+
+
+}
+/// @nodoc
+class _$ConversationEvent_UpdateLatestMessageReadStateCopyWithImpl<$Res>
+    implements $ConversationEvent_UpdateLatestMessageReadStateCopyWith<$Res> {
+  _$ConversationEvent_UpdateLatestMessageReadStateCopyWithImpl(this._self, this._then);
+
+  final ConversationEvent_UpdateLatestMessageReadState _self;
+  final $Res Function(ConversationEvent_UpdateLatestMessageReadState) _then;
+
+/// Create a copy of ConversationEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,}) {
+  return _then(ConversationEvent_UpdateLatestMessageReadState(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+// dart format on

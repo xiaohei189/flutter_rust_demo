@@ -167,7 +167,7 @@ async fn group_contract() {
     let a_sdk = create_sdk(&user_a, &a_token).await;
 
     let group = a_sdk
-        .create_group("ContractGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id))
+        .create_group("ContractGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id), None)
         .await
         .expect("创建群组失败");
     assert!(!group.group_id.is_empty());
@@ -195,7 +195,7 @@ async fn fixture_drift_contract() {
     a_sdk.send_text_message("fixture drift", &user_b.user_id, 1).await.expect("发送消息失败");
     tokio::time::sleep(Duration::from_secs(2)).await;
     let group = a_sdk
-        .create_group("FixtureGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id))
+        .create_group("FixtureGroup", GroupType::Normal, std::slice::from_ref(&user_a.user_id), None)
         .await
         .expect("创建群组失败");
 

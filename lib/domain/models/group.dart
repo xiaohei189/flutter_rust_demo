@@ -5,7 +5,7 @@ import 'group_mode.dart';
 part 'group.freezed.dart';
 
 @freezed
-class Group with _$Group {
+abstract class Group with _$Group {
   const Group._();
 
   const factory Group({

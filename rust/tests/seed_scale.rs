@@ -81,7 +81,7 @@ async fn seed_scale_data() {
         for s in &speakers {
             members.push(s.user_id.clone());
         }
-        let g = me_sdk.create_group(name, GroupType::Normal, &members).await.expect("创建中型群失败");
+        let g = me_sdk.create_group(name, GroupType::Normal, &members, None).await.expect("创建中型群失败");
         println!("  中型群 {}: {} ({}) 成员={}", i + 1, g.group_name, g.group_id, members.len() + 1);
         all_groups.push((g.group_name, g.group_id, i));
     }
@@ -92,7 +92,7 @@ async fn seed_scale_data() {
         for s in &speakers {
             members.push(s.user_id.clone());
         }
-        let g = me_sdk.create_group(name, GroupType::Normal, &members).await.expect("创建大型群失败");
+        let g = me_sdk.create_group(name, GroupType::Normal, &members, None).await.expect("创建大型群失败");
         println!("  大型群 {}: {} ({}) 成员={}", i + 1, g.group_name, g.group_id, members.len() + 1);
         all_groups.push((g.group_name, g.group_id, i));
     }

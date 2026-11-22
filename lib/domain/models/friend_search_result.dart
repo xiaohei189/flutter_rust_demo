@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'friend_search_result.freezed.dart';
 
 @freezed
-class FriendSearchResult with _$FriendSearchResult {
+abstract class FriendSearchResult with _$FriendSearchResult {
   const factory FriendSearchResult({
     required String userId,
     required String nickname,

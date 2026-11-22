@@ -9,6 +9,13 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'conversation.freezed.dart';
 
+Future<void> frbMirrorAnchorConversationEvent({
+  required ConversationEvent value,
+}) => RustLib.instance.api
+    .crateCoreEventEventsConversationFrbMirrorAnchorConversationEvent(
+      value: value,
+    );
+
 @freezed
 sealed class ConversationEvent with _$ConversationEvent {
   const ConversationEvent._();

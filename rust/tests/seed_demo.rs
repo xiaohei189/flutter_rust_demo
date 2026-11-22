@@ -164,6 +164,7 @@ async fn seed_demo_data() {
                 others[4].0.user_id.clone(),
                 others[7].0.user_id.clone(),
             ],
+            None,
         )
         .await
         .expect("创建群1失败");
@@ -183,6 +184,7 @@ async fn seed_demo_data() {
             "周末羽毛球",
             GroupType::Normal,
             &[others[8].0.user_id.clone(), others[9].0.user_id.clone(), others[10].0.user_id.clone(), others[11].0.user_id.clone()],
+            None,
         )
         .await
         .expect("创建群2失败");
@@ -196,7 +198,7 @@ async fn seed_demo_data() {
     send_demo_msg(&me_sdk, &g2.group_id, 3, &DemoMsg::Text("带！顺便带两桶球")).await;
 
     let g3 = me_sdk
-        .create_group("同学聚会", GroupType::Normal, &[others[5].0.user_id.clone(), others[6].0.user_id.clone(), others[11].0.user_id.clone()])
+        .create_group("同学聚会", GroupType::Normal, &[others[5].0.user_id.clone(), others[6].0.user_id.clone(), others[11].0.user_id.clone()], None)
         .await
         .expect("创建群3失败");
     println!("  群3: {} ({})", g3.group_name, g3.group_id);
@@ -211,6 +213,7 @@ async fn seed_demo_data() {
             "项目管理群",
             GroupType::Normal,
             &[others[2].0.user_id.clone(), others[3].0.user_id.clone(), others[7].0.user_id.clone(), others[5].0.user_id.clone()],
+            None,
         )
         .await
         .expect("创建群4失败");

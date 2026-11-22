@@ -19,7 +19,7 @@ async fn test_create_group() {
 
     let group_name = format!("TestGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
 
-    let result = sdk.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account.user_id)).await;
+    let result = sdk.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account.user_id), None).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
     let group = result.unwrap();
@@ -45,7 +45,7 @@ async fn test_join_and_quit_group() {
     let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("JQGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id)).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id), None).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入...");
@@ -80,7 +80,7 @@ async fn test_group_member_management() {
     let sdk = create_sdk(&account, &im_token).await;
 
     let group = sdk
-        .create_group("MemberTestGroup", GroupType::Normal, std::slice::from_ref(&account.user_id))
+        .create_group("MemberTestGroup", GroupType::Normal, std::slice::from_ref(&account.user_id), None)
         .await
         .expect("创建群组失败");
 
@@ -158,11 +158,11 @@ async fn test_group_info_update() {
     let (im_token, _) = login_account(&account).await.expect("登录失败");
     let sdk = create_sdk(&account, &im_token).await;
 
-    let group = sdk.create_group("InfoTestGroup", GroupType::Normal, std::slice::from_ref(&account.user_id)).await.expect("创建失败");
+    let group = sdk.create_group("InfoTestGroup", GroupType::Normal, std::slice::from_ref(&account.user_id), None).await.expect("创建失败");
     println!("群: {} ({})", group.group_name, group.group_id);
 
     println!("更新群名称...");
-    let set_result = sdk.set_group_info(&group.group_id, Some("UpdatedName"), None, None, None).await;
+    let set_result = sdk.set_group_info(&group.group_id, Some("UpdatedName"), None, None, None, None).await;
     assert!(set_result.is_ok(), "更新群信息失败: {:?}", set_result.err());
     println!("  ✅ 更新成功");
 
@@ -207,7 +207,7 @@ async fn test_user_state_group_management() {
     let sdk = create_sdk(&account, &im_token).await;
 
     let group_name = format!("UGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let result = sdk.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account.user_id)).await;
+    let result = sdk.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account.user_id), None).await;
 
     assert!(result.is_ok(), "创建群组失败: {:?}", result.err());
     let group = result.unwrap();
@@ -236,7 +236,7 @@ async fn test_group_application_flow() {
     let sdk2 = create_sdk(&account2, &im_token2).await;
 
     let group_name = format!("GAppGroup_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id)).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id), None).await.expect("创建群组失败");
     println!("群组: {}", group.group_id);
 
     println!("用户2申请加入群组...");
@@ -303,7 +303,7 @@ async fn test_group_dismiss_and_transfer() {
 
     // 创建群组
     let group_name = format!("DismissTransfer_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id)).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id), None).await.expect("创建群组失败");
     println!("群组: {} ({})", group.group_name, group.group_id);
 
     // 邀请 account2
@@ -368,7 +368,7 @@ async fn test_group_mute_operations() {
 
     // 创建群组
     let group_name = format!("MuteTest_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id)).await.expect("创建群组失败");
+    let group = sdk1.create_group(&group_name, GroupType::Normal, std::slice::from_ref(&account1.user_id), None).await.expect("创建群组失败");
     println!("群组: {} ({})", group.group_name, group.group_id);
 
     // 邀请 account2

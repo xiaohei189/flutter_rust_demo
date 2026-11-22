@@ -1,5 +1,5 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,313 +9,286 @@ part of 'group_member.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// dart format off
 T _$identity<T>(T value) => value;
-
-final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
-
 /// @nodoc
 mixin _$GroupMember {
-  String get groupId => throw _privateConstructorUsedError;
-  String get userId => throw _privateConstructorUsedError;
-  String get nickname => throw _privateConstructorUsedError;
-  String get faceUrl => throw _privateConstructorUsedError;
-  int get roleLevel => throw _privateConstructorUsedError;
-  String get joinSource => throw _privateConstructorUsedError;
-  DateTime? get joinTime => throw _privateConstructorUsedError;
 
-  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
-  DateTime? get muteEndTime => throw _privateConstructorUsedError;
+ String get groupId; String get userId; String get nickname; String get faceUrl; int get roleLevel; String get joinSource; DateTime? get joinTime;/// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
+ DateTime? get muteEndTime;
+/// Create a copy of GroupMember
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$GroupMemberCopyWith<GroupMember> get copyWith => _$GroupMemberCopyWithImpl<GroupMember>(this as GroupMember, _$identity);
 
-  /// Create a copy of GroupMember
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $GroupMemberCopyWith<GroupMember> get copyWith =>
-      throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GroupMember&&(identical(other.groupId, groupId) || other.groupId == groupId)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.faceUrl, faceUrl) || other.faceUrl == faceUrl)&&(identical(other.roleLevel, roleLevel) || other.roleLevel == roleLevel)&&(identical(other.joinSource, joinSource) || other.joinSource == joinSource)&&(identical(other.joinTime, joinTime) || other.joinTime == joinTime)&&(identical(other.muteEndTime, muteEndTime) || other.muteEndTime == muteEndTime));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,groupId,userId,nickname,faceUrl,roleLevel,joinSource,joinTime,muteEndTime);
+
+@override
+String toString() {
+  return 'GroupMember(groupId: $groupId, userId: $userId, nickname: $nickname, faceUrl: $faceUrl, roleLevel: $roleLevel, joinSource: $joinSource, joinTime: $joinTime, muteEndTime: $muteEndTime)';
+}
+
+
 }
 
 /// @nodoc
-abstract class $GroupMemberCopyWith<$Res> {
-  factory $GroupMemberCopyWith(
-    GroupMember value,
-    $Res Function(GroupMember) then,
-  ) = _$GroupMemberCopyWithImpl<$Res, GroupMember>;
-  @useResult
-  $Res call({
-    String groupId,
-    String userId,
-    String nickname,
-    String faceUrl,
-    int roleLevel,
-    String joinSource,
-    DateTime? joinTime,
-    DateTime? muteEndTime,
-  });
-}
+abstract mixin class $GroupMemberCopyWith<$Res>  {
+  factory $GroupMemberCopyWith(GroupMember value, $Res Function(GroupMember) _then) = _$GroupMemberCopyWithImpl;
+@useResult
+$Res call({
+ String groupId, String userId, String nickname, String faceUrl, int roleLevel, String joinSource, DateTime? joinTime, DateTime? muteEndTime
+});
 
+
+
+
+}
 /// @nodoc
-class _$GroupMemberCopyWithImpl<$Res, $Val extends GroupMember>
+class _$GroupMemberCopyWithImpl<$Res>
     implements $GroupMemberCopyWith<$Res> {
-  _$GroupMemberCopyWithImpl(this._value, this._then);
+  _$GroupMemberCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final GroupMember _self;
+  final $Res Function(GroupMember) _then;
 
-  /// Create a copy of GroupMember
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? groupId = null,
-    Object? userId = null,
-    Object? nickname = null,
-    Object? faceUrl = null,
-    Object? roleLevel = null,
-    Object? joinSource = null,
-    Object? joinTime = freezed,
-    Object? muteEndTime = freezed,
-  }) {
-    return _then(
-      _value.copyWith(
-            groupId: null == groupId
-                ? _value.groupId
-                : groupId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            userId: null == userId
-                ? _value.userId
-                : userId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            nickname: null == nickname
-                ? _value.nickname
-                : nickname // ignore: cast_nullable_to_non_nullable
-                      as String,
-            faceUrl: null == faceUrl
-                ? _value.faceUrl
-                : faceUrl // ignore: cast_nullable_to_non_nullable
-                      as String,
-            roleLevel: null == roleLevel
-                ? _value.roleLevel
-                : roleLevel // ignore: cast_nullable_to_non_nullable
-                      as int,
-            joinSource: null == joinSource
-                ? _value.joinSource
-                : joinSource // ignore: cast_nullable_to_non_nullable
-                      as String,
-            joinTime: freezed == joinTime
-                ? _value.joinTime
-                : joinTime // ignore: cast_nullable_to_non_nullable
-                      as DateTime?,
-            muteEndTime: freezed == muteEndTime
-                ? _value.muteEndTime
-                : muteEndTime // ignore: cast_nullable_to_non_nullable
-                      as DateTime?,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of GroupMember
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? groupId = null,Object? userId = null,Object? nickname = null,Object? faceUrl = null,Object? roleLevel = null,Object? joinSource = null,Object? joinTime = freezed,Object? muteEndTime = freezed,}) {
+  return _then(_self.copyWith(
+groupId: null == groupId ? _self.groupId : groupId // ignore: cast_nullable_to_non_nullable
+as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,nickname: null == nickname ? _self.nickname : nickname // ignore: cast_nullable_to_non_nullable
+as String,faceUrl: null == faceUrl ? _self.faceUrl : faceUrl // ignore: cast_nullable_to_non_nullable
+as String,roleLevel: null == roleLevel ? _self.roleLevel : roleLevel // ignore: cast_nullable_to_non_nullable
+as int,joinSource: null == joinSource ? _self.joinSource : joinSource // ignore: cast_nullable_to_non_nullable
+as String,joinTime: freezed == joinTime ? _self.joinTime : joinTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,muteEndTime: freezed == muteEndTime ? _self.muteEndTime : muteEndTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [GroupMember].
+extension GroupMemberPatterns on GroupMember {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _GroupMember value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _GroupMember() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _GroupMember value)  $default,){
+final _that = this;
+switch (_that) {
+case _GroupMember():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _GroupMember value)?  $default,){
+final _that = this;
+switch (_that) {
+case _GroupMember() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String groupId,  String userId,  String nickname,  String faceUrl,  int roleLevel,  String joinSource,  DateTime? joinTime,  DateTime? muteEndTime)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _GroupMember() when $default != null:
+return $default(_that.groupId,_that.userId,_that.nickname,_that.faceUrl,_that.roleLevel,_that.joinSource,_that.joinTime,_that.muteEndTime);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String groupId,  String userId,  String nickname,  String faceUrl,  int roleLevel,  String joinSource,  DateTime? joinTime,  DateTime? muteEndTime)  $default,) {final _that = this;
+switch (_that) {
+case _GroupMember():
+return $default(_that.groupId,_that.userId,_that.nickname,_that.faceUrl,_that.roleLevel,_that.joinSource,_that.joinTime,_that.muteEndTime);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String groupId,  String userId,  String nickname,  String faceUrl,  int roleLevel,  String joinSource,  DateTime? joinTime,  DateTime? muteEndTime)?  $default,) {final _that = this;
+switch (_that) {
+case _GroupMember() when $default != null:
+return $default(_that.groupId,_that.userId,_that.nickname,_that.faceUrl,_that.roleLevel,_that.joinSource,_that.joinTime,_that.muteEndTime);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
-abstract class _$$GroupMemberImplCopyWith<$Res>
-    implements $GroupMemberCopyWith<$Res> {
-  factory _$$GroupMemberImplCopyWith(
-    _$GroupMemberImpl value,
-    $Res Function(_$GroupMemberImpl) then,
-  ) = __$$GroupMemberImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    String groupId,
-    String userId,
-    String nickname,
-    String faceUrl,
-    int roleLevel,
-    String joinSource,
-    DateTime? joinTime,
-    DateTime? muteEndTime,
-  });
+
+
+class _GroupMember implements GroupMember {
+  const _GroupMember({required this.groupId, required this.userId, required this.nickname, required this.faceUrl, required this.roleLevel, required this.joinSource, this.joinTime, this.muteEndTime});
+  
+
+@override final  String groupId;
+@override final  String userId;
+@override final  String nickname;
+@override final  String faceUrl;
+@override final  int roleLevel;
+@override final  String joinSource;
+@override final  DateTime? joinTime;
+/// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
+@override final  DateTime? muteEndTime;
+
+/// Create a copy of GroupMember
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$GroupMemberCopyWith<_GroupMember> get copyWith => __$GroupMemberCopyWithImpl<_GroupMember>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GroupMember&&(identical(other.groupId, groupId) || other.groupId == groupId)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.nickname, nickname) || other.nickname == nickname)&&(identical(other.faceUrl, faceUrl) || other.faceUrl == faceUrl)&&(identical(other.roleLevel, roleLevel) || other.roleLevel == roleLevel)&&(identical(other.joinSource, joinSource) || other.joinSource == joinSource)&&(identical(other.joinTime, joinTime) || other.joinTime == joinTime)&&(identical(other.muteEndTime, muteEndTime) || other.muteEndTime == muteEndTime));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,groupId,userId,nickname,faceUrl,roleLevel,joinSource,joinTime,muteEndTime);
+
+@override
+String toString() {
+  return 'GroupMember(groupId: $groupId, userId: $userId, nickname: $nickname, faceUrl: $faceUrl, roleLevel: $roleLevel, joinSource: $joinSource, joinTime: $joinTime, muteEndTime: $muteEndTime)';
+}
+
+
 }
 
 /// @nodoc
-class __$$GroupMemberImplCopyWithImpl<$Res>
-    extends _$GroupMemberCopyWithImpl<$Res, _$GroupMemberImpl>
-    implements _$$GroupMemberImplCopyWith<$Res> {
-  __$$GroupMemberImplCopyWithImpl(
-    _$GroupMemberImpl _value,
-    $Res Function(_$GroupMemberImpl) _then,
-  ) : super(_value, _then);
+abstract mixin class _$GroupMemberCopyWith<$Res> implements $GroupMemberCopyWith<$Res> {
+  factory _$GroupMemberCopyWith(_GroupMember value, $Res Function(_GroupMember) _then) = __$GroupMemberCopyWithImpl;
+@override @useResult
+$Res call({
+ String groupId, String userId, String nickname, String faceUrl, int roleLevel, String joinSource, DateTime? joinTime, DateTime? muteEndTime
+});
 
-  /// Create a copy of GroupMember
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? groupId = null,
-    Object? userId = null,
-    Object? nickname = null,
-    Object? faceUrl = null,
-    Object? roleLevel = null,
-    Object? joinSource = null,
-    Object? joinTime = freezed,
-    Object? muteEndTime = freezed,
-  }) {
-    return _then(
-      _$GroupMemberImpl(
-        groupId: null == groupId
-            ? _value.groupId
-            : groupId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        userId: null == userId
-            ? _value.userId
-            : userId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        nickname: null == nickname
-            ? _value.nickname
-            : nickname // ignore: cast_nullable_to_non_nullable
-                  as String,
-        faceUrl: null == faceUrl
-            ? _value.faceUrl
-            : faceUrl // ignore: cast_nullable_to_non_nullable
-                  as String,
-        roleLevel: null == roleLevel
-            ? _value.roleLevel
-            : roleLevel // ignore: cast_nullable_to_non_nullable
-                  as int,
-        joinSource: null == joinSource
-            ? _value.joinSource
-            : joinSource // ignore: cast_nullable_to_non_nullable
-                  as String,
-        joinTime: freezed == joinTime
-            ? _value.joinTime
-            : joinTime // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
-        muteEndTime: freezed == muteEndTime
-            ? _value.muteEndTime
-            : muteEndTime // ignore: cast_nullable_to_non_nullable
-                  as DateTime?,
-      ),
-    );
-  }
+
+
+
 }
-
 /// @nodoc
+class __$GroupMemberCopyWithImpl<$Res>
+    implements _$GroupMemberCopyWith<$Res> {
+  __$GroupMemberCopyWithImpl(this._self, this._then);
 
-class _$GroupMemberImpl implements _GroupMember {
-  const _$GroupMemberImpl({
-    required this.groupId,
-    required this.userId,
-    required this.nickname,
-    required this.faceUrl,
-    required this.roleLevel,
-    required this.joinSource,
-    this.joinTime,
-    this.muteEndTime,
-  });
+  final _GroupMember _self;
+  final $Res Function(_GroupMember) _then;
 
-  @override
-  final String groupId;
-  @override
-  final String userId;
-  @override
-  final String nickname;
-  @override
-  final String faceUrl;
-  @override
-  final int roleLevel;
-  @override
-  final String joinSource;
-  @override
-  final DateTime? joinTime;
-
-  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
-  @override
-  final DateTime? muteEndTime;
-
-  @override
-  String toString() {
-    return 'GroupMember(groupId: $groupId, userId: $userId, nickname: $nickname, faceUrl: $faceUrl, roleLevel: $roleLevel, joinSource: $joinSource, joinTime: $joinTime, muteEndTime: $muteEndTime)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$GroupMemberImpl &&
-            (identical(other.groupId, groupId) || other.groupId == groupId) &&
-            (identical(other.userId, userId) || other.userId == userId) &&
-            (identical(other.nickname, nickname) ||
-                other.nickname == nickname) &&
-            (identical(other.faceUrl, faceUrl) || other.faceUrl == faceUrl) &&
-            (identical(other.roleLevel, roleLevel) ||
-                other.roleLevel == roleLevel) &&
-            (identical(other.joinSource, joinSource) ||
-                other.joinSource == joinSource) &&
-            (identical(other.joinTime, joinTime) ||
-                other.joinTime == joinTime) &&
-            (identical(other.muteEndTime, muteEndTime) ||
-                other.muteEndTime == muteEndTime));
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    groupId,
-    userId,
-    nickname,
-    faceUrl,
-    roleLevel,
-    joinSource,
-    joinTime,
-    muteEndTime,
-  );
-
-  /// Create a copy of GroupMember
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$GroupMemberImplCopyWith<_$GroupMemberImpl> get copyWith =>
-      __$$GroupMemberImplCopyWithImpl<_$GroupMemberImpl>(this, _$identity);
+/// Create a copy of GroupMember
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? groupId = null,Object? userId = null,Object? nickname = null,Object? faceUrl = null,Object? roleLevel = null,Object? joinSource = null,Object? joinTime = freezed,Object? muteEndTime = freezed,}) {
+  return _then(_GroupMember(
+groupId: null == groupId ? _self.groupId : groupId // ignore: cast_nullable_to_non_nullable
+as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,nickname: null == nickname ? _self.nickname : nickname // ignore: cast_nullable_to_non_nullable
+as String,faceUrl: null == faceUrl ? _self.faceUrl : faceUrl // ignore: cast_nullable_to_non_nullable
+as String,roleLevel: null == roleLevel ? _self.roleLevel : roleLevel // ignore: cast_nullable_to_non_nullable
+as int,joinSource: null == joinSource ? _self.joinSource : joinSource // ignore: cast_nullable_to_non_nullable
+as String,joinTime: freezed == joinTime ? _self.joinTime : joinTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,muteEndTime: freezed == muteEndTime ? _self.muteEndTime : muteEndTime // ignore: cast_nullable_to_non_nullable
+as DateTime?,
+  ));
 }
 
-abstract class _GroupMember implements GroupMember {
-  const factory _GroupMember({
-    required final String groupId,
-    required final String userId,
-    required final String nickname,
-    required final String faceUrl,
-    required final int roleLevel,
-    required final String joinSource,
-    final DateTime? joinTime,
-    final DateTime? muteEndTime,
-  }) = _$GroupMemberImpl;
 
-  @override
-  String get groupId;
-  @override
-  String get userId;
-  @override
-  String get nickname;
-  @override
-  String get faceUrl;
-  @override
-  int get roleLevel;
-  @override
-  String get joinSource;
-  @override
-  DateTime? get joinTime;
-
-  /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
-  @override
-  DateTime? get muteEndTime;
-
-  /// Create a copy of GroupMember
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$GroupMemberImplCopyWith<_$GroupMemberImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }
+
+// dart format on

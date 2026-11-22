@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+#[allow(clippy::redundant_field_names)]
 #[derive(Debug, Error)]
 pub enum SdkError {
     #[error("网络错误: {message}")]

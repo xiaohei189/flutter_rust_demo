@@ -6,6 +6,14 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+Future<void> frbMirrorAnchorGroupApplyInfo({required GroupApplyInfo value}) =>
+    RustLib.instance.api.crateInfraHttpGroupFrbMirrorAnchorGroupApplyInfo(
+      value: value,
+    );
+
+/// flutter_rust_bridge:mirror(GroupApplyInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GroupApplyInfo {
   final String groupId;
   final String userId;

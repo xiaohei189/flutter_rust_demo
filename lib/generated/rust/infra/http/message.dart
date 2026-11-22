@@ -6,7 +6,25 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 删除消息请求体（对齐服务端 `/msg/delete_msgs` API）
+Future<void> frbMirrorAnchorDeleteMessagesReq({
+  required DeleteMessagesReq value,
+}) => RustLib.instance.api
+    .crateInfraHttpMessageFrbMirrorAnchorDeleteMessagesReq(value: value);
+
+Future<void> frbMirrorAnchorMarkMessagesAsReadReq({
+  required MarkMessagesAsReadReq value,
+}) => RustLib.instance.api
+    .crateInfraHttpMessageFrbMirrorAnchorMarkMessagesAsReadReq(value: value);
+
+Future<void> frbMirrorAnchorRevokeMessageReq({
+  required RevokeMessageReq value,
+}) => RustLib.instance.api.crateInfraHttpMessageFrbMirrorAnchorRevokeMessageReq(
+  value: value,
+);
+
+/// flutter_rust_bridge:mirror(DeleteMessagesReq)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class DeleteMessagesReq {
   final String conversationId;
   final List<String> clientMsgIds;
@@ -28,7 +46,9 @@ class DeleteMessagesReq {
           clientMsgIds == other.clientMsgIds;
 }
 
-/// 按 seq 列表标记消息已读请求体（对齐服务端 `/msg/mark_msgs_as_read` API）
+/// flutter_rust_bridge:mirror(MarkMessagesAsReadReq)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MarkMessagesAsReadReq {
   final String conversationId;
   final String userId;
@@ -64,7 +84,9 @@ class MarkMessagesAsReadReq {
           seqs == other.seqs;
 }
 
-/// 撤回消息请求体（对齐服务端 `/msg/revoke_msg` API）
+/// flutter_rust_bridge:mirror(RevokeMessageReq)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class RevokeMessageReq {
   final String conversationId;
   final int seq;

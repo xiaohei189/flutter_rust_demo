@@ -6,7 +6,14 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 好友信息模型
+Future<void> frbMirrorAnchorFriendInfo({required FriendInfo value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelFriendFrbMirrorAnchorFriendInfo(value: value);
+
+/// flutter_rust_bridge:mirror(FriendInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class FriendInfo {
   /// 用户 ID
   final String userId;

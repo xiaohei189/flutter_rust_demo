@@ -35,7 +35,7 @@ use flutter_rust_bridge::{Handler, IntoIntoDart};
 
 flutter_rust_bridge::frb_generated_boilerplate!(default_stream_sink_codec = SseCodec, default_rust_opaque = RustOpaqueMoi, default_rust_auto_opaque = RustAutoOpaqueMoi,);
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1414579700;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1995180485;
 
 // Section: executor
 
@@ -5308,6 +5308,1350 @@ fn wire__crate__api__ffi__message_advanced__forward_message_by_client_id_impl(
         },
     )
 }
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_advanced_text_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_advanced_text_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::AdvancedTextElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_advanced_text_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_at_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_at_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::AtInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_at_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_at_text_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_at_text_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::AtTextElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_at_text_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_card_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_card_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::CardElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_card_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__friend__frb_mirror_anchor_check_friend_result_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_check_friend_result",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::friend::CheckFriendResult>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::friend::frb_mirror_anchor_check_friend_result(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__config__frb_mirror_anchor_client_config_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_client_config",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::config::ClientConfig>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::config::frb_mirror_anchor_client_config(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__connection__frb_mirror_anchor_connection_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_connection_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::connection::ConnectionEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::connection::frb_mirror_anchor_connection_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__constant__enums__frb_mirror_anchor_connection_state_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_connection_state",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::constant::enums::ConnectionState>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::constant::enums::frb_mirror_anchor_connection_state(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__conversation__frb_mirror_anchor_conversation_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_conversation_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::conversation::ConversationEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::conversation::frb_mirror_anchor_conversation_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_custom_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_custom_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::CustomElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_custom_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__message__frb_mirror_anchor_delete_messages_req_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_delete_messages_req",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::message::DeleteMessagesReq>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::message::frb_mirror_anchor_delete_messages_req(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_face_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_face_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::FaceElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_face_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_file_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_file_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::FileElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_file_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__friend__frb_mirror_anchor_friend_apply_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_friend_apply_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::friend::FriendApplyInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::friend::frb_mirror_anchor_friend_apply_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__friend__frb_mirror_anchor_friend_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_friend_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::friend::FriendEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::friend::frb_mirror_anchor_friend_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__friend__frb_mirror_anchor_friend_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_friend_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::friend::FriendInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::friend::frb_mirror_anchor_friend_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__sdk__client__frb_mirror_anchor_get_history_messages_req_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_get_history_messages_req",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::sdk::client::GetHistoryMessagesReq>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::sdk::client::frb_mirror_anchor_get_history_messages_req(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__sdk__client__frb_mirror_anchor_get_history_messages_result_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_get_history_messages_result",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::sdk::client::GetHistoryMessagesResult>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::sdk::client::frb_mirror_anchor_get_history_messages_result(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__group__frb_mirror_anchor_group_apply_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_group_apply_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::group::GroupApplyInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::group::frb_mirror_anchor_group_apply_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__group__frb_mirror_anchor_group_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_group_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::group::GroupEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::group::frb_mirror_anchor_group_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__group__frb_mirror_anchor_group_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_group_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::group::GroupInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::group::frb_mirror_anchor_group_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__group__frb_mirror_anchor_group_member_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_group_member",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::group::GroupMember>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::group::frb_mirror_anchor_group_member(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__message__frb_mirror_anchor_group_read_receipt_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_group_read_receipt",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::message::GroupReadReceipt>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::message::frb_mirror_anchor_group_read_receipt(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__local__frb_mirror_anchor_local_chat_log_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_local_chat_log",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::local::LocalChatLog>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::local::frb_mirror_anchor_local_chat_log(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__local__frb_mirror_anchor_local_conversation_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_local_conversation",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::local::LocalConversation>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::local::frb_mirror_anchor_local_conversation(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_location_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_location_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::LocationElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_location_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__logger__config__frb_mirror_anchor_log_config_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_log_config",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::logger::config::LogConfig>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::logger::config::frb_mirror_anchor_log_config(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__message__frb_mirror_anchor_mark_messages_as_read_req_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_mark_messages_as_read_req",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::message::MarkMessagesAsReadReq>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::message::frb_mirror_anchor_mark_messages_as_read_req(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_markdown_text_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_markdown_text_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::MarkdownTextElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_markdown_text_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_merge_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_merge_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::MergeElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_merge_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_message_entity_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_message_entity",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::MessageEntity>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_message_entity(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__message__frb_mirror_anchor_message_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_message_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::message::MessageEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::message::frb_mirror_anchor_message_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__message__frb_mirror_anchor_message_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_message_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::message::MessageInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::message::frb_mirror_anchor_message_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__message__frb_mirror_anchor_message_receipt_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_message_receipt",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::message::MessageReceipt>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::message::frb_mirror_anchor_message_receipt(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_msg_struct_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_msg_struct",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::MsgStruct>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_msg_struct(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_offline_push_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_offline_push_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::OfflinePushInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_offline_push_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__online__frb_mirror_anchor_online_status_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_online_status",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::online::OnlineStatus>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::online::frb_mirror_anchor_online_status(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_picture_base_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_picture_base_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::PictureBaseInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_picture_base_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_quote_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_quote_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::QuoteElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_quote_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__message__frb_mirror_anchor_revoke_message_req_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_revoke_message_req",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::message::RevokeMessageReq>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::message::frb_mirror_anchor_revoke_message_req(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__infra__http__friend__frb_mirror_anchor_search_friend_item_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_search_friend_item",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::infra::http::friend::SearchFriendItem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::infra::http::friend::frb_mirror_anchor_search_friend_item(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__sdk__client__frb_mirror_anchor_search_messages_req_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_search_messages_req",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::sdk::client::SearchMessagesReq>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::sdk::client::frb_mirror_anchor_search_messages_req(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__constant__enums__frb_mirror_anchor_session_type_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_session_type",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::constant::enums::SessionType>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::constant::enums::frb_mirror_anchor_session_type(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_sound_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_sound_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::SoundElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_sound_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_text_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_text_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::TextElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_text_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__core__event__events__user__frb_mirror_anchor_user_event_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_user_event",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::core::event::events::user::UserEvent>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::core::event::events::user::frb_mirror_anchor_user_event(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__user__frb_mirror_anchor_user_info_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_user_info",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::user::UserInfo>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::user::frb_mirror_anchor_user_info(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__domain__model__msg_struct__frb_mirror_anchor_video_elem_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "frb_mirror_anchor_video_elem",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe { flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(ptr_, rust_vec_len_, data_len_) };
+            let mut deserializer = flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_value = <crate::domain::model::msg_struct::VideoElem>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok = Result::<_, ()>::Ok({
+                        crate::domain::model::msg_struct::frb_mirror_anchor_video_elem(api_value);
+                    })?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__ffi__message_advanced__get_advanced_history_message_list_by_seq_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -6576,6 +7920,631 @@ fn wire__crate__api__ffi__message_media__upload_file_with_progress_impl(
         },
     )
 }
+
+// Section: static_checks
+
+#[allow(clippy::unnecessary_literal_unwrap)]
+const _: fn() = || {
+    {
+        let AdvancedTextElem = None::<crate::domain::model::msg_struct::AdvancedTextElem>.unwrap();
+        let _: String = AdvancedTextElem.text;
+        let _: Vec<crate::domain::model::msg_struct::MessageEntity> = AdvancedTextElem.message_entity_list;
+    }
+    {
+        let AtInfo = None::<crate::domain::model::msg_struct::AtInfo>.unwrap();
+        let _: String = AtInfo.at_user_id;
+        let _: String = AtInfo.group_nickname;
+    }
+    {
+        let AtTextElem = None::<crate::domain::model::msg_struct::AtTextElem>.unwrap();
+        let _: String = AtTextElem.text;
+        let _: Vec<String> = AtTextElem.at_user_list;
+        let _: Vec<crate::domain::model::msg_struct::AtInfo> = AtTextElem.at_users_info;
+        let _: Option<Box<crate::domain::model::msg_struct::MsgStruct>> = AtTextElem.quote_message;
+    }
+    {
+        let CardElem = None::<crate::domain::model::msg_struct::CardElem>.unwrap();
+        let _: String = CardElem.user_id;
+        let _: String = CardElem.nickname;
+        let _: String = CardElem.face_url;
+        let _: String = CardElem.ex;
+    }
+    {
+        let CheckFriendResult = None::<crate::infra::http::friend::CheckFriendResult>.unwrap();
+        let _: String = CheckFriendResult.user_id;
+        let _: i32 = CheckFriendResult.result;
+    }
+    {
+        let ClientConfig = None::<crate::core::config::ClientConfig>.unwrap();
+        let _: String = ClientConfig.user_id;
+        let _: String = ClientConfig.token;
+        let _: i32 = ClientConfig.platform_id;
+        let _: Option<String> = ClientConfig.ws_url;
+        let _: String = ClientConfig.api_base_url;
+        let _: Option<String> = ClientConfig.upload_url;
+        let _: String = ClientConfig.data_dir;
+    }
+    match None::<crate::core::event::events::connection::ConnectionEvent>.unwrap() {
+        crate::core::event::events::connection::ConnectionEvent::Connecting => {}
+        crate::core::event::events::connection::ConnectionEvent::Connected => {}
+        crate::core::event::events::connection::ConnectionEvent::Disconnected(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::connection::ConnectionEvent::ConnectFailed { err_code, error } => {
+            let _: i32 = err_code;
+            let _: String = error;
+        }
+        crate::core::event::events::connection::ConnectionEvent::KickedOffline(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::connection::ConnectionEvent::TokenExpired => {}
+        crate::core::event::events::connection::ConnectionEvent::TokenInvalid { error } => {
+            let _: String = error;
+        }
+        crate::core::event::events::connection::ConnectionEvent::Reconnecting { attempt, max_attempts } => {
+            let _: u32 = attempt;
+            let _: u32 = max_attempts;
+        }
+        crate::core::event::events::connection::ConnectionEvent::LoginSuccess(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::connection::ConnectionEvent::Logout => {}
+    }
+    match None::<crate::core::event::events::conversation::ConversationEvent>.unwrap() {
+        crate::core::event::events::conversation::ConversationEvent::Changed(field0) => {
+            let _: Vec<crate::domain::model::local::LocalConversation> = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::Deleted(field0) => {
+            let _: Vec<String> = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::New(field0) => {
+            let _: Vec<crate::domain::model::local::LocalConversation> = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::TotalUnreadCountChanged(field0) => {
+            let _: i64 = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::SyncStarted(field0) => {
+            let _: bool = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::SyncFinished(field0) => {
+            let _: bool = field0;
+        }
+        crate::core::event::events::conversation::ConversationEvent::SyncFailed { reinstalled, error } => {
+            let _: bool = reinstalled;
+            let _: String = error;
+        }
+        crate::core::event::events::conversation::ConversationEvent::SyncProgress { progress, message } => {
+            let _: i32 = progress;
+            let _: String = message;
+        }
+        crate::core::event::events::conversation::ConversationEvent::UserInputStatusChanged {
+            conversation_id,
+            user_id,
+            platform_ids,
+        } => {
+            let _: String = conversation_id;
+            let _: String = user_id;
+            let _: Vec<i32> = platform_ids;
+        }
+        crate::core::event::events::conversation::ConversationEvent::UpdateLatestMessageReadState { conversation_id } => {
+            let _: String = conversation_id;
+        }
+    }
+    {
+        let CustomElem = None::<crate::domain::model::msg_struct::CustomElem>.unwrap();
+        let _: String = CustomElem.data;
+        let _: String = CustomElem.extension;
+        let _: String = CustomElem.description;
+    }
+    {
+        let DeleteMessagesReq = None::<crate::infra::http::message::DeleteMessagesReq>.unwrap();
+        let _: String = DeleteMessagesReq.conversation_id;
+        let _: Vec<String> = DeleteMessagesReq.client_msg_ids;
+    }
+    {
+        let FaceElem = None::<crate::domain::model::msg_struct::FaceElem>.unwrap();
+        let _: i32 = FaceElem.index;
+        let _: String = FaceElem.data;
+    }
+    {
+        let FileElem = None::<crate::domain::model::msg_struct::FileElem>.unwrap();
+        let _: String = FileElem.file_path;
+        let _: String = FileElem.uuid;
+        let _: String = FileElem.source_url;
+        let _: String = FileElem.file_name;
+        let _: i64 = FileElem.file_size;
+        let _: String = FileElem.file_type;
+    }
+    {
+        let FriendApplyInfo = None::<crate::infra::http::friend::FriendApplyInfo>.unwrap();
+        let _: String = FriendApplyInfo.user_id;
+        let _: String = FriendApplyInfo.nickname;
+        let _: String = FriendApplyInfo.face_url;
+        let _: i32 = FriendApplyInfo.gender;
+        let _: i64 = FriendApplyInfo.create_time;
+        let _: i32 = FriendApplyInfo.add_source;
+        let _: String = FriendApplyInfo.ex;
+        let _: Option<String> = FriendApplyInfo.req_msg;
+        let _: i32 = FriendApplyInfo.handle_result;
+        let _: Option<String> = FriendApplyInfo.handle_msg;
+    }
+    match None::<crate::core::event::events::friend::FriendEvent>.unwrap() {
+        crate::core::event::events::friend::FriendEvent::Added(field0) => {
+            let _: Vec<crate::domain::model::friend::FriendInfo> = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::Deleted(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::InfoChanged(field0) => {
+            let _: Vec<crate::domain::model::friend::FriendInfo> = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::BlackAdded(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::BlackDeleted(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::ApplicationAdded(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::ApplicationDeleted(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::ApplicationAccepted(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::friend::FriendEvent::ApplicationRejected(field0) => {
+            let _: String = field0;
+        }
+    }
+    {
+        let FriendInfo = None::<crate::domain::model::friend::FriendInfo>.unwrap();
+        let _: String = FriendInfo.user_id;
+        let _: String = FriendInfo.nickname;
+        let _: String = FriendInfo.face_url;
+        let _: i32 = FriendInfo.gender;
+        let _: String = FriendInfo.remark;
+        let _: i64 = FriendInfo.create_time;
+        let _: String = FriendInfo.add_source;
+        let _: String = FriendInfo.ex;
+    }
+    {
+        let GetHistoryMessagesReq = None::<crate::sdk::client::GetHistoryMessagesReq>.unwrap();
+        let _: String = GetHistoryMessagesReq.conversation_id;
+        let _: String = GetHistoryMessagesReq.start_client_msg_id;
+        let _: i64 = GetHistoryMessagesReq.count;
+    }
+    {
+        let GetHistoryMessagesResult = None::<crate::sdk::client::GetHistoryMessagesResult>.unwrap();
+        let _: Vec<crate::domain::model::message::MessageInfo> = GetHistoryMessagesResult.messages;
+        let _: bool = GetHistoryMessagesResult.is_end;
+    }
+    {
+        let GroupApplyInfo = None::<crate::infra::http::group::GroupApplyInfo>.unwrap();
+        let _: String = GroupApplyInfo.group_id;
+        let _: String = GroupApplyInfo.user_id;
+        let _: String = GroupApplyInfo.nickname;
+        let _: String = GroupApplyInfo.face_url;
+        let _: String = GroupApplyInfo.reason;
+        let _: i32 = GroupApplyInfo.handle_result;
+        let _: Option<String> = GroupApplyInfo.ex;
+    }
+    match None::<crate::core::event::events::group::GroupEvent>.unwrap() {
+        crate::core::event::events::group::GroupEvent::JoinedGroupAdded(field0) => {
+            let _: crate::domain::model::group::GroupInfo = field0;
+        }
+        crate::core::event::events::group::GroupEvent::JoinedGroupDeleted(field0) => {
+            let _: crate::domain::model::group::GroupInfo = field0;
+        }
+        crate::core::event::events::group::GroupEvent::GroupInfoChanged(field0) => {
+            let _: crate::domain::model::group::GroupInfo = field0;
+        }
+        crate::core::event::events::group::GroupEvent::MemberAdded(field0) => {
+            let _: crate::domain::model::group::GroupMember = field0;
+        }
+        crate::core::event::events::group::GroupEvent::MemberDeleted(field0) => {
+            let _: crate::domain::model::group::GroupMember = field0;
+        }
+        crate::core::event::events::group::GroupEvent::MemberInfoChanged(field0) => {
+            let _: crate::domain::model::group::GroupMember = field0;
+        }
+        crate::core::event::events::group::GroupEvent::GroupReadReceipt(field0) => {
+            let _: Vec<crate::core::event::events::message::GroupReadReceipt> = field0;
+        }
+        crate::core::event::events::group::GroupEvent::ApplicationAdded(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::group::GroupEvent::ApplicationDeleted(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::group::GroupEvent::ApplicationApproved(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::group::GroupEvent::ApplicationRejected(field0) => {
+            let _: String = field0;
+        }
+        crate::core::event::events::group::GroupEvent::Dismissed(field0) => {
+            let _: crate::domain::model::group::GroupInfo = field0;
+        }
+    }
+    {
+        let GroupInfo = None::<crate::domain::model::group::GroupInfo>.unwrap();
+        let _: String = GroupInfo.group_id;
+        let _: String = GroupInfo.group_name;
+        let _: String = GroupInfo.face_url;
+        let _: String = GroupInfo.introduction;
+        let _: String = GroupInfo.notification;
+        let _: String = GroupInfo.owner_user_id;
+        let _: i64 = GroupInfo.create_time;
+        let _: u32 = GroupInfo.member_count;
+        let _: i32 = GroupInfo.status;
+        let _: String = GroupInfo.ex;
+    }
+    {
+        let GroupMember = None::<crate::domain::model::group::GroupMember>.unwrap();
+        let _: String = GroupMember.group_id;
+        let _: String = GroupMember.user_id;
+        let _: String = GroupMember.nickname;
+        let _: String = GroupMember.face_url;
+        let _: i32 = GroupMember.role_level;
+        let _: i64 = GroupMember.join_time;
+        let _: String = GroupMember.join_source;
+        let _: i64 = GroupMember.mute_end_time;
+    }
+    {
+        let GroupReadReceipt = None::<crate::core::event::events::message::GroupReadReceipt>.unwrap();
+        let _: String = GroupReadReceipt.group_id;
+        let _: String = GroupReadReceipt.msg_id;
+        let _: Vec<String> = GroupReadReceipt.has_read_user_id_list;
+        let _: i32 = GroupReadReceipt.has_read_count;
+        let _: i32 = GroupReadReceipt.group_member_count;
+        let _: i64 = GroupReadReceipt.read_time;
+    }
+    {
+        let LocalChatLog = None::<crate::domain::model::local::LocalChatLog>.unwrap();
+        let _: String = LocalChatLog.conversation_id;
+        let _: String = LocalChatLog.client_msg_id;
+        let _: String = LocalChatLog.server_msg_id;
+        let _: String = LocalChatLog.send_id;
+        let _: String = LocalChatLog.recv_id;
+        let _: i32 = LocalChatLog.sender_platform_id;
+        let _: String = LocalChatLog.sender_nick_name;
+        let _: String = LocalChatLog.sender_face_url;
+        let _: i32 = LocalChatLog.session_type;
+        let _: i32 = LocalChatLog.msg_from;
+        let _: i32 = LocalChatLog.content_type;
+        let _: String = LocalChatLog.content;
+        let _: i32 = LocalChatLog.is_read;
+        let _: i32 = LocalChatLog.status;
+        let _: i64 = LocalChatLog.seq;
+        let _: i64 = LocalChatLog.send_time;
+        let _: i64 = LocalChatLog.create_time;
+        let _: String = LocalChatLog.attached_info;
+        let _: String = LocalChatLog.ex;
+        let _: String = LocalChatLog.topic_id;
+        let _: String = LocalChatLog.local_ex;
+        let _: String = LocalChatLog.group_id;
+    }
+    {
+        let LocalConversation = None::<crate::domain::model::local::LocalConversation>.unwrap();
+        let _: String = LocalConversation.conversation_id;
+        let _: i32 = LocalConversation.conversation_type;
+        let _: String = LocalConversation.user_id;
+        let _: String = LocalConversation.group_id;
+        let _: String = LocalConversation.show_name;
+        let _: String = LocalConversation.face_url;
+        let _: String = LocalConversation.latest_msg;
+        let _: i64 = LocalConversation.latest_msg_send_time;
+        let _: i32 = LocalConversation.unread_count;
+        let _: i32 = LocalConversation.recv_msg_opt;
+        let _: bool = LocalConversation.is_pinned;
+        let _: bool = LocalConversation.is_private_chat;
+        let _: i32 = LocalConversation.burn_duration;
+        let _: i32 = LocalConversation.group_at_type;
+        let _: bool = LocalConversation.is_not_in_group;
+        let _: i64 = LocalConversation.update_unread_count_time;
+        let _: String = LocalConversation.attached_info;
+        let _: String = LocalConversation.ex;
+        let _: String = LocalConversation.draft_text;
+        let _: i64 = LocalConversation.draft_text_time;
+        let _: i64 = LocalConversation.max_seq;
+        let _: i64 = LocalConversation.min_seq;
+        let _: bool = LocalConversation.is_msg_destruct;
+        let _: i64 = LocalConversation.msg_destruct_time;
+    }
+    {
+        let LocationElem = None::<crate::domain::model::msg_struct::LocationElem>.unwrap();
+        let _: String = LocationElem.description;
+        let _: f64 = LocationElem.longitude;
+        let _: f64 = LocationElem.latitude;
+    }
+    {
+        let LogConfig = None::<crate::infra::logger::config::LogConfig>.unwrap();
+        let _: u32 = LogConfig.log_level;
+        let _: bool = LogConfig.is_log_standard_output;
+        let _: String = LogConfig.log_file_path;
+        let _: u32 = LogConfig.log_remain_count;
+        let _: bool = LogConfig.is_log_json;
+        let _: String = LogConfig.system_type;
+        let _: String = LogConfig.platform_name;
+        let _: String = LogConfig.sdk_version;
+        let _: bool = LogConfig.is_log_span_events;
+    }
+    {
+        let MarkMessagesAsReadReq = None::<crate::infra::http::message::MarkMessagesAsReadReq>.unwrap();
+        let _: String = MarkMessagesAsReadReq.conversation_id;
+        let _: String = MarkMessagesAsReadReq.user_id;
+        let _: i32 = MarkMessagesAsReadReq.session_type;
+        let _: i64 = MarkMessagesAsReadReq.has_read_seq;
+        let _: Vec<i64> = MarkMessagesAsReadReq.seqs;
+    }
+    {
+        let MarkdownTextElem = None::<crate::domain::model::msg_struct::MarkdownTextElem>.unwrap();
+        let _: String = MarkdownTextElem.content;
+    }
+    {
+        let MergeElem = None::<crate::domain::model::msg_struct::MergeElem>.unwrap();
+        let _: String = MergeElem.title;
+        let _: Vec<String> = MergeElem.abstract_list;
+        let _: Vec<crate::domain::model::msg_struct::MsgStruct> = MergeElem.multi_message;
+    }
+    {
+        let MessageEntity = None::<crate::domain::model::msg_struct::MessageEntity>.unwrap();
+        let _: String = MessageEntity.entity_type;
+        let _: i32 = MessageEntity.offset;
+        let _: i32 = MessageEntity.length;
+        let _: String = MessageEntity.url;
+        let _: String = MessageEntity.ex;
+    }
+    match None::<crate::core::event::events::message::MessageEvent>.unwrap() {
+        crate::core::event::events::message::MessageEvent::NewMessage { conversation_id, message } => {
+            let _: String = conversation_id;
+            let _: crate::domain::model::message::MessageInfo = message;
+        }
+        crate::core::event::events::message::MessageEvent::OfflineNewMessage { conversation_id, message } => {
+            let _: String = conversation_id;
+            let _: crate::domain::model::message::MessageInfo = message;
+        }
+        crate::core::event::events::message::MessageEvent::OnlineOnlyMessage { conversation_id, message } => {
+            let _: String = conversation_id;
+            let _: crate::domain::model::message::MessageInfo = message;
+        }
+        crate::core::event::events::message::MessageEvent::Revoked {
+            conversation_id,
+            seq,
+            client_msg_id,
+            revoker_id,
+            revoker_role,
+            revoker_nickname,
+            revoke_time,
+            source_message_send_time,
+            source_message_send_id,
+            source_message_sender_nickname,
+            session_type,
+            is_admin_revoke,
+        } => {
+            let _: String = conversation_id;
+            let _: i64 = seq;
+            let _: String = client_msg_id;
+            let _: String = revoker_id;
+            let _: i32 = revoker_role;
+            let _: String = revoker_nickname;
+            let _: i64 = revoke_time;
+            let _: i64 = source_message_send_time;
+            let _: String = source_message_send_id;
+            let _: String = source_message_sender_nickname;
+            let _: i32 = session_type;
+            let _: bool = is_admin_revoke;
+        }
+        crate::core::event::events::message::MessageEvent::C2CReadReceipt { receipts } => {
+            let _: Vec<crate::core::event::events::message::MessageReceipt> = receipts;
+        }
+        crate::core::event::events::message::MessageEvent::Deleted { conversation_id, client_msg_ids } => {
+            let _: String = conversation_id;
+            let _: Vec<String> = client_msg_ids;
+        }
+        crate::core::event::events::message::MessageEvent::SendFailed { client_msg_id, error } => {
+            let _: String = client_msg_id;
+            let _: String = error;
+        }
+        crate::core::event::events::message::MessageEvent::UploadProgress {
+            client_msg_id,
+            progress,
+            total_size,
+            uploaded_size,
+        } => {
+            let _: String = client_msg_id;
+            let _: u8 = progress;
+            let _: u64 = total_size;
+            let _: u64 = uploaded_size;
+        }
+    }
+    {
+        let MessageInfo = None::<crate::domain::model::message::MessageInfo>.unwrap();
+        let _: String = MessageInfo.client_msg_id;
+        let _: String = MessageInfo.server_msg_id;
+        let _: String = MessageInfo.send_id;
+        let _: String = MessageInfo.recv_id;
+        let _: String = MessageInfo.group_id;
+        let _: i32 = MessageInfo.sender_platform_id;
+        let _: String = MessageInfo.sender_nickname;
+        let _: String = MessageInfo.sender_face_url;
+        let _: i32 = MessageInfo.session_type;
+        let _: i32 = MessageInfo.msg_from;
+        let _: i32 = MessageInfo.content_type;
+        let _: String = MessageInfo.content;
+        let _: i64 = MessageInfo.seq;
+        let _: i64 = MessageInfo.send_time;
+        let _: i64 = MessageInfo.create_time;
+        let _: i32 = MessageInfo.status;
+        let _: bool = MessageInfo.is_read;
+        let _: String = MessageInfo.attached_info;
+        let _: String = MessageInfo.ex;
+        let _: String = MessageInfo.topic_id;
+    }
+    {
+        let MessageReceipt = None::<crate::core::event::events::message::MessageReceipt>.unwrap();
+        let _: String = MessageReceipt.user_id;
+        let _: Vec<String> = MessageReceipt.msg_ids;
+        let _: i64 = MessageReceipt.read_time;
+        let _: i32 = MessageReceipt.session_type;
+    }
+    {
+        let MsgStruct = None::<crate::domain::model::msg_struct::MsgStruct>.unwrap();
+        let _: String = MsgStruct.client_msg_id;
+        let _: String = MsgStruct.server_msg_id;
+        let _: i64 = MsgStruct.create_time;
+        let _: i64 = MsgStruct.send_time;
+        let _: i32 = MsgStruct.session_type;
+        let _: String = MsgStruct.send_id;
+        let _: String = MsgStruct.recv_id;
+        let _: i32 = MsgStruct.msg_from;
+        let _: i32 = MsgStruct.content_type;
+        let _: i32 = MsgStruct.sender_platform_id;
+        let _: String = MsgStruct.sender_nickname;
+        let _: String = MsgStruct.sender_face_url;
+        let _: String = MsgStruct.group_id;
+        let _: String = MsgStruct.content;
+        let _: i64 = MsgStruct.seq;
+        let _: bool = MsgStruct.is_read;
+        let _: i32 = MsgStruct.status;
+        let _: String = MsgStruct.attached_info;
+        let _: String = MsgStruct.ex;
+        let _: String = MsgStruct.topic_id;
+        let _: String = MsgStruct.local_ex;
+        let _: Option<crate::domain::model::msg_struct::TextElem> = MsgStruct.text_elem;
+        let _: Option<crate::domain::model::msg_struct::PictureElem> = MsgStruct.picture_elem;
+        let _: Option<crate::domain::model::msg_struct::SoundElem> = MsgStruct.sound_elem;
+        let _: Option<crate::domain::model::msg_struct::VideoElem> = MsgStruct.video_elem;
+        let _: Option<crate::domain::model::msg_struct::FileElem> = MsgStruct.file_elem;
+        let _: Option<crate::domain::model::msg_struct::AtTextElem> = MsgStruct.at_text_elem;
+        let _: Option<crate::domain::model::msg_struct::QuoteElem> = MsgStruct.quote_elem;
+        let _: Option<crate::domain::model::msg_struct::MergeElem> = MsgStruct.merge_elem;
+        let _: Option<crate::domain::model::msg_struct::CardElem> = MsgStruct.card_elem;
+        let _: Option<crate::domain::model::msg_struct::LocationElem> = MsgStruct.location_elem;
+        let _: Option<crate::domain::model::msg_struct::FaceElem> = MsgStruct.face_elem;
+        let _: Option<crate::domain::model::msg_struct::CustomElem> = MsgStruct.custom_elem;
+        let _: Option<crate::domain::model::msg_struct::AdvancedTextElem> = MsgStruct.advanced_text_elem;
+        let _: Option<crate::domain::model::msg_struct::MarkdownTextElem> = MsgStruct.markdown_text_elem;
+        let _: Option<crate::domain::model::msg_struct::OfflinePushInfo> = MsgStruct.offline_push;
+    }
+    {
+        let OfflinePushInfo = None::<crate::domain::model::msg_struct::OfflinePushInfo>.unwrap();
+        let _: String = OfflinePushInfo.title;
+        let _: String = OfflinePushInfo.desc;
+        let _: String = OfflinePushInfo.ex;
+        let _: String = OfflinePushInfo.ios_push_sound;
+        let _: bool = OfflinePushInfo.ios_badge_count;
+        let _: String = OfflinePushInfo.signal_info;
+    }
+    {
+        let OnlineStatus = None::<crate::infra::http::online::OnlineStatus>.unwrap();
+        let _: String = OnlineStatus.user_id;
+        let _: i32 = OnlineStatus.status;
+        let _: Vec<i32> = OnlineStatus.platform_ids;
+    }
+    {
+        let PictureBaseInfo = None::<crate::domain::model::msg_struct::PictureBaseInfo>.unwrap();
+        let _: i32 = PictureBaseInfo.width;
+        let _: i32 = PictureBaseInfo.height;
+        let _: String = PictureBaseInfo.picture_type;
+        let _: i64 = PictureBaseInfo.size;
+        let _: String = PictureBaseInfo.url;
+        let _: String = PictureBaseInfo.uuid;
+    }
+    {
+        let PictureElem = None::<crate::domain::model::msg_struct::PictureElem>.unwrap();
+        let _: String = PictureElem.source_path;
+        let _: crate::domain::model::msg_struct::PictureBaseInfo = PictureElem.source_picture;
+        let _: crate::domain::model::msg_struct::PictureBaseInfo = PictureElem.big_picture;
+        let _: crate::domain::model::msg_struct::PictureBaseInfo = PictureElem.snapshot_picture;
+    }
+    {
+        let QuoteElem = None::<crate::domain::model::msg_struct::QuoteElem>.unwrap();
+        let _: String = QuoteElem.text;
+        let _: Option<Box<crate::domain::model::msg_struct::MsgStruct>> = QuoteElem.quote_message;
+        let _: Vec<crate::domain::model::msg_struct::MessageEntity> = QuoteElem.message_entity_list;
+    }
+    {
+        let RevokeMessageReq = None::<crate::infra::http::message::RevokeMessageReq>.unwrap();
+        let _: String = RevokeMessageReq.conversation_id;
+        let _: i64 = RevokeMessageReq.seq;
+        let _: String = RevokeMessageReq.user_id;
+        let _: String = RevokeMessageReq.client_msg_id;
+        let _: i32 = RevokeMessageReq.session_type;
+    }
+    {
+        let SearchFriendItem = None::<crate::infra::http::friend::SearchFriendItem>.unwrap();
+        let _: String = SearchFriendItem.friend_user_id;
+        let _: String = SearchFriendItem.nickname;
+        let _: String = SearchFriendItem.face_url;
+        let _: String = SearchFriendItem.remark;
+        let _: String = SearchFriendItem.ex;
+        let _: i64 = SearchFriendItem.create_time;
+        let _: i32 = SearchFriendItem.relationship;
+    }
+    {
+        let SearchMessagesReq = None::<crate::sdk::client::SearchMessagesReq>.unwrap();
+        let _: String = SearchMessagesReq.conversation_id;
+        let _: String = SearchMessagesReq.keyword;
+        let _: Vec<String> = SearchMessagesReq.sender_user_ids;
+        let _: Vec<i32> = SearchMessagesReq.message_types;
+        let _: i64 = SearchMessagesReq.start_time;
+        let _: i64 = SearchMessagesReq.end_time;
+        let _: i64 = SearchMessagesReq.offset;
+        let _: i64 = SearchMessagesReq.count;
+    }
+    {
+        let SoundElem = None::<crate::domain::model::msg_struct::SoundElem>.unwrap();
+        let _: String = SoundElem.uuid;
+        let _: String = SoundElem.sound_path;
+        let _: String = SoundElem.source_url;
+        let _: i64 = SoundElem.data_size;
+        let _: i64 = SoundElem.duration;
+        let _: String = SoundElem.sound_type;
+    }
+    {
+        let TextElem = None::<crate::domain::model::msg_struct::TextElem>.unwrap();
+        let _: String = TextElem.content;
+    }
+    match None::<crate::core::event::events::user::UserEvent>.unwrap() {
+        crate::core::event::events::user::UserEvent::UserInfoUpdated { user } => {
+            let _: crate::domain::model::user::UserInfo = user;
+        }
+        crate::core::event::events::user::UserEvent::UserStatusChanged { user_id, status, platform_ids } => {
+            let _: String = user_id;
+            let _: i32 = status;
+            let _: Vec<i32> = platform_ids;
+        }
+    }
+    {
+        let UserInfo = None::<crate::domain::model::user::UserInfo>.unwrap();
+        let _: String = UserInfo.user_id;
+        let _: String = UserInfo.nickname;
+        let _: String = UserInfo.face_url;
+        let _: i32 = UserInfo.gender;
+        let _: String = UserInfo.telephone;
+        let _: String = UserInfo.email;
+        let _: String = UserInfo.remark;
+        let _: i32 = UserInfo.global_recv_msg_opt;
+    }
+    {
+        let VideoElem = None::<crate::domain::model::msg_struct::VideoElem>.unwrap();
+        let _: String = VideoElem.video_path;
+        let _: String = VideoElem.video_uuid;
+        let _: String = VideoElem.video_url;
+        let _: String = VideoElem.video_type;
+        let _: i64 = VideoElem.video_size;
+        let _: i64 = VideoElem.duration;
+        let _: String = VideoElem.snapshot_path;
+        let _: String = VideoElem.snapshot_uuid;
+        let _: i64 = VideoElem.snapshot_size;
+        let _: String = VideoElem.snapshot_url;
+        let _: i32 = VideoElem.snapshot_width;
+        let _: i32 = VideoElem.snapshot_height;
+        let _: String = VideoElem.snapshot_type;
+    }
+};
 
 // Section: related_funcs
 
@@ -8687,47 +10656,95 @@ fn pde_ffi_dispatcher_primary_impl(
         140 => wire__crate__api__ffi__message_advanced__find_message_list_impl(port, ptr, rust_vec_len, data_len),
         141 => wire__crate__api__ffi__message_advanced__forward_message_impl(port, ptr, rust_vec_len, data_len),
         142 => wire__crate__api__ffi__message_advanced__forward_message_by_client_id_impl(port, ptr, rust_vec_len, data_len),
-        143 => wire__crate__api__ffi__message_advanced__get_advanced_history_message_list_by_seq_impl(port, ptr, rust_vec_len, data_len),
-        144 => wire__crate__api__ffi__message_builder__get_at_all_tag_impl(port, ptr, rust_vec_len, data_len),
-        145 => wire__crate__api__ffi__message_advanced__get_history_message_by_seq_impl(port, ptr, rust_vec_len, data_len),
-        146 => wire__crate__api__ffi__message_advanced__get_history_messages_reverse_impl(port, ptr, rust_vec_len, data_len),
-        147 => wire__crate__api__ffi__message_advanced__get_input_states_impl(port, ptr, rust_vec_len, data_len),
-        148 => wire__crate__api__ffi__global__get_login_user_id_impl(port, ptr, rust_vec_len, data_len),
-        149 => wire__crate__api__ffi__global__get_sdk_version_impl(port, ptr, rust_vec_len, data_len),
-        150 => wire__crate__api__ffi__message_advanced__get_server_time_impl(port, ptr, rust_vec_len, data_len),
-        151 => wire__crate__api__ffi__message_advanced__get_total_unread_msg_count_impl(port, ptr, rust_vec_len, data_len),
-        152 => wire__crate__api__ffi__message_advanced__incr_sync_conversations_impl(port, ptr, rust_vec_len, data_len),
-        153 => wire__crate__api__ffi__ffi_init__init_logger_impl(port, ptr, rust_vec_len, data_len),
-        154 => wire__crate__api__ffi__ffi_init__init_logger_v2_impl(port, ptr, rust_vec_len, data_len),
-        155 => wire__crate__api__ffi__message_advanced__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
-        156 => wire__crate__api__ffi__message_advanced__insert_single_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
-        157 => wire__crate__api__ffi__message_advanced__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
-        158 => wire__crate__api__ffi__global__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
-        159 => wire__crate__api__ffi__message__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        160 => wire__crate__api__ffi__message__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
-        161 => wire__crate__api__ffi__message__send_card_message_impl(port, ptr, rust_vec_len, data_len),
-        162 => wire__crate__api__ffi__message__send_face_message_impl(port, ptr, rust_vec_len, data_len),
-        163 => wire__crate__api__ffi__message_media__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        164 => wire__crate__api__ffi__message_media__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        165 => wire__crate__api__ffi__message__send_location_message_impl(port, ptr, rust_vec_len, data_len),
-        166 => wire__crate__api__ffi__message__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
-        167 => wire__crate__api__ffi__message_advanced__send_message_impl(port, ptr, rust_vec_len, data_len),
-        168 => wire__crate__api__ffi__message_advanced__send_message_not_oss_impl(port, ptr, rust_vec_len, data_len),
-        169 => wire__crate__api__ffi__message_advanced__send_message_online_only_impl(port, ptr, rust_vec_len, data_len),
-        170 => wire__crate__api__ffi__message__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
-        171 => wire__crate__api__ffi__message_media__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        172 => wire__crate__api__ffi__message_advanced__send_typing_impl(port, ptr, rust_vec_len, data_len),
-        173 => wire__crate__api__ffi__message_media__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
-        174 => wire__crate__api__ffi__global__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
-        175 => wire__crate__api__ffi__third__set_app_badge_impl(port, ptr, rust_vec_len, data_len),
-        176 => wire__crate__api__ffi__ffi_init__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
-        177 => wire__crate__api__ffi__ffi_init__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
-        178 => wire__crate__api__ffi__message_advanced__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
-        179 => wire__crate__api__ffi__message_builder__set_message_topic_id_impl(port, ptr, rust_vec_len, data_len),
-        180 => wire__crate__api__ffi__global__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
-        181 => wire__crate__api__ffi__third__update_fcm_token_impl(port, ptr, rust_vec_len, data_len),
-        182 => wire__crate__api__ffi__message_media__upload_file_impl(port, ptr, rust_vec_len, data_len),
-        183 => wire__crate__api__ffi__message_media__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
+        143 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_advanced_text_elem_impl(port, ptr, rust_vec_len, data_len),
+        144 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_at_info_impl(port, ptr, rust_vec_len, data_len),
+        145 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_at_text_elem_impl(port, ptr, rust_vec_len, data_len),
+        146 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_card_elem_impl(port, ptr, rust_vec_len, data_len),
+        147 => wire__crate__infra__http__friend__frb_mirror_anchor_check_friend_result_impl(port, ptr, rust_vec_len, data_len),
+        148 => wire__crate__core__config__frb_mirror_anchor_client_config_impl(port, ptr, rust_vec_len, data_len),
+        149 => wire__crate__core__event__events__connection__frb_mirror_anchor_connection_event_impl(port, ptr, rust_vec_len, data_len),
+        150 => wire__crate__domain__constant__enums__frb_mirror_anchor_connection_state_impl(port, ptr, rust_vec_len, data_len),
+        151 => wire__crate__core__event__events__conversation__frb_mirror_anchor_conversation_event_impl(port, ptr, rust_vec_len, data_len),
+        152 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_custom_elem_impl(port, ptr, rust_vec_len, data_len),
+        153 => wire__crate__infra__http__message__frb_mirror_anchor_delete_messages_req_impl(port, ptr, rust_vec_len, data_len),
+        154 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_face_elem_impl(port, ptr, rust_vec_len, data_len),
+        155 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_file_elem_impl(port, ptr, rust_vec_len, data_len),
+        156 => wire__crate__infra__http__friend__frb_mirror_anchor_friend_apply_info_impl(port, ptr, rust_vec_len, data_len),
+        157 => wire__crate__core__event__events__friend__frb_mirror_anchor_friend_event_impl(port, ptr, rust_vec_len, data_len),
+        158 => wire__crate__domain__model__friend__frb_mirror_anchor_friend_info_impl(port, ptr, rust_vec_len, data_len),
+        159 => wire__crate__sdk__client__frb_mirror_anchor_get_history_messages_req_impl(port, ptr, rust_vec_len, data_len),
+        160 => wire__crate__sdk__client__frb_mirror_anchor_get_history_messages_result_impl(port, ptr, rust_vec_len, data_len),
+        161 => wire__crate__infra__http__group__frb_mirror_anchor_group_apply_info_impl(port, ptr, rust_vec_len, data_len),
+        162 => wire__crate__core__event__events__group__frb_mirror_anchor_group_event_impl(port, ptr, rust_vec_len, data_len),
+        163 => wire__crate__domain__model__group__frb_mirror_anchor_group_info_impl(port, ptr, rust_vec_len, data_len),
+        164 => wire__crate__domain__model__group__frb_mirror_anchor_group_member_impl(port, ptr, rust_vec_len, data_len),
+        165 => wire__crate__core__event__events__message__frb_mirror_anchor_group_read_receipt_impl(port, ptr, rust_vec_len, data_len),
+        166 => wire__crate__domain__model__local__frb_mirror_anchor_local_chat_log_impl(port, ptr, rust_vec_len, data_len),
+        167 => wire__crate__domain__model__local__frb_mirror_anchor_local_conversation_impl(port, ptr, rust_vec_len, data_len),
+        168 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_location_elem_impl(port, ptr, rust_vec_len, data_len),
+        169 => wire__crate__infra__logger__config__frb_mirror_anchor_log_config_impl(port, ptr, rust_vec_len, data_len),
+        170 => wire__crate__infra__http__message__frb_mirror_anchor_mark_messages_as_read_req_impl(port, ptr, rust_vec_len, data_len),
+        171 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_markdown_text_elem_impl(port, ptr, rust_vec_len, data_len),
+        172 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_merge_elem_impl(port, ptr, rust_vec_len, data_len),
+        173 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_message_entity_impl(port, ptr, rust_vec_len, data_len),
+        174 => wire__crate__core__event__events__message__frb_mirror_anchor_message_event_impl(port, ptr, rust_vec_len, data_len),
+        175 => wire__crate__domain__model__message__frb_mirror_anchor_message_info_impl(port, ptr, rust_vec_len, data_len),
+        176 => wire__crate__core__event__events__message__frb_mirror_anchor_message_receipt_impl(port, ptr, rust_vec_len, data_len),
+        177 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_msg_struct_impl(port, ptr, rust_vec_len, data_len),
+        178 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_offline_push_info_impl(port, ptr, rust_vec_len, data_len),
+        179 => wire__crate__infra__http__online__frb_mirror_anchor_online_status_impl(port, ptr, rust_vec_len, data_len),
+        180 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_picture_base_info_impl(port, ptr, rust_vec_len, data_len),
+        181 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_quote_elem_impl(port, ptr, rust_vec_len, data_len),
+        182 => wire__crate__infra__http__message__frb_mirror_anchor_revoke_message_req_impl(port, ptr, rust_vec_len, data_len),
+        183 => wire__crate__infra__http__friend__frb_mirror_anchor_search_friend_item_impl(port, ptr, rust_vec_len, data_len),
+        184 => wire__crate__sdk__client__frb_mirror_anchor_search_messages_req_impl(port, ptr, rust_vec_len, data_len),
+        185 => wire__crate__domain__constant__enums__frb_mirror_anchor_session_type_impl(port, ptr, rust_vec_len, data_len),
+        186 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_sound_elem_impl(port, ptr, rust_vec_len, data_len),
+        187 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_text_elem_impl(port, ptr, rust_vec_len, data_len),
+        188 => wire__crate__core__event__events__user__frb_mirror_anchor_user_event_impl(port, ptr, rust_vec_len, data_len),
+        189 => wire__crate__domain__model__user__frb_mirror_anchor_user_info_impl(port, ptr, rust_vec_len, data_len),
+        190 => wire__crate__domain__model__msg_struct__frb_mirror_anchor_video_elem_impl(port, ptr, rust_vec_len, data_len),
+        191 => wire__crate__api__ffi__message_advanced__get_advanced_history_message_list_by_seq_impl(port, ptr, rust_vec_len, data_len),
+        192 => wire__crate__api__ffi__message_builder__get_at_all_tag_impl(port, ptr, rust_vec_len, data_len),
+        193 => wire__crate__api__ffi__message_advanced__get_history_message_by_seq_impl(port, ptr, rust_vec_len, data_len),
+        194 => wire__crate__api__ffi__message_advanced__get_history_messages_reverse_impl(port, ptr, rust_vec_len, data_len),
+        195 => wire__crate__api__ffi__message_advanced__get_input_states_impl(port, ptr, rust_vec_len, data_len),
+        196 => wire__crate__api__ffi__global__get_login_user_id_impl(port, ptr, rust_vec_len, data_len),
+        197 => wire__crate__api__ffi__global__get_sdk_version_impl(port, ptr, rust_vec_len, data_len),
+        198 => wire__crate__api__ffi__message_advanced__get_server_time_impl(port, ptr, rust_vec_len, data_len),
+        199 => wire__crate__api__ffi__message_advanced__get_total_unread_msg_count_impl(port, ptr, rust_vec_len, data_len),
+        200 => wire__crate__api__ffi__message_advanced__incr_sync_conversations_impl(port, ptr, rust_vec_len, data_len),
+        201 => wire__crate__api__ffi__ffi_init__init_logger_impl(port, ptr, rust_vec_len, data_len),
+        202 => wire__crate__api__ffi__ffi_init__init_logger_v2_impl(port, ptr, rust_vec_len, data_len),
+        203 => wire__crate__api__ffi__message_advanced__insert_group_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
+        204 => wire__crate__api__ffi__message_advanced__insert_single_message_to_local_storage_impl(port, ptr, rust_vec_len, data_len),
+        205 => wire__crate__api__ffi__message_advanced__mark_all_conversation_message_as_read_impl(port, ptr, rust_vec_len, data_len),
+        206 => wire__crate__api__ffi__global__network_status_changed_impl(port, ptr, rust_vec_len, data_len),
+        207 => wire__crate__api__ffi__message__send_advanced_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        208 => wire__crate__api__ffi__message__send_at_text_message_with_quote_impl(port, ptr, rust_vec_len, data_len),
+        209 => wire__crate__api__ffi__message__send_card_message_impl(port, ptr, rust_vec_len, data_len),
+        210 => wire__crate__api__ffi__message__send_face_message_impl(port, ptr, rust_vec_len, data_len),
+        211 => wire__crate__api__ffi__message_media__send_file_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        212 => wire__crate__api__ffi__message_media__send_image_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        213 => wire__crate__api__ffi__message__send_location_message_impl(port, ptr, rust_vec_len, data_len),
+        214 => wire__crate__api__ffi__message__send_merger_message_impl(port, ptr, rust_vec_len, data_len),
+        215 => wire__crate__api__ffi__message_advanced__send_message_impl(port, ptr, rust_vec_len, data_len),
+        216 => wire__crate__api__ffi__message_advanced__send_message_not_oss_impl(port, ptr, rust_vec_len, data_len),
+        217 => wire__crate__api__ffi__message_advanced__send_message_online_only_impl(port, ptr, rust_vec_len, data_len),
+        218 => wire__crate__api__ffi__message__send_quote_message_impl(port, ptr, rust_vec_len, data_len),
+        219 => wire__crate__api__ffi__message_media__send_sound_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        220 => wire__crate__api__ffi__message_advanced__send_typing_impl(port, ptr, rust_vec_len, data_len),
+        221 => wire__crate__api__ffi__message_media__send_video_message_from_url_impl(port, ptr, rust_vec_len, data_len),
+        222 => wire__crate__api__ffi__global__set_app_background_status_impl(port, ptr, rust_vec_len, data_len),
+        223 => wire__crate__api__ffi__third__set_app_badge_impl(port, ptr, rust_vec_len, data_len),
+        224 => wire__crate__api__ffi__ffi_init__set_log_directory_impl(port, ptr, rust_vec_len, data_len),
+        225 => wire__crate__api__ffi__ffi_init__set_log_span_events_impl(port, ptr, rust_vec_len, data_len),
+        226 => wire__crate__api__ffi__message_advanced__set_message_local_ex_impl(port, ptr, rust_vec_len, data_len),
+        227 => wire__crate__api__ffi__message_builder__set_message_topic_id_impl(port, ptr, rust_vec_len, data_len),
+        228 => wire__crate__api__ffi__global__un_init_sdk_impl(port, ptr, rust_vec_len, data_len),
+        229 => wire__crate__api__ffi__third__update_fcm_token_impl(port, ptr, rust_vec_len, data_len),
+        230 => wire__crate__api__ffi__message_media__upload_file_impl(port, ptr, rust_vec_len, data_len),
+        231 => wire__crate__api__ffi__message_media__upload_file_with_progress_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -8761,102 +10778,102 @@ impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<OpenIMBridgeClient>> for OpenI
 }
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::AdvancedTextElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::AdvancedTextElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.text.into_into_dart().into_dart(), self.message_entity_list.into_into_dart().into_dart()].into_dart()
+        [self.0.text.into_into_dart().into_dart(), self.0.message_entity_list.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::AdvancedTextElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::AdvancedTextElem> for crate::domain::model::msg_struct::AdvancedTextElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::AdvancedTextElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::AdvancedTextElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::AdvancedTextElem>> for crate::domain::model::msg_struct::AdvancedTextElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::AdvancedTextElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::AtInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::AtInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.at_user_id.into_into_dart().into_dart(), self.group_nickname.into_into_dart().into_dart()].into_dart()
+        [self.0.at_user_id.into_into_dart().into_dart(), self.0.group_nickname.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::AtInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::AtInfo> for crate::domain::model::msg_struct::AtInfo {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::AtInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::AtInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::AtInfo>> for crate::domain::model::msg_struct::AtInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::AtInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::AtTextElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::AtTextElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.text.into_into_dart().into_dart(),
-            self.at_user_list.into_into_dart().into_dart(),
-            self.at_users_info.into_into_dart().into_dart(),
-            self.quote_message.into_into_dart().into_dart(),
+            self.0.text.into_into_dart().into_dart(),
+            self.0.at_user_list.into_into_dart().into_dart(),
+            self.0.at_users_info.into_into_dart().into_dart(),
+            self.0.quote_message.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::AtTextElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::AtTextElem> for crate::domain::model::msg_struct::AtTextElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::AtTextElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::AtTextElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::AtTextElem>> for crate::domain::model::msg_struct::AtTextElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::AtTextElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::CardElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::CardElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::CardElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::CardElem> for crate::domain::model::msg_struct::CardElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::CardElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::CardElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::CardElem>> for crate::domain::model::msg_struct::CardElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::CardElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::friend::CheckFriendResult {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::friend::CheckFriendResult> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.user_id.into_into_dart().into_dart(), self.result.into_into_dart().into_dart()].into_dart()
+        [self.0.user_id.into_into_dart().into_dart(), self.0.result.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::friend::CheckFriendResult {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::friend::CheckFriendResult> for crate::infra::http::friend::CheckFriendResult {
-    fn into_into_dart(self) -> crate::infra::http::friend::CheckFriendResult {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::friend::CheckFriendResult> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::friend::CheckFriendResult>> for crate::infra::http::friend::CheckFriendResult {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::friend::CheckFriendResult> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::config::ClientConfig {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::config::ClientConfig> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.token.into_into_dart().into_dart(),
-            self.platform_id.into_into_dart().into_dart(),
-            self.ws_url.into_into_dart().into_dart(),
-            self.api_base_url.into_into_dart().into_dart(),
-            self.upload_url.into_into_dart().into_dart(),
-            self.data_dir.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.token.into_into_dart().into_dart(),
+            self.0.platform_id.into_into_dart().into_dart(),
+            self.0.ws_url.into_into_dart().into_dart(),
+            self.0.api_base_url.into_into_dart().into_dart(),
+            self.0.upload_url.into_into_dart().into_dart(),
+            self.0.data_dir.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::config::ClientConfig {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::config::ClientConfig> for crate::core::config::ClientConfig {
-    fn into_into_dart(self) -> crate::core::config::ClientConfig {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::config::ClientConfig> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::config::ClientConfig>> for crate::core::config::ClientConfig {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::config::ClientConfig> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::connection::ConnectionEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::connection::ConnectionEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::connection::ConnectionEvent::Connecting => [0.into_dart()].into_dart(),
             crate::core::event::events::connection::ConnectionEvent::Connected => [1.into_dart()].into_dart(),
             crate::core::event::events::connection::ConnectionEvent::Disconnected(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
@@ -8877,35 +10894,35 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::connection::C
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::connection::ConnectionEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::connection::ConnectionEvent> for crate::core::event::events::connection::ConnectionEvent {
-    fn into_into_dart(self) -> crate::core::event::events::connection::ConnectionEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::connection::ConnectionEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::connection::ConnectionEvent>> for crate::core::event::events::connection::ConnectionEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::connection::ConnectionEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::constant::enums::ConnectionState {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::constant::enums::ConnectionState> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::Disconnected => 0.into_dart(),
-            Self::Connecting => 1.into_dart(),
-            Self::Connected => 2.into_dart(),
-            Self::Reconnecting => 3.into_dart(),
-            Self::Kicked => 4.into_dart(),
+        match self.0 {
+            crate::domain::constant::enums::ConnectionState::Disconnected => 0.into_dart(),
+            crate::domain::constant::enums::ConnectionState::Connecting => 1.into_dart(),
+            crate::domain::constant::enums::ConnectionState::Connected => 2.into_dart(),
+            crate::domain::constant::enums::ConnectionState::Reconnecting => 3.into_dart(),
+            crate::domain::constant::enums::ConnectionState::Kicked => 4.into_dart(),
             _ => unreachable!(),
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::constant::enums::ConnectionState {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::constant::enums::ConnectionState> for crate::domain::constant::enums::ConnectionState {
-    fn into_into_dart(self) -> crate::domain::constant::enums::ConnectionState {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::constant::enums::ConnectionState> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::constant::enums::ConnectionState>> for crate::domain::constant::enums::ConnectionState {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::constant::enums::ConnectionState> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::conversation::ConversationEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::conversation::ConversationEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::conversation::ConversationEvent::Changed(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::conversation::ConversationEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::conversation::ConversationEvent::New(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
@@ -8936,101 +10953,101 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::conversation:
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::conversation::ConversationEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::conversation::ConversationEvent> for crate::core::event::events::conversation::ConversationEvent {
-    fn into_into_dart(self) -> crate::core::event::events::conversation::ConversationEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::conversation::ConversationEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::conversation::ConversationEvent>> for crate::core::event::events::conversation::ConversationEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::conversation::ConversationEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::CustomElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::CustomElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.data.into_into_dart().into_dart(),
-            self.extension.into_into_dart().into_dart(),
-            self.description.into_into_dart().into_dart(),
+            self.0.data.into_into_dart().into_dart(),
+            self.0.extension.into_into_dart().into_dart(),
+            self.0.description.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::CustomElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::CustomElem> for crate::domain::model::msg_struct::CustomElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::CustomElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::CustomElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::CustomElem>> for crate::domain::model::msg_struct::CustomElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::CustomElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::message::DeleteMessagesReq {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::message::DeleteMessagesReq> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.conversation_id.into_into_dart().into_dart(), self.client_msg_ids.into_into_dart().into_dart()].into_dart()
+        [self.0.conversation_id.into_into_dart().into_dart(), self.0.client_msg_ids.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::message::DeleteMessagesReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::message::DeleteMessagesReq> for crate::infra::http::message::DeleteMessagesReq {
-    fn into_into_dart(self) -> crate::infra::http::message::DeleteMessagesReq {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::message::DeleteMessagesReq> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::message::DeleteMessagesReq>> for crate::infra::http::message::DeleteMessagesReq {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::message::DeleteMessagesReq> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::FaceElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::FaceElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.index.into_into_dart().into_dart(), self.data.into_into_dart().into_dart()].into_dart()
+        [self.0.index.into_into_dart().into_dart(), self.0.data.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::FaceElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::FaceElem> for crate::domain::model::msg_struct::FaceElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::FaceElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::FaceElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::FaceElem>> for crate::domain::model::msg_struct::FaceElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::FaceElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::FileElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::FileElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.file_path.into_into_dart().into_dart(),
-            self.uuid.into_into_dart().into_dart(),
-            self.source_url.into_into_dart().into_dart(),
-            self.file_name.into_into_dart().into_dart(),
-            self.file_size.into_into_dart().into_dart(),
-            self.file_type.into_into_dart().into_dart(),
+            self.0.file_path.into_into_dart().into_dart(),
+            self.0.uuid.into_into_dart().into_dart(),
+            self.0.source_url.into_into_dart().into_dart(),
+            self.0.file_name.into_into_dart().into_dart(),
+            self.0.file_size.into_into_dart().into_dart(),
+            self.0.file_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::FileElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::FileElem> for crate::domain::model::msg_struct::FileElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::FileElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::FileElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::FileElem>> for crate::domain::model::msg_struct::FileElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::FileElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::friend::FriendApplyInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::friend::FriendApplyInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.gender.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.add_source.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.req_msg.into_into_dart().into_dart(),
-            self.handle_result.into_into_dart().into_dart(),
-            self.handle_msg.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.gender.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.add_source.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.req_msg.into_into_dart().into_dart(),
+            self.0.handle_result.into_into_dart().into_dart(),
+            self.0.handle_msg.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::friend::FriendApplyInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::friend::FriendApplyInfo> for crate::infra::http::friend::FriendApplyInfo {
-    fn into_into_dart(self) -> crate::infra::http::friend::FriendApplyInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::friend::FriendApplyInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::friend::FriendApplyInfo>> for crate::infra::http::friend::FriendApplyInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::friend::FriendApplyInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::friend::FriendEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::friend::FriendEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::friend::FriendEvent::Added(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::friend::FriendEvent::Deleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::friend::FriendEvent::InfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
@@ -9046,88 +11063,88 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::friend::Frien
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::friend::FriendEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::friend::FriendEvent> for crate::core::event::events::friend::FriendEvent {
-    fn into_into_dart(self) -> crate::core::event::events::friend::FriendEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::friend::FriendEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::friend::FriendEvent>> for crate::core::event::events::friend::FriendEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::friend::FriendEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::friend::FriendInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::friend::FriendInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.gender.into_into_dart().into_dart(),
-            self.remark.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.add_source.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.gender.into_into_dart().into_dart(),
+            self.0.remark.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.add_source.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::friend::FriendInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::friend::FriendInfo> for crate::domain::model::friend::FriendInfo {
-    fn into_into_dart(self) -> crate::domain::model::friend::FriendInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::friend::FriendInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::friend::FriendInfo>> for crate::domain::model::friend::FriendInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::friend::FriendInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::sdk::client::GetHistoryMessagesReq {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::sdk::client::GetHistoryMessagesReq> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.start_client_msg_id.into_into_dart().into_dart(),
-            self.count.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.start_client_msg_id.into_into_dart().into_dart(),
+            self.0.count.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::GetHistoryMessagesReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::GetHistoryMessagesReq> for crate::sdk::client::GetHistoryMessagesReq {
-    fn into_into_dart(self) -> crate::sdk::client::GetHistoryMessagesReq {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::sdk::client::GetHistoryMessagesReq> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::sdk::client::GetHistoryMessagesReq>> for crate::sdk::client::GetHistoryMessagesReq {
+    fn into_into_dart(self) -> FrbWrapper<crate::sdk::client::GetHistoryMessagesReq> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::sdk::client::GetHistoryMessagesResult {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::sdk::client::GetHistoryMessagesResult> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.messages.into_into_dart().into_dart(), self.is_end.into_into_dart().into_dart()].into_dart()
+        [self.0.messages.into_into_dart().into_dart(), self.0.is_end.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::GetHistoryMessagesResult {}
-impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::GetHistoryMessagesResult> for crate::sdk::client::GetHistoryMessagesResult {
-    fn into_into_dart(self) -> crate::sdk::client::GetHistoryMessagesResult {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::sdk::client::GetHistoryMessagesResult> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::sdk::client::GetHistoryMessagesResult>> for crate::sdk::client::GetHistoryMessagesResult {
+    fn into_into_dart(self) -> FrbWrapper<crate::sdk::client::GetHistoryMessagesResult> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::group::GroupApplyInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::group::GroupApplyInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.group_id.into_into_dart().into_dart(),
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.reason.into_into_dart().into_dart(),
-            self.handle_result.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.reason.into_into_dart().into_dart(),
+            self.0.handle_result.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::group::GroupApplyInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::group::GroupApplyInfo> for crate::infra::http::group::GroupApplyInfo {
-    fn into_into_dart(self) -> crate::infra::http::group::GroupApplyInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::group::GroupApplyInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::group::GroupApplyInfo>> for crate::infra::http::group::GroupApplyInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::group::GroupApplyInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::group::GroupEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::group::GroupEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::group::GroupEvent::JoinedGroupAdded(field0) => [0.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::group::GroupEvent::JoinedGroupDeleted(field0) => [1.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::group::GroupEvent::GroupInfoChanged(field0) => [2.into_dart(), field0.into_into_dart().into_dart()].into_dart(),
@@ -9146,263 +11163,263 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::group::GroupE
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::group::GroupEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::group::GroupEvent> for crate::core::event::events::group::GroupEvent {
-    fn into_into_dart(self) -> crate::core::event::events::group::GroupEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::group::GroupEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::group::GroupEvent>> for crate::core::event::events::group::GroupEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::group::GroupEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::group::GroupInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::group::GroupInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.group_id.into_into_dart().into_dart(),
-            self.group_name.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.introduction.into_into_dart().into_dart(),
-            self.notification.into_into_dart().into_dart(),
-            self.owner_user_id.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.member_count.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.group_name.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.introduction.into_into_dart().into_dart(),
+            self.0.notification.into_into_dart().into_dart(),
+            self.0.owner_user_id.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.member_count.into_into_dart().into_dart(),
+            self.0.status.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::group::GroupInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::group::GroupInfo> for crate::domain::model::group::GroupInfo {
-    fn into_into_dart(self) -> crate::domain::model::group::GroupInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::group::GroupInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::group::GroupInfo>> for crate::domain::model::group::GroupInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::group::GroupInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::group::GroupMember {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::group::GroupMember> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.group_id.into_into_dart().into_dart(),
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.role_level.into_into_dart().into_dart(),
-            self.join_time.into_into_dart().into_dart(),
-            self.join_source.into_into_dart().into_dart(),
-            self.mute_end_time.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.role_level.into_into_dart().into_dart(),
+            self.0.join_time.into_into_dart().into_dart(),
+            self.0.join_source.into_into_dart().into_dart(),
+            self.0.mute_end_time.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::group::GroupMember {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::group::GroupMember> for crate::domain::model::group::GroupMember {
-    fn into_into_dart(self) -> crate::domain::model::group::GroupMember {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::group::GroupMember> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::group::GroupMember>> for crate::domain::model::group::GroupMember {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::group::GroupMember> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::message::GroupReadReceipt {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::message::GroupReadReceipt> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.group_id.into_into_dart().into_dart(),
-            self.msg_id.into_into_dart().into_dart(),
-            self.has_read_user_id_list.into_into_dart().into_dart(),
-            self.has_read_count.into_into_dart().into_dart(),
-            self.group_member_count.into_into_dart().into_dart(),
-            self.read_time.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.msg_id.into_into_dart().into_dart(),
+            self.0.has_read_user_id_list.into_into_dart().into_dart(),
+            self.0.has_read_count.into_into_dart().into_dart(),
+            self.0.group_member_count.into_into_dart().into_dart(),
+            self.0.read_time.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::message::GroupReadReceipt {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::message::GroupReadReceipt> for crate::core::event::events::message::GroupReadReceipt {
-    fn into_into_dart(self) -> crate::core::event::events::message::GroupReadReceipt {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::message::GroupReadReceipt> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::message::GroupReadReceipt>> for crate::core::event::events::message::GroupReadReceipt {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::message::GroupReadReceipt> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::local::LocalChatLog {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::local::LocalChatLog> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.client_msg_id.into_into_dart().into_dart(),
-            self.server_msg_id.into_into_dart().into_dart(),
-            self.send_id.into_into_dart().into_dart(),
-            self.recv_id.into_into_dart().into_dart(),
-            self.sender_platform_id.into_into_dart().into_dart(),
-            self.sender_nick_name.into_into_dart().into_dart(),
-            self.sender_face_url.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
-            self.msg_from.into_into_dart().into_dart(),
-            self.content_type.into_into_dart().into_dart(),
-            self.content.into_into_dart().into_dart(),
-            self.is_read.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.seq.into_into_dart().into_dart(),
-            self.send_time.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.attached_info.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.topic_id.into_into_dart().into_dart(),
-            self.local_ex.into_into_dart().into_dart(),
-            self.group_id.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.client_msg_id.into_into_dart().into_dart(),
+            self.0.server_msg_id.into_into_dart().into_dart(),
+            self.0.send_id.into_into_dart().into_dart(),
+            self.0.recv_id.into_into_dart().into_dart(),
+            self.0.sender_platform_id.into_into_dart().into_dart(),
+            self.0.sender_nick_name.into_into_dart().into_dart(),
+            self.0.sender_face_url.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
+            self.0.msg_from.into_into_dart().into_dart(),
+            self.0.content_type.into_into_dart().into_dart(),
+            self.0.content.into_into_dart().into_dart(),
+            self.0.is_read.into_into_dart().into_dart(),
+            self.0.status.into_into_dart().into_dart(),
+            self.0.seq.into_into_dart().into_dart(),
+            self.0.send_time.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.attached_info.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.topic_id.into_into_dart().into_dart(),
+            self.0.local_ex.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::local::LocalChatLog {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::local::LocalChatLog> for crate::domain::model::local::LocalChatLog {
-    fn into_into_dart(self) -> crate::domain::model::local::LocalChatLog {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::local::LocalChatLog> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::local::LocalChatLog>> for crate::domain::model::local::LocalChatLog {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::local::LocalChatLog> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::local::LocalConversation {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::local::LocalConversation> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.conversation_type.into_into_dart().into_dart(),
-            self.user_id.into_into_dart().into_dart(),
-            self.group_id.into_into_dart().into_dart(),
-            self.show_name.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.latest_msg.into_into_dart().into_dart(),
-            self.latest_msg_send_time.into_into_dart().into_dart(),
-            self.unread_count.into_into_dart().into_dart(),
-            self.recv_msg_opt.into_into_dart().into_dart(),
-            self.is_pinned.into_into_dart().into_dart(),
-            self.is_private_chat.into_into_dart().into_dart(),
-            self.burn_duration.into_into_dart().into_dart(),
-            self.group_at_type.into_into_dart().into_dart(),
-            self.is_not_in_group.into_into_dart().into_dart(),
-            self.update_unread_count_time.into_into_dart().into_dart(),
-            self.attached_info.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.draft_text.into_into_dart().into_dart(),
-            self.draft_text_time.into_into_dart().into_dart(),
-            self.max_seq.into_into_dart().into_dart(),
-            self.min_seq.into_into_dart().into_dart(),
-            self.is_msg_destruct.into_into_dart().into_dart(),
-            self.msg_destruct_time.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.conversation_type.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.show_name.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.latest_msg.into_into_dart().into_dart(),
+            self.0.latest_msg_send_time.into_into_dart().into_dart(),
+            self.0.unread_count.into_into_dart().into_dart(),
+            self.0.recv_msg_opt.into_into_dart().into_dart(),
+            self.0.is_pinned.into_into_dart().into_dart(),
+            self.0.is_private_chat.into_into_dart().into_dart(),
+            self.0.burn_duration.into_into_dart().into_dart(),
+            self.0.group_at_type.into_into_dart().into_dart(),
+            self.0.is_not_in_group.into_into_dart().into_dart(),
+            self.0.update_unread_count_time.into_into_dart().into_dart(),
+            self.0.attached_info.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.draft_text.into_into_dart().into_dart(),
+            self.0.draft_text_time.into_into_dart().into_dart(),
+            self.0.max_seq.into_into_dart().into_dart(),
+            self.0.min_seq.into_into_dart().into_dart(),
+            self.0.is_msg_destruct.into_into_dart().into_dart(),
+            self.0.msg_destruct_time.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::local::LocalConversation {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::local::LocalConversation> for crate::domain::model::local::LocalConversation {
-    fn into_into_dart(self) -> crate::domain::model::local::LocalConversation {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::local::LocalConversation> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::local::LocalConversation>> for crate::domain::model::local::LocalConversation {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::local::LocalConversation> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::LocationElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::LocationElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.description.into_into_dart().into_dart(),
-            self.longitude.into_into_dart().into_dart(),
-            self.latitude.into_into_dart().into_dart(),
+            self.0.description.into_into_dart().into_dart(),
+            self.0.longitude.into_into_dart().into_dart(),
+            self.0.latitude.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::LocationElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::LocationElem> for crate::domain::model::msg_struct::LocationElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::LocationElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::LocationElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::LocationElem>> for crate::domain::model::msg_struct::LocationElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::LocationElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::logger::config::LogConfig {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::logger::config::LogConfig> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.log_level.into_into_dart().into_dart(),
-            self.is_log_standard_output.into_into_dart().into_dart(),
-            self.log_file_path.into_into_dart().into_dart(),
-            self.log_remain_count.into_into_dart().into_dart(),
-            self.is_log_json.into_into_dart().into_dart(),
-            self.system_type.into_into_dart().into_dart(),
-            self.platform_name.into_into_dart().into_dart(),
-            self.sdk_version.into_into_dart().into_dart(),
-            self.is_log_span_events.into_into_dart().into_dart(),
+            self.0.log_level.into_into_dart().into_dart(),
+            self.0.is_log_standard_output.into_into_dart().into_dart(),
+            self.0.log_file_path.into_into_dart().into_dart(),
+            self.0.log_remain_count.into_into_dart().into_dart(),
+            self.0.is_log_json.into_into_dart().into_dart(),
+            self.0.system_type.into_into_dart().into_dart(),
+            self.0.platform_name.into_into_dart().into_dart(),
+            self.0.sdk_version.into_into_dart().into_dart(),
+            self.0.is_log_span_events.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::logger::config::LogConfig {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::logger::config::LogConfig> for crate::infra::logger::config::LogConfig {
-    fn into_into_dart(self) -> crate::infra::logger::config::LogConfig {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::logger::config::LogConfig> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::logger::config::LogConfig>> for crate::infra::logger::config::LogConfig {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::logger::config::LogConfig> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::message::MarkMessagesAsReadReq {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::message::MarkMessagesAsReadReq> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.user_id.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
-            self.has_read_seq.into_into_dart().into_dart(),
-            self.seqs.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
+            self.0.has_read_seq.into_into_dart().into_dart(),
+            self.0.seqs.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::message::MarkMessagesAsReadReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::message::MarkMessagesAsReadReq> for crate::infra::http::message::MarkMessagesAsReadReq {
-    fn into_into_dart(self) -> crate::infra::http::message::MarkMessagesAsReadReq {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::message::MarkMessagesAsReadReq> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::message::MarkMessagesAsReadReq>> for crate::infra::http::message::MarkMessagesAsReadReq {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::message::MarkMessagesAsReadReq> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MarkdownTextElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::MarkdownTextElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.content.into_into_dart().into_dart()].into_dart()
+        [self.0.content.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::MarkdownTextElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::MarkdownTextElem> for crate::domain::model::msg_struct::MarkdownTextElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::MarkdownTextElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::MarkdownTextElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::MarkdownTextElem>> for crate::domain::model::msg_struct::MarkdownTextElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::MarkdownTextElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MergeElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::MergeElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.title.into_into_dart().into_dart(),
-            self.abstract_list.into_into_dart().into_dart(),
-            self.multi_message.into_into_dart().into_dart(),
+            self.0.title.into_into_dart().into_dart(),
+            self.0.abstract_list.into_into_dart().into_dart(),
+            self.0.multi_message.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::MergeElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::MergeElem> for crate::domain::model::msg_struct::MergeElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::MergeElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::MergeElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::MergeElem>> for crate::domain::model::msg_struct::MergeElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::MergeElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MessageEntity {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::MessageEntity> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.entity_type.into_into_dart().into_dart(),
-            self.offset.into_into_dart().into_dart(),
-            self.length.into_into_dart().into_dart(),
-            self.url.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
+            self.0.entity_type.into_into_dart().into_dart(),
+            self.0.offset.into_into_dart().into_dart(),
+            self.0.length.into_into_dart().into_dart(),
+            self.0.url.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::MessageEntity {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::MessageEntity> for crate::domain::model::msg_struct::MessageEntity {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::MessageEntity {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::MessageEntity> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::MessageEntity>> for crate::domain::model::msg_struct::MessageEntity {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::MessageEntity> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::message::MessageEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::message::MessageEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::message::MessageEvent::NewMessage { conversation_id, message } => {
                 [0.into_dart(), conversation_id.into_into_dart().into_dart(), message.into_into_dart().into_dart()].into_dart()
             }
@@ -9467,266 +11484,266 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::message::Mess
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::message::MessageEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::message::MessageEvent> for crate::core::event::events::message::MessageEvent {
-    fn into_into_dart(self) -> crate::core::event::events::message::MessageEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::message::MessageEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::message::MessageEvent>> for crate::core::event::events::message::MessageEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::message::MessageEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::message::MessageInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::message::MessageInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.client_msg_id.into_into_dart().into_dart(),
-            self.server_msg_id.into_into_dart().into_dart(),
-            self.send_id.into_into_dart().into_dart(),
-            self.recv_id.into_into_dart().into_dart(),
-            self.group_id.into_into_dart().into_dart(),
-            self.sender_platform_id.into_into_dart().into_dart(),
-            self.sender_nickname.into_into_dart().into_dart(),
-            self.sender_face_url.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
-            self.msg_from.into_into_dart().into_dart(),
-            self.content_type.into_into_dart().into_dart(),
-            self.content.into_into_dart().into_dart(),
-            self.seq.into_into_dart().into_dart(),
-            self.send_time.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.is_read.into_into_dart().into_dart(),
-            self.attached_info.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.topic_id.into_into_dart().into_dart(),
+            self.0.client_msg_id.into_into_dart().into_dart(),
+            self.0.server_msg_id.into_into_dart().into_dart(),
+            self.0.send_id.into_into_dart().into_dart(),
+            self.0.recv_id.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.sender_platform_id.into_into_dart().into_dart(),
+            self.0.sender_nickname.into_into_dart().into_dart(),
+            self.0.sender_face_url.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
+            self.0.msg_from.into_into_dart().into_dart(),
+            self.0.content_type.into_into_dart().into_dart(),
+            self.0.content.into_into_dart().into_dart(),
+            self.0.seq.into_into_dart().into_dart(),
+            self.0.send_time.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.status.into_into_dart().into_dart(),
+            self.0.is_read.into_into_dart().into_dart(),
+            self.0.attached_info.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.topic_id.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::message::MessageInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::message::MessageInfo> for crate::domain::model::message::MessageInfo {
-    fn into_into_dart(self) -> crate::domain::model::message::MessageInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::message::MessageInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::message::MessageInfo>> for crate::domain::model::message::MessageInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::message::MessageInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::message::MessageReceipt {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::message::MessageReceipt> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.msg_ids.into_into_dart().into_dart(),
-            self.read_time.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.msg_ids.into_into_dart().into_dart(),
+            self.0.read_time.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::message::MessageReceipt {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::message::MessageReceipt> for crate::core::event::events::message::MessageReceipt {
-    fn into_into_dart(self) -> crate::core::event::events::message::MessageReceipt {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::message::MessageReceipt> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::message::MessageReceipt>> for crate::core::event::events::message::MessageReceipt {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::message::MessageReceipt> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::MsgStruct {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::MsgStruct> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.client_msg_id.into_into_dart().into_dart(),
-            self.server_msg_id.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.send_time.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
-            self.send_id.into_into_dart().into_dart(),
-            self.recv_id.into_into_dart().into_dart(),
-            self.msg_from.into_into_dart().into_dart(),
-            self.content_type.into_into_dart().into_dart(),
-            self.sender_platform_id.into_into_dart().into_dart(),
-            self.sender_nickname.into_into_dart().into_dart(),
-            self.sender_face_url.into_into_dart().into_dart(),
-            self.group_id.into_into_dart().into_dart(),
-            self.content.into_into_dart().into_dart(),
-            self.seq.into_into_dart().into_dart(),
-            self.is_read.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.attached_info.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.topic_id.into_into_dart().into_dart(),
-            self.local_ex.into_into_dart().into_dart(),
-            self.text_elem.into_into_dart().into_dart(),
-            self.picture_elem.into_into_dart().into_dart(),
-            self.sound_elem.into_into_dart().into_dart(),
-            self.video_elem.into_into_dart().into_dart(),
-            self.file_elem.into_into_dart().into_dart(),
-            self.at_text_elem.into_into_dart().into_dart(),
-            self.quote_elem.into_into_dart().into_dart(),
-            self.merge_elem.into_into_dart().into_dart(),
-            self.card_elem.into_into_dart().into_dart(),
-            self.location_elem.into_into_dart().into_dart(),
-            self.face_elem.into_into_dart().into_dart(),
-            self.custom_elem.into_into_dart().into_dart(),
-            self.advanced_text_elem.into_into_dart().into_dart(),
-            self.markdown_text_elem.into_into_dart().into_dart(),
-            self.offline_push.into_into_dart().into_dart(),
+            self.0.client_msg_id.into_into_dart().into_dart(),
+            self.0.server_msg_id.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.send_time.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
+            self.0.send_id.into_into_dart().into_dart(),
+            self.0.recv_id.into_into_dart().into_dart(),
+            self.0.msg_from.into_into_dart().into_dart(),
+            self.0.content_type.into_into_dart().into_dart(),
+            self.0.sender_platform_id.into_into_dart().into_dart(),
+            self.0.sender_nickname.into_into_dart().into_dart(),
+            self.0.sender_face_url.into_into_dart().into_dart(),
+            self.0.group_id.into_into_dart().into_dart(),
+            self.0.content.into_into_dart().into_dart(),
+            self.0.seq.into_into_dart().into_dart(),
+            self.0.is_read.into_into_dart().into_dart(),
+            self.0.status.into_into_dart().into_dart(),
+            self.0.attached_info.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.topic_id.into_into_dart().into_dart(),
+            self.0.local_ex.into_into_dart().into_dart(),
+            self.0.text_elem.into_into_dart().into_dart(),
+            self.0.picture_elem.into_into_dart().into_dart(),
+            self.0.sound_elem.into_into_dart().into_dart(),
+            self.0.video_elem.into_into_dart().into_dart(),
+            self.0.file_elem.into_into_dart().into_dart(),
+            self.0.at_text_elem.into_into_dart().into_dart(),
+            self.0.quote_elem.into_into_dart().into_dart(),
+            self.0.merge_elem.into_into_dart().into_dart(),
+            self.0.card_elem.into_into_dart().into_dart(),
+            self.0.location_elem.into_into_dart().into_dart(),
+            self.0.face_elem.into_into_dart().into_dart(),
+            self.0.custom_elem.into_into_dart().into_dart(),
+            self.0.advanced_text_elem.into_into_dart().into_dart(),
+            self.0.markdown_text_elem.into_into_dart().into_dart(),
+            self.0.offline_push.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::MsgStruct {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::MsgStruct> for crate::domain::model::msg_struct::MsgStruct {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::MsgStruct {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::MsgStruct> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::MsgStruct>> for crate::domain::model::msg_struct::MsgStruct {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::MsgStruct> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::OfflinePushInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::OfflinePushInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.title.into_into_dart().into_dart(),
-            self.desc.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.ios_push_sound.into_into_dart().into_dart(),
-            self.ios_badge_count.into_into_dart().into_dart(),
-            self.signal_info.into_into_dart().into_dart(),
+            self.0.title.into_into_dart().into_dart(),
+            self.0.desc.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.ios_push_sound.into_into_dart().into_dart(),
+            self.0.ios_badge_count.into_into_dart().into_dart(),
+            self.0.signal_info.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::OfflinePushInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::OfflinePushInfo> for crate::domain::model::msg_struct::OfflinePushInfo {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::OfflinePushInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::OfflinePushInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::OfflinePushInfo>> for crate::domain::model::msg_struct::OfflinePushInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::OfflinePushInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::online::OnlineStatus {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::online::OnlineStatus> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.platform_ids.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.status.into_into_dart().into_dart(),
+            self.0.platform_ids.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::online::OnlineStatus {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::online::OnlineStatus> for crate::infra::http::online::OnlineStatus {
-    fn into_into_dart(self) -> crate::infra::http::online::OnlineStatus {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::online::OnlineStatus> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::online::OnlineStatus>> for crate::infra::http::online::OnlineStatus {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::online::OnlineStatus> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::PictureBaseInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::PictureBaseInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.width.into_into_dart().into_dart(),
-            self.height.into_into_dart().into_dart(),
-            self.picture_type.into_into_dart().into_dart(),
-            self.size.into_into_dart().into_dart(),
-            self.url.into_into_dart().into_dart(),
-            self.uuid.into_into_dart().into_dart(),
+            self.0.width.into_into_dart().into_dart(),
+            self.0.height.into_into_dart().into_dart(),
+            self.0.picture_type.into_into_dart().into_dart(),
+            self.0.size.into_into_dart().into_dart(),
+            self.0.url.into_into_dart().into_dart(),
+            self.0.uuid.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::PictureBaseInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::PictureBaseInfo> for crate::domain::model::msg_struct::PictureBaseInfo {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::PictureBaseInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::PictureBaseInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::PictureBaseInfo>> for crate::domain::model::msg_struct::PictureBaseInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::PictureBaseInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::PictureElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::PictureElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.source_path.into_into_dart().into_dart(),
-            self.source_picture.into_into_dart().into_dart(),
-            self.big_picture.into_into_dart().into_dart(),
-            self.snapshot_picture.into_into_dart().into_dart(),
+            self.0.source_path.into_into_dart().into_dart(),
+            self.0.source_picture.into_into_dart().into_dart(),
+            self.0.big_picture.into_into_dart().into_dart(),
+            self.0.snapshot_picture.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::PictureElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::PictureElem> for crate::domain::model::msg_struct::PictureElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::PictureElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::PictureElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::PictureElem>> for crate::domain::model::msg_struct::PictureElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::PictureElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::QuoteElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::QuoteElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.text.into_into_dart().into_dart(),
-            self.quote_message.into_into_dart().into_dart(),
-            self.message_entity_list.into_into_dart().into_dart(),
+            self.0.text.into_into_dart().into_dart(),
+            self.0.quote_message.into_into_dart().into_dart(),
+            self.0.message_entity_list.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::QuoteElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::QuoteElem> for crate::domain::model::msg_struct::QuoteElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::QuoteElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::QuoteElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::QuoteElem>> for crate::domain::model::msg_struct::QuoteElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::QuoteElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::message::RevokeMessageReq {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::message::RevokeMessageReq> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.seq.into_into_dart().into_dart(),
-            self.user_id.into_into_dart().into_dart(),
-            self.client_msg_id.into_into_dart().into_dart(),
-            self.session_type.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.seq.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.client_msg_id.into_into_dart().into_dart(),
+            self.0.session_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::message::RevokeMessageReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::message::RevokeMessageReq> for crate::infra::http::message::RevokeMessageReq {
-    fn into_into_dart(self) -> crate::infra::http::message::RevokeMessageReq {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::message::RevokeMessageReq> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::message::RevokeMessageReq>> for crate::infra::http::message::RevokeMessageReq {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::message::RevokeMessageReq> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::infra::http::friend::SearchFriendItem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::infra::http::friend::SearchFriendItem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.friend_user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.remark.into_into_dart().into_dart(),
-            self.ex.into_into_dart().into_dart(),
-            self.create_time.into_into_dart().into_dart(),
-            self.relationship.into_into_dart().into_dart(),
+            self.0.friend_user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.remark.into_into_dart().into_dart(),
+            self.0.ex.into_into_dart().into_dart(),
+            self.0.create_time.into_into_dart().into_dart(),
+            self.0.relationship.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::infra::http::friend::SearchFriendItem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::infra::http::friend::SearchFriendItem> for crate::infra::http::friend::SearchFriendItem {
-    fn into_into_dart(self) -> crate::infra::http::friend::SearchFriendItem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::infra::http::friend::SearchFriendItem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::infra::http::friend::SearchFriendItem>> for crate::infra::http::friend::SearchFriendItem {
+    fn into_into_dart(self) -> FrbWrapper<crate::infra::http::friend::SearchFriendItem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::sdk::client::SearchMessagesReq {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::sdk::client::SearchMessagesReq> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.conversation_id.into_into_dart().into_dart(),
-            self.keyword.into_into_dart().into_dart(),
-            self.sender_user_ids.into_into_dart().into_dart(),
-            self.message_types.into_into_dart().into_dart(),
-            self.start_time.into_into_dart().into_dart(),
-            self.end_time.into_into_dart().into_dart(),
-            self.offset.into_into_dart().into_dart(),
-            self.count.into_into_dart().into_dart(),
+            self.0.conversation_id.into_into_dart().into_dart(),
+            self.0.keyword.into_into_dart().into_dart(),
+            self.0.sender_user_ids.into_into_dart().into_dart(),
+            self.0.message_types.into_into_dart().into_dart(),
+            self.0.start_time.into_into_dart().into_dart(),
+            self.0.end_time.into_into_dart().into_dart(),
+            self.0.offset.into_into_dart().into_dart(),
+            self.0.count.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::sdk::client::SearchMessagesReq {}
-impl flutter_rust_bridge::IntoIntoDart<crate::sdk::client::SearchMessagesReq> for crate::sdk::client::SearchMessagesReq {
-    fn into_into_dart(self) -> crate::sdk::client::SearchMessagesReq {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::sdk::client::SearchMessagesReq> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::sdk::client::SearchMessagesReq>> for crate::sdk::client::SearchMessagesReq {
+    fn into_into_dart(self) -> FrbWrapper<crate::sdk::client::SearchMessagesReq> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -9747,59 +11764,59 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::ffi::message_advanced::SendTy
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::constant::enums::SessionType {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::constant::enums::SessionType> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::SingleChat => 0.into_dart(),
-            Self::WriteGroupChat => 1.into_dart(),
-            Self::ReadGroupChat => 2.into_dart(),
-            Self::NotificationChat => 3.into_dart(),
+        match self.0 {
+            crate::domain::constant::enums::SessionType::SingleChat => 0.into_dart(),
+            crate::domain::constant::enums::SessionType::WriteGroupChat => 1.into_dart(),
+            crate::domain::constant::enums::SessionType::ReadGroupChat => 2.into_dart(),
+            crate::domain::constant::enums::SessionType::NotificationChat => 3.into_dart(),
             _ => unreachable!(),
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::constant::enums::SessionType {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::constant::enums::SessionType> for crate::domain::constant::enums::SessionType {
-    fn into_into_dart(self) -> crate::domain::constant::enums::SessionType {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::constant::enums::SessionType> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::constant::enums::SessionType>> for crate::domain::constant::enums::SessionType {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::constant::enums::SessionType> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::SoundElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::SoundElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.uuid.into_into_dart().into_dart(),
-            self.sound_path.into_into_dart().into_dart(),
-            self.source_url.into_into_dart().into_dart(),
-            self.data_size.into_into_dart().into_dart(),
-            self.duration.into_into_dart().into_dart(),
-            self.sound_type.into_into_dart().into_dart(),
+            self.0.uuid.into_into_dart().into_dart(),
+            self.0.sound_path.into_into_dart().into_dart(),
+            self.0.source_url.into_into_dart().into_dart(),
+            self.0.data_size.into_into_dart().into_dart(),
+            self.0.duration.into_into_dart().into_dart(),
+            self.0.sound_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::SoundElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::SoundElem> for crate::domain::model::msg_struct::SoundElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::SoundElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::SoundElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::SoundElem>> for crate::domain::model::msg_struct::SoundElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::SoundElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::TextElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::TextElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [self.content.into_into_dart().into_dart()].into_dart()
+        [self.0.content.into_into_dart().into_dart()].into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::TextElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::TextElem> for crate::domain::model::msg_struct::TextElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::TextElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::TextElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::TextElem>> for crate::domain::model::msg_struct::TextElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::TextElem> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::core::event::events::user::UserEvent {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::core::event::events::user::UserEvent> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
+        match self.0 {
             crate::core::event::events::user::UserEvent::UserInfoUpdated { user } => [0.into_dart(), user.into_into_dart().into_dart()].into_dart(),
             crate::core::event::events::user::UserEvent::UserStatusChanged { user_id, status, platform_ids } => [
                 1.into_dart(),
@@ -9814,59 +11831,59 @@ impl flutter_rust_bridge::IntoDart for crate::core::event::events::user::UserEve
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::event::events::user::UserEvent {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::event::events::user::UserEvent> for crate::core::event::events::user::UserEvent {
-    fn into_into_dart(self) -> crate::core::event::events::user::UserEvent {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::core::event::events::user::UserEvent> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::core::event::events::user::UserEvent>> for crate::core::event::events::user::UserEvent {
+    fn into_into_dart(self) -> FrbWrapper<crate::core::event::events::user::UserEvent> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::user::UserInfo {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::user::UserInfo> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.user_id.into_into_dart().into_dart(),
-            self.nickname.into_into_dart().into_dart(),
-            self.face_url.into_into_dart().into_dart(),
-            self.gender.into_into_dart().into_dart(),
-            self.telephone.into_into_dart().into_dart(),
-            self.email.into_into_dart().into_dart(),
-            self.remark.into_into_dart().into_dart(),
-            self.global_recv_msg_opt.into_into_dart().into_dart(),
+            self.0.user_id.into_into_dart().into_dart(),
+            self.0.nickname.into_into_dart().into_dart(),
+            self.0.face_url.into_into_dart().into_dart(),
+            self.0.gender.into_into_dart().into_dart(),
+            self.0.telephone.into_into_dart().into_dart(),
+            self.0.email.into_into_dart().into_dart(),
+            self.0.remark.into_into_dart().into_dart(),
+            self.0.global_recv_msg_opt.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::user::UserInfo {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::user::UserInfo> for crate::domain::model::user::UserInfo {
-    fn into_into_dart(self) -> crate::domain::model::user::UserInfo {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::user::UserInfo> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::user::UserInfo>> for crate::domain::model::user::UserInfo {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::user::UserInfo> {
+        self.into()
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::domain::model::msg_struct::VideoElem {
+impl flutter_rust_bridge::IntoDart for FrbWrapper<crate::domain::model::msg_struct::VideoElem> {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
-            self.video_path.into_into_dart().into_dart(),
-            self.video_uuid.into_into_dart().into_dart(),
-            self.video_url.into_into_dart().into_dart(),
-            self.video_type.into_into_dart().into_dart(),
-            self.video_size.into_into_dart().into_dart(),
-            self.duration.into_into_dart().into_dart(),
-            self.snapshot_path.into_into_dart().into_dart(),
-            self.snapshot_uuid.into_into_dart().into_dart(),
-            self.snapshot_size.into_into_dart().into_dart(),
-            self.snapshot_url.into_into_dart().into_dart(),
-            self.snapshot_width.into_into_dart().into_dart(),
-            self.snapshot_height.into_into_dart().into_dart(),
-            self.snapshot_type.into_into_dart().into_dart(),
+            self.0.video_path.into_into_dart().into_dart(),
+            self.0.video_uuid.into_into_dart().into_dart(),
+            self.0.video_url.into_into_dart().into_dart(),
+            self.0.video_type.into_into_dart().into_dart(),
+            self.0.video_size.into_into_dart().into_dart(),
+            self.0.duration.into_into_dart().into_dart(),
+            self.0.snapshot_path.into_into_dart().into_dart(),
+            self.0.snapshot_uuid.into_into_dart().into_dart(),
+            self.0.snapshot_size.into_into_dart().into_dart(),
+            self.0.snapshot_url.into_into_dart().into_dart(),
+            self.0.snapshot_width.into_into_dart().into_dart(),
+            self.0.snapshot_height.into_into_dart().into_dart(),
+            self.0.snapshot_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::domain::model::msg_struct::VideoElem {}
-impl flutter_rust_bridge::IntoIntoDart<crate::domain::model::msg_struct::VideoElem> for crate::domain::model::msg_struct::VideoElem {
-    fn into_into_dart(self) -> crate::domain::model::msg_struct::VideoElem {
-        self
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for FrbWrapper<crate::domain::model::msg_struct::VideoElem> {}
+impl flutter_rust_bridge::IntoIntoDart<FrbWrapper<crate::domain::model::msg_struct::VideoElem>> for crate::domain::model::msg_struct::VideoElem {
+    fn into_into_dart(self) -> FrbWrapper<crate::domain::model::msg_struct::VideoElem> {
+        self.into()
     }
 }
 

@@ -2,7 +2,9 @@
 
 ## 概述
 
-Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_bridge` v2.11.1 进行跨语言通信。Rust 侧实现完整的 IM SDK，Dart 侧负责 UI 和状态管理。
+Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_bridge`
+v2.12.0 进行跨语言通信。平台无关的 Rust 业务核心位于独立 `rust/im-core`
+crate；Flutter 只保留自己的 FFI 适配层，Dart 侧负责 UI 和状态管理。
 
 ## 分层架构
 
@@ -36,12 +38,18 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  └──────────┘ └──────────────┘ └────────────────┘   │
 ├─────────────────────────────────────────────────────┤
 │  flutter_rust_bridge (FFI)                           │
-│  lib/generated/rust/ ← 自动生成 → rust/src/ffi/      │
+│  lib/generated/rust/ ← 自动生成 → rust/src/api/ffi/  │
 ├─────────────────────────────────────────────────────┤
-│  Rust SDK (rust/src/)                                │
+│  Flutter Rust Bridge 适配层 (rust/)                  │
 │  ┌────────────────────────────────────────────────┐ │
 │  │  api/          FFI 桥接层 (OpenIMBridgeClient)  │ │
 │  ├────────────────────────────────────────────────┤ │
+│  │  core/domain/infra/sdk                         │ │
+│  │    FRB mirror 兼容模块（脚本生成）              │ │
+│  └────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────┤
+│  平台无关核心 (rust/im-core/)                        │
+│  ┌────────────────────────────────────────────────┐ │
 │  │  sdk/          SDK 入口 (OpenIMClient)          │ │
 │  ├────────────────────────────────────────────────┤ │
 │  │  core/         业务逻辑层                        │ │
@@ -70,8 +78,8 @@ Flutter + Rust 即时通讯应用，基于 OpenIM 协议，使用 `flutter_rust_
 │  │  ├─ file       文件上传                          │ │
 │  │  └─ logger     tracing + OpenTelemetry          │ │
 │  ├────────────────────────────────────────────────┤ │
-│  │  (openim-protocol 外部 crate 提供协议类型)      │ │
-│  │  └─ openim_protocol 重导出 + WS 类型             │ │
+│  │  (openim-protocol 外部 crate 提供纯协议类型)     │ │
+│  │  └─ prost + serde，无 Flutter/NSH 依赖           │ │
 │  └────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────┘
 ```

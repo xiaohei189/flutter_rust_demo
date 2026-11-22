@@ -8,6 +8,12 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'connection.freezed.dart';
 
+Future<void> frbMirrorAnchorConnectionEvent({required ConnectionEvent value}) =>
+    RustLib.instance.api
+        .crateCoreEventEventsConnectionFrbMirrorAnchorConnectionEvent(
+          value: value,
+        );
+
 @freezed
 sealed class ConnectionEvent with _$ConnectionEvent {
   const ConnectionEvent._();
