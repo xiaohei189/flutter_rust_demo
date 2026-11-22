@@ -1,6 +1,6 @@
 # 消息同步器模块详细设计 (MessageSyncer)
 
-> 模块路径: `rust/src/core/message/syncer.rs`
+> 模块路径: `rust/src/core/message/receive/syncer.rs`
 > Go SDK 对标: `internal/interaction/msg_sync.go` (760 行)
 
 ---
@@ -590,11 +590,11 @@ CREATE TABLE local_app_sdk_version (
 
 | 文件 | 说明 |
 |------|------|
-| `rust/src/core/message/syncer.rs` | Rust 消息同步器实现 |
-| `rust/src/sdk/client/client.rs` | 客户端主入口，包含 push_message_handler |
-| `rust/src/domain/event/types.rs` | SdkEvent 事件定义（SyncStarted/SyncFinished 等） |
+| `rust/src/core/message/receive/syncer.rs` | Rust 消息同步器实现 |
+| `rust/src/sdk/client/core.rs` | SDK 门面（`OpenIMClient`），包含 push_message_handler |
+| `rust/src/core/event/types.rs` | 领域事件类型（SyncStarted/SyncFinished 等，见 `core/event/events/`） |
 | `rust/src/domain/constant/types.rs` | msg_sync_status 常量定义 |
-| `rust/src/infra/database/` | DAO 层实现 |
+| `rust/src/infra/db/` | DAO 层实现 |
 | Go SDK: `internal/interaction/msg_sync.go` | Go 消息同步器（760 行） |
 | Go SDK: `pkg/constant/constant.go` | 常量定义（CmdConnSuccesss 等） |
 | Go SDK: `pkg/common/notification.go` | Dispatch 系列辅助函数 |

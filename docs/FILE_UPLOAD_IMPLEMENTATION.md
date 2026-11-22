@@ -1,5 +1,7 @@
 # 文件上传功能实现文档
 
+> 📌 历史实现说明（实施期结构）。当前代码位置：上传器 `rust/src/infra/file/upload/uploader.rs`、FFI `rust/src/api/ffi/message_media.rs` 等、Dart 侧 `lib/data/services/media_upload_service.dart`；下文 `rust/src/im/`、`lib/screens/` 等为当时路径。
+
 ## 背景
 
 参考 `openim-sdk-core` 和 `openim-flutter-demo` 的实现，我们需要在 Rust 中实现文件上传功能，并通过 `flutter_rust_bridge` 暴露给 Flutter 端，以便 Flutter 应用可以上传用户头像等文件。

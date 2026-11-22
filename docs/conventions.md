@@ -113,7 +113,7 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 依赖方向固定为 `UI (lib/ui) -> Domain (lib/domain) -> Data (lib/data) -> generated/rust`，任何一层都不允许反向 import：
 
 - `lib/data` 与 `lib/domain` 禁止 import `lib/ui/` 或 `lib/providers/`；日志等基础工具放在 `lib/core/`，不能放在 `lib/ui/core/`。
-- `lib/ui` 与 `lib/providers` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；FFI 调用统一收口到 Service/Repository。
+- `lib/ui` 与 `lib/providers` 禁止 import `lib/generated/rust/` 下任何子模块（`api/`、`core/`、`domain/`、`infra/`、`sdk/`）；FFI 调用统一收口到 Service/Repository。
 - View/ViewModel 只能依赖 Repository/Provider；禁止在 View 内直接调用 `uploadFile`、`sendMergerMessage`、`sendTyping` 等 FFI 函数。
 - 同一领域只保留一个状态源（如 `ConnectionService`、`ConversationListProvider`），其他 Provider 通过 `select` 派生；禁止创建并行的双轨 Provider。
 - Service 由 Riverpod Provider 持有实例；业务代码禁止直接访问 `X.instance`，基础设施单例只在 Provider 桥中暴露。抽象接口仅用于需要依赖反转或单测替换的边界，不为所有 Service 强制接口。
@@ -122,8 +122,8 @@ final xxxProvider = StateNotifierProvider<XxxNotifier, XxxState>((ref) {
 提交前用以下命令做边界回归：
 
 ```powershell
-rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"
-rg -n "ui/core/utils/app_logger|from '\.\./ui/|from '\.\./providers/" lib/data lib/domain
+rg -n "generated/rust/" lib/ui lib/providers --glob "!lib/generated/**"
+rg -n "from '\.\./ui/|from '\.\./providers/" lib/data lib/domain
 ```
 
 两项都应为空（`lib/main.dart` 的 Rust 启动初始化除外）。
@@ -190,7 +190,7 @@ appLog.d('[ModuleName] 调试信息')
 
 ### 模块组织
 
-目标分层架构（每层有 `mod.rs`）：`api/ sdk/ core/ event/ infra/ domain/` 已全部迁入：
+五层架构（每层有 `mod.rs`）：`api/ sdk/ core/ domain/ infra/` 已全部迁入（事件系统在 `core/event/`，没有独立顶层 `event/`）：
 
 ```rust
 // rust/src/lib.rs
@@ -206,7 +206,7 @@ pub mod infra;    // 基础设施
 
 | 类型 | 风格 | 示例 |
 |------|------|------|
-| 文件 | `snake_case` | `bridge_client.rs` |
+| 文件 | `snake_case` | `client.rs` |
 | 结构体/枚举 | `PascalCase` | `OpenIMBridgeClient`, `SdkError` |
 | 函数/方法 | `snake_case` | `send_text_message` |
 | 常量 | `SCREAMING_SNAKE_CASE` | `EVENT_CHANNEL_CAPACITY` |

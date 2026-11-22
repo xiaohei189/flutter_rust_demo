@@ -1,5 +1,7 @@
 # Flutter Rust Demo 项目全局约定
 
+> ⚠️ **结构信息已过时**：本文件成文于早期 `rust/src/im/` 时代，当前 `rust/` 已按 `api/sdk/core/domain/infra` 五层组织，Dart 侧为 `lib/{ui,application,data,domain,providers,router}`。结构以 [AGENTS.md](../../AGENTS.md)、[CLAUDE.md](../../CLAUDE.md)、[docs/architecture.md](../../docs/architecture.md) 为准。
+
 ## 项目概述
 
 本项目是一个基于 Rust + Flutter 的跨平台 IM 应用，使用 `flutter_rust_bridge` (v2.11.1) 进行 FFI 通信。

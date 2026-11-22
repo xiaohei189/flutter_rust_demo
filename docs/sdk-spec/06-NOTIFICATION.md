@@ -875,6 +875,8 @@ impl NotificationFilter {
 
 ### 13.1 架构建议
 
+> 本节为早期设计建议，实际落地：通知路由在 `rust/src/core/message/notification.rs`，会话通知在 `rust/src/core/conversation/`，好友/群组通知分别在 `rust/src/sdk/friend/`、`rust/src/sdk/group/`，事件类型在 `rust/src/core/event/events/`。下方目录仅作设计参考。
+
 ```
 rust/src/core/conversation/
 ├── mod.rs

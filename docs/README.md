@@ -29,19 +29,20 @@
 | 文档 | 状态 | 说明 |
 |------|------|------|
 | [docs/architecture.md](./architecture.md) | ✅ 现行 | **当前架构与数据流**（Dart 侧已对齐 Flutter 分层规范） |
-| [rust/ARCHITECTURE.md](../rust/ARCHITECTURE.md) | 📌 参考 | Rust **目标**分层（五层）；实际为扁平结构（迁移未完成） |
+| [rust/ARCHITECTURE.md](../rust/ARCHITECTURE.md) | ✅ 现行 | Rust 五层架构、异步边界、依赖边界与已知 seam |
 
-### 架构对齐现状（2026-08）
+### 架构对齐现状
 
 | 侧 | 文档描述 | 实际代码 | 对齐 |
 |----|----------|----------|------|
-| **Dart `lib/`** | `data/` + `domain/` + `ui/<feature>` | ✅ `data/repositories+services`、`domain/models`、`ui/{auth,chat,contacts,groups,profile,discover,shared,shell}` + `ui/core` | ✅ **已对齐** |
-| **Rust `rust/src/`** | 五层：`api/sdk/core/domain/infra` | ❌ 实际为**扁平结构**（`cache, client, connection, db, ffi, ...` 平铺） | ⚠️ **未对齐**（五层为目标，迁移未完成） |
+| **Dart `lib/`** | `application/` + `data/` + `domain/` + `ui/<feature>` | ✅ `application/{auth,chat,topics}`、`data/{repositories,services,mappers}`、`domain/models`、`ui/{auth,chat,contacts,groups,profile,shared,shell,topics,workbench,previews}` + `ui/core` | ✅ **已对齐** |
+| **Rust `rust/src/`** | 五层：`api/sdk/core/domain/infra` | ✅ `api/ffi`、`sdk/{client,friend,group}`、`core/{connection,conversation,event,message,user}`、`domain/{model,constant,error}`、`infra/{db,http,cache,file,logger}` | ✅ **已对齐**（2026-08 迁移完成） |
 
 ## 📚 SDK 模块规范（docs/sdk-spec/）
 
 > ⚠️ **规格参考**：sdk-spec 的「实施状态 / ❌ 未实现」标注为**早期基线，与代码有出入**（多数已实现）。
 > 功能状态的权威依据：**实际代码 + [docs/testing-gap.md](./testing-gap.md)**。协议/常量/模型等规格内容仍可参考。
+> 「模块路径 / 实现文件索引」已于 2026-11 按当前五层代码校正；纯设计建议段落会另行标注。
 
 17 个文档，**从 [INDEX.md](./sdk-spec/INDEX.md) 进入**：
 
@@ -79,6 +80,8 @@
 | 文档 | 状态 | 说明 |
 |------|------|------|
 | [docs/RUST_API_IMPLEMENTATION.md](./RUST_API_IMPLEMENTATION.md) | 📌 参考 | Rust API 与 Go SDK 对照 |
+| [docs/chat-gap-plan.md](./chat-gap-plan.md) | ✅ 现行 | 会话列表/消息详情功能补齐盘点与 P0 落地结论（2026-10） |
+| [docs/send-pipeline.md](./send-pipeline.md) | 📌 参考 | 消息发送链路重构设计（Phase 1 已实施，Phase 2/3 待做） |
 | [docs/MESSAGE_LOADING_IMPLEMENTATION.md](./MESSAGE_LOADING_IMPLEMENTATION.md) | 📌 参考 | 消息加载实现（对照 Go SDK） |
 | [docs/FILE_UPLOAD_IMPLEMENTATION.md](./FILE_UPLOAD_IMPLEMENTATION.md) | 📌 参考 | 文件/头像上传实现 |
 | [docs/AVATAR_UPDATE.md](./AVATAR_UPDATE.md) | 📌 参考 | 头像系统更新说明 |
@@ -101,7 +104,7 @@
 
 ## 🧰 Agent 技能（.agents/skills/）
 
-项目内置 22 个 Dart/Flutter 开发技能（`SKILL.md`），供 Agent 使用：
+项目内置 28 个 Dart/Flutter 开发技能（`SKILL.md`），供 Agent 使用：
 
 | 类别 | 技能 |
 |------|------|
@@ -116,7 +119,7 @@
 
 | 冲突点 | 位置 | 处理 |
 |--------|------|------|
-| Rust 侧结构：文档写五层（api/sdk/core/domain/infra） | docs/architecture.md、rust/ARCHITECTURE.md、CLAUDE.md | **实际为扁平结构**；五层是目标，迁移未完成 |
+| ~~Rust 侧结构：文档写五层（api/sdk/core/domain/infra）~~ | ~~docs/architecture.md、rust/ARCHITECTURE.md、CLAUDE.md~~ | **已解决**：五层迁移 2026-08 完成，上述文档 2026-11 已同步为现状 |
 | sdk-spec 大量「❌ 未实现」实为已实现 | sdk-spec/00、05、07、08、09、15 等 | 已加警示；以代码 + testing-gap.md 为准 |
 | SDK_PROGRESS.md 大量功能标 ✅ | docs/SDK_PROGRESS.md | 与代码有出入，已加警示；以 testing-gap.md 为准 |
 

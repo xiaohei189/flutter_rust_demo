@@ -334,6 +334,8 @@ POST   /topic/v1/groups/{groupID}/mode
 
 ## 5. Rust SDK 改造
 
+> 本节为实施前的设计清单（路径为规划路径）。实际落地：群模式字段在 `rust/src/domain/model/group.rs`、`rust/src/sdk/group/service.rs`、`rust/src/api/ffi/group.rs`；话题消息通过 `domain/model/message.rs` 的 `topic_id` 贯穿，话题状态由服务端 topic RPC 提供，客户端无独立 `sdk/topic/` 模块。
+
 ### 5.1 群模式
 
 需要修改：
@@ -439,6 +441,8 @@ local_topic_sync_checkpoint
 - 不在 `lib/generated` 手改。
 
 ## 6. Flutter 改造
+
+> 本节为实施前的设计清单（路径为规划路径）。实际落地：模型在 `lib/domain/models/topic.dart`（含 user state/task/卡片类型），数据层在 `lib/data/mappers/topic_mapper.dart`、`lib/data/repositories/topic_repository.dart`、`lib/data/services/topic_api.dart`；状态与页面在 `lib/ui/topics/`（`view_models/`、`views/`、`providers/`），未单独建 `lib/application/topic/`。
 
 ### 6.1 领域模型和 Repository
 

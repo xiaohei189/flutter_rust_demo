@@ -1,5 +1,7 @@
 # 项目上下文
 
+> ⚠️ **结构信息已过时**：下文 `rust/src/im/` 等路径为早期结构；当前目录以 [AGENTS.md](../../AGENTS.md) / [CLAUDE.md](../../CLAUDE.md) / [docs/architecture.md](../../docs/architecture.md) 为准。
+
 ## 项目基本信息
 
 - **项目名称**: flutter_rust_demo
@@ -88,7 +90,7 @@ IM Core (client.rs)
 
 ## 开发约定
 
-详见 [project_rules.md](./rules/project_rules.md)
+详见 [project_rules.md](../rules/project_rules.md)
 
 ### 关键约定摘要
 1. FFI 函数使用 `#[flutter_rust_bridge::frb]` 注解

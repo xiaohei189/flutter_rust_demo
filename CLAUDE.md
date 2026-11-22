@@ -35,17 +35,17 @@ flutter run -d windows
 ## 分层架构
 
 ```
-Flutter UI (lib/screens/, lib/widgets/)
+Flutter UI (lib/ui/<feature>/views|widgets, lib/ui/core/)
     ↕
-Riverpod 状态管理 (lib/providers/)
+状态与用例 (lib/application/；Riverpod 桥 lib/providers/、lib/ui/<feature>/providers/)
     ↕
-Dart 服务层 (lib/services/)
+Dart 数据层 (lib/data/repositories、lib/data/services、lib/data/mappers)
     ↕
 flutter_rust_bridge FFI (lib/generated/rust/ ←→ rust/src/api/)
     ↕
-Rust SDK 入口 (rust/src/sdk/)
+Rust SDK 外观 (rust/src/sdk/)
     ↕
-Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)
+Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)  ←→  领域 (rust/src/domain/)
 ```
 
 ## 代码修改规则
@@ -77,26 +77,28 @@ Rust 核心业务 (rust/src/core/)  ←→  基础设施 (rust/src/infra/)
 
 | 类型 | 位置 | 示例 |
 |------|------|------|
-| 页面 | `lib/screens/` | `chat_screen.dart` |
-| 组件 | `lib/widgets/` | `message_bubble.dart` |
-| 服务 | `lib/services/` | `auth_service.dart` |
-| Provider | `lib/providers/` | `user_provider.dart` |
-| 模型 | `lib/models/` | `user.dart` |
-| Rust API | `rust/src/api/` | `client.rs` |
+| 页面 | `lib/ui/<feature>/views/` | `ui/chat/views/chat_detail_screen.dart` |
+| 组件 | `lib/ui/core/widgets/`（共享）或 `lib/ui/<feature>/widgets/` | `ui/core/widgets/user_avatar.dart` |
+| 状态/用例 | `lib/application/` | `application/chat/message_service_notifier.dart` |
+| 服务 | `lib/data/services/` | `auth_api.dart` |
+| Repository | `lib/data/repositories/` | `message_repository.dart` |
+| Provider | `lib/providers/`（基础设施桥）或 `lib/ui/<feature>/providers/` | `providers/im_providers.dart` |
+| 模型 | `lib/domain/models/` | `message.dart` |
+| Rust API | `rust/src/api/ffi/` | `client.rs` |
+| Rust SDK 外观 | `rust/src/sdk/` | `client/builder.rs` |
 | Rust 核心 | `rust/src/core/` | `connection/manager.rs` |
 | Rust 领域 | `rust/src/domain/` | `model/message.rs` |
-| Rust 基础设施 | `rust/src/infra/` | `database/message_dao.rs` |
+| Rust 基础设施 | `rust/src/infra/` | `db/message_dao.rs` |
 
 ## Rust 目录组织约定
 
 ### 分层原则
 rust/src/
-- domain/     # 领域层（最底层：模型、错误、常量、契约）
+- domain/     # 领域层（最底层：模型、错误、常量）
 - infra/      # 基础设施（依赖 domain）
-- event/      # 事件系统（依赖 domain + openim_protocol（外部 crate））
-- core/       # 核心业务（依赖 domain + infra + event）
-- sdk/        # SDK 门面（依赖 core）
-- api/        # FFI 桥接（最上层，依赖 sdk, 供 frb_generated 使用）
+- core/       # 核心业务（依赖 domain + infra；事件系统在 core/event/）
+- sdk/        # SDK 门面（依赖 core/domain/infra）
+- api/        # FFI 桥接（最上层，依赖 sdk，供 frb_generated 使用）
 
 ### 目录规则
 1. 单文件优先：模块只有 1-2 个文件时用单文件，超过 4-5 个才建目录
@@ -104,18 +106,18 @@ rust/src/
 3. domain/constant/ 和 domain/error/ 保持目录：因为 frb_generated 自动生成代码依赖 domain::constant::enums:: 和 domain::error::types:: 路径，不可扁平化。通过 mod.rs 中的 pub use enums::*; pub use types::*; 提供新旧路径兼容
 4. api/ 按子模块独立生成：rust_input = crate::api，codegen 直接生成 api/client.dart、api/message.dart 等，不再需要 bridge_client.rs 类 re-export 枢纽
 5. api/simple.rs 曾为 ffi_init 兼容 shim，FRB 重新生成后已删除，App 直接使用 api/ffi_init.dart
-6. core/file/ 只保留业务逻辑：uploader.rs 是核心业务，其他工具类移入 infra/file/
+6. 文件上传业务在 infra/file/upload/uploader.rs；bitmap / md5 / progress_reader 等工具类同在 infra/file/（core/ 不再有 file/ 子模块）
 7. 协议类型统一使用外部 openim-protocol crate（path = ../../protocol）；本地不再有 protocol/ 模块，WS 帧类型与压缩器在 core/connection/ws.rs
-8. 外部服务契约（Ports）集中在 domain/ports/：SyncServerApi / MessageServerApi / ConversationServerApi；HTTP 适配器实现放 infra/http/（message_api.rs、conversation_api.rs），WS 适配器由 core/connection 实现
+8. 外部服务契约 trait 现状：`SyncServerApi` 在 core/connection/sync_server.rs，`MessageServerApi` / `ConversationServerApi` 在 infra/http/{message,conversation}.rs；目标是下沉到 `domain/ports/`（尚未迁移，新增契约优先放 domain/）。HTTP 适配器实现放 infra/http/（message_api.rs、conversation_api.rs），WS 适配器由 core/connection 实现
 9. DB 模型（LocalChatLog / LocalConversation 等）集中在 domain/model/local.rs；frb_generated 直接引用该路径，无兼容 shim
 
 ### 各层职责
 | 层 | 职责 | 不允许 |
 |----|------|--------|
-| domain/ | 数据模型、错误类型、常量、Repository trait、Ports（外部服务契约） | 不依赖 core/、sdk/、api/ |
+| domain/ | 数据模型、错误类型、常量 | 不依赖 core/、sdk/、api/ |
 | infra/ | 数据库 DAO、HTTP 客户端、缓存、日志、文件工具 | 不依赖 core/、sdk/ |
-| core/ | 连接管理、消息收发、会话/好友/群组业务逻辑 | 不依赖 api/、sdk/ |
-| sdk/ | OpenIMClient 门面，聚合 core 各模块 | 不依赖 api/ |
+| core/ | 连接管理、消息收发、会话/用户业务逻辑、事件分发（core/event/） | 不依赖 api/、sdk/ |
+| sdk/ | OpenIMClient 门面（client/friend/group），聚合 core 各模块 | 不依赖 api/ |
 | api/ | FFI 桥接，#[flutter_rust_bridge::frb] 注解 | 不依赖 core/ 内部细节 |
 
 

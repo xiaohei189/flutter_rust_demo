@@ -1,5 +1,7 @@
 # 头像系统更新说明
 
+> 📌 历史实现说明。当前代码位置：头像组件 `lib/ui/core/widgets/user_avatar.dart`、头像存储 `lib/data/services/user_avatar_store.dart`、用户模型 `lib/domain/models/user.dart`；下文 `lib/widgets/`、`lib/models/` 为当时路径。
+
 ## 问题背景
 
 原先使用的头像服务 `https://i.pravatar.cc` 在某些网络环境下可能无法访问，导致应用无法正常显示用户头像。

@@ -169,10 +169,10 @@ flutter run --profile
 
 ## 🎨 自定义修改建议
 
-1. **修改主题色**：编辑 `lib/theme/app_theme.dart`
-2. **添加新页面**：在 `lib/screens/` 中创建新文件
-3. **添加新组件**：在 `lib/widgets/` 中创建新文件
-4. **修改模拟数据**：编辑 `lib/models/` 中的静态数据
+1. **修改主题色**：编辑 `lib/ui/core/theme/app_theme.dart`（语义色板 `AppColors`，light/dark 两套）
+2. **添加新页面**：在 `lib/ui/<feature>/views/` 创建 `xxx_screen.dart`，并在 `lib/router/` 注册路由
+3. **添加新组件**：共享组件放 `lib/ui/core/widgets/`，feature 内组件放 `lib/ui/<feature>/widgets/`
+4. **修改演示数据**：客户端不再内置模拟数据，演示账号与 seed 见 `docs/demo-accounts.md`
 
 ## 📚 学习资源
 

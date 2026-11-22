@@ -27,7 +27,7 @@
 
 关键事实：
 
-- `editMessage`：`lib/generated/rust/ffi/message_advanced.dart`，Rust 实现 `rust/src/core/message/send/sender.rs`（当前为「构造新消息 + MQ 广播」，非原子编辑）。
+- `editMessage`：`lib/generated/rust/api/ffi/message_advanced.dart`，Rust 实现 `rust/src/core/message/send/sender.rs`（当前为「构造新消息 + MQ 广播」，非原子编辑）。
 - `setMessageLocalEx`：同上 FFI 文件；`ChatMessage` 领域模型目前**没有** `localEx` 字段，`lib/data/mappers/message_mapper.dart` 直接丢成空串，P1 需先补字段。
 - `markAllConversationsAsRead`：`lib/application/chat/message_service_notifier.dart` 已实现，无任何 UI 调用方。
 

@@ -785,17 +785,17 @@ CREATE TABLE local_sending_messages (
 
 | 文件 | 职责 |
 |------|------|
-| `rust/src/core/message/handler.rs` | 消息处理器核心（handle_messages、去重、入库、通知） |
-| `rust/src/core/message/service.rs` | 消息服务（撤回、删除、标记已读、搜索） |
-| `rust/src/core/message/syncer.rs` | 消息同步器（Pull 拉取、增量同步、重装同步） |
-| `rust/src/core/message/types.rs` | 消息类型工具函数 |
-| `rust/src/core/message/mod.rs` | 模块导出 |
+| `rust/src/core/message/receive/processor.rs` | 消息处理器核心（`MessageProcessor::handle_messages`、去重、入库、通知） |
+| `rust/src/core/message/operate.rs` | 消息服务（撤回、删除、标记已读、搜索；细分在 `operate/` 下） |
+| `rust/src/core/message/receive/syncer.rs` | 消息同步器（Pull 拉取、增量同步、重装同步） |
+| `rust/src/domain/constant/content_type_utils.rs` | 消息类型工具函数（`ContentTypeUtils`） |
+| `rust/src/core/message/mod.rs` | 模块导出（Facade re-exports） |
 | `rust/src/sdk/client/message.rs` | SDK 层消息 API（send_msg、get_history 等） |
-| `rust/src/infra/database/message_dao.rs` | 消息 DAO 层（SQLite CRUD） |
-| `rust/src/infra/database/conversation_dao.rs` | 会话 DAO 层 |
-| `rust/src/infra/database/sending_message_dao.rs` | 发送中消息 DAO |
+| `rust/src/infra/db/message_dao.rs` | 消息 DAO 层（SQLite CRUD） |
+| `rust/src/infra/db/conversation_dao.rs` | 会话 DAO 层 |
+| `rust/src/infra/db/sending_message.rs` | 发送中消息存储接口（`SendingMessageRepository`） |
 | `rust/src/domain/model/message.rs` | 消息数据模型（ReceivedMessage、MessageInfo） |
-| `rust/src/domain/event/types.rs` | 事件定义（SdkEvent 枚举） |
+| `rust/src/core/event/types.rs` | 领域事件类型（`core/event/events/` 按领域拆分） |
 
 ---
 

@@ -3,14 +3,14 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 
-$uiViolations = & rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**" 2>$null
+$uiViolations = & rg -n "generated/rust/" lib/ui lib/providers --glob "!lib/generated/**" 2>$null
 $uiOk = $LASTEXITCODE -eq 1
 
-$dataViolations = & rg -n "from '\.\./ui/|from '\.\./providers/|ui/core/utils/app_logger" lib/data lib/domain 2>$null
+$dataViolations = & rg -n "from '\.\./ui/|from '\.\./providers/" lib/data lib/domain 2>$null
 $dataOk = $LASTEXITCODE -eq 1
 
 if (-not $uiOk) {
-  Write-Host "UI/Providers must not import generated/rust/ffi or generated/rust/client:" -ForegroundColor Red
+  Write-Host "UI/Providers must not import generated/rust (any submodule):" -ForegroundColor Red
   Write-Host $uiViolations
 }
 if (-not $dataOk) {

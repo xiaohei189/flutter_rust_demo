@@ -1,5 +1,7 @@
 # UI 与目录组织优化计划
 
+> 📌 实施记录（2026-07～08）：文中目录路径为当时结构，现状以 `lib/ui/<feature>/`、`lib/application/`、`lib/data/` 为准（见 [docs/architecture.md](./architecture.md)）。
+
 > 状态：已实施（A-E 全部完成，Windows 集成测试通过）
 > 范围：Flutter UI 层、目录组织、测试目录镜像
 > 不涉及：Rust SDK、OpenIM 服务端协议、后端接口改动

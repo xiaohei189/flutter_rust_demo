@@ -577,7 +577,7 @@ handleMessage → WsSubUserOnlineStatus 分支
 |------|------|
 | `rust/src/core/connection/manager.rs` | Rust 连接管理器实现 |
 | `rust/src/domain/constant/types.rs` | WS 标识符常量定义 |
-| `rust/src/domain/event/types.rs` | SdkEvent 事件定义 |
+| `rust/src/core/event/types.rs` | 领域事件类型（`core/event/events/` 按领域拆分，types.rs 负责 re-export） |
 | `rust/src/core/connection/ws.rs` | WebSocket 协议类型定义 |
 | Go SDK: `internal/interaction/long_conn_mgr.go` | Go 连接管理器（974 行） |
 | Go SDK: `internal/interaction/ws_resp_asyn.go` | Go RPC 异步匹配器 |

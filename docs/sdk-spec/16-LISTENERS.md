@@ -10,7 +10,7 @@
 
 所有 trait 要求 `Send + Sync`，方法均有默认空实现——外部接入只需覆写关心的回调，可包在 `Arc<dyn XxxListener>` 中注入。
 
-源码位置：`rust/src/event/events/`（每个领域一个文件）。
+源码位置：`rust/src/core/event/events/`（每个领域一个文件）。
 
 ### 1.1 ConnectionListener — 连接（connection.rs，9 个）
 
@@ -97,7 +97,7 @@ Service（core/*）
 Listener 回调  ←—————————————— 唯一出口
   │
   ▼
-EventHub（rust/src/event/hub.rs，SDK 内置实现全部 6 个 trait）
+EventHub（rust/src/core/event/hub.rs，SDK 内置实现全部 6 个 trait）
   │  回调 → 领域事件 → 写入各 mpsc 通道
   ▼
 connection / conversation / friend / group / user / message 通道

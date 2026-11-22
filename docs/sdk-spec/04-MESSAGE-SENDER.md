@@ -758,13 +758,13 @@ func (b *MessageBatcher) mergePullsLocked(source map[string]*sdkws.PullMsgs, isM
 |------|------|
 | `rust/src/sdk/client/message.rs` | SDK 层消息发送 API（send_msg、send_text、send_image 等） |
 | `rust/src/domain/model/msg_struct.rs` | MsgStruct 消息结构体定义 |
-| `rust/src/core/message/types.rs` | 消息类型工具（is_text、is_media、is_notification） |
-| `rust/src/core/message/service.rs` | 消息服务（撤回、删除、标记已读） |
-| `rust/src/core/message/handler.rs` | 消息处理器（接收侧，配合发送结果更新） |
-| `rust/src/infra/database/message_dao.rs` | 消息 DAO（update_send_status、update_after_send_success） |
-| `rust/src/infra/database/sending_message_dao.rs` | 发送中消息追踪 |
-| `rust/src/infra/file/uploader.rs` | 文件上传器 |
-| `rust/src/domain/event/types.rs` | 事件定义（MessageSent、MessageSendFailed） |
+| `rust/src/domain/constant/content_type_utils.rs` | 消息类型工具（`is_text`、`is_media` 等） |
+| `rust/src/core/message/operate.rs` | 消息服务（撤回、删除、标记已读；细分在 `operate/` 下） |
+| `rust/src/core/message/receive/processor.rs` | 消息处理器（接收侧，配合发送结果更新） |
+| `rust/src/infra/db/message_dao.rs` | 消息 DAO（update_send_status、update_after_send_success） |
+| `rust/src/infra/db/sending_message.rs` | 发送中消息追踪 |
+| `rust/src/infra/file/upload/uploader.rs` | 文件上传器 |
+| `rust/src/core/event/types.rs` | 领域事件类型（MessageSent、MessageSendFailed 等，见 `core/event/events/`） |
 
 ---
 

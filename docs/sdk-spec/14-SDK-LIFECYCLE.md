@@ -137,7 +137,7 @@ Go SDK 对应函数：`open_im_sdk/init_login.go` → `InitSDK()`
 ### 2.2 Rust 对应实现
 
 ```rust
-// rust/src/domain/config.rs - ClientConfig（对应 Go SDK sdk_struct.IMConfig）
+// rust/src/sdk/client/config.rs - ClientConfig（对应 Go SDK sdk_struct.IMConfig）
 pub struct ClientConfig {
     pub user_id: String,
     pub token: String,
@@ -148,7 +148,7 @@ pub struct ClientConfig {
     pub data_dir: String,
 }
 
-// rust/src/sdk/context.rs - RuntimeContext（对应 Go SDK UserContext 的核心字段）
+// rust/src/sdk/client/context.rs - RuntimeContext（对应 Go SDK UserContext 的核心字段）
 pub struct RuntimeContext {
     pub config: ClientConfig,
     pub event_bus: Arc<EventBus>,
@@ -246,7 +246,7 @@ login(userID, token)
 ### 3.2 Rust 实现
 
 ```rust
-// rust/src/sdk/client/client.rs
+// rust/src/sdk/client/core.rs
 impl OpenIMClient {
     pub async fn login(&self, user_id: &str, token: &str) -> Result<()> {
         // Step 1: 设置用户 ID 到各模块

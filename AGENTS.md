@@ -4,7 +4,7 @@
 
 This repository is an OpenIM instant messaging client built with Flutter + Rust (`flutter_rust_bridge`).
 
-- `lib/` - Flutter UI and Dart services: screens, widgets, Riverpod providers, and models.
+- `lib/` - Flutter UI 与 Dart 数据层：`ui/<feature>/`（views/view_models/widgets）、`application/`（状态与用例）、`data/`（repositories/services/mappers）、`domain/`（领域模型）、`providers/`（Riverpod 依赖桥）、`router/`、`core/`（日志等基础工具）。
 - `lib/generated/rust/` - flutter_rust_bridge 与 Freezed 自动生成代码，禁止手改，由 codegen/build_runner 重新生成。
 - `rust/` - Flutter Rust Bridge 适配 crate。`rust/src/api/` 是 FFI 入口，
   `rust/src/{core,domain,infra,sdk}/` 只包含由脚本生成的 FRB mirror 兼容模块。
@@ -21,15 +21,15 @@ This repository is an OpenIM instant messaging client built with Flutter + Rust 
 所有改动必须遵守以下依赖与分层规则，违反即视为不合规：
 
 - Dart 依赖方向固定为 `UI (lib/ui) -> Domain (lib/domain) -> Data (lib/data) -> generated/rust`。`lib/data` 与 `lib/domain` 禁止 import `lib/ui/` 或 `lib/providers/`。
-- FFI 调用只能出现在 `lib/data/` 与 `lib/main.dart`。`lib/ui/` 与 `lib/providers/` 禁止 import `generated/rust/ffi/` 和 `generated/rust/client/`；所有 Rust 调用必须经 Service/Repository。
+- FFI 调用只能出现在 `lib/data/` 与 `lib/main.dart`。`lib/ui/` 与 `lib/providers/` 禁止 import `lib/generated/rust/` 下任何子模块（旧路径 `generated/rust/ffi/`、`generated/rust/client/` 已随五层迁移变成 `generated/rust/{api,core,domain,infra,sdk}/`）；所有 Rust 调用必须经 Service/Repository。
 - View 与 ViewModel 只能依赖 Repository/Provider，禁止直接调用 FFI、生成客户端或 Service 单例。
 - 每个领域只保留一个状态源；派生状态用 Provider + `select`，禁止用 `ref.listen` 把全局状态复制进本地 Notifier（纯展示格式化除外）。
 - Flutter 侧遵循 Flutter 官方/业界分层（UI / Application / Domain / Data）：Service 由 Riverpod Provider 持有实例并注入使用；仅在需要依赖反转或单测替换的边界（Repository、Rust 客户端桥）提供抽象接口，不为所有 Service 强制接口样板。
 - 业务 Provider 禁止直接返回 `X.instance`；基础设施单例仅在 `lib/providers/im_providers.dart` 的 Provider 桥中暴露。
 - Repository 返回 Domain Model；存量直接把 generated model 暴露给 UI 的代码应逐步迁移，新增代码禁止新增该泄漏。
 - 提交前必须运行边界检查（或直接执行 `scripts/check-architecture.ps1`）：
-  - `rg -n "generated/rust/(ffi|client)" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。
-  - `rg -n "from '\.\./ui/|from '\.\./providers/|ui/core/utils/app_logger" lib/data lib/domain` 结果必须为空。
+  - `rg -n "generated/rust/" lib/ui lib/providers --glob "!lib/generated/**"` 结果必须为空（`lib/main.dart` 的启动初始化除外）。
+  - `rg -n "from '\.\./ui/|from '\.\./providers/" lib/data lib/domain` 结果必须为空。
 - 提交前必须运行设计 token 检查（`scripts/check-design-tokens.ps1`）：`lib/ui` 内不得硬编码颜色
   （`Color(0x…)` / 裸 `Colors.*`），统一取 `context.appColors.*` 或装饰色板 `AppIconColors`；
   基线已归零，新增一处即失败。确属功能性的例外在行尾标注 `// design-token-ignore: 原因`。
