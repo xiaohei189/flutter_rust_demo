@@ -9,6 +9,11 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'friend.freezed.dart';
 
+Future<void> frbMirrorAnchorFriendEvent({required FriendEvent value}) => RustLib
+    .instance
+    .api
+    .crateCoreEventEventsFriendFrbMirrorAnchorFriendEvent(value: value);
+
 @freezed
 sealed class FriendEvent with _$FriendEvent {
   const FriendEvent._();

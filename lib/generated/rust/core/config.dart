@@ -6,7 +6,14 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 客户端配置
+Future<void> frbMirrorAnchorClientConfig({required ClientConfig value}) =>
+    RustLib.instance.api.crateCoreConfigFrbMirrorAnchorClientConfig(
+      value: value,
+    );
+
+/// flutter_rust_bridge:mirror(ClientConfig)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class ClientConfig {
   /// 用户 ID
   final String userId;

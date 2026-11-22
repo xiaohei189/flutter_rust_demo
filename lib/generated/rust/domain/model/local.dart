@@ -6,6 +6,19 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+Future<void> frbMirrorAnchorLocalChatLog({required LocalChatLog value}) =>
+    RustLib.instance.api.crateDomainModelLocalFrbMirrorAnchorLocalChatLog(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorLocalConversation({
+  required LocalConversation value,
+}) => RustLib.instance.api
+    .crateDomainModelLocalFrbMirrorAnchorLocalConversation(value: value);
+
+/// flutter_rust_bridge:mirror(LocalChatLog)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class LocalChatLog {
   final String conversationId;
   final String clientMsgId;
@@ -105,6 +118,9 @@ class LocalChatLog {
           groupId == other.groupId;
 }
 
+/// flutter_rust_bridge:mirror(LocalConversation)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class LocalConversation {
   final String conversationId;
   final int conversationType;

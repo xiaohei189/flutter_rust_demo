@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -174,8 +176,22 @@ class RustBuilder {
   }
 
   Future<Map<String, String>> _buildEnvironment() async {
+    final result = <String, String>{};
+    if (Platform.isWindows) {
+      final toolTempDir = Platform.environment['CARGOKIT_TOOL_TEMP_DIR'] ??
+          environment.targetTempDir;
+      result['TMP'] = toolTempDir;
+      result['TEMP'] = toolTempDir;
+      result['TMPDIR'] = toolTempDir;
+      if (environment.configuration.isDebug) {
+        // MSVC c1.dll 在本项目的宿主 SQLite 构建中处理 /Z7 调试记录时
+        // 返回 D8050；DEBUG 构建关闭宿主 C 调试信息可避免该工具链缺陷。
+        result['CARGO_PROFILE_DEV_DEBUG'] = '0';
+      }
+    }
+
     if (target.android == null) {
-      return {};
+      return result;
     } else {
       final sdkPath = environment.androidSdkPath;
       final ndkVersion = environment.androidNdkVersion;
@@ -199,7 +215,8 @@ class RustBuilder {
       if (!env.ndkIsInstalled() && environment.javaHome != null) {
         env.installNdk(javaHome: environment.javaHome!);
       }
-      return env.buildEnvironment();
+      result.addAll(await env.buildEnvironment());
+      return result;
     }
   }
 }

@@ -6,7 +6,7 @@ part of 'chat.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ChatImpl _$$ChatImplFromJson(Map<String, dynamic> json) => _$ChatImpl(
+_Chat _$ChatFromJson(Map<String, dynamic> json) => _Chat(
   id: json['id'] as String,
   name: json['name'] as String,
   avatar: json['avatar'] as String?,
@@ -20,15 +20,14 @@ _$ChatImpl _$$ChatImplFromJson(Map<String, dynamic> json) => _$ChatImpl(
   groupId: json['groupId'] as String?,
 );
 
-Map<String, dynamic> _$$ChatImplToJson(_$ChatImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'avatar': instance.avatar,
-      'isGroup': instance.isGroup,
-      'unreadCount': instance.unreadCount,
-      'lastMessage': instance.lastMessage,
-      'lastMessageTime': instance.lastMessageTime.toIso8601String(),
-      'memberIds': instance.memberIds,
-      'groupId': instance.groupId,
-    };
+Map<String, dynamic> _$ChatToJson(_Chat instance) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
+  'avatar': instance.avatar,
+  'isGroup': instance.isGroup,
+  'unreadCount': instance.unreadCount,
+  'lastMessage': instance.lastMessage,
+  'lastMessageTime': instance.lastMessageTime.toIso8601String(),
+  'memberIds': instance.memberIds,
+  'groupId': instance.groupId,
+};

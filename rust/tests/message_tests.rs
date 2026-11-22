@@ -824,8 +824,8 @@ async fn test_login_sync() {
 async fn test_send_all_message_types() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::{MessageEntity, MsgStruct};
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // 使用全新随机账号
     let receiver = create_random_account("TypeReceiver").await;
@@ -1298,8 +1298,8 @@ async fn test_find_messages_by_ids() {
 async fn test_mark_specific_messages_as_read() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::MarkMessagesAsReadReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1439,8 +1439,8 @@ async fn test_mark_specific_messages_as_read() {
 async fn test_delete_message_local_only() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1573,8 +1573,8 @@ async fn test_delete_message_local_only() {
 async fn test_clear_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1707,8 +1707,8 @@ async fn test_clear_conversation_and_delete_all_msg() {
 async fn test_delete_conversation_and_delete_all_msg() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::infra::http::message::DeleteMessagesReq;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -1846,8 +1846,8 @@ async fn test_delete_conversation_and_delete_all_msg() {
 async fn test_quote_message_flow() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 0: 创建账号 + 登录
     println!("\n========== Phase 0: 创建账号 + 登录 ==========");
@@ -2039,8 +2039,8 @@ async fn test_total_unread_count() {
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_message_local_ex() {
-    use rust_lib_flutter_rust_demo::sdk::client::SearchMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::local::LocalChatLog;
+    use rust_lib_flutter_rust_demo::sdk::client::SearchMessagesReq;
 
     // Setup
     let account_a = create_random_account("LocalExA").await;
@@ -2142,8 +2142,8 @@ async fn test_message_local_ex() {
 #[tokio::test]
 #[ignore = "requires docker OpenIM server"]
 async fn test_group_message_flow() {
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Setup
     let account_a = create_random_account("GrpA").await;
@@ -2293,8 +2293,8 @@ async fn test_group_message_flow() {
 async fn test_online_only_message() {
     let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_target(false).try_init();
 
-    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
     use rust_lib_flutter_rust_demo::domain::model::msg_struct::MsgStruct;
+    use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 
     // Phase 1: 创建账号 + 登录 + 建立好友
     println!("\n========== Phase 1: 创建账号 + 登录 + 建立好友 ==========");

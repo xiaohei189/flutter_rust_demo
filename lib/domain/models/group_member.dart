@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'group_member.freezed.dart';
 
 @freezed
-class GroupMember with _$GroupMember {
+abstract class GroupMember with _$GroupMember {
   const factory GroupMember({
     required String groupId,
     required String userId,
@@ -12,6 +12,7 @@ class GroupMember with _$GroupMember {
     required int roleLevel,
     required String joinSource,
     DateTime? joinTime,
+
     /// 禁言结束时间；`null` 表示当前未被禁言（服务端用 0 表示未禁言）。
     DateTime? muteEndTime,
   }) = _GroupMember;

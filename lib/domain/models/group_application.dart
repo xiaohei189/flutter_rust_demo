@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'group_application.freezed.dart';
 
 @freezed
-class GroupApplication with _$GroupApplication {
+abstract class GroupApplication with _$GroupApplication {
   const factory GroupApplication({
     required String groupId,
     required String userId,

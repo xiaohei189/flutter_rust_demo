@@ -21,7 +21,9 @@ Future<void> main(List<String> args) async {
       args: {'objectGroup': 'root'},
     );
     final outFile = File('logs/vm_widget_tree.json');
-    outFile.writeAsStringSync(JsonEncoder.withIndent('  ').convert(tree.json));
+    outFile.writeAsStringSync(
+      const JsonEncoder.withIndent('  ').convert(tree.json),
+    );
     stdout.writeln('tree saved: ${outFile.path}');
     // 完整树（含属性描述），用于查看 URL 等详情
     try {
@@ -35,13 +37,21 @@ Future<void> main(List<String> args) async {
         },
       );
       final fullFile = File('logs/vm_widget_full_tree.json');
-      fullFile.writeAsStringSync(JsonEncoder.withIndent('  ').convert(full.json));
+      fullFile.writeAsStringSync(
+        const JsonEncoder.withIndent('  ').convert(full.json),
+      );
       stdout.writeln('full tree saved: ${fullFile.path}');
     } catch (e) {
       stdout.writeln('full tree failed: $e');
     }
-    final text = JsonEncoder().convert(tree.json);
-    for (final k in ['UserAvatar', 'NetworkImage', '_t=', 'faceUrl', 'avatar']) {
+    final text = const JsonEncoder().convert(tree.json);
+    for (final k in [
+      'UserAvatar',
+      'NetworkImage',
+      '_t=',
+      'faceUrl',
+      'avatar',
+    ]) {
       stdout.writeln('key[$k]: ${text.split(k).length - 1}');
     }
   }

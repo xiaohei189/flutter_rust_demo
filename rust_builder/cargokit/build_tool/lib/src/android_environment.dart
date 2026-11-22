@@ -112,13 +112,18 @@ class AndroidEnvironment {
     final targetArg = '--target=${target.rust}$minSdkVersion';
 
     final ccKey = 'CC_${target.rust}';
-    final ccValue = path.join(toolchainPath, 'clang$exe');
+    final ccUnderscoreKey = 'CC_${target.rust.replaceAll('-', '_')}';
+    final clangValue = path.join(toolchainPath, 'clang$exe');
     final cfFlagsKey = 'CFLAGS_${target.rust}';
+    final cfFlagsUnderscoreKey = 'CFLAGS_${target.rust.replaceAll('-', '_')}';
     final cFlagsValue = targetArg;
 
     final cxxKey = 'CXX_${target.rust}';
-    final cxxValue = path.join(toolchainPath, 'clang++$exe');
+    final cxxUnderscoreKey = 'CXX_${target.rust.replaceAll('-', '_')}';
+    final clangxxValue = path.join(toolchainPath, 'clang++$exe');
     final cxxFlagsKey = 'CXXFLAGS_${target.rust}';
+    final cxxFlagsUnderscoreKey =
+        'CXXFLAGS_${target.rust.replaceAll('-', '_')}';
     final cxxFlagsValue = targetArg;
 
     final linkerKey =
@@ -131,19 +136,21 @@ class AndroidEnvironment {
     final rustFlagsKey = 'CARGO_ENCODED_RUSTFLAGS';
     final rustFlagsValue = _libGccWorkaround(targetTempDir, ndkVersionParsed);
 
-    final runRustTool =
-        Platform.isWindows ? 'run_build_tool.cmd' : 'run_build_tool.sh';
-
     final packagePath = (await Isolate.resolvePackageUri(
             Uri.parse('package:build_tool/buildtool.dart')))!
         .toFilePath();
-    final selfPath = path.canonicalize(path.join(
+    final cargokitDir = path.canonicalize(path.join(
       packagePath,
       '..',
       '..',
       '..',
-      runRustTool,
     ));
+    final runRustTool =
+        Platform.isWindows ? 'run_build_tool.cmd' : 'run_build_tool.sh';
+    final selfPath = path.join(cargokitDir, runRustTool);
+
+    final ccValue = clangValue;
+    final cxxValue = clangxxValue;
 
     // Make sure that run_build_tool is working properly even initially launched directly
     // through dart run.
@@ -152,16 +159,22 @@ class AndroidEnvironment {
 
     return {
       arKey: arValue,
+      'AR_${target.rust.replaceAll('-', '_')}': arValue,
       ccKey: ccValue,
+      ccUnderscoreKey: ccValue,
       cfFlagsKey: cFlagsValue,
+      cfFlagsUnderscoreKey: cFlagsValue,
       cxxKey: cxxValue,
+      cxxUnderscoreKey: cxxValue,
       cxxFlagsKey: cxxFlagsValue,
+      cxxFlagsUnderscoreKey: cxxFlagsValue,
       ranlibKey: ranlibValue,
+      'RANLIB_${target.rust.replaceAll('-', '_')}': ranlibValue,
       rustFlagsKey: rustFlagsValue,
       linkerKey: selfPath,
       // Recognized by main() so we know when we're acting as a wrapper
       '_CARGOKIT_NDK_LINK_TARGET': targetArg,
-      '_CARGOKIT_NDK_LINK_CLANG': ccValue,
+      '_CARGOKIT_NDK_LINK_CLANG': clangValue,
       'CARGOKIT_TOOL_TEMP_DIR': toolTempDir,
     };
   }

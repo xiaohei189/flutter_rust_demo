@@ -6,7 +6,14 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 日志配置（对齐 Go SDK IMConfig 日志字段）
+Future<void> frbMirrorAnchorLogConfig({required LogConfig value}) => RustLib
+    .instance
+    .api
+    .crateInfraLoggerConfigFrbMirrorAnchorLogConfig(value: value);
+
+/// flutter_rust_bridge:mirror(LogConfig)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class LogConfig {
   /// 日志级别: 0=trace, 1=debug, 2=info, 3=warn, 4=error, 5=off
   final int logLevel;

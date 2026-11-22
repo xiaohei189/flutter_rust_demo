@@ -1,8 +1,8 @@
 mod common;
 
 use common::*;
-use rust_lib_flutter_rust_demo::sdk::client::*;
 use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
+use rust_lib_flutter_rust_demo::sdk::client::*;
 use std::time::Duration;
 
 /// 验证创建群组成功并返回群组信息。

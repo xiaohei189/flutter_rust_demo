@@ -30,7 +30,8 @@ class UserOnlineStatus {
           _listEquals(platformIds, other.platformIds);
 
   @override
-  int get hashCode => userId.hashCode ^ status.hashCode ^ Object.hashAll(platformIds);
+  int get hashCode =>
+      userId.hashCode ^ status.hashCode ^ Object.hashAll(platformIds);
 
   static bool _listEquals(List<int> a, List<int> b) {
     if (identical(a, b)) return true;

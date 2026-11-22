@@ -7,9 +7,9 @@
 mod common;
 
 use common::*;
+use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 use rust_lib_flutter_rust_demo::sdk::client::GetHistoryMessagesReq;
 use rust_lib_flutter_rust_demo::sdk::client::*;
-use rust_lib_flutter_rust_demo::domain::constant::enums::GroupType;
 use serde_json::Value;
 use std::time::Duration;
 

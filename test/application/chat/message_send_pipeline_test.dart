@@ -42,10 +42,9 @@ class _FakeService extends MessageServiceNotifier {
       );
 
   /// 模拟 SDK 的 `MessageEvent.sendFailed`
-  void emitSendFailed(String conversationId, String clientMsgId) =>
-      updateState(
-        MessageServiceReducer.applySendFailed(currentState, clientMsgId),
-      );
+  void emitSendFailed(String conversationId, String clientMsgId) => updateState(
+    MessageServiceReducer.applySendFailed(currentState, clientMsgId),
+  );
 
   @override
   void applySendStatus(String conversationId, String clientMsgId, int status) =>
@@ -57,7 +56,6 @@ class _FakeService extends MessageServiceNotifier {
           status,
         ),
       );
-
 }
 
 /// 本地构造返回 clientMsgId=m1 的文本消息；发送结果由测试用 Completer 控制。
@@ -117,6 +115,7 @@ MsgStruct _localMessage({required String text, String clientMsgId = 'm1'}) =>
       status: MessageSendStatus.sending.value,
       attachedInfo: '',
       ex: '',
+      topicId: '',
       localEx: '',
     );
 

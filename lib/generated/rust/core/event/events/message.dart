@@ -9,7 +9,23 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'message.freezed.dart';
 
-/// 群聊已读回执（对齐 Go SDK OnRecvGroupReadReceipt）
+Future<void> frbMirrorAnchorGroupReadReceipt({
+  required GroupReadReceipt value,
+}) => RustLib.instance.api
+    .crateCoreEventEventsMessageFrbMirrorAnchorGroupReadReceipt(value: value);
+
+Future<void> frbMirrorAnchorMessageEvent({required MessageEvent value}) =>
+    RustLib.instance.api.crateCoreEventEventsMessageFrbMirrorAnchorMessageEvent(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorMessageReceipt({required MessageReceipt value}) =>
+    RustLib.instance.api
+        .crateCoreEventEventsMessageFrbMirrorAnchorMessageReceipt(value: value);
+
+/// flutter_rust_bridge:mirror(GroupReadReceipt)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GroupReadReceipt {
   final String groupId;
   final String msgId;
@@ -113,7 +129,9 @@ sealed class MessageEvent with _$MessageEvent {
   }) = MessageEvent_UploadProgress;
 }
 
-/// C2C 已读回执（对齐 Go SDK sdkws.MessageReceipt）
+/// flutter_rust_bridge:mirror(MessageReceipt)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MessageReceipt {
   final String userId;
   final List<String> msgIds;

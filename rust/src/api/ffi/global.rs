@@ -16,7 +16,11 @@ use std::sync::RwLock;
 static CLIENT_HOLDER: RwLock<Option<Arc<dyn SdkApi>>> = RwLock::new(None);
 
 pub(crate) fn client_holder() -> Result<Arc<dyn SdkApi>> {
-    CLIENT_HOLDER.read().ok().and_then(|guard| guard.clone()).ok_or_else(|| anyhow::anyhow!("SDK 客户端未初始化，请先调用 new"))
+    CLIENT_HOLDER
+        .read()
+        .ok()
+        .and_then(|guard| guard.clone())
+        .ok_or_else(|| anyhow::anyhow!("SDK 客户端未初始化，请先调用 new"))
 }
 
 pub(crate) fn set_client(client: Arc<dyn SdkApi>) {

@@ -6,49 +6,18 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "staticlib", "rlib"]
 
+[workspace]
+members = ["im-core"]
+
 [dependencies]
+im-core = { path = "im-core" }
 flutter_rust_bridge = { version = "=2.12.0", optional = true }
 openim-protocol = { path = "../../protocol" }
 tokio = { version = "1.48", features = ["full","tracing"] }
-tokio-util = { version = "0.7" }
-tokio-stream = { version = "0.1", features = ["sync"] }
-tokio-tungstenite = "0.24"
-futures-util = "0.3"
-chrono = "0.4"
-serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-prost = "0.13"
-thiserror = "2.0"
-rand = "0.8"
-lru = "0.12"
-flate2 = "1.0"
-base64 = "0.22"
-reqwest = { version = "0.13", features = ["json", "rustls", "multipart"], default-features = false }
-reqwest-middleware = { version = "0.5.1", features = ["json"] }
-uuid = { version = "1.10", features = ["v4"] }
 anyhow = "1.0"
-log = "0.4"
-async-trait = "0.1"
 tracing = "0.1.41"
-tracing-core = "0.1"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "ansi"] }
-tracing-appender = "0.2"
-tracing-log = "0.2"
-md-5 = "0.10"
-hex = "0.4"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp", "bmp"] }
-url = "2"
-http = "1.4.0"
-bytes = "1.6"
-http-body = "1.0"
-http-body-util = "0.1"
-clap = { version = "4.5", features = ["derive"] }
-
-# Phase 2: 新 core 模块数据库访问
-sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "migrate", "macros"] }
-tracing-opentelemetry = "0.28"
-opentelemetry = "0.27"
-opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
 
 [profile.release]
 opt-level = "z"       # 最小体积
@@ -62,6 +31,12 @@ ffi = ["flutter_rust_bridge"]
 
 [dev-dependencies]
 wiremock = "0.6"
+serde_json = "1.0"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "migrate", "macros"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json", "ansi"] }
+reqwest = { version = "0.13", features = ["json", "rustls", "multipart"], default-features = false }
+tokio-tungstenite = "0.24"
 
 [lints.rust]
 unexpected_cfgs = { level = "allow", check-cfg = ["cfg(frb_expand)"] }

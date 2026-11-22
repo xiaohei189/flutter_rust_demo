@@ -20,16 +20,10 @@ use std::time::{Duration, Instant};
 #[ignore = "requires docker OpenIM server"]
 async fn seed_scale_data() {
     let started = Instant::now();
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::WARN)
-        .with_target(false)
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::WARN).with_target(false).try_init();
 
     let total_users = 10_000usize;
-    let target_phone = std::env::var("OPENIM_DEMO_TARGET_PHONE")
-        .ok()
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "17764008284".to_string());
+    let target_phone = std::env::var("OPENIM_DEMO_TARGET_PHONE").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| "17764008284".to_string());
 
     // ========== 1. 批量注册用户基数 ==========
     println!("\n========== 批量注册 {} 用户（并发 24）==========", total_users);
@@ -55,23 +49,31 @@ async fn seed_scale_data() {
     // ========== 3. 建群：20 中型（200人）+ 3 大型（2000/1500/1200）==========
     println!("\n========== 创建群聊 ==========");
     let medium_names = [
-        "前端技术交流", "后端架构组", "产品需求评审", "UI 设计讨论", "测试质量保障",
-        "运维值班群", "数据平台组", "算法研究组", "移动端开发", "Web 开发组",
-        "项目管理部", "市场运营部", "人力资源部", "财务部", "法务合规",
-        "客户成功部", "售前方案组", "售后支持组", "企业文化活动", "全员通知群",
+        "前端技术交流",
+        "后端架构组",
+        "产品需求评审",
+        "UI 设计讨论",
+        "测试质量保障",
+        "运维值班群",
+        "数据平台组",
+        "算法研究组",
+        "移动端开发",
+        "Web 开发组",
+        "项目管理部",
+        "市场运营部",
+        "人力资源部",
+        "财务部",
+        "法务合规",
+        "客户成功部",
+        "售前方案组",
+        "售后支持组",
+        "企业文化活动",
+        "全员通知群",
     ];
     let large_names = ["公司全员大群", "集团总群", "年度战略群"];
 
     let mut all_groups = Vec::new();
-    let member_of = |users: &[TestAccount], start: usize, count: usize| -> Vec<String> {
-        users
-            .iter()
-            .cycle()
-            .skip(start)
-            .take(count)
-            .map(|u| u.user_id.clone())
-            .collect()
-    };
+    let member_of = |users: &[TestAccount], start: usize, count: usize| -> Vec<String> { users.iter().cycle().skip(start).take(count).map(|u| u.user_id.clone()).collect() };
 
     // 20 个中型群，每个 200 人（滚动窗口，避免重复组合）
     for (i, name) in medium_names.iter().enumerate() {
@@ -79,10 +81,7 @@ async fn seed_scale_data() {
         for s in &speakers {
             members.push(s.user_id.clone());
         }
-        let g = me_sdk
-            .create_group(name, GroupType::Normal, &members)
-            .await
-            .expect("创建中型群失败");
+        let g = me_sdk.create_group(name, GroupType::Normal, &members).await.expect("创建中型群失败");
         println!("  中型群 {}: {} ({}) 成员={}", i + 1, g.group_name, g.group_id, members.len() + 1);
         all_groups.push((g.group_name, g.group_id, i));
     }
@@ -93,10 +92,7 @@ async fn seed_scale_data() {
         for s in &speakers {
             members.push(s.user_id.clone());
         }
-        let g = me_sdk
-            .create_group(name, GroupType::Normal, &members)
-            .await
-            .expect("创建大型群失败");
+        let g = me_sdk.create_group(name, GroupType::Normal, &members).await.expect("创建大型群失败");
         println!("  大型群 {}: {} ({}) 成员={}", i + 1, g.group_name, g.group_id, members.len() + 1);
         all_groups.push((g.group_name, g.group_id, i));
     }
@@ -118,13 +114,7 @@ async fn seed_scale_data() {
             send_demo_msg(&me_sdk, gid, 3, &DemoMsg::Image("https://picsum.photos/seed/scale/400/300")).await;
             sent += 1;
         } else if idx % 7 == 3 {
-            send_demo_msg(
-                &speaker_sdks[1],
-                gid,
-                3,
-                &DemoMsg::At("这个安排大家看下，有疑问随时提".to_string(), vec![me.user_id.clone()]),
-            )
-            .await;
+            send_demo_msg(&speaker_sdks[1], gid, 3, &DemoMsg::At("这个安排大家看下，有疑问随时提".to_string(), vec![me.user_id.clone()])).await;
             sent += 1;
         } else {
             send_demo_msg(&speaker_sdks[idx % 3], gid, 3, &DemoMsg::Text("收到，我这边没问题".to_string())).await;
@@ -170,14 +160,9 @@ async fn send_demo_msg(sdk: &OpenIMClient, target: &str, session_type: i32, msg:
 }
 
 fn gen_nickname(i: usize) -> String {
-    const SURNAMES: [&str; 20] = [
-        "张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴",
-        "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗",
-    ];
+    const SURNAMES: [&str; 20] = ["张", "李", "王", "赵", "刘", "陈", "杨", "黄", "周", "吴", "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗"];
     const GIVEN: [&str; 30] = [
-        "伟", "芳", "娜", "敏", "静", "磊", "军", "洋", "勇", "艳",
-        "杰", "涛", "明", "超", "霞", "平", "刚", "文", "辉", "婷",
-        "志强", "秀英", "丽", "强", "斌", "雪", "晨", "子涵", "雨桐", "一诺",
+        "伟", "芳", "娜", "敏", "静", "磊", "军", "洋", "勇", "艳", "杰", "涛", "明", "超", "霞", "平", "刚", "文", "辉", "婷", "志强", "秀英", "丽", "强", "斌", "雪", "晨", "子涵", "雨桐", "一诺",
     ];
     format!("{}{}{:03}", SURNAMES[i % 20], GIVEN[(i / 20) % 30], i % 1000)
 }

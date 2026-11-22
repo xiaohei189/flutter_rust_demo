@@ -1,7 +1,38 @@
 # Rust SDK 架构指南
 
-> ✅ **【已迁移】五层目录 `api/ sdk/ core/ event/ infra/ domain/` 已落地**：`domain/`（model/constant/error）、`infra/`（db/http/cache/logger/file/util）、`core/`（connection/conversation/event/message/user）、`sdk/`（client/friend/group）、`api/`（ffi）均已迁入。层间依赖边界抽查见本文档末尾；`test-fast.ps1` 全绿。
-> 现状与规划的对照见 [docs/README.md](../docs/README.md#架构对齐现状-2026-08)。
+> 当前 `rust/` 是 Cargo workspace：`im-core` 拥有平台无关业务核心，Flutter
+> Rust Bridge 适配 crate 只保留 FFI 入口、FRB 生成代码和类型 mirror。
+
+## Workspace 边界
+
+```
+rust/
+  Cargo.toml                 # Flutter FFI 适配 crate + workspace
+  src/
+    api/                     # Flutter 专属 FFI 入口
+    frb_generated.rs         # FRB 生成代码
+    core/ domain/ infra/ sdk # 由脚本生成的 FRB mirror 兼容模块
+  im-core/
+    Cargo.toml               # 不依赖 Flutter、NSH 或本地 RPC
+    migrations/              # SQLite migrations 随核心移动
+    src/
+      core/ domain/ infra/ sdk
+  scripts/generate-frb-mirrors.ps1
+```
+
+依赖方向固定为：
+
+```
+Flutter Dart -> Flutter FFI 适配 crate -> im-core
+NSH TSX     -> NSH native 适配 crate   -> im-core
+```
+
+`im-core` 可以持有连接 OpenIM 服务端的 WebSocket 客户端和事件通道，但不得直接
+包含 Flutter Rust Bridge、NSH 组件或某个项目的本地 WebSocket RPC 协议。
+
+`openim-protocol` 同样保持中性：只包含 prost、serde 和协议字段映射。Flutter
+需要暴露协议 DTO 时，在 Flutter 适配 crate 定义 mirror 或桥接 DTO；NSH 使用
+自己的 native DTO，不向共享协议层反向添加桥接依赖。
 
 ## 分层架构（从底层到上层）
 

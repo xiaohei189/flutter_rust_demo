@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'friend_application.freezed.dart';
 
 @freezed
-class FriendApplication with _$FriendApplication {
+abstract class FriendApplication with _$FriendApplication {
   const factory FriendApplication({
     required String userId,
     required String nickname,

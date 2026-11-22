@@ -6,6 +6,14 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+Future<void> frbMirrorAnchorOnlineStatus({required OnlineStatus value}) =>
+    RustLib.instance.api.crateInfraHttpOnlineFrbMirrorAnchorOnlineStatus(
+      value: value,
+    );
+
+/// flutter_rust_bridge:mirror(OnlineStatus)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class OnlineStatus {
   final String userId;
   final int status;

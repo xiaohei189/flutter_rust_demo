@@ -91,7 +91,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1795987318;
+  int get rustContentHash => -1031586146;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -898,6 +898,199 @@ abstract class RustLibApi extends BaseApi {
     required String clientMsgId,
     required String sourceId,
     required SessionType sessionType,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAdvancedTextElem({
+    required AdvancedTextElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAtInfo({
+    required AtInfo value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAtTextElem({
+    required AtTextElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorCardElem({
+    required CardElem value,
+  });
+
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorCheckFriendResult({
+    required CheckFriendResult value,
+  });
+
+  Future<void> crateCoreConfigFrbMirrorAnchorClientConfig({
+    required ClientConfig value,
+  });
+
+  Future<void> crateCoreEventEventsConnectionFrbMirrorAnchorConnectionEvent({
+    required ConnectionEvent value,
+  });
+
+  Future<void> crateDomainConstantEnumsFrbMirrorAnchorConnectionState({
+    required ConnectionState value,
+  });
+
+  Future<void>
+  crateCoreEventEventsConversationFrbMirrorAnchorConversationEvent({
+    required ConversationEvent value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorCustomElem({
+    required CustomElem value,
+  });
+
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorDeleteMessagesReq({
+    required DeleteMessagesReq value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorFaceElem({
+    required FaceElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorFileElem({
+    required FileElem value,
+  });
+
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorFriendApplyInfo({
+    required FriendApplyInfo value,
+  });
+
+  Future<void> crateCoreEventEventsFriendFrbMirrorAnchorFriendEvent({
+    required FriendEvent value,
+  });
+
+  Future<void> crateDomainModelFriendFrbMirrorAnchorFriendInfo({
+    required FriendInfo value,
+  });
+
+  Future<void> crateSdkClientFrbMirrorAnchorGetHistoryMessagesReq({
+    required GetHistoryMessagesReq value,
+  });
+
+  Future<void> crateSdkClientFrbMirrorAnchorGetHistoryMessagesResult({
+    required GetHistoryMessagesResult value,
+  });
+
+  Future<void> crateInfraHttpGroupFrbMirrorAnchorGroupApplyInfo({
+    required GroupApplyInfo value,
+  });
+
+  Future<void> crateCoreEventEventsGroupFrbMirrorAnchorGroupEvent({
+    required GroupEvent value,
+  });
+
+  Future<void> crateDomainModelGroupFrbMirrorAnchorGroupInfo({
+    required GroupInfo value,
+  });
+
+  Future<void> crateDomainModelGroupFrbMirrorAnchorGroupMember({
+    required GroupMember value,
+  });
+
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorGroupReadReceipt({
+    required GroupReadReceipt value,
+  });
+
+  Future<void> crateDomainModelLocalFrbMirrorAnchorLocalChatLog({
+    required LocalChatLog value,
+  });
+
+  Future<void> crateDomainModelLocalFrbMirrorAnchorLocalConversation({
+    required LocalConversation value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorLocationElem({
+    required LocationElem value,
+  });
+
+  Future<void> crateInfraLoggerConfigFrbMirrorAnchorLogConfig({
+    required LogConfig value,
+  });
+
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorMarkMessagesAsReadReq({
+    required MarkMessagesAsReadReq value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMarkdownTextElem({
+    required MarkdownTextElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMergeElem({
+    required MergeElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMessageEntity({
+    required MessageEntity value,
+  });
+
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorMessageEvent({
+    required MessageEvent value,
+  });
+
+  Future<void> crateDomainModelMessageFrbMirrorAnchorMessageInfo({
+    required MessageInfo value,
+  });
+
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorMessageReceipt({
+    required MessageReceipt value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMsgStruct({
+    required MsgStruct value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorOfflinePushInfo({
+    required OfflinePushInfo value,
+  });
+
+  Future<void> crateInfraHttpOnlineFrbMirrorAnchorOnlineStatus({
+    required OnlineStatus value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorPictureBaseInfo({
+    required PictureBaseInfo value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorQuoteElem({
+    required QuoteElem value,
+  });
+
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorRevokeMessageReq({
+    required RevokeMessageReq value,
+  });
+
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorSearchFriendItem({
+    required SearchFriendItem value,
+  });
+
+  Future<void> crateSdkClientFrbMirrorAnchorSearchMessagesReq({
+    required SearchMessagesReq value,
+  });
+
+  Future<void> crateDomainConstantEnumsFrbMirrorAnchorSessionType({
+    required SessionType value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorSoundElem({
+    required SoundElem value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorTextElem({
+    required TextElem value,
+  });
+
+  Future<void> crateCoreEventEventsUserFrbMirrorAnchorUserEvent({
+    required UserEvent value,
+  });
+
+  Future<void> crateDomainModelUserFrbMirrorAnchorUserInfo({
+    required UserInfo value,
+  });
+
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorVideoElem({
+    required VideoElem value,
   });
 
   Future<List<LocalChatLog>>
@@ -6888,6 +7081,1650 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAdvancedTextElem({
+    required AdvancedTextElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_advanced_text_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 143,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorAdvancedTextElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorAdvancedTextElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_advanced_text_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAtInfo({
+    required AtInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_at_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 144,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorAtInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateDomainModelMsgStructFrbMirrorAnchorAtInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_at_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorAtTextElem({
+    required AtTextElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_at_text_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 145,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorAtTextElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorAtTextElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_at_text_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorCardElem({
+    required CardElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_card_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 146,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorCardElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorCardElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_card_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorCheckFriendResult({
+    required CheckFriendResult value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_check_friend_result(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 147,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateInfraHttpFriendFrbMirrorAnchorCheckFriendResultConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpFriendFrbMirrorAnchorCheckFriendResultConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_check_friend_result",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreConfigFrbMirrorAnchorClientConfig({
+    required ClientConfig value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_client_config(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 148,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateCoreConfigFrbMirrorAnchorClientConfigConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateCoreConfigFrbMirrorAnchorClientConfigConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_client_config",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsConnectionFrbMirrorAnchorConnectionEvent({
+    required ConnectionEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_connection_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 149,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsConnectionFrbMirrorAnchorConnectionEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsConnectionFrbMirrorAnchorConnectionEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_connection_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainConstantEnumsFrbMirrorAnchorConnectionState({
+    required ConnectionState value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_connection_state(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 150,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainConstantEnumsFrbMirrorAnchorConnectionStateConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainConstantEnumsFrbMirrorAnchorConnectionStateConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_connection_state",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void>
+  crateCoreEventEventsConversationFrbMirrorAnchorConversationEvent({
+    required ConversationEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_conversation_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 151,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsConversationFrbMirrorAnchorConversationEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsConversationFrbMirrorAnchorConversationEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_conversation_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorCustomElem({
+    required CustomElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_custom_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 152,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorCustomElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorCustomElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_custom_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorDeleteMessagesReq({
+    required DeleteMessagesReq value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_delete_messages_req(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 153,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateInfraHttpMessageFrbMirrorAnchorDeleteMessagesReqConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpMessageFrbMirrorAnchorDeleteMessagesReqConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_delete_messages_req",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorFaceElem({
+    required FaceElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_face_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 154,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorFaceElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorFaceElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_face_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorFileElem({
+    required FileElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_file_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 155,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorFileElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorFileElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_file_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorFriendApplyInfo({
+    required FriendApplyInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_friend_apply_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 156,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateInfraHttpFriendFrbMirrorAnchorFriendApplyInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpFriendFrbMirrorAnchorFriendApplyInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_friend_apply_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsFriendFrbMirrorAnchorFriendEvent({
+    required FriendEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_friend_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 157,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsFriendFrbMirrorAnchorFriendEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsFriendFrbMirrorAnchorFriendEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_friend_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelFriendFrbMirrorAnchorFriendInfo({
+    required FriendInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_friend_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 158,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelFriendFrbMirrorAnchorFriendInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateDomainModelFriendFrbMirrorAnchorFriendInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_friend_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateSdkClientFrbMirrorAnchorGetHistoryMessagesReq({
+    required GetHistoryMessagesReq value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_get_history_messages_req(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 159,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSdkClientFrbMirrorAnchorGetHistoryMessagesReqConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateSdkClientFrbMirrorAnchorGetHistoryMessagesReqConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_get_history_messages_req",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateSdkClientFrbMirrorAnchorGetHistoryMessagesResult({
+    required GetHistoryMessagesResult value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_get_history_messages_result(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 160,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateSdkClientFrbMirrorAnchorGetHistoryMessagesResultConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateSdkClientFrbMirrorAnchorGetHistoryMessagesResultConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_get_history_messages_result",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpGroupFrbMirrorAnchorGroupApplyInfo({
+    required GroupApplyInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_group_apply_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 161,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateInfraHttpGroupFrbMirrorAnchorGroupApplyInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpGroupFrbMirrorAnchorGroupApplyInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_group_apply_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsGroupFrbMirrorAnchorGroupEvent({
+    required GroupEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_group_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 162,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateCoreEventEventsGroupFrbMirrorAnchorGroupEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsGroupFrbMirrorAnchorGroupEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_group_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelGroupFrbMirrorAnchorGroupInfo({
+    required GroupInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_group_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 163,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelGroupFrbMirrorAnchorGroupInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateDomainModelGroupFrbMirrorAnchorGroupInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_group_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelGroupFrbMirrorAnchorGroupMember({
+    required GroupMember value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_group_member(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 164,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelGroupFrbMirrorAnchorGroupMemberConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateDomainModelGroupFrbMirrorAnchorGroupMemberConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_group_member",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorGroupReadReceipt({
+    required GroupReadReceipt value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_group_read_receipt(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 165,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsMessageFrbMirrorAnchorGroupReadReceiptConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsMessageFrbMirrorAnchorGroupReadReceiptConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_group_read_receipt",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelLocalFrbMirrorAnchorLocalChatLog({
+    required LocalChatLog value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_local_chat_log(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 166,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelLocalFrbMirrorAnchorLocalChatLogConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelLocalFrbMirrorAnchorLocalChatLogConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_local_chat_log",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelLocalFrbMirrorAnchorLocalConversation({
+    required LocalConversation value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_local_conversation(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 167,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelLocalFrbMirrorAnchorLocalConversationConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelLocalFrbMirrorAnchorLocalConversationConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_local_conversation",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorLocationElem({
+    required LocationElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_location_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 168,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorLocationElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorLocationElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_location_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraLoggerConfigFrbMirrorAnchorLogConfig({
+    required LogConfig value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_log_config(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 169,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateInfraLoggerConfigFrbMirrorAnchorLogConfigConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateInfraLoggerConfigFrbMirrorAnchorLogConfigConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_log_config",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorMarkMessagesAsReadReq({
+    required MarkMessagesAsReadReq value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_mark_messages_as_read_req(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 170,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateInfraHttpMessageFrbMirrorAnchorMarkMessagesAsReadReqConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpMessageFrbMirrorAnchorMarkMessagesAsReadReqConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_mark_messages_as_read_req",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMarkdownTextElem({
+    required MarkdownTextElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_markdown_text_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 171,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorMarkdownTextElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorMarkdownTextElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_markdown_text_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMergeElem({
+    required MergeElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_merge_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 172,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorMergeElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorMergeElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_merge_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMessageEntity({
+    required MessageEntity value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_message_entity(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 173,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorMessageEntityConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorMessageEntityConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_message_entity",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorMessageEvent({
+    required MessageEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_message_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 174,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsMessageFrbMirrorAnchorMessageEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsMessageFrbMirrorAnchorMessageEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_message_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMessageFrbMirrorAnchorMessageInfo({
+    required MessageInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_message_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 175,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMessageFrbMirrorAnchorMessageInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMessageFrbMirrorAnchorMessageInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_message_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsMessageFrbMirrorAnchorMessageReceipt({
+    required MessageReceipt value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_message_receipt(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 176,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateCoreEventEventsMessageFrbMirrorAnchorMessageReceiptConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsMessageFrbMirrorAnchorMessageReceiptConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_message_receipt",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorMsgStruct({
+    required MsgStruct value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_msg_struct(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 177,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorMsgStructConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorMsgStructConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_msg_struct",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorOfflinePushInfo({
+    required OfflinePushInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_offline_push_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 178,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorOfflinePushInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorOfflinePushInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_offline_push_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpOnlineFrbMirrorAnchorOnlineStatus({
+    required OnlineStatus value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_online_status(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 179,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateInfraHttpOnlineFrbMirrorAnchorOnlineStatusConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateInfraHttpOnlineFrbMirrorAnchorOnlineStatusConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_online_status",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorPictureBaseInfo({
+    required PictureBaseInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_picture_base_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 180,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateDomainModelMsgStructFrbMirrorAnchorPictureBaseInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorPictureBaseInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_picture_base_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorQuoteElem({
+    required QuoteElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_quote_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 181,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorQuoteElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorQuoteElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_quote_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpMessageFrbMirrorAnchorRevokeMessageReq({
+    required RevokeMessageReq value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_revoke_message_req(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 182,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateInfraHttpMessageFrbMirrorAnchorRevokeMessageReqConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpMessageFrbMirrorAnchorRevokeMessageReqConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_revoke_message_req",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateInfraHttpFriendFrbMirrorAnchorSearchFriendItem({
+    required SearchFriendItem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_search_friend_item(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 183,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta:
+            kCrateInfraHttpFriendFrbMirrorAnchorSearchFriendItemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateInfraHttpFriendFrbMirrorAnchorSearchFriendItemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_search_friend_item",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateSdkClientFrbMirrorAnchorSearchMessagesReq({
+    required SearchMessagesReq value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_search_messages_req(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 184,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateSdkClientFrbMirrorAnchorSearchMessagesReqConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateSdkClientFrbMirrorAnchorSearchMessagesReqConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_search_messages_req",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainConstantEnumsFrbMirrorAnchorSessionType({
+    required SessionType value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_session_type(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 185,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainConstantEnumsFrbMirrorAnchorSessionTypeConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainConstantEnumsFrbMirrorAnchorSessionTypeConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_session_type",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorSoundElem({
+    required SoundElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_sound_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 186,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorSoundElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorSoundElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_sound_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorTextElem({
+    required TextElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_text_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 187,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorTextElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorTextElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_text_elem",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateCoreEventEventsUserFrbMirrorAnchorUserEvent({
+    required UserEvent value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_user_event(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 188,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateCoreEventEventsUserFrbMirrorAnchorUserEventConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateCoreEventEventsUserFrbMirrorAnchorUserEventConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_user_event",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelUserFrbMirrorAnchorUserInfo({
+    required UserInfo value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_user_info(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 189,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelUserFrbMirrorAnchorUserInfoConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateDomainModelUserFrbMirrorAnchorUserInfoConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_user_info",
+        argNames: ["value"],
+      );
+
+  @override
+  Future<void> crateDomainModelMsgStructFrbMirrorAnchorVideoElem({
+    required VideoElem value,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_box_autoadd_video_elem(value, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 190,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateDomainModelMsgStructFrbMirrorAnchorVideoElemConstMeta,
+        argValues: [value],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta
+  get kCrateDomainModelMsgStructFrbMirrorAnchorVideoElemConstMeta =>
+      const TaskConstMeta(
+        debugName: "frb_mirror_anchor_video_elem",
+        argNames: ["value"],
+      );
+
+  @override
   Future<List<LocalChatLog>>
   crateApiFfiMessageAdvancedGetAdvancedHistoryMessageListBySeq({
     required String conversationId,
@@ -6906,7 +8743,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 143,
+            funcId: 191,
             port: port_,
           );
         },
@@ -6938,7 +8775,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 144,
+            funcId: 192,
             port: port_,
           );
         },
@@ -6968,7 +8805,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 145,
+            funcId: 193,
             port: port_,
           );
         },
@@ -7007,7 +8844,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 146,
+            funcId: 194,
             port: port_,
           );
         },
@@ -7044,7 +8881,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 147,
+            funcId: 195,
             port: port_,
           );
         },
@@ -7074,7 +8911,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 148,
+            funcId: 196,
             port: port_,
           );
         },
@@ -7101,7 +8938,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 149,
+            funcId: 197,
             port: port_,
           );
         },
@@ -7128,7 +8965,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 150,
+            funcId: 198,
             port: port_,
           );
         },
@@ -7155,7 +8992,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 151,
+            funcId: 199,
             port: port_,
           );
         },
@@ -7186,7 +9023,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 152,
+            funcId: 200,
             port: port_,
           );
         },
@@ -7214,7 +9051,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 153,
+            funcId: 201,
             port: port_,
           );
         },
@@ -7242,7 +9079,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 154,
+            funcId: 202,
             port: port_,
           );
         },
@@ -7279,7 +9116,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 155,
+            funcId: 203,
             port: port_,
           );
         },
@@ -7321,7 +9158,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 156,
+            funcId: 204,
             port: port_,
           );
         },
@@ -7353,7 +9190,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 157,
+            funcId: 205,
             port: port_,
           );
         },
@@ -7385,7 +9222,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 158,
+            funcId: 206,
             port: port_,
           );
         },
@@ -7429,7 +9266,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 159,
+            funcId: 207,
             port: port_,
           );
         },
@@ -7488,7 +9325,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 160,
+            funcId: 208,
             port: port_,
           );
         },
@@ -7537,7 +9374,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 161,
+            funcId: 209,
             port: port_,
           );
         },
@@ -7583,7 +9420,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 162,
+            funcId: 210,
             port: port_,
           );
         },
@@ -7624,7 +9461,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 163,
+            funcId: 211,
             port: port_,
           );
         },
@@ -7667,7 +9504,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 164,
+            funcId: 212,
             port: port_,
           );
         },
@@ -7708,7 +9545,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 165,
+            funcId: 213,
             port: port_,
           );
         },
@@ -7757,7 +9594,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 166,
+            funcId: 214,
             port: port_,
           );
         },
@@ -7813,7 +9650,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 167,
+            funcId: 215,
             port: port_,
           );
         },
@@ -7855,7 +9692,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 168,
+            funcId: 216,
             port: port_,
           );
         },
@@ -7892,7 +9729,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 169,
+            funcId: 217,
             port: port_,
           );
         },
@@ -7937,7 +9774,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 170,
+            funcId: 218,
             port: port_,
           );
         },
@@ -7992,7 +9829,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 171,
+            funcId: 219,
             port: port_,
           );
         },
@@ -8029,7 +9866,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 172,
+            funcId: 220,
             port: port_,
           );
         },
@@ -8070,7 +9907,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 173,
+            funcId: 221,
             port: port_,
           );
         },
@@ -8109,7 +9946,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 174,
+            funcId: 222,
             port: port_,
           );
         },
@@ -8140,7 +9977,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 175,
+            funcId: 223,
             port: port_,
           );
         },
@@ -8171,7 +10008,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 176,
+            funcId: 224,
             port: port_,
           );
         },
@@ -8199,7 +10036,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 177,
+            funcId: 225,
             port: port_,
           );
         },
@@ -8236,7 +10073,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 178,
+            funcId: 226,
             port: port_,
           );
         },
@@ -8266,7 +10103,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 179,
+            funcId: 227,
             port: port_,
           );
         },
@@ -8298,7 +10135,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 180,
+            funcId: 228,
             port: port_,
           );
         },
@@ -8333,7 +10170,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 181,
+            funcId: 229,
             port: port_,
           );
         },
@@ -8371,7 +10208,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 182,
+              funcId: 230,
               port: port_,
             );
           },
@@ -8569,6 +10406,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AtInfo dco_decode_box_autoadd_at_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_at_info(raw);
+  }
+
+  @protected
   AtTextElem dco_decode_box_autoadd_at_text_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_at_text_elem(raw);
@@ -8587,9 +10430,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CheckFriendResult dco_decode_box_autoadd_check_friend_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_check_friend_result(raw);
+  }
+
+  @protected
   ClientConfig dco_decode_box_autoadd_client_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_client_config(raw);
+  }
+
+  @protected
+  ConnectionEvent dco_decode_box_autoadd_connection_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_connection_event(raw);
+  }
+
+  @protected
+  ConversationEvent dco_decode_box_autoadd_conversation_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_conversation_event(raw);
   }
 
   @protected
@@ -8617,11 +10478,49 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FriendApplyInfo dco_decode_box_autoadd_friend_apply_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_friend_apply_info(raw);
+  }
+
+  @protected
+  FriendEvent dco_decode_box_autoadd_friend_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_friend_event(raw);
+  }
+
+  @protected
+  FriendInfo dco_decode_box_autoadd_friend_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_friend_info(raw);
+  }
+
+  @protected
   GetHistoryMessagesReq dco_decode_box_autoadd_get_history_messages_req(
     dynamic raw,
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_get_history_messages_req(raw);
+  }
+
+  @protected
+  GetHistoryMessagesResult dco_decode_box_autoadd_get_history_messages_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_get_history_messages_result(raw);
+  }
+
+  @protected
+  GroupApplyInfo dco_decode_box_autoadd_group_apply_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_group_apply_info(raw);
+  }
+
+  @protected
+  GroupEvent dco_decode_box_autoadd_group_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_group_event(raw);
   }
 
   @protected
@@ -8637,9 +10536,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReadReceipt dco_decode_box_autoadd_group_read_receipt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_group_read_receipt(raw);
+  }
+
+  @protected
   int dco_decode_box_autoadd_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  LocalChatLog dco_decode_box_autoadd_local_chat_log(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_local_chat_log(raw);
   }
 
   @protected
@@ -8681,9 +10592,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MessageEntity dco_decode_box_autoadd_message_entity(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_entity(raw);
+  }
+
+  @protected
+  MessageEvent dco_decode_box_autoadd_message_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_event(raw);
+  }
+
+  @protected
   MessageInfo dco_decode_box_autoadd_message_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_message_info(raw);
+  }
+
+  @protected
+  MessageReceipt dco_decode_box_autoadd_message_receipt(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_message_receipt(raw);
   }
 
   @protected
@@ -8696,6 +10625,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   OfflinePushInfo dco_decode_box_autoadd_offline_push_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_offline_push_info(raw);
+  }
+
+  @protected
+  OnlineStatus dco_decode_box_autoadd_online_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_online_status(raw);
   }
 
   @protected
@@ -8723,6 +10658,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SearchFriendItem dco_decode_box_autoadd_search_friend_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_search_friend_item(raw);
+  }
+
+  @protected
   SearchMessagesReq dco_decode_box_autoadd_search_messages_req(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_search_messages_req(raw);
@@ -8738,6 +10679,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TextElem dco_decode_box_autoadd_text_elem(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_text_elem(raw);
+  }
+
+  @protected
+  UserEvent dco_decode_box_autoadd_user_event(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_user_event(raw);
   }
 
   @protected
@@ -9555,8 +11502,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   MsgStruct dco_decode_msg_struct(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 35)
-      throw Exception('unexpected arr length: expect 35 but see ${arr.length}');
+    if (arr.length != 36)
+      throw Exception('unexpected arr length: expect 36 but see ${arr.length}');
     return MsgStruct(
       clientMsgId: dco_decode_String(arr[0]),
       serverMsgId: dco_decode_String(arr[1]),
@@ -9577,22 +11524,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       status: dco_decode_i_32(arr[16]),
       attachedInfo: dco_decode_String(arr[17]),
       ex: dco_decode_String(arr[18]),
-      localEx: dco_decode_String(arr[19]),
-      textElem: dco_decode_opt_box_autoadd_text_elem(arr[20]),
-      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[21]),
-      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[22]),
-      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[23]),
-      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[24]),
-      atTextElem: dco_decode_opt_box_autoadd_at_text_elem(arr[25]),
-      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[26]),
-      mergeElem: dco_decode_opt_box_autoadd_merge_elem(arr[27]),
-      cardElem: dco_decode_opt_box_autoadd_card_elem(arr[28]),
-      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[29]),
-      faceElem: dco_decode_opt_box_autoadd_face_elem(arr[30]),
-      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[31]),
-      advancedTextElem: dco_decode_opt_box_autoadd_advanced_text_elem(arr[32]),
-      markdownTextElem: dco_decode_opt_box_autoadd_markdown_text_elem(arr[33]),
-      offlinePush: dco_decode_opt_box_autoadd_offline_push_info(arr[34]),
+      topicId: dco_decode_String(arr[19]),
+      localEx: dco_decode_String(arr[20]),
+      textElem: dco_decode_opt_box_autoadd_text_elem(arr[21]),
+      pictureElem: dco_decode_opt_box_autoadd_picture_elem(arr[22]),
+      soundElem: dco_decode_opt_box_autoadd_sound_elem(arr[23]),
+      videoElem: dco_decode_opt_box_autoadd_video_elem(arr[24]),
+      fileElem: dco_decode_opt_box_autoadd_file_elem(arr[25]),
+      atTextElem: dco_decode_opt_box_autoadd_at_text_elem(arr[26]),
+      quoteElem: dco_decode_opt_box_autoadd_quote_elem(arr[27]),
+      mergeElem: dco_decode_opt_box_autoadd_merge_elem(arr[28]),
+      cardElem: dco_decode_opt_box_autoadd_card_elem(arr[29]),
+      locationElem: dco_decode_opt_box_autoadd_location_elem(arr[30]),
+      faceElem: dco_decode_opt_box_autoadd_face_elem(arr[31]),
+      customElem: dco_decode_opt_box_autoadd_custom_elem(arr[32]),
+      advancedTextElem: dco_decode_opt_box_autoadd_advanced_text_elem(arr[33]),
+      markdownTextElem: dco_decode_opt_box_autoadd_markdown_text_elem(arr[34]),
+      offlinePush: dco_decode_opt_box_autoadd_offline_push_info(arr[35]),
     );
   }
 
@@ -10161,6 +12109,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AtInfo sse_decode_box_autoadd_at_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_at_info(deserializer));
+  }
+
+  @protected
   AtTextElem sse_decode_box_autoadd_at_text_elem(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_at_text_elem(deserializer));
@@ -10179,11 +12133,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  CheckFriendResult sse_decode_box_autoadd_check_friend_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_check_friend_result(deserializer));
+  }
+
+  @protected
   ClientConfig sse_decode_box_autoadd_client_config(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_client_config(deserializer));
+  }
+
+  @protected
+  ConnectionEvent sse_decode_box_autoadd_connection_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_connection_event(deserializer));
+  }
+
+  @protected
+  ConversationEvent sse_decode_box_autoadd_conversation_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_conversation_event(deserializer));
   }
 
   @protected
@@ -10213,11 +12191,55 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  FriendApplyInfo sse_decode_box_autoadd_friend_apply_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_friend_apply_info(deserializer));
+  }
+
+  @protected
+  FriendEvent sse_decode_box_autoadd_friend_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_friend_event(deserializer));
+  }
+
+  @protected
+  FriendInfo sse_decode_box_autoadd_friend_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_friend_info(deserializer));
+  }
+
+  @protected
   GetHistoryMessagesReq sse_decode_box_autoadd_get_history_messages_req(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_get_history_messages_req(deserializer));
+  }
+
+  @protected
+  GetHistoryMessagesResult sse_decode_box_autoadd_get_history_messages_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_get_history_messages_result(deserializer));
+  }
+
+  @protected
+  GroupApplyInfo sse_decode_box_autoadd_group_apply_info(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_group_apply_info(deserializer));
+  }
+
+  @protected
+  GroupEvent sse_decode_box_autoadd_group_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_group_event(deserializer));
   }
 
   @protected
@@ -10235,9 +12257,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  GroupReadReceipt sse_decode_box_autoadd_group_read_receipt(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_group_read_receipt(deserializer));
+  }
+
+  @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_i_32(deserializer));
+  }
+
+  @protected
+  LocalChatLog sse_decode_box_autoadd_local_chat_log(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_local_chat_log(deserializer));
   }
 
   @protected
@@ -10285,11 +12323,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MessageEntity sse_decode_box_autoadd_message_entity(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_entity(deserializer));
+  }
+
+  @protected
+  MessageEvent sse_decode_box_autoadd_message_event(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_event(deserializer));
+  }
+
+  @protected
   MessageInfo sse_decode_box_autoadd_message_info(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_message_info(deserializer));
+  }
+
+  @protected
+  MessageReceipt sse_decode_box_autoadd_message_receipt(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_message_receipt(deserializer));
   }
 
   @protected
@@ -10304,6 +12366,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_offline_push_info(deserializer));
+  }
+
+  @protected
+  OnlineStatus sse_decode_box_autoadd_online_status(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_online_status(deserializer));
   }
 
   @protected
@@ -10337,6 +12407,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  SearchFriendItem sse_decode_box_autoadd_search_friend_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_search_friend_item(deserializer));
+  }
+
+  @protected
   SearchMessagesReq sse_decode_box_autoadd_search_messages_req(
     SseDeserializer deserializer,
   ) {
@@ -10354,6 +12432,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TextElem sse_decode_box_autoadd_text_elem(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_text_elem(deserializer));
+  }
+
+  @protected
+  UserEvent sse_decode_box_autoadd_user_event(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_user_event(deserializer));
   }
 
   @protected
@@ -11499,6 +13583,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_status = sse_decode_i_32(deserializer);
     var var_attachedInfo = sse_decode_String(deserializer);
     var var_ex = sse_decode_String(deserializer);
+    var var_topicId = sse_decode_String(deserializer);
     var var_localEx = sse_decode_String(deserializer);
     var var_textElem = sse_decode_opt_box_autoadd_text_elem(deserializer);
     var var_pictureElem = sse_decode_opt_box_autoadd_picture_elem(deserializer);
@@ -11543,6 +13628,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       status: var_status,
       attachedInfo: var_attachedInfo,
       ex: var_ex,
+      topicId: var_topicId,
       localEx: var_localEx,
       textElem: var_textElem,
       pictureElem: var_pictureElem,
@@ -12351,6 +14437,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_at_info(AtInfo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_at_info(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_at_text_elem(
     AtTextElem self,
     SseSerializer serializer,
@@ -12375,12 +14467,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_check_friend_result(
+    CheckFriendResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_check_friend_result(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_client_config(
     ClientConfig self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_client_config(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_connection_event(
+    ConnectionEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_connection_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_conversation_event(
+    ConversationEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_conversation_event(self, serializer);
   }
 
   @protected
@@ -12420,12 +14539,66 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_friend_apply_info(
+    FriendApplyInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_friend_apply_info(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_friend_event(
+    FriendEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_friend_event(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_friend_info(
+    FriendInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_friend_info(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_get_history_messages_req(
     GetHistoryMessagesReq self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_get_history_messages_req(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_get_history_messages_result(
+    GetHistoryMessagesResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_get_history_messages_result(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_group_apply_info(
+    GroupApplyInfo self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_group_apply_info(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_group_event(
+    GroupEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_group_event(self, serializer);
   }
 
   @protected
@@ -12447,9 +14620,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_group_read_receipt(
+    GroupReadReceipt self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_group_read_receipt(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_local_chat_log(
+    LocalChatLog self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_local_chat_log(self, serializer);
   }
 
   @protected
@@ -12507,12 +14698,39 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_message_entity(
+    MessageEntity self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_entity(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_message_event(
+    MessageEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_event(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_message_info(
     MessageInfo self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_message_info(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_message_receipt(
+    MessageReceipt self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_message_receipt(self, serializer);
   }
 
   @protected
@@ -12531,6 +14749,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_offline_push_info(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_online_status(
+    OnlineStatus self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_online_status(self, serializer);
   }
 
   @protected
@@ -12570,6 +14797,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_search_friend_item(
+    SearchFriendItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_search_friend_item(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_search_messages_req(
     SearchMessagesReq self,
     SseSerializer serializer,
@@ -12594,6 +14830,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_text_elem(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_user_event(
+    UserEvent self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_user_event(self, serializer);
   }
 
   @protected
@@ -13514,6 +15759,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.status, serializer);
     sse_encode_String(self.attachedInfo, serializer);
     sse_encode_String(self.ex, serializer);
+    sse_encode_String(self.topicId, serializer);
     sse_encode_String(self.localEx, serializer);
     sse_encode_opt_box_autoadd_text_elem(self.textElem, serializer);
     sse_encode_opt_box_autoadd_picture_elem(self.pictureElem, serializer);

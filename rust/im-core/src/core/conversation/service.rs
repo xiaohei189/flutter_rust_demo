@@ -1,0 +1,1019 @@
+//! 会话管理器 - 本地 CRUD（置顶、免打扰、未读数、草稿等）
+
+use crate::core::context::Repositories;
+use crate::core::conversation::enrich::batch_add_face_url_and_name;
+use crate::core::event::events::conversation::{ConversationEvent, ConversationListener, ConversationListenerExt};
+use crate::domain::error::Result;
+use crate::domain::model::local::LocalConversation;
+use crate::domain::model::UserId;
+use crate::infra::http::conversation::{ConversationServerApi, SetConversationReq};
+
+use std::sync::Arc;
+use tracing::{debug, info, warn};
+
+/// 群会话 ID 前缀（`sg_<groupID>`）
+const GROUP_CONVERSATION_PREFIX: &str = "sg_";
+
+/// 群会话 ID → 群 ID；非群会话返回 `None`
+pub fn group_id_of_group_conversation(conversation_id: &str) -> Option<&str> {
+    conversation_id.strip_prefix(GROUP_CONVERSATION_PREFIX).filter(|g| !g.is_empty())
+}
+
+/// 本地清理来源：用于区分「推送 / 同步兜底 / 本端操作」，
+/// 日志里带上它才能判断死群残留是服务端漏推还是客户端漏清理。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CleanupSource {
+    /// 服务端通知（群解散、自己被移出群等）
+    Push,
+    /// 同步兜底（登录/重连、群增量同步成功后的对账）
+    Sync,
+    /// 本端主动操作（主动退群、主动解散群、删除会话）
+    LocalAction,
+}
+
+impl CleanupSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            CleanupSource::Push => "push",
+            CleanupSource::Sync => "sync",
+            CleanupSource::LocalAction => "local_action",
+        }
+    }
+}
+
+pub struct ConversationService {
+    /// 外部依赖
+    repositories: Arc<Repositories>,
+    /// 服务端 API（用于同步设置到服务器）
+    server_api: Option<Arc<dyn ConversationServerApi>>,
+    /// 当前登录用户 ID（同步会话设置到服务器时使用）
+    user_id: Option<UserId>,
+    /// 事件出口（Listener trait）
+    pub(crate) listener: Arc<dyn ConversationListener>,
+}
+
+impl ConversationService {
+    pub fn new(repositories: Arc<Repositories>, listener: Arc<dyn ConversationListener>) -> Self {
+        Self {
+            repositories,
+            server_api: None,
+            user_id: None,
+            listener,
+        }
+    }
+
+    /// 设置服务端 API（builder 调用）
+    pub fn with_server_api(mut self, api: Arc<dyn ConversationServerApi>) -> Self {
+        self.server_api = Some(api);
+        self
+    }
+
+    /// 设置当前登录用户 ID
+    pub fn with_user_id(mut self, user_id: UserId) -> Self {
+        self.user_id = Some(user_id);
+        self
+    }
+
+    pub(crate) fn send(&self, e: ConversationEvent) {
+        self.listener.emit(e);
+    }
+
+    pub async fn get_all_conversations(&self) -> Result<Vec<LocalConversation>> {
+        let mut local_convs = self.repositories.conversation_repo.get_all().await?;
+
+        // 回填空的 latest_msg（从消息数据库获取最新消息）
+        for conv in &mut local_convs {
+            if conv.latest_msg.is_empty() {
+                if let Ok(messages) = self.repositories.message_repo.get_latest(&conv.conversation_id, 1).await {
+                    if let Some(latest) = messages.first() {
+                        conv.latest_msg = latest.content.clone();
+                        conv.latest_msg_send_time = latest.send_time;
+                        let _ = self.repositories.conversation_repo.update_latest_msg(&conv.conversation_id, &latest.content, latest.send_time).await;
+                    }
+                }
+            }
+        }
+
+        self.normalize_empty_draft_times(&mut local_convs).await;
+
+        Ok(local_convs)
+    }
+
+    pub async fn get_conversation(&self, conversation_id: &str) -> Result<Option<LocalConversation>> {
+        self.repositories.conversation_repo.get_by_id(conversation_id).await
+    }
+
+    pub async fn upsert_conversation(&self, conv: LocalConversation) -> Result<()> {
+        self.repositories.conversation_repo.upsert(&conv).await?;
+        self.send(ConversationEvent::Changed(vec![conv]));
+        Ok(())
+    }
+
+    pub async fn upsert_conversations(&self, conversations: Vec<LocalConversation>) -> Result<()> {
+        for conv in conversations {
+            self.upsert_conversation(conv).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn delete_conversation(&self, conversation_id: &str) -> Result<()> {
+        self.delete_conversation_with_source(conversation_id, CleanupSource::LocalAction).await
+    }
+
+    /// 删除本地会话并广播 `Deleted`（唯一实现：删库 + 事件必须成对发生）。
+    ///
+    /// `source` 只进日志，用来定位「群失效后会话残留」是哪条链路漏了清理。
+    /// 幂等：会话本来就不存在时删除不报错，允许重复调用。
+    pub async fn delete_conversation_with_source(&self, conversation_id: &str, source: CleanupSource) -> Result<()> {
+        let removed = self.repositories.conversation_repo.delete(conversation_id).await?;
+        let group_id = group_id_of_group_conversation(conversation_id).unwrap_or_default();
+        if removed > 0 {
+            info!(
+                "本地会话已清理: cleanup_source={}, conversation_id={}, group_id={}, removed=true",
+                source.as_str(),
+                conversation_id,
+                group_id
+            );
+        } else {
+            // 推送与对账可能针对同一群重复触发，空删只留 debug，避免误读成「清理了两次」。
+            debug!(
+                "本地会话本就不存在: cleanup_source={}, conversation_id={}, group_id={}, removed=false",
+                source.as_str(),
+                conversation_id,
+                group_id
+            );
+        }
+        self.send(ConversationEvent::Deleted(vec![conversation_id.to_string()]));
+        Ok(())
+    }
+
+    /// 群会话对账：删除不在 `valid_group_ids` 里的 `sg_<groupID>` 会话，并逐条广播 `Deleted`。
+    ///
+    /// 服务端不会为「被解散 / 自己被移出」的群下发会话删除，群通知也可能不到，
+    /// 所以每次群同步成功后都要以「服务端返回的群集合」为准对齐一次会话表。
+    /// 返回清理掉的会话条数；重复执行安全（第二次已无脏会话可清）。
+    pub async fn reconcile_group_conversations(&self, valid_group_ids: &[String], source: CleanupSource) -> Result<usize> {
+        let valid: std::collections::HashSet<&str> = valid_group_ids.iter().map(|id| id.as_str()).collect();
+        let conversations = self.repositories.conversation_repo.get_all().await?;
+        let mut removed = 0usize;
+        for conversation in conversations {
+            let Some(group_id) = group_id_of_group_conversation(&conversation.conversation_id) else {
+                continue;
+            };
+            if valid.contains(group_id) {
+                continue;
+            }
+            // 群已不在群表里 → 会话进不去了，清理并通知 UI 从列表移除
+            self.delete_conversation_with_source(&conversation.conversation_id, source).await?;
+            removed += 1;
+        }
+        if removed > 0 {
+            info!("群会话对账完成: cleanup_source={}, removed={}", source.as_str(), removed);
+        }
+        Ok(removed)
+    }
+
+    pub async fn set_pinned(&self, conversation_id: &str, is_pinned: bool) -> Result<()> {
+        self.repositories.conversation_repo.set_pinned(conversation_id, is_pinned).await?;
+        if let Some(api) = &self.server_api {
+            let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
+                conversation_id: conversation_id.to_string(),
+                conversation_type: None,
+                user_id: None,
+                group_id: None,
+                recv_msg_opt: None,
+                is_pinned: Some(is_pinned),
+                is_private_chat: None,
+                group_at_type: None,
+                ex: None,
+            };
+            if let Some(conv) = &existing {
+                req.conversation_type = Some(conv.conversation_type);
+                req.user_id = Some(conv.user_id.clone());
+                req.group_id = Some(conv.group_id.clone());
+            }
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
+            if let Err(e) = api.set_conversation_on_server(&req).await {
+                warn!("同步会话置顶状态到服务器失败: {}", e);
+            }
+        }
+        info!("会话 {} 置顶状态设置为: {}", conversation_id, is_pinned);
+        Ok(())
+    }
+
+    pub async fn set_private_chat(&self, conversation_id: &str, is_private: bool) -> Result<()> {
+        self.repositories.conversation_repo.set_private_chat(conversation_id, is_private).await?;
+        if let Some(api) = &self.server_api {
+            let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
+                conversation_id: conversation_id.to_string(),
+                conversation_type: None,
+                user_id: None,
+                group_id: None,
+                recv_msg_opt: None,
+                is_pinned: None,
+                is_private_chat: Some(is_private),
+                group_at_type: None,
+                ex: None,
+            };
+            if let Some(conv) = &existing {
+                req.conversation_type = Some(conv.conversation_type);
+                req.user_id = Some(conv.user_id.clone());
+                req.group_id = Some(conv.group_id.clone());
+            }
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
+            if let Err(e) = api.set_conversation_on_server(&req).await {
+                warn!("同步会话私聊状态到服务器失败: {}", e);
+            }
+        }
+        info!("会话 {} 免打扰状态设置为: {}", conversation_id, is_private);
+        Ok(())
+    }
+
+    pub async fn update_unread_count(&self, conversation_id: &str, unread_count: i32) -> Result<()> {
+        self.repositories.conversation_repo.update_unread_count(conversation_id, unread_count).await?;
+        debug!("会话 {} 未读消息数更新为: {}", conversation_id, unread_count);
+        Ok(())
+    }
+
+    pub async fn set_draft(&self, conversation_id: &str, draft_text: &str) -> Result<()> {
+        // 空草稿 = 清空草稿，草稿时间必须归零。
+        // 会话列表按 MAX(latest_msg_send_time, draft_text_time) 排序并显示行内时间，
+        // 清空时若也盖「当前时间」，就会出现「进过会话但没写草稿 → 会话被顶到最前、
+        // 行内时间变成刚才」。
+        let draft_time = if draft_text.is_empty() { 0 } else { chrono::Utc::now().timestamp_millis() };
+        self.repositories.conversation_repo.set_draft(conversation_id, draft_text, draft_time).await?;
+        if draft_text.is_empty() {
+            debug!("会话 {} 草稿已清空", conversation_id);
+        } else {
+            debug!("会话 {} 草稿已设置", conversation_id);
+        }
+        Ok(())
+    }
+
+    pub async fn clear_draft(&self, conversation_id: &str) -> Result<()> {
+        self.set_draft(conversation_id, "").await
+    }
+
+    pub async fn get_pinned_conversations(&self) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.get_pinned().await
+    }
+
+    pub async fn count(&self) -> Result<i32> {
+        self.repositories.conversation_repo.count().await
+    }
+
+    /// 获取全部会话（不含 latest_msg 回填）
+    pub async fn get_all(&self) -> Result<Vec<LocalConversation>> {
+        let mut conversations = self.repositories.conversation_repo.get_all().await?;
+        self.normalize_empty_draft_times(&mut conversations).await;
+        Ok(conversations)
+    }
+
+    /// 分页获取会话（置顶优先、按时间倒序）
+    pub async fn get_split(&self, offset: i64, count: i64) -> Result<Vec<LocalConversation>> {
+        let mut conversations = self.repositories.conversation_repo.get_split(offset, count).await?;
+        self.normalize_empty_draft_times(&mut conversations).await;
+        Ok(conversations)
+    }
+
+    /// 兼容历史脏数据：草稿已清空却残留 draft_text_time。
+    ///
+    /// 会话列表按 `MAX(latest_msg_send_time, draft_text_time)` 排序并显示行内时间，
+    /// 早先 `clear_draft` 会盖上「当前时间」，于是「进过会话但没写草稿」的会话会被顶到
+    /// 最前、行内时间显示成刚才。这里把存量脏数据归零并落库，只在首次读取时写一次。
+    async fn normalize_empty_draft_times(&self, conversations: &mut [LocalConversation]) {
+        for conv in conversations.iter_mut() {
+            if conv.draft_text.is_empty() && conv.draft_text_time != 0 {
+                conv.draft_text_time = 0;
+                let _ = self.repositories.conversation_repo.set_draft(&conv.conversation_id, "", 0).await;
+            }
+        }
+    }
+
+    /// 按 ID 列表批量获取会话
+    pub async fn get_multiple(&self, conversation_ids: &[String]) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.get_multiple(conversation_ids).await
+    }
+
+    /// 搜索会话（按 show_name 模糊匹配）
+    pub async fn search(&self, keyword: &str) -> Result<Vec<LocalConversation>> {
+        self.repositories.conversation_repo.search(keyword).await
+    }
+
+    /// 重置会话（未读数/最新消息/草稿等），使其不出现在会话列表中（隐藏）
+    pub async fn reset(&self, conversation_id: &str) -> Result<()> {
+        self.repositories.conversation_repo.reset(conversation_id).await
+    }
+
+    /// 隐藏全部会话（对齐 Go SDK `HideAllConversations`）
+    pub async fn hide_all_conversations(&self) -> Result<()> {
+        let conversations = self.get_all().await?;
+        for conversation in conversations {
+            self.reset(&conversation.conversation_id).await?;
+        }
+        Ok(())
+    }
+
+    /// 通用会话信息设置：按 conversation_id 查找已有会话，更新非空字段后 upsert
+    /// 同步到服务器（如果 server_api 已设置）
+    pub async fn set_conversation(
+        &self,
+        conversation_id: &str,
+        recv_msg_opt: Option<i32>,
+        is_pinned: Option<bool>,
+        is_private_chat: Option<bool>,
+        group_at_type: Option<i32>,
+        ex: Option<&str>,
+    ) -> Result<()> {
+        let existing = self.repositories.conversation_repo.get_by_id(conversation_id).await?;
+        let mut conv = existing.clone().unwrap_or_else(|| LocalConversation {
+            conversation_id: conversation_id.to_string(),
+            ..Default::default()
+        });
+        if let Some(opt) = recv_msg_opt {
+            conv.recv_msg_opt = opt;
+        }
+        if let Some(pinned) = is_pinned {
+            conv.is_pinned = pinned;
+        }
+        if let Some(private) = is_private_chat {
+            conv.is_private_chat = private;
+        }
+        if let Some(at_type) = group_at_type {
+            conv.group_at_type = at_type;
+        }
+        if let Some(ex_val) = ex {
+            conv.ex = ex_val.to_string();
+        }
+        if existing.is_some() {
+            self.repositories
+                .conversation_repo
+                .update_partial(conversation_id, recv_msg_opt, is_pinned, is_private_chat, group_at_type, ex)
+                .await?;
+        } else {
+            self.repositories.conversation_repo.upsert(&conv).await?;
+        }
+
+        // 同步到服务器
+        if let Some(api) = &self.server_api {
+            let mut req = SetConversationReq {
+                user_ids: Vec::new(),
+                conversation_id: conversation_id.to_string(),
+                conversation_type: Some(conv.conversation_type),
+                user_id: Some(conv.user_id.clone()),
+                group_id: Some(conv.group_id.clone()),
+                recv_msg_opt,
+                is_pinned,
+                is_private_chat,
+                group_at_type,
+                ex: ex.map(|s| s.to_string()),
+            };
+            if let Some(uid) = &self.user_id {
+                req.user_ids.push(uid.get().await);
+            }
+            if let Err(e) = api.set_conversation_on_server(&req).await {
+                warn!("同步会话设置到服务器失败: {}", e);
+            }
+        }
+
+        info!("会话 {} 已更新并同步到服务器", conversation_id);
+        Ok(())
+    }
+
+    pub async fn clear_all(&self) -> Result<()> {
+        self.repositories.conversation_repo.clear_all().await?;
+        info!("会话数据已清空");
+        Ok(())
+    }
+
+    /// 刷新全部会话的头像和名称（对齐 Go SDK `DispatchUpdateConversation(UpdateConFaceUrlAndNickName)`）
+    ///
+    /// 用户/好友/群组信息变更后调用：重新从本地数据源补全 show_name/face_url，
+    /// 仅当值变化时落库并发布 Changed 事件，避免空更新。
+    pub async fn refresh_face_url_and_name(&self) -> Result<()> {
+        let Some(user_id) = &self.user_id else {
+            return Ok(());
+        };
+        let login_user_id = user_id.get().await;
+        let mut conversations = self.repositories.conversation_repo.get_all().await?;
+        // 记录补全前的值，用于比较是否变化
+        let before: Vec<(String, String, String)> = conversations.iter().map(|c| (c.conversation_id.clone(), c.show_name.clone(), c.face_url.clone())).collect();
+        batch_add_face_url_and_name(&self.repositories, &login_user_id, &mut conversations).await?;
+        let mut changed = Vec::new();
+        for (conv, (id, old_name, old_face)) in conversations.into_iter().zip(before) {
+            if conv.show_name != old_name || conv.face_url != old_face {
+                self.repositories.conversation_repo.update_face_url_and_name(&id, &conv.show_name, &conv.face_url).await?;
+                changed.push(conv);
+            }
+        }
+        if !changed.is_empty() {
+            self.send(ConversationEvent::Changed(changed));
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infra::db::pool::create_pool_memory;
+    use crate::infra::db::{ConversationDao, FriendDao, GroupDao, MessageDao, NotificationSeqDao, SendingMessageDao, SyncVersionDao, UserDao};
+
+    fn make_test_repositories(pool: sqlx::SqlitePool) -> Arc<Repositories> {
+        Arc::new(Repositories {
+            message_repo: Arc::new(MessageDao::new(pool.clone())),
+            conversation_repo: Arc::new(ConversationDao::new(pool.clone())),
+            friend_repo: Arc::new(FriendDao::new(pool.clone())),
+            user_repo: Arc::new(UserDao::new(pool.clone())),
+            group_repo: Arc::new(GroupDao::new(pool.clone())),
+            sync_version_repo: Arc::new(SyncVersionDao::new(pool.clone())),
+            notification_seq_repo: Arc::new(NotificationSeqDao::new(pool.clone())),
+            sending_message_repo: Arc::new(SendingMessageDao::new(pool)),
+        })
+    }
+
+    fn create_test_conversation(id: &str) -> LocalConversation {
+        LocalConversation {
+            conversation_id: id.to_string(),
+            conversation_type: 1,
+            user_id: "user_1".to_string(),
+            group_id: String::new(),
+            show_name: format!("Conversation {}", id),
+            face_url: String::new(),
+            latest_msg: String::new(),
+            latest_msg_send_time: 0,
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: false,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_creation() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        assert_eq!(manager.count().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_upsert() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let conv = create_test_conversation("conv_1");
+        manager.upsert_conversation(conv).await.unwrap();
+        assert_eq!(manager.count().await.unwrap(), 1);
+        let retrieved = manager.get_conversation("conv_1").await.unwrap();
+        assert!(retrieved.is_some());
+        assert_eq!(retrieved.unwrap().conversation_id, "conv_1");
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_delete() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let conv = create_test_conversation("conv_1");
+        manager.upsert_conversation(conv).await.unwrap();
+        assert_eq!(manager.count().await.unwrap(), 1);
+        manager.delete_conversation("conv_1").await.unwrap();
+        assert_eq!(manager.count().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_set_pinned() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let conv = create_test_conversation("conv_1");
+        manager.upsert_conversation(conv).await.unwrap();
+        manager.set_pinned("conv_1", true).await.unwrap();
+        let pinned = manager.get_pinned_conversations().await.unwrap();
+        assert_eq!(pinned.len(), 1);
+        assert_eq!(pinned[0].conversation_id, "conv_1");
+        manager.set_pinned("conv_1", false).await.unwrap();
+        let pinned = manager.get_pinned_conversations().await.unwrap();
+        assert_eq!(pinned.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_update_unread_count() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let conv = create_test_conversation("conv_1");
+        manager.upsert_conversation(conv).await.unwrap();
+        manager.update_unread_count("conv_1", 5).await.unwrap();
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 5);
+    }
+
+    #[tokio::test]
+    async fn test_conversation_manager_set_draft() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let conv = create_test_conversation("conv_1");
+        manager.upsert_conversation(conv).await.unwrap();
+        manager.set_draft("conv_1", "test draft").await.unwrap();
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.draft_text, "test draft");
+        assert!(conv.draft_text_time > 0, "有内容的草稿要留时间给会话列表排序");
+        manager.clear_draft("conv_1").await.unwrap();
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.draft_text, "");
+        assert_eq!(conv.draft_text_time, 0, "清空草稿必须同时清掉草稿时间，否则会话会被顶到最前");
+    }
+
+    #[tokio::test]
+    async fn test_get_all_clears_stale_empty_draft_time() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let mut conv = create_test_conversation("conv_1");
+        // 模拟历史脏数据：草稿已清空，却残留草稿时间
+        conv.latest_msg = "hi".to_string();
+        conv.latest_msg_send_time = 1000;
+        conv.draft_text = String::new();
+        conv.draft_text_time = 8888;
+        manager.upsert_conversation(conv).await.unwrap();
+
+        // App 的会话列表走 get_all（纯读路径），这里必须自愈
+        let list = manager.get_all().await.unwrap();
+        assert_eq!(list[0].draft_text_time, 0, "空草稿的草稿时间应归零");
+        // 分页路径同样自愈
+        let page = manager.get_split(0, 10).await.unwrap();
+        assert_eq!(page[0].draft_text_time, 0);
+
+        // 并且落库，避免每次读会话列表都要重新清理
+        let stored = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(stored.draft_text_time, 0);
+    }
+
+    // ========================================================================
+    // set_conversation：服务端同步 + 本地回写
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_set_conversation_updates_existing_fields() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        manager.set_conversation("conv_1", Some(2), Some(true), Some(true), Some(3), Some("ex_val")).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert!(conv.is_private_chat);
+        assert_eq!(conv.group_at_type, 3);
+        assert_eq!(conv.ex, "ex_val");
+        // 未传入字段保持原值
+        assert_eq!(conv.show_name, "Conversation conv_1");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_creates_new_when_missing() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+
+        manager.set_conversation("conv_new", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_new").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(!conv.is_pinned);
+        assert_eq!(conv.conversation_type, 0);
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_partial_updates_do_not_overwrite() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_partial")).await.unwrap();
+
+        let _ = tokio::join!(
+            manager.set_conversation("conv_partial", Some(2), None, None, None, None),
+            manager.set_conversation("conv_partial", None, Some(true), None, None, None),
+            manager.set_conversation("conv_partial", None, None, Some(true), None, None),
+        );
+
+        let conv = manager.get_conversation("conv_partial").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert!(conv.is_private_chat);
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_none_fields_keep_existing() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "conv_1".to_string(),
+                recv_msg_opt: 1,
+                is_pinned: true,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 只更新 recv_msg_opt，其余传 None 应保持
+        manager.set_conversation("conv_1", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned, "is_pinned 未被覆盖应保持 true");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_syncs_to_server() {
+        let pool = create_pool_memory().await.unwrap();
+        let api = Arc::new(crate::infra::http::conversation::MockConversationApi::new());
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        manager.set_conversation("conv_1", Some(2), Some(true), None, None, Some("ex")).await.unwrap();
+
+        // 服务端被调用且请求参数正确（仅传非 None 字段）
+        let calls = api.set_calls();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].conversation_id, "conv_1");
+        assert_eq!(calls[0].recv_msg_opt, Some(2));
+        assert_eq!(calls[0].is_pinned, Some(true));
+        assert_eq!(calls[0].is_private_chat, None);
+        assert_eq!(calls[0].group_at_type, None);
+        assert_eq!(calls[0].ex.as_deref(), Some("ex"));
+
+        // 本地已回写
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+        assert!(conv.is_pinned);
+        assert_eq!(conv.ex, "ex");
+    }
+
+    #[tokio::test]
+    async fn test_set_conversation_server_failure_keeps_local_success() {
+        let pool = create_pool_memory().await.unwrap();
+        let api = Arc::new(crate::infra::http::conversation::MockConversationApi::new().with_set_fail(true));
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener()).with_server_api(api.clone());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+
+        // 服务端失败不应影响本地更新结果
+        manager.set_conversation("conv_1", Some(2), None, None, None, None).await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.recv_msg_opt, 2);
+    }
+
+    // ========================================================================
+    // 查询族：get_split / get_multiple / search / reset / 回填
+    // ========================================================================
+
+    fn create_conv_with_time(id: &str, latest_msg_send_time: i64, pinned: bool) -> LocalConversation {
+        LocalConversation {
+            conversation_id: id.to_string(),
+            conversation_type: 1,
+            user_id: "user_1".to_string(),
+            group_id: String::new(),
+            show_name: format!("Chat_{}", id),
+            face_url: String::new(),
+            latest_msg: format!("msg_{}", id),
+            latest_msg_send_time,
+            unread_count: 0,
+            recv_msg_opt: 0,
+            is_pinned: pinned,
+            is_private_chat: false,
+            burn_duration: 0,
+            group_at_type: 0,
+            is_not_in_group: false,
+            update_unread_count_time: 0,
+            attached_info: String::new(),
+            ex: String::new(),
+            draft_text: String::new(),
+            draft_text_time: 0,
+            max_seq: 0,
+            min_seq: 0,
+            is_msg_destruct: false,
+            msg_destruct_time: 0,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_split_pinned_first_then_time_desc() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_old", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_new", 3000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_pinned", 2000, true)).await.unwrap();
+
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert_eq!(list.len(), 3);
+        // 置顶优先，其余按时间倒序
+        assert_eq!(list[0].conversation_id, "conv_pinned");
+        assert_eq!(list[1].conversation_id, "conv_new");
+        assert_eq!(list[2].conversation_id, "conv_old");
+    }
+
+    #[tokio::test]
+    async fn test_get_split_filters_hidden_and_paginates() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        // latest_msg_send_time = 0 的会话被过滤（reset 后隐藏）
+        manager.upsert_conversation(create_conv_with_time("conv_hidden", 0, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_1", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_2", 2000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_3", 3000, false)).await.unwrap();
+
+        let list = manager.get_split(0, 2).await.unwrap();
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].conversation_id, "conv_3");
+        assert_eq!(list[1].conversation_id, "conv_2");
+
+        let list = manager.get_split(2, 2).await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].conversation_id, "conv_1");
+    }
+
+    #[tokio::test]
+    async fn test_get_multiple() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+        manager.upsert_conversation(create_test_conversation("conv_2")).await.unwrap();
+        manager.upsert_conversation(create_test_conversation("conv_3")).await.unwrap();
+
+        let list = manager.get_multiple(&["conv_1".to_string(), "conv_3".to_string()]).await.unwrap();
+        let mut ids: Vec<String> = list.into_iter().map(|c| c.conversation_id).collect();
+        ids.sort();
+        assert_eq!(ids, vec!["conv_1", "conv_3"]);
+
+        // 空列表直接返回空
+        let empty = manager.get_multiple(&[]).await.unwrap();
+        assert!(empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_search_by_show_name() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_alice", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_bob", 2000, false)).await.unwrap();
+
+        let found = manager.search("alice").await.unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].conversation_id, "conv_alice");
+
+        let none = manager.search("nobody").await.unwrap();
+        assert!(none.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_reset_hides_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        let mut conv = create_conv_with_time("conv_1", 1000, false);
+        conv.unread_count = 5;
+        conv.draft_text = "draft".to_string();
+        manager.upsert_conversation(conv).await.unwrap();
+
+        manager.reset("conv_1").await.unwrap();
+
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.unread_count, 0);
+        assert_eq!(conv.latest_msg, "");
+        assert_eq!(conv.latest_msg_send_time, 0);
+        assert_eq!(conv.draft_text, "");
+        // reset 后不再出现在分页列表中
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_reset_missing_conversation_returns_error() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        assert!(manager.reset("conv_missing").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_hide_all_conversations_hides_all() {
+        let pool = create_pool_memory().await.unwrap();
+        let manager = ConversationService::new(make_test_repositories(pool), crate::core::event::test_util::noop_conversation_listener());
+        manager.upsert_conversation(create_conv_with_time("conv_1", 1000, false)).await.unwrap();
+        manager.upsert_conversation(create_conv_with_time("conv_2", 2000, false)).await.unwrap();
+
+        manager.hide_all_conversations().await.unwrap();
+
+        let list = manager.get_split(0, 10).await.unwrap();
+        assert!(list.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_all_conversations_backfills_latest_msg() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let manager = ConversationService::new(repositories.clone(), crate::core::event::test_util::noop_conversation_listener());
+
+        // 会话 latest_msg 为空，但消息库有最新消息
+        manager.upsert_conversation(create_test_conversation("conv_1")).await.unwrap();
+        let message_repo = repositories.message_repo.clone();
+        let msg = crate::domain::model::local::LocalChatLog {
+            conversation_id: "conv_1".to_string(),
+            client_msg_id: "m1".to_string(),
+            server_msg_id: String::new(),
+            send_id: "u1".to_string(),
+            recv_id: "u2".to_string(),
+            sender_platform_id: 1,
+            sender_nick_name: String::new(),
+            sender_face_url: String::new(),
+            session_type: 1,
+            msg_from: 100,
+            content_type: 101,
+            content: "最新内容".to_string(),
+            is_read: 0,
+            status: 2,
+            seq: 1,
+            send_time: 8888,
+            create_time: 8888,
+            attached_info: String::new(),
+            ex: String::new(),
+            local_ex: String::new(),
+            group_id: String::new(),
+        };
+        message_repo.batch_insert(&[msg]).await.unwrap();
+
+        let list = manager.get_all_conversations().await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].latest_msg, "最新内容");
+        assert_eq!(list[0].latest_msg_send_time, 8888);
+
+        // 回填已持久化到会话表
+        let conv = manager.get_conversation("conv_1").await.unwrap().unwrap();
+        assert_eq!(conv.latest_msg, "最新内容");
+    }
+
+    // ========================================================================
+    // refresh_face_url_and_name：用户/好友/群组信息变更后的会话名称联动
+    // ========================================================================
+
+    /// 好友备注变更后刷新会话名称并落库、发布事件（对齐 Go `DispatchUpdateConversation`）
+    #[tokio::test]
+    async fn test_refresh_face_url_and_name_updates_conversation() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool.clone());
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories.clone(), hub).with_user_id(crate::domain::model::UserId::new("me"));
+
+        // 预置单聊会话（旧名称/旧头像）
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "si_me_u1".to_string(),
+                conversation_type: 1,
+                user_id: "u1".to_string(),
+                show_name: "旧名字".to_string(),
+                face_url: "http://old.png".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 好友信息变更（备注/头像更新）
+        repositories
+            .friend_repo
+            .upsert(&crate::domain::model::local::LocalFriend {
+                owner_user_id: "me".to_string(),
+                friend_user_id: "u1".to_string(),
+                remark: "新备注".to_string(),
+                nickname: "王强".to_string(),
+                face_url: "http://friend.png".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 消费 upsert 自身发布的 Changed 事件，后续断言只关心 refresh 发布的事件
+        let _ = rx.try_recv();
+
+        manager.refresh_face_url_and_name().await.unwrap();
+
+        // 会话名称/头像已更新并落库
+        let conv = manager.get_conversation("si_me_u1").await.unwrap().unwrap();
+        assert_eq!(conv.show_name, "新备注");
+        assert_eq!(conv.face_url, "http://friend.png");
+        // 发布 Changed 事件
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Changed(convs) => assert_eq!(convs[0].show_name, "新备注"),
+            other => panic!("期望 Changed 事件，实际 {:?}", other.as_str()),
+        }
+    }
+
+    /// 数据源无变化时不发布事件（避免空更新）
+    #[tokio::test]
+    async fn test_refresh_face_url_and_name_no_change_no_event() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub).with_user_id(crate::domain::model::UserId::new("me"));
+
+        // 会话已存在且无好友/用户/群组数据，refresh 后仍为空 → 无变化
+        manager
+            .upsert_conversation(LocalConversation {
+                conversation_id: "si_me_u1".to_string(),
+                conversation_type: 1,
+                user_id: "u1".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        // 消费 upsert 自身发布的 Changed 事件
+        let _ = rx.try_recv();
+
+        manager.refresh_face_url_and_name().await.unwrap();
+        assert!(rx.try_recv().is_err(), "无变化不应发布事件");
+    }
+
+    // ========================================================================
+    // reconcile_group_conversations：以当前群集合为准清理孤儿群会话
+    // （服务端不会为「被解散 / 自己被移出」的群下发会话删除，必须客户端兜底）
+    // ========================================================================
+
+    fn create_group_conversation(group_id: &str) -> LocalConversation {
+        LocalConversation {
+            conversation_id: format!("sg_{}", group_id),
+            conversation_type: 3,
+            user_id: String::new(),
+            group_id: group_id.to_string(),
+            show_name: format!("群 {}", group_id),
+            ..Default::default()
+        }
+    }
+
+    /// 群还在 → 会话保留，不广播任何事件
+    #[tokio::test]
+    async fn test_reconcile_group_conversations_keeps_valid_group() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub);
+
+        manager.upsert_conversation(create_test_conversation("si_me_u1")).await.unwrap();
+        manager.upsert_conversation(create_group_conversation("group_1")).await.unwrap();
+        let _ = rx.try_recv();
+        let _ = rx.try_recv();
+
+        let removed = manager.reconcile_group_conversations(&["group_1".to_string()], CleanupSource::Sync).await.unwrap();
+
+        assert_eq!(removed, 0);
+        assert!(manager.get_conversation("sg_group_1").await.unwrap().is_some(), "群还在时的会话不能被误删");
+        assert!(manager.get_conversation("si_me_u1").await.unwrap().is_some(), "单聊会话不受对账影响");
+        assert!(rx.try_recv().is_err(), "无脏会话时不应广播事件");
+    }
+
+    /// 群已不存在 → 删会话 + 广播 Deleted；重复执行幂等（第二次无脏会话可清）
+    #[tokio::test]
+    async fn test_reconcile_group_conversations_deletes_orphan_and_is_idempotent() {
+        let pool = create_pool_memory().await.unwrap();
+        let repositories = make_test_repositories(pool);
+        let hub = crate::core::event::hub::EventHub::new();
+        let mut rx = hub.take_conv_rx().unwrap();
+        let manager = ConversationService::new(repositories, hub);
+
+        manager.upsert_conversation(create_group_conversation("group_dead")).await.unwrap();
+        manager.upsert_conversation(create_group_conversation("group_alive")).await.unwrap();
+        let _ = rx.try_recv();
+        let _ = rx.try_recv();
+
+        let removed = manager.reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync).await.unwrap();
+        assert_eq!(removed, 1);
+        assert!(manager.get_conversation("sg_group_dead").await.unwrap().is_none(), "失效群的会话必须被清理");
+        assert!(manager.get_conversation("sg_group_alive").await.unwrap().is_some());
+        match rx.try_recv().unwrap() {
+            ConversationEvent::Deleted(ids) => assert_eq!(ids, vec!["sg_group_dead".to_string()]),
+            other => panic!("期望 Deleted 事件，实际 {:?}", other.as_str()),
+        }
+
+        // 重复执行：不报错，也不再广播
+        let removed_again = manager.reconcile_group_conversations(&["group_alive".to_string()], CleanupSource::Sync).await.unwrap();
+        assert_eq!(removed_again, 0);
+        assert!(rx.try_recv().is_err(), "重复对账不应重复广播删除");
+    }
+}

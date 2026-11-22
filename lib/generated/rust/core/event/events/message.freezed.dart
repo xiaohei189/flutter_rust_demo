@@ -1,5 +1,5 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -9,2567 +9,780 @@ part of 'message.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// dart format off
 T _$identity<T>(T value) => value;
-
-final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
-
 /// @nodoc
 mixin _$MessageEvent {
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) => throw _privateConstructorUsedError;
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) => throw _privateConstructorUsedError;
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'MessageEvent()';
+}
+
+
 }
 
 /// @nodoc
-abstract class $MessageEventCopyWith<$Res> {
-  factory $MessageEventCopyWith(
-    MessageEvent value,
-    $Res Function(MessageEvent) then,
-  ) = _$MessageEventCopyWithImpl<$Res, MessageEvent>;
+class $MessageEventCopyWith<$Res>  {
+$MessageEventCopyWith(MessageEvent _, $Res Function(MessageEvent) __);
 }
 
-/// @nodoc
-class _$MessageEventCopyWithImpl<$Res, $Val extends MessageEvent>
-    implements $MessageEventCopyWith<$Res> {
-  _$MessageEventCopyWithImpl(this._value, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+/// Adds pattern-matching-related methods to [MessageEvent].
+extension MessageEventPatterns on MessageEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( MessageEvent_NewMessage value)?  newMessage,TResult Function( MessageEvent_OfflineNewMessage value)?  offlineNewMessage,TResult Function( MessageEvent_OnlineOnlyMessage value)?  onlineOnlyMessage,TResult Function( MessageEvent_Revoked value)?  revoked,TResult Function( MessageEvent_C2CReadReceipt value)?  c2CReadReceipt,TResult Function( MessageEvent_Deleted value)?  deleted,TResult Function( MessageEvent_SendFailed value)?  sendFailed,TResult Function( MessageEvent_UploadProgress value)?  uploadProgress,required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage() when newMessage != null:
+return newMessage(_that);case MessageEvent_OfflineNewMessage() when offlineNewMessage != null:
+return offlineNewMessage(_that);case MessageEvent_OnlineOnlyMessage() when onlineOnlyMessage != null:
+return onlineOnlyMessage(_that);case MessageEvent_Revoked() when revoked != null:
+return revoked(_that);case MessageEvent_C2CReadReceipt() when c2CReadReceipt != null:
+return c2CReadReceipt(_that);case MessageEvent_Deleted() when deleted != null:
+return deleted(_that);case MessageEvent_SendFailed() when sendFailed != null:
+return sendFailed(_that);case MessageEvent_UploadProgress() when uploadProgress != null:
+return uploadProgress(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( MessageEvent_NewMessage value)  newMessage,required TResult Function( MessageEvent_OfflineNewMessage value)  offlineNewMessage,required TResult Function( MessageEvent_OnlineOnlyMessage value)  onlineOnlyMessage,required TResult Function( MessageEvent_Revoked value)  revoked,required TResult Function( MessageEvent_C2CReadReceipt value)  c2CReadReceipt,required TResult Function( MessageEvent_Deleted value)  deleted,required TResult Function( MessageEvent_SendFailed value)  sendFailed,required TResult Function( MessageEvent_UploadProgress value)  uploadProgress,}){
+final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage():
+return newMessage(_that);case MessageEvent_OfflineNewMessage():
+return offlineNewMessage(_that);case MessageEvent_OnlineOnlyMessage():
+return onlineOnlyMessage(_that);case MessageEvent_Revoked():
+return revoked(_that);case MessageEvent_C2CReadReceipt():
+return c2CReadReceipt(_that);case MessageEvent_Deleted():
+return deleted(_that);case MessageEvent_SendFailed():
+return sendFailed(_that);case MessageEvent_UploadProgress():
+return uploadProgress(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( MessageEvent_NewMessage value)?  newMessage,TResult? Function( MessageEvent_OfflineNewMessage value)?  offlineNewMessage,TResult? Function( MessageEvent_OnlineOnlyMessage value)?  onlineOnlyMessage,TResult? Function( MessageEvent_Revoked value)?  revoked,TResult? Function( MessageEvent_C2CReadReceipt value)?  c2CReadReceipt,TResult? Function( MessageEvent_Deleted value)?  deleted,TResult? Function( MessageEvent_SendFailed value)?  sendFailed,TResult? Function( MessageEvent_UploadProgress value)?  uploadProgress,}){
+final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage() when newMessage != null:
+return newMessage(_that);case MessageEvent_OfflineNewMessage() when offlineNewMessage != null:
+return offlineNewMessage(_that);case MessageEvent_OnlineOnlyMessage() when onlineOnlyMessage != null:
+return onlineOnlyMessage(_that);case MessageEvent_Revoked() when revoked != null:
+return revoked(_that);case MessageEvent_C2CReadReceipt() when c2CReadReceipt != null:
+return c2CReadReceipt(_that);case MessageEvent_Deleted() when deleted != null:
+return deleted(_that);case MessageEvent_SendFailed() when sendFailed != null:
+return sendFailed(_that);case MessageEvent_UploadProgress() when uploadProgress != null:
+return uploadProgress(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String conversationId,  MessageInfo message)?  newMessage,TResult Function( String conversationId,  MessageInfo message)?  offlineNewMessage,TResult Function( String conversationId,  MessageInfo message)?  onlineOnlyMessage,TResult Function( String conversationId,  int seq,  String clientMsgId,  String revokerId,  int revokerRole,  String revokerNickname,  int revokeTime,  int sourceMessageSendTime,  String sourceMessageSendId,  String sourceMessageSenderNickname,  int sessionType,  bool isAdminRevoke)?  revoked,TResult Function( List<MessageReceipt> receipts)?  c2CReadReceipt,TResult Function( String conversationId,  List<String> clientMsgIds)?  deleted,TResult Function( String clientMsgId,  String error)?  sendFailed,TResult Function( String clientMsgId,  int progress,  int totalSize,  int uploadedSize)?  uploadProgress,required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage() when newMessage != null:
+return newMessage(_that.conversationId,_that.message);case MessageEvent_OfflineNewMessage() when offlineNewMessage != null:
+return offlineNewMessage(_that.conversationId,_that.message);case MessageEvent_OnlineOnlyMessage() when onlineOnlyMessage != null:
+return onlineOnlyMessage(_that.conversationId,_that.message);case MessageEvent_Revoked() when revoked != null:
+return revoked(_that.conversationId,_that.seq,_that.clientMsgId,_that.revokerId,_that.revokerRole,_that.revokerNickname,_that.revokeTime,_that.sourceMessageSendTime,_that.sourceMessageSendId,_that.sourceMessageSenderNickname,_that.sessionType,_that.isAdminRevoke);case MessageEvent_C2CReadReceipt() when c2CReadReceipt != null:
+return c2CReadReceipt(_that.receipts);case MessageEvent_Deleted() when deleted != null:
+return deleted(_that.conversationId,_that.clientMsgIds);case MessageEvent_SendFailed() when sendFailed != null:
+return sendFailed(_that.clientMsgId,_that.error);case MessageEvent_UploadProgress() when uploadProgress != null:
+return uploadProgress(_that.clientMsgId,_that.progress,_that.totalSize,_that.uploadedSize);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String conversationId,  MessageInfo message)  newMessage,required TResult Function( String conversationId,  MessageInfo message)  offlineNewMessage,required TResult Function( String conversationId,  MessageInfo message)  onlineOnlyMessage,required TResult Function( String conversationId,  int seq,  String clientMsgId,  String revokerId,  int revokerRole,  String revokerNickname,  int revokeTime,  int sourceMessageSendTime,  String sourceMessageSendId,  String sourceMessageSenderNickname,  int sessionType,  bool isAdminRevoke)  revoked,required TResult Function( List<MessageReceipt> receipts)  c2CReadReceipt,required TResult Function( String conversationId,  List<String> clientMsgIds)  deleted,required TResult Function( String clientMsgId,  String error)  sendFailed,required TResult Function( String clientMsgId,  int progress,  int totalSize,  int uploadedSize)  uploadProgress,}) {final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage():
+return newMessage(_that.conversationId,_that.message);case MessageEvent_OfflineNewMessage():
+return offlineNewMessage(_that.conversationId,_that.message);case MessageEvent_OnlineOnlyMessage():
+return onlineOnlyMessage(_that.conversationId,_that.message);case MessageEvent_Revoked():
+return revoked(_that.conversationId,_that.seq,_that.clientMsgId,_that.revokerId,_that.revokerRole,_that.revokerNickname,_that.revokeTime,_that.sourceMessageSendTime,_that.sourceMessageSendId,_that.sourceMessageSenderNickname,_that.sessionType,_that.isAdminRevoke);case MessageEvent_C2CReadReceipt():
+return c2CReadReceipt(_that.receipts);case MessageEvent_Deleted():
+return deleted(_that.conversationId,_that.clientMsgIds);case MessageEvent_SendFailed():
+return sendFailed(_that.clientMsgId,_that.error);case MessageEvent_UploadProgress():
+return uploadProgress(_that.clientMsgId,_that.progress,_that.totalSize,_that.uploadedSize);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String conversationId,  MessageInfo message)?  newMessage,TResult? Function( String conversationId,  MessageInfo message)?  offlineNewMessage,TResult? Function( String conversationId,  MessageInfo message)?  onlineOnlyMessage,TResult? Function( String conversationId,  int seq,  String clientMsgId,  String revokerId,  int revokerRole,  String revokerNickname,  int revokeTime,  int sourceMessageSendTime,  String sourceMessageSendId,  String sourceMessageSenderNickname,  int sessionType,  bool isAdminRevoke)?  revoked,TResult? Function( List<MessageReceipt> receipts)?  c2CReadReceipt,TResult? Function( String conversationId,  List<String> clientMsgIds)?  deleted,TResult? Function( String clientMsgId,  String error)?  sendFailed,TResult? Function( String clientMsgId,  int progress,  int totalSize,  int uploadedSize)?  uploadProgress,}) {final _that = this;
+switch (_that) {
+case MessageEvent_NewMessage() when newMessage != null:
+return newMessage(_that.conversationId,_that.message);case MessageEvent_OfflineNewMessage() when offlineNewMessage != null:
+return offlineNewMessage(_that.conversationId,_that.message);case MessageEvent_OnlineOnlyMessage() when onlineOnlyMessage != null:
+return onlineOnlyMessage(_that.conversationId,_that.message);case MessageEvent_Revoked() when revoked != null:
+return revoked(_that.conversationId,_that.seq,_that.clientMsgId,_that.revokerId,_that.revokerRole,_that.revokerNickname,_that.revokeTime,_that.sourceMessageSendTime,_that.sourceMessageSendId,_that.sourceMessageSenderNickname,_that.sessionType,_that.isAdminRevoke);case MessageEvent_C2CReadReceipt() when c2CReadReceipt != null:
+return c2CReadReceipt(_that.receipts);case MessageEvent_Deleted() when deleted != null:
+return deleted(_that.conversationId,_that.clientMsgIds);case MessageEvent_SendFailed() when sendFailed != null:
+return sendFailed(_that.clientMsgId,_that.error);case MessageEvent_UploadProgress() when uploadProgress != null:
+return uploadProgress(_that.clientMsgId,_that.progress,_that.totalSize,_that.uploadedSize);case _:
+  return null;
+
+}
 }
 
-/// @nodoc
-abstract class _$$MessageEvent_NewMessageImplCopyWith<$Res> {
-  factory _$$MessageEvent_NewMessageImplCopyWith(
-    _$MessageEvent_NewMessageImpl value,
-    $Res Function(_$MessageEvent_NewMessageImpl) then,
-  ) = __$$MessageEvent_NewMessageImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId, MessageInfo message});
-}
-
-/// @nodoc
-class __$$MessageEvent_NewMessageImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_NewMessageImpl>
-    implements _$$MessageEvent_NewMessageImplCopyWith<$Res> {
-  __$$MessageEvent_NewMessageImplCopyWithImpl(
-    _$MessageEvent_NewMessageImpl _value,
-    $Res Function(_$MessageEvent_NewMessageImpl) _then,
-  ) : super(_value, _then);
-
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? conversationId = null, Object? message = null}) {
-    return _then(
-      _$MessageEvent_NewMessageImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as MessageInfo,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_NewMessageImpl extends MessageEvent_NewMessage {
-  const _$MessageEvent_NewMessageImpl({
-    required this.conversationId,
-    required this.message,
-  }) : super._();
 
-  @override
-  final String conversationId;
-  @override
-  final MessageInfo message;
+class MessageEvent_NewMessage extends MessageEvent {
+  const MessageEvent_NewMessage({required this.conversationId, required this.message}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.newMessage(conversationId: $conversationId, message: $message)';
-  }
+ final  String conversationId;
+ final  MessageInfo message;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_NewMessageImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            (identical(other.message, message) || other.message == message));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_NewMessageCopyWith<MessageEvent_NewMessage> get copyWith => _$MessageEvent_NewMessageCopyWithImpl<MessageEvent_NewMessage>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, conversationId, message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_NewMessageImplCopyWith<_$MessageEvent_NewMessageImpl>
-  get copyWith =>
-      __$$MessageEvent_NewMessageImplCopyWithImpl<
-        _$MessageEvent_NewMessageImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return newMessage(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return newMessage?.call(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (newMessage != null) {
-      return newMessage(conversationId, message);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return newMessage(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return newMessage?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (newMessage != null) {
-      return newMessage(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_NewMessage&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.message, message) || other.message == message));
 }
 
-abstract class MessageEvent_NewMessage extends MessageEvent {
-  const factory MessageEvent_NewMessage({
-    required final String conversationId,
-    required final MessageInfo message,
-  }) = _$MessageEvent_NewMessageImpl;
-  const MessageEvent_NewMessage._() : super._();
 
-  String get conversationId;
-  MessageInfo get message;
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_NewMessageImplCopyWith<_$MessageEvent_NewMessageImpl>
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.newMessage(conversationId: $conversationId, message: $message)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_OfflineNewMessageImplCopyWith<$Res> {
-  factory _$$MessageEvent_OfflineNewMessageImplCopyWith(
-    _$MessageEvent_OfflineNewMessageImpl value,
-    $Res Function(_$MessageEvent_OfflineNewMessageImpl) then,
-  ) = __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId, MessageInfo message});
+abstract mixin class $MessageEvent_NewMessageCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_NewMessageCopyWith(MessageEvent_NewMessage value, $Res Function(MessageEvent_NewMessage) _then) = _$MessageEvent_NewMessageCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, MessageInfo message
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_NewMessageCopyWithImpl<$Res>
+    implements $MessageEvent_NewMessageCopyWith<$Res> {
+  _$MessageEvent_NewMessageCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_NewMessage _self;
+  final $Res Function(MessageEvent_NewMessage) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? message = null,}) {
+  return _then(MessageEvent_NewMessage(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as MessageInfo,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<$Res>
-    extends
-        _$MessageEventCopyWithImpl<$Res, _$MessageEvent_OfflineNewMessageImpl>
-    implements _$$MessageEvent_OfflineNewMessageImplCopyWith<$Res> {
-  __$$MessageEvent_OfflineNewMessageImplCopyWithImpl(
-    _$MessageEvent_OfflineNewMessageImpl _value,
-    $Res Function(_$MessageEvent_OfflineNewMessageImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? conversationId = null, Object? message = null}) {
-    return _then(
-      _$MessageEvent_OfflineNewMessageImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as MessageInfo,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_OfflineNewMessageImpl
-    extends MessageEvent_OfflineNewMessage {
-  const _$MessageEvent_OfflineNewMessageImpl({
-    required this.conversationId,
-    required this.message,
-  }) : super._();
 
-  @override
-  final String conversationId;
-  @override
-  final MessageInfo message;
+class MessageEvent_OfflineNewMessage extends MessageEvent {
+  const MessageEvent_OfflineNewMessage({required this.conversationId, required this.message}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.offlineNewMessage(conversationId: $conversationId, message: $message)';
-  }
+ final  String conversationId;
+ final  MessageInfo message;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_OfflineNewMessageImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            (identical(other.message, message) || other.message == message));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_OfflineNewMessageCopyWith<MessageEvent_OfflineNewMessage> get copyWith => _$MessageEvent_OfflineNewMessageCopyWithImpl<MessageEvent_OfflineNewMessage>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, conversationId, message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_OfflineNewMessageImplCopyWith<
-    _$MessageEvent_OfflineNewMessageImpl
-  >
-  get copyWith =>
-      __$$MessageEvent_OfflineNewMessageImplCopyWithImpl<
-        _$MessageEvent_OfflineNewMessageImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return offlineNewMessage(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return offlineNewMessage?.call(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (offlineNewMessage != null) {
-      return offlineNewMessage(conversationId, message);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return offlineNewMessage(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return offlineNewMessage?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (offlineNewMessage != null) {
-      return offlineNewMessage(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_OfflineNewMessage&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.message, message) || other.message == message));
 }
 
-abstract class MessageEvent_OfflineNewMessage extends MessageEvent {
-  const factory MessageEvent_OfflineNewMessage({
-    required final String conversationId,
-    required final MessageInfo message,
-  }) = _$MessageEvent_OfflineNewMessageImpl;
-  const MessageEvent_OfflineNewMessage._() : super._();
 
-  String get conversationId;
-  MessageInfo get message;
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_OfflineNewMessageImplCopyWith<
-    _$MessageEvent_OfflineNewMessageImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.offlineNewMessage(conversationId: $conversationId, message: $message)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_OnlineOnlyMessageImplCopyWith<$Res> {
-  factory _$$MessageEvent_OnlineOnlyMessageImplCopyWith(
-    _$MessageEvent_OnlineOnlyMessageImpl value,
-    $Res Function(_$MessageEvent_OnlineOnlyMessageImpl) then,
-  ) = __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId, MessageInfo message});
+abstract mixin class $MessageEvent_OfflineNewMessageCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_OfflineNewMessageCopyWith(MessageEvent_OfflineNewMessage value, $Res Function(MessageEvent_OfflineNewMessage) _then) = _$MessageEvent_OfflineNewMessageCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, MessageInfo message
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_OfflineNewMessageCopyWithImpl<$Res>
+    implements $MessageEvent_OfflineNewMessageCopyWith<$Res> {
+  _$MessageEvent_OfflineNewMessageCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_OfflineNewMessage _self;
+  final $Res Function(MessageEvent_OfflineNewMessage) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? message = null,}) {
+  return _then(MessageEvent_OfflineNewMessage(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as MessageInfo,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<$Res>
-    extends
-        _$MessageEventCopyWithImpl<$Res, _$MessageEvent_OnlineOnlyMessageImpl>
-    implements _$$MessageEvent_OnlineOnlyMessageImplCopyWith<$Res> {
-  __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl(
-    _$MessageEvent_OnlineOnlyMessageImpl _value,
-    $Res Function(_$MessageEvent_OnlineOnlyMessageImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? conversationId = null, Object? message = null}) {
-    return _then(
-      _$MessageEvent_OnlineOnlyMessageImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as MessageInfo,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_OnlineOnlyMessageImpl
-    extends MessageEvent_OnlineOnlyMessage {
-  const _$MessageEvent_OnlineOnlyMessageImpl({
-    required this.conversationId,
-    required this.message,
-  }) : super._();
 
-  @override
-  final String conversationId;
-  @override
-  final MessageInfo message;
+class MessageEvent_OnlineOnlyMessage extends MessageEvent {
+  const MessageEvent_OnlineOnlyMessage({required this.conversationId, required this.message}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.onlineOnlyMessage(conversationId: $conversationId, message: $message)';
-  }
+ final  String conversationId;
+ final  MessageInfo message;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_OnlineOnlyMessageImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            (identical(other.message, message) || other.message == message));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_OnlineOnlyMessageCopyWith<MessageEvent_OnlineOnlyMessage> get copyWith => _$MessageEvent_OnlineOnlyMessageCopyWithImpl<MessageEvent_OnlineOnlyMessage>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, conversationId, message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_OnlineOnlyMessageImplCopyWith<
-    _$MessageEvent_OnlineOnlyMessageImpl
-  >
-  get copyWith =>
-      __$$MessageEvent_OnlineOnlyMessageImplCopyWithImpl<
-        _$MessageEvent_OnlineOnlyMessageImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return onlineOnlyMessage(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return onlineOnlyMessage?.call(conversationId, message);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (onlineOnlyMessage != null) {
-      return onlineOnlyMessage(conversationId, message);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return onlineOnlyMessage(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return onlineOnlyMessage?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (onlineOnlyMessage != null) {
-      return onlineOnlyMessage(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_OnlineOnlyMessage&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.message, message) || other.message == message));
 }
 
-abstract class MessageEvent_OnlineOnlyMessage extends MessageEvent {
-  const factory MessageEvent_OnlineOnlyMessage({
-    required final String conversationId,
-    required final MessageInfo message,
-  }) = _$MessageEvent_OnlineOnlyMessageImpl;
-  const MessageEvent_OnlineOnlyMessage._() : super._();
 
-  String get conversationId;
-  MessageInfo get message;
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,message);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_OnlineOnlyMessageImplCopyWith<
-    _$MessageEvent_OnlineOnlyMessageImpl
-  >
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.onlineOnlyMessage(conversationId: $conversationId, message: $message)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_RevokedImplCopyWith<$Res> {
-  factory _$$MessageEvent_RevokedImplCopyWith(
-    _$MessageEvent_RevokedImpl value,
-    $Res Function(_$MessageEvent_RevokedImpl) then,
-  ) = __$$MessageEvent_RevokedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({
-    String conversationId,
-    int seq,
-    String clientMsgId,
-    String revokerId,
-    int revokerRole,
-    String revokerNickname,
-    int revokeTime,
-    int sourceMessageSendTime,
-    String sourceMessageSendId,
-    String sourceMessageSenderNickname,
-    int sessionType,
-    bool isAdminRevoke,
-  });
+abstract mixin class $MessageEvent_OnlineOnlyMessageCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_OnlineOnlyMessageCopyWith(MessageEvent_OnlineOnlyMessage value, $Res Function(MessageEvent_OnlineOnlyMessage) _then) = _$MessageEvent_OnlineOnlyMessageCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, MessageInfo message
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_OnlineOnlyMessageCopyWithImpl<$Res>
+    implements $MessageEvent_OnlineOnlyMessageCopyWith<$Res> {
+  _$MessageEvent_OnlineOnlyMessageCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_OnlineOnlyMessage _self;
+  final $Res Function(MessageEvent_OnlineOnlyMessage) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? message = null,}) {
+  return _then(MessageEvent_OnlineOnlyMessage(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as MessageInfo,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_RevokedImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_RevokedImpl>
-    implements _$$MessageEvent_RevokedImplCopyWith<$Res> {
-  __$$MessageEvent_RevokedImplCopyWithImpl(
-    _$MessageEvent_RevokedImpl _value,
-    $Res Function(_$MessageEvent_RevokedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? conversationId = null,
-    Object? seq = null,
-    Object? clientMsgId = null,
-    Object? revokerId = null,
-    Object? revokerRole = null,
-    Object? revokerNickname = null,
-    Object? revokeTime = null,
-    Object? sourceMessageSendTime = null,
-    Object? sourceMessageSendId = null,
-    Object? sourceMessageSenderNickname = null,
-    Object? sessionType = null,
-    Object? isAdminRevoke = null,
-  }) {
-    return _then(
-      _$MessageEvent_RevokedImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        seq: null == seq
-            ? _value.seq
-            : seq // ignore: cast_nullable_to_non_nullable
-                  as int,
-        clientMsgId: null == clientMsgId
-            ? _value.clientMsgId
-            : clientMsgId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        revokerId: null == revokerId
-            ? _value.revokerId
-            : revokerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        revokerRole: null == revokerRole
-            ? _value.revokerRole
-            : revokerRole // ignore: cast_nullable_to_non_nullable
-                  as int,
-        revokerNickname: null == revokerNickname
-            ? _value.revokerNickname
-            : revokerNickname // ignore: cast_nullable_to_non_nullable
-                  as String,
-        revokeTime: null == revokeTime
-            ? _value.revokeTime
-            : revokeTime // ignore: cast_nullable_to_non_nullable
-                  as int,
-        sourceMessageSendTime: null == sourceMessageSendTime
-            ? _value.sourceMessageSendTime
-            : sourceMessageSendTime // ignore: cast_nullable_to_non_nullable
-                  as int,
-        sourceMessageSendId: null == sourceMessageSendId
-            ? _value.sourceMessageSendId
-            : sourceMessageSendId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        sourceMessageSenderNickname: null == sourceMessageSenderNickname
-            ? _value.sourceMessageSenderNickname
-            : sourceMessageSenderNickname // ignore: cast_nullable_to_non_nullable
-                  as String,
-        sessionType: null == sessionType
-            ? _value.sessionType
-            : sessionType // ignore: cast_nullable_to_non_nullable
-                  as int,
-        isAdminRevoke: null == isAdminRevoke
-            ? _value.isAdminRevoke
-            : isAdminRevoke // ignore: cast_nullable_to_non_nullable
-                  as bool,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_RevokedImpl extends MessageEvent_Revoked {
-  const _$MessageEvent_RevokedImpl({
-    required this.conversationId,
-    required this.seq,
-    required this.clientMsgId,
-    required this.revokerId,
-    required this.revokerRole,
-    required this.revokerNickname,
-    required this.revokeTime,
-    required this.sourceMessageSendTime,
-    required this.sourceMessageSendId,
-    required this.sourceMessageSenderNickname,
-    required this.sessionType,
-    required this.isAdminRevoke,
-  }) : super._();
 
-  @override
-  final String conversationId;
-  @override
-  final int seq;
-  @override
-  final String clientMsgId;
-  @override
-  final String revokerId;
-  @override
-  final int revokerRole;
-  @override
-  final String revokerNickname;
-  @override
-  final int revokeTime;
-  @override
-  final int sourceMessageSendTime;
-  @override
-  final String sourceMessageSendId;
-  @override
-  final String sourceMessageSenderNickname;
-  @override
-  final int sessionType;
-  @override
-  final bool isAdminRevoke;
+class MessageEvent_Revoked extends MessageEvent {
+  const MessageEvent_Revoked({required this.conversationId, required this.seq, required this.clientMsgId, required this.revokerId, required this.revokerRole, required this.revokerNickname, required this.revokeTime, required this.sourceMessageSendTime, required this.sourceMessageSendId, required this.sourceMessageSenderNickname, required this.sessionType, required this.isAdminRevoke}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.revoked(conversationId: $conversationId, seq: $seq, clientMsgId: $clientMsgId, revokerId: $revokerId, revokerRole: $revokerRole, revokerNickname: $revokerNickname, revokeTime: $revokeTime, sourceMessageSendTime: $sourceMessageSendTime, sourceMessageSendId: $sourceMessageSendId, sourceMessageSenderNickname: $sourceMessageSenderNickname, sessionType: $sessionType, isAdminRevoke: $isAdminRevoke)';
-  }
+ final  String conversationId;
+ final  int seq;
+ final  String clientMsgId;
+ final  String revokerId;
+ final  int revokerRole;
+ final  String revokerNickname;
+ final  int revokeTime;
+ final  int sourceMessageSendTime;
+ final  String sourceMessageSendId;
+ final  String sourceMessageSenderNickname;
+ final  int sessionType;
+ final  bool isAdminRevoke;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_RevokedImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            (identical(other.seq, seq) || other.seq == seq) &&
-            (identical(other.clientMsgId, clientMsgId) ||
-                other.clientMsgId == clientMsgId) &&
-            (identical(other.revokerId, revokerId) ||
-                other.revokerId == revokerId) &&
-            (identical(other.revokerRole, revokerRole) ||
-                other.revokerRole == revokerRole) &&
-            (identical(other.revokerNickname, revokerNickname) ||
-                other.revokerNickname == revokerNickname) &&
-            (identical(other.revokeTime, revokeTime) ||
-                other.revokeTime == revokeTime) &&
-            (identical(other.sourceMessageSendTime, sourceMessageSendTime) ||
-                other.sourceMessageSendTime == sourceMessageSendTime) &&
-            (identical(other.sourceMessageSendId, sourceMessageSendId) ||
-                other.sourceMessageSendId == sourceMessageSendId) &&
-            (identical(
-                  other.sourceMessageSenderNickname,
-                  sourceMessageSenderNickname,
-                ) ||
-                other.sourceMessageSenderNickname ==
-                    sourceMessageSenderNickname) &&
-            (identical(other.sessionType, sessionType) ||
-                other.sessionType == sessionType) &&
-            (identical(other.isAdminRevoke, isAdminRevoke) ||
-                other.isAdminRevoke == isAdminRevoke));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_RevokedCopyWith<MessageEvent_Revoked> get copyWith => _$MessageEvent_RevokedCopyWithImpl<MessageEvent_Revoked>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    conversationId,
-    seq,
-    clientMsgId,
-    revokerId,
-    revokerRole,
-    revokerNickname,
-    revokeTime,
-    sourceMessageSendTime,
-    sourceMessageSendId,
-    sourceMessageSenderNickname,
-    sessionType,
-    isAdminRevoke,
-  );
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_RevokedImplCopyWith<_$MessageEvent_RevokedImpl>
-  get copyWith =>
-      __$$MessageEvent_RevokedImplCopyWithImpl<_$MessageEvent_RevokedImpl>(
-        this,
-        _$identity,
-      );
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return revoked(
-      conversationId,
-      seq,
-      clientMsgId,
-      revokerId,
-      revokerRole,
-      revokerNickname,
-      revokeTime,
-      sourceMessageSendTime,
-      sourceMessageSendId,
-      sourceMessageSenderNickname,
-      sessionType,
-      isAdminRevoke,
-    );
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return revoked?.call(
-      conversationId,
-      seq,
-      clientMsgId,
-      revokerId,
-      revokerRole,
-      revokerNickname,
-      revokeTime,
-      sourceMessageSendTime,
-      sourceMessageSendId,
-      sourceMessageSenderNickname,
-      sessionType,
-      isAdminRevoke,
-    );
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (revoked != null) {
-      return revoked(
-        conversationId,
-        seq,
-        clientMsgId,
-        revokerId,
-        revokerRole,
-        revokerNickname,
-        revokeTime,
-        sourceMessageSendTime,
-        sourceMessageSendId,
-        sourceMessageSenderNickname,
-        sessionType,
-        isAdminRevoke,
-      );
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return revoked(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return revoked?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (revoked != null) {
-      return revoked(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_Revoked&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.seq, seq) || other.seq == seq)&&(identical(other.clientMsgId, clientMsgId) || other.clientMsgId == clientMsgId)&&(identical(other.revokerId, revokerId) || other.revokerId == revokerId)&&(identical(other.revokerRole, revokerRole) || other.revokerRole == revokerRole)&&(identical(other.revokerNickname, revokerNickname) || other.revokerNickname == revokerNickname)&&(identical(other.revokeTime, revokeTime) || other.revokeTime == revokeTime)&&(identical(other.sourceMessageSendTime, sourceMessageSendTime) || other.sourceMessageSendTime == sourceMessageSendTime)&&(identical(other.sourceMessageSendId, sourceMessageSendId) || other.sourceMessageSendId == sourceMessageSendId)&&(identical(other.sourceMessageSenderNickname, sourceMessageSenderNickname) || other.sourceMessageSenderNickname == sourceMessageSenderNickname)&&(identical(other.sessionType, sessionType) || other.sessionType == sessionType)&&(identical(other.isAdminRevoke, isAdminRevoke) || other.isAdminRevoke == isAdminRevoke));
 }
 
-abstract class MessageEvent_Revoked extends MessageEvent {
-  const factory MessageEvent_Revoked({
-    required final String conversationId,
-    required final int seq,
-    required final String clientMsgId,
-    required final String revokerId,
-    required final int revokerRole,
-    required final String revokerNickname,
-    required final int revokeTime,
-    required final int sourceMessageSendTime,
-    required final String sourceMessageSendId,
-    required final String sourceMessageSenderNickname,
-    required final int sessionType,
-    required final bool isAdminRevoke,
-  }) = _$MessageEvent_RevokedImpl;
-  const MessageEvent_Revoked._() : super._();
 
-  String get conversationId;
-  int get seq;
-  String get clientMsgId;
-  String get revokerId;
-  int get revokerRole;
-  String get revokerNickname;
-  int get revokeTime;
-  int get sourceMessageSendTime;
-  String get sourceMessageSendId;
-  String get sourceMessageSenderNickname;
-  int get sessionType;
-  bool get isAdminRevoke;
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,seq,clientMsgId,revokerId,revokerRole,revokerNickname,revokeTime,sourceMessageSendTime,sourceMessageSendId,sourceMessageSenderNickname,sessionType,isAdminRevoke);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_RevokedImplCopyWith<_$MessageEvent_RevokedImpl>
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.revoked(conversationId: $conversationId, seq: $seq, clientMsgId: $clientMsgId, revokerId: $revokerId, revokerRole: $revokerRole, revokerNickname: $revokerNickname, revokeTime: $revokeTime, sourceMessageSendTime: $sourceMessageSendTime, sourceMessageSendId: $sourceMessageSendId, sourceMessageSenderNickname: $sourceMessageSenderNickname, sessionType: $sessionType, isAdminRevoke: $isAdminRevoke)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_C2CReadReceiptImplCopyWith<$Res> {
-  factory _$$MessageEvent_C2CReadReceiptImplCopyWith(
-    _$MessageEvent_C2CReadReceiptImpl value,
-    $Res Function(_$MessageEvent_C2CReadReceiptImpl) then,
-  ) = __$$MessageEvent_C2CReadReceiptImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({List<MessageReceipt> receipts});
+abstract mixin class $MessageEvent_RevokedCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_RevokedCopyWith(MessageEvent_Revoked value, $Res Function(MessageEvent_Revoked) _then) = _$MessageEvent_RevokedCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, int seq, String clientMsgId, String revokerId, int revokerRole, String revokerNickname, int revokeTime, int sourceMessageSendTime, String sourceMessageSendId, String sourceMessageSenderNickname, int sessionType, bool isAdminRevoke
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_RevokedCopyWithImpl<$Res>
+    implements $MessageEvent_RevokedCopyWith<$Res> {
+  _$MessageEvent_RevokedCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_Revoked _self;
+  final $Res Function(MessageEvent_Revoked) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? seq = null,Object? clientMsgId = null,Object? revokerId = null,Object? revokerRole = null,Object? revokerNickname = null,Object? revokeTime = null,Object? sourceMessageSendTime = null,Object? sourceMessageSendId = null,Object? sourceMessageSenderNickname = null,Object? sessionType = null,Object? isAdminRevoke = null,}) {
+  return _then(MessageEvent_Revoked(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,seq: null == seq ? _self.seq : seq // ignore: cast_nullable_to_non_nullable
+as int,clientMsgId: null == clientMsgId ? _self.clientMsgId : clientMsgId // ignore: cast_nullable_to_non_nullable
+as String,revokerId: null == revokerId ? _self.revokerId : revokerId // ignore: cast_nullable_to_non_nullable
+as String,revokerRole: null == revokerRole ? _self.revokerRole : revokerRole // ignore: cast_nullable_to_non_nullable
+as int,revokerNickname: null == revokerNickname ? _self.revokerNickname : revokerNickname // ignore: cast_nullable_to_non_nullable
+as String,revokeTime: null == revokeTime ? _self.revokeTime : revokeTime // ignore: cast_nullable_to_non_nullable
+as int,sourceMessageSendTime: null == sourceMessageSendTime ? _self.sourceMessageSendTime : sourceMessageSendTime // ignore: cast_nullable_to_non_nullable
+as int,sourceMessageSendId: null == sourceMessageSendId ? _self.sourceMessageSendId : sourceMessageSendId // ignore: cast_nullable_to_non_nullable
+as String,sourceMessageSenderNickname: null == sourceMessageSenderNickname ? _self.sourceMessageSenderNickname : sourceMessageSenderNickname // ignore: cast_nullable_to_non_nullable
+as String,sessionType: null == sessionType ? _self.sessionType : sessionType // ignore: cast_nullable_to_non_nullable
+as int,isAdminRevoke: null == isAdminRevoke ? _self.isAdminRevoke : isAdminRevoke // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_C2CReadReceiptImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_C2CReadReceiptImpl>
-    implements _$$MessageEvent_C2CReadReceiptImplCopyWith<$Res> {
-  __$$MessageEvent_C2CReadReceiptImplCopyWithImpl(
-    _$MessageEvent_C2CReadReceiptImpl _value,
-    $Res Function(_$MessageEvent_C2CReadReceiptImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? receipts = null}) {
-    return _then(
-      _$MessageEvent_C2CReadReceiptImpl(
-        receipts: null == receipts
-            ? _value._receipts
-            : receipts // ignore: cast_nullable_to_non_nullable
-                  as List<MessageReceipt>,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_C2CReadReceiptImpl extends MessageEvent_C2CReadReceipt {
-  const _$MessageEvent_C2CReadReceiptImpl({
-    required final List<MessageReceipt> receipts,
-  }) : _receipts = receipts,
-       super._();
 
-  final List<MessageReceipt> _receipts;
-  @override
-  List<MessageReceipt> get receipts {
-    if (_receipts is EqualUnmodifiableListView) return _receipts;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_receipts);
-  }
+class MessageEvent_C2CReadReceipt extends MessageEvent {
+  const MessageEvent_C2CReadReceipt({required final  List<MessageReceipt> receipts}): _receipts = receipts,super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.c2CReadReceipt(receipts: $receipts)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_C2CReadReceiptImpl &&
-            const DeepCollectionEquality().equals(other._receipts, _receipts));
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_receipts));
-
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_C2CReadReceiptImplCopyWith<_$MessageEvent_C2CReadReceiptImpl>
-  get copyWith =>
-      __$$MessageEvent_C2CReadReceiptImplCopyWithImpl<
-        _$MessageEvent_C2CReadReceiptImpl
-      >(this, _$identity);
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return c2CReadReceipt(receipts);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return c2CReadReceipt?.call(receipts);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (c2CReadReceipt != null) {
-      return c2CReadReceipt(receipts);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return c2CReadReceipt(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return c2CReadReceipt?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (c2CReadReceipt != null) {
-      return c2CReadReceipt(this);
-    }
-    return orElse();
-  }
+ final  List<MessageReceipt> _receipts;
+ List<MessageReceipt> get receipts {
+  if (_receipts is EqualUnmodifiableListView) return _receipts;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_receipts);
 }
 
-abstract class MessageEvent_C2CReadReceipt extends MessageEvent {
-  const factory MessageEvent_C2CReadReceipt({
-    required final List<MessageReceipt> receipts,
-  }) = _$MessageEvent_C2CReadReceiptImpl;
-  const MessageEvent_C2CReadReceipt._() : super._();
 
-  List<MessageReceipt> get receipts;
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_C2CReadReceiptCopyWith<MessageEvent_C2CReadReceipt> get copyWith => _$MessageEvent_C2CReadReceiptCopyWithImpl<MessageEvent_C2CReadReceipt>(this, _$identity);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_C2CReadReceiptImplCopyWith<_$MessageEvent_C2CReadReceiptImpl>
-  get copyWith => throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_C2CReadReceipt&&const DeepCollectionEquality().equals(other._receipts, _receipts));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_receipts));
+
+@override
+String toString() {
+  return 'MessageEvent.c2CReadReceipt(receipts: $receipts)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_DeletedImplCopyWith<$Res> {
-  factory _$$MessageEvent_DeletedImplCopyWith(
-    _$MessageEvent_DeletedImpl value,
-    $Res Function(_$MessageEvent_DeletedImpl) then,
-  ) = __$$MessageEvent_DeletedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String conversationId, List<String> clientMsgIds});
+abstract mixin class $MessageEvent_C2CReadReceiptCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_C2CReadReceiptCopyWith(MessageEvent_C2CReadReceipt value, $Res Function(MessageEvent_C2CReadReceipt) _then) = _$MessageEvent_C2CReadReceiptCopyWithImpl;
+@useResult
+$Res call({
+ List<MessageReceipt> receipts
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_C2CReadReceiptCopyWithImpl<$Res>
+    implements $MessageEvent_C2CReadReceiptCopyWith<$Res> {
+  _$MessageEvent_C2CReadReceiptCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_C2CReadReceipt _self;
+  final $Res Function(MessageEvent_C2CReadReceipt) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? receipts = null,}) {
+  return _then(MessageEvent_C2CReadReceipt(
+receipts: null == receipts ? _self._receipts : receipts // ignore: cast_nullable_to_non_nullable
+as List<MessageReceipt>,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_DeletedImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_DeletedImpl>
-    implements _$$MessageEvent_DeletedImplCopyWith<$Res> {
-  __$$MessageEvent_DeletedImplCopyWithImpl(
-    _$MessageEvent_DeletedImpl _value,
-    $Res Function(_$MessageEvent_DeletedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? conversationId = null, Object? clientMsgIds = null}) {
-    return _then(
-      _$MessageEvent_DeletedImpl(
-        conversationId: null == conversationId
-            ? _value.conversationId
-            : conversationId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        clientMsgIds: null == clientMsgIds
-            ? _value._clientMsgIds
-            : clientMsgIds // ignore: cast_nullable_to_non_nullable
-                  as List<String>,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_DeletedImpl extends MessageEvent_Deleted {
-  const _$MessageEvent_DeletedImpl({
-    required this.conversationId,
-    required final List<String> clientMsgIds,
-  }) : _clientMsgIds = clientMsgIds,
-       super._();
 
-  @override
-  final String conversationId;
-  final List<String> _clientMsgIds;
-  @override
-  List<String> get clientMsgIds {
-    if (_clientMsgIds is EqualUnmodifiableListView) return _clientMsgIds;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_clientMsgIds);
-  }
+class MessageEvent_Deleted extends MessageEvent {
+  const MessageEvent_Deleted({required this.conversationId, required final  List<String> clientMsgIds}): _clientMsgIds = clientMsgIds,super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.deleted(conversationId: $conversationId, clientMsgIds: $clientMsgIds)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_DeletedImpl &&
-            (identical(other.conversationId, conversationId) ||
-                other.conversationId == conversationId) &&
-            const DeepCollectionEquality().equals(
-              other._clientMsgIds,
-              _clientMsgIds,
-            ));
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    conversationId,
-    const DeepCollectionEquality().hash(_clientMsgIds),
-  );
-
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_DeletedImplCopyWith<_$MessageEvent_DeletedImpl>
-  get copyWith =>
-      __$$MessageEvent_DeletedImplCopyWithImpl<_$MessageEvent_DeletedImpl>(
-        this,
-        _$identity,
-      );
-
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return deleted(conversationId, clientMsgIds);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return deleted?.call(conversationId, clientMsgIds);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (deleted != null) {
-      return deleted(conversationId, clientMsgIds);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return deleted(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return deleted?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (deleted != null) {
-      return deleted(this);
-    }
-    return orElse();
-  }
+ final  String conversationId;
+ final  List<String> _clientMsgIds;
+ List<String> get clientMsgIds {
+  if (_clientMsgIds is EqualUnmodifiableListView) return _clientMsgIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_clientMsgIds);
 }
 
-abstract class MessageEvent_Deleted extends MessageEvent {
-  const factory MessageEvent_Deleted({
-    required final String conversationId,
-    required final List<String> clientMsgIds,
-  }) = _$MessageEvent_DeletedImpl;
-  const MessageEvent_Deleted._() : super._();
 
-  String get conversationId;
-  List<String> get clientMsgIds;
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_DeletedCopyWith<MessageEvent_Deleted> get copyWith => _$MessageEvent_DeletedCopyWithImpl<MessageEvent_Deleted>(this, _$identity);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_DeletedImplCopyWith<_$MessageEvent_DeletedImpl>
-  get copyWith => throw _privateConstructorUsedError;
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_Deleted&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&const DeepCollectionEquality().equals(other._clientMsgIds, _clientMsgIds));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,conversationId,const DeepCollectionEquality().hash(_clientMsgIds));
+
+@override
+String toString() {
+  return 'MessageEvent.deleted(conversationId: $conversationId, clientMsgIds: $clientMsgIds)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_SendFailedImplCopyWith<$Res> {
-  factory _$$MessageEvent_SendFailedImplCopyWith(
-    _$MessageEvent_SendFailedImpl value,
-    $Res Function(_$MessageEvent_SendFailedImpl) then,
-  ) = __$$MessageEvent_SendFailedImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({String clientMsgId, String error});
+abstract mixin class $MessageEvent_DeletedCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_DeletedCopyWith(MessageEvent_Deleted value, $Res Function(MessageEvent_Deleted) _then) = _$MessageEvent_DeletedCopyWithImpl;
+@useResult
+$Res call({
+ String conversationId, List<String> clientMsgIds
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_DeletedCopyWithImpl<$Res>
+    implements $MessageEvent_DeletedCopyWith<$Res> {
+  _$MessageEvent_DeletedCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_Deleted _self;
+  final $Res Function(MessageEvent_Deleted) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? clientMsgIds = null,}) {
+  return _then(MessageEvent_Deleted(
+conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
+as String,clientMsgIds: null == clientMsgIds ? _self._clientMsgIds : clientMsgIds // ignore: cast_nullable_to_non_nullable
+as List<String>,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_SendFailedImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_SendFailedImpl>
-    implements _$$MessageEvent_SendFailedImplCopyWith<$Res> {
-  __$$MessageEvent_SendFailedImplCopyWithImpl(
-    _$MessageEvent_SendFailedImpl _value,
-    $Res Function(_$MessageEvent_SendFailedImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({Object? clientMsgId = null, Object? error = null}) {
-    return _then(
-      _$MessageEvent_SendFailedImpl(
-        clientMsgId: null == clientMsgId
-            ? _value.clientMsgId
-            : clientMsgId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        error: null == error
-            ? _value.error
-            : error // ignore: cast_nullable_to_non_nullable
-                  as String,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_SendFailedImpl extends MessageEvent_SendFailed {
-  const _$MessageEvent_SendFailedImpl({
-    required this.clientMsgId,
-    required this.error,
-  }) : super._();
 
-  @override
-  final String clientMsgId;
-  @override
-  final String error;
+class MessageEvent_SendFailed extends MessageEvent {
+  const MessageEvent_SendFailed({required this.clientMsgId, required this.error}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.sendFailed(clientMsgId: $clientMsgId, error: $error)';
-  }
+ final  String clientMsgId;
+ final  String error;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_SendFailedImpl &&
-            (identical(other.clientMsgId, clientMsgId) ||
-                other.clientMsgId == clientMsgId) &&
-            (identical(other.error, error) || other.error == error));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_SendFailedCopyWith<MessageEvent_SendFailed> get copyWith => _$MessageEvent_SendFailedCopyWithImpl<MessageEvent_SendFailed>(this, _$identity);
 
-  @override
-  int get hashCode => Object.hash(runtimeType, clientMsgId, error);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_SendFailedImplCopyWith<_$MessageEvent_SendFailedImpl>
-  get copyWith =>
-      __$$MessageEvent_SendFailedImplCopyWithImpl<
-        _$MessageEvent_SendFailedImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return sendFailed(clientMsgId, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return sendFailed?.call(clientMsgId, error);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (sendFailed != null) {
-      return sendFailed(clientMsgId, error);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return sendFailed(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return sendFailed?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (sendFailed != null) {
-      return sendFailed(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_SendFailed&&(identical(other.clientMsgId, clientMsgId) || other.clientMsgId == clientMsgId)&&(identical(other.error, error) || other.error == error));
 }
 
-abstract class MessageEvent_SendFailed extends MessageEvent {
-  const factory MessageEvent_SendFailed({
-    required final String clientMsgId,
-    required final String error,
-  }) = _$MessageEvent_SendFailedImpl;
-  const MessageEvent_SendFailed._() : super._();
 
-  String get clientMsgId;
-  String get error;
+@override
+int get hashCode => Object.hash(runtimeType,clientMsgId,error);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_SendFailedImplCopyWith<_$MessageEvent_SendFailedImpl>
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.sendFailed(clientMsgId: $clientMsgId, error: $error)';
+}
+
+
 }
 
 /// @nodoc
-abstract class _$$MessageEvent_UploadProgressImplCopyWith<$Res> {
-  factory _$$MessageEvent_UploadProgressImplCopyWith(
-    _$MessageEvent_UploadProgressImpl value,
-    $Res Function(_$MessageEvent_UploadProgressImpl) then,
-  ) = __$$MessageEvent_UploadProgressImplCopyWithImpl<$Res>;
-  @useResult
-  $Res call({
-    String clientMsgId,
-    int progress,
-    int totalSize,
-    int uploadedSize,
-  });
+abstract mixin class $MessageEvent_SendFailedCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_SendFailedCopyWith(MessageEvent_SendFailed value, $Res Function(MessageEvent_SendFailed) _then) = _$MessageEvent_SendFailedCopyWithImpl;
+@useResult
+$Res call({
+ String clientMsgId, String error
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_SendFailedCopyWithImpl<$Res>
+    implements $MessageEvent_SendFailedCopyWith<$Res> {
+  _$MessageEvent_SendFailedCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_SendFailed _self;
+  final $Res Function(MessageEvent_SendFailed) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? clientMsgId = null,Object? error = null,}) {
+  return _then(MessageEvent_SendFailed(
+clientMsgId: null == clientMsgId ? _self.clientMsgId : clientMsgId // ignore: cast_nullable_to_non_nullable
+as String,error: null == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
 }
 
-/// @nodoc
-class __$$MessageEvent_UploadProgressImplCopyWithImpl<$Res>
-    extends _$MessageEventCopyWithImpl<$Res, _$MessageEvent_UploadProgressImpl>
-    implements _$$MessageEvent_UploadProgressImplCopyWith<$Res> {
-  __$$MessageEvent_UploadProgressImplCopyWithImpl(
-    _$MessageEvent_UploadProgressImpl _value,
-    $Res Function(_$MessageEvent_UploadProgressImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? clientMsgId = null,
-    Object? progress = null,
-    Object? totalSize = null,
-    Object? uploadedSize = null,
-  }) {
-    return _then(
-      _$MessageEvent_UploadProgressImpl(
-        clientMsgId: null == clientMsgId
-            ? _value.clientMsgId
-            : clientMsgId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        progress: null == progress
-            ? _value.progress
-            : progress // ignore: cast_nullable_to_non_nullable
-                  as int,
-        totalSize: null == totalSize
-            ? _value.totalSize
-            : totalSize // ignore: cast_nullable_to_non_nullable
-                  as int,
-        uploadedSize: null == uploadedSize
-            ? _value.uploadedSize
-            : uploadedSize // ignore: cast_nullable_to_non_nullable
-                  as int,
-      ),
-    );
-  }
 }
 
 /// @nodoc
 
-class _$MessageEvent_UploadProgressImpl extends MessageEvent_UploadProgress {
-  const _$MessageEvent_UploadProgressImpl({
-    required this.clientMsgId,
-    required this.progress,
-    required this.totalSize,
-    required this.uploadedSize,
-  }) : super._();
 
-  @override
-  final String clientMsgId;
-  @override
-  final int progress;
-  @override
-  final int totalSize;
-  @override
-  final int uploadedSize;
+class MessageEvent_UploadProgress extends MessageEvent {
+  const MessageEvent_UploadProgress({required this.clientMsgId, required this.progress, required this.totalSize, required this.uploadedSize}): super._();
+  
 
-  @override
-  String toString() {
-    return 'MessageEvent.uploadProgress(clientMsgId: $clientMsgId, progress: $progress, totalSize: $totalSize, uploadedSize: $uploadedSize)';
-  }
+ final  String clientMsgId;
+ final  int progress;
+ final  int totalSize;
+ final  int uploadedSize;
 
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$MessageEvent_UploadProgressImpl &&
-            (identical(other.clientMsgId, clientMsgId) ||
-                other.clientMsgId == clientMsgId) &&
-            (identical(other.progress, progress) ||
-                other.progress == progress) &&
-            (identical(other.totalSize, totalSize) ||
-                other.totalSize == totalSize) &&
-            (identical(other.uploadedSize, uploadedSize) ||
-                other.uploadedSize == uploadedSize));
-  }
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageEvent_UploadProgressCopyWith<MessageEvent_UploadProgress> get copyWith => _$MessageEvent_UploadProgressCopyWithImpl<MessageEvent_UploadProgress>(this, _$identity);
 
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, clientMsgId, progress, totalSize, uploadedSize);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$MessageEvent_UploadProgressImplCopyWith<_$MessageEvent_UploadProgressImpl>
-  get copyWith =>
-      __$$MessageEvent_UploadProgressImplCopyWithImpl<
-        _$MessageEvent_UploadProgressImpl
-      >(this, _$identity);
 
-  @override
-  @optionalTypeArgs
-  TResult when<TResult extends Object?>({
-    required TResult Function(String conversationId, MessageInfo message)
-    newMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    offlineNewMessage,
-    required TResult Function(String conversationId, MessageInfo message)
-    onlineOnlyMessage,
-    required TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )
-    revoked,
-    required TResult Function(List<MessageReceipt> receipts) c2CReadReceipt,
-    required TResult Function(String conversationId, List<String> clientMsgIds)
-    deleted,
-    required TResult Function(String clientMsgId, String error) sendFailed,
-    required TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )
-    uploadProgress,
-  }) {
-    return uploadProgress(clientMsgId, progress, totalSize, uploadedSize);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(String conversationId, MessageInfo message)? newMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult? Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult? Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult? Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult? Function(String conversationId, List<String> clientMsgIds)?
-    deleted,
-    TResult? Function(String clientMsgId, String error)? sendFailed,
-    TResult? Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-  }) {
-    return uploadProgress?.call(clientMsgId, progress, totalSize, uploadedSize);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeWhen<TResult extends Object?>({
-    TResult Function(String conversationId, MessageInfo message)? newMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    offlineNewMessage,
-    TResult Function(String conversationId, MessageInfo message)?
-    onlineOnlyMessage,
-    TResult Function(
-      String conversationId,
-      int seq,
-      String clientMsgId,
-      String revokerId,
-      int revokerRole,
-      String revokerNickname,
-      int revokeTime,
-      int sourceMessageSendTime,
-      String sourceMessageSendId,
-      String sourceMessageSenderNickname,
-      int sessionType,
-      bool isAdminRevoke,
-    )?
-    revoked,
-    TResult Function(List<MessageReceipt> receipts)? c2CReadReceipt,
-    TResult Function(String conversationId, List<String> clientMsgIds)? deleted,
-    TResult Function(String clientMsgId, String error)? sendFailed,
-    TResult Function(
-      String clientMsgId,
-      int progress,
-      int totalSize,
-      int uploadedSize,
-    )?
-    uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (uploadProgress != null) {
-      return uploadProgress(clientMsgId, progress, totalSize, uploadedSize);
-    }
-    return orElse();
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult map<TResult extends Object?>({
-    required TResult Function(MessageEvent_NewMessage value) newMessage,
-    required TResult Function(MessageEvent_OfflineNewMessage value)
-    offlineNewMessage,
-    required TResult Function(MessageEvent_OnlineOnlyMessage value)
-    onlineOnlyMessage,
-    required TResult Function(MessageEvent_Revoked value) revoked,
-    required TResult Function(MessageEvent_C2CReadReceipt value) c2CReadReceipt,
-    required TResult Function(MessageEvent_Deleted value) deleted,
-    required TResult Function(MessageEvent_SendFailed value) sendFailed,
-    required TResult Function(MessageEvent_UploadProgress value) uploadProgress,
-  }) {
-    return uploadProgress(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult? mapOrNull<TResult extends Object?>({
-    TResult? Function(MessageEvent_NewMessage value)? newMessage,
-    TResult? Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult? Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult? Function(MessageEvent_Revoked value)? revoked,
-    TResult? Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult? Function(MessageEvent_Deleted value)? deleted,
-    TResult? Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult? Function(MessageEvent_UploadProgress value)? uploadProgress,
-  }) {
-    return uploadProgress?.call(this);
-  }
-
-  @override
-  @optionalTypeArgs
-  TResult maybeMap<TResult extends Object?>({
-    TResult Function(MessageEvent_NewMessage value)? newMessage,
-    TResult Function(MessageEvent_OfflineNewMessage value)? offlineNewMessage,
-    TResult Function(MessageEvent_OnlineOnlyMessage value)? onlineOnlyMessage,
-    TResult Function(MessageEvent_Revoked value)? revoked,
-    TResult Function(MessageEvent_C2CReadReceipt value)? c2CReadReceipt,
-    TResult Function(MessageEvent_Deleted value)? deleted,
-    TResult Function(MessageEvent_SendFailed value)? sendFailed,
-    TResult Function(MessageEvent_UploadProgress value)? uploadProgress,
-    required TResult orElse(),
-  }) {
-    if (uploadProgress != null) {
-      return uploadProgress(this);
-    }
-    return orElse();
-  }
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEvent_UploadProgress&&(identical(other.clientMsgId, clientMsgId) || other.clientMsgId == clientMsgId)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.totalSize, totalSize) || other.totalSize == totalSize)&&(identical(other.uploadedSize, uploadedSize) || other.uploadedSize == uploadedSize));
 }
 
-abstract class MessageEvent_UploadProgress extends MessageEvent {
-  const factory MessageEvent_UploadProgress({
-    required final String clientMsgId,
-    required final int progress,
-    required final int totalSize,
-    required final int uploadedSize,
-  }) = _$MessageEvent_UploadProgressImpl;
-  const MessageEvent_UploadProgress._() : super._();
 
-  String get clientMsgId;
-  int get progress;
-  int get totalSize;
-  int get uploadedSize;
+@override
+int get hashCode => Object.hash(runtimeType,clientMsgId,progress,totalSize,uploadedSize);
 
-  /// Create a copy of MessageEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$MessageEvent_UploadProgressImplCopyWith<_$MessageEvent_UploadProgressImpl>
-  get copyWith => throw _privateConstructorUsedError;
+@override
+String toString() {
+  return 'MessageEvent.uploadProgress(clientMsgId: $clientMsgId, progress: $progress, totalSize: $totalSize, uploadedSize: $uploadedSize)';
 }
+
+
+}
+
+/// @nodoc
+abstract mixin class $MessageEvent_UploadProgressCopyWith<$Res> implements $MessageEventCopyWith<$Res> {
+  factory $MessageEvent_UploadProgressCopyWith(MessageEvent_UploadProgress value, $Res Function(MessageEvent_UploadProgress) _then) = _$MessageEvent_UploadProgressCopyWithImpl;
+@useResult
+$Res call({
+ String clientMsgId, int progress, int totalSize, int uploadedSize
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageEvent_UploadProgressCopyWithImpl<$Res>
+    implements $MessageEvent_UploadProgressCopyWith<$Res> {
+  _$MessageEvent_UploadProgressCopyWithImpl(this._self, this._then);
+
+  final MessageEvent_UploadProgress _self;
+  final $Res Function(MessageEvent_UploadProgress) _then;
+
+/// Create a copy of MessageEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? clientMsgId = null,Object? progress = null,Object? totalSize = null,Object? uploadedSize = null,}) {
+  return _then(MessageEvent_UploadProgress(
+clientMsgId: null == clientMsgId ? _self.clientMsgId : clientMsgId // ignore: cast_nullable_to_non_nullable
+as String,progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as int,totalSize: null == totalSize ? _self.totalSize : totalSize // ignore: cast_nullable_to_non_nullable
+as int,uploadedSize: null == uploadedSize ? _self.uploadedSize : uploadedSize // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+// dart format on

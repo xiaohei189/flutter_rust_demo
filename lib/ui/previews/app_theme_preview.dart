@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../core/theme/app_theme.dart';
@@ -21,9 +22,9 @@ final class AppThemePreview extends Preview {
   });
 
   PreviewThemeData _themeBuilder() {
-    return PreviewThemeData(
-      materialLight: AppTheme.lightTheme,
-      materialDark: AppTheme.darkTheme,
+    return _AppPreviewThemeData(
+      light: AppTheme.lightTheme,
+      dark: AppTheme.darkTheme,
     );
   }
 
@@ -32,5 +33,21 @@ final class AppThemePreview extends Preview {
     final builder = super.transform().toBuilder();
     builder.theme = _themeBuilder;
     return builder.build();
+  }
+}
+
+final class _AppPreviewThemeData extends PreviewThemeData {
+  const _AppPreviewThemeData({required this.light, required this.dark});
+
+  final ThemeData light;
+  final ThemeData dark;
+
+  @override
+  Widget apply(BuildContext context, Widget child) {
+    final brightness = MediaQuery.platformBrightnessOf(context);
+    return Theme(
+      data: brightness == Brightness.dark ? dark : light,
+      child: child,
+    );
   }
 }

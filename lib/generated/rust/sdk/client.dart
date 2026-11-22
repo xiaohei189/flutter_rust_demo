@@ -7,7 +7,26 @@ import '../domain/model/message.dart';
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 历史消息分页查询参数
+Future<void> frbMirrorAnchorGetHistoryMessagesReq({
+  required GetHistoryMessagesReq value,
+}) => RustLib.instance.api.crateSdkClientFrbMirrorAnchorGetHistoryMessagesReq(
+  value: value,
+);
+
+Future<void> frbMirrorAnchorGetHistoryMessagesResult({
+  required GetHistoryMessagesResult value,
+}) => RustLib.instance.api
+    .crateSdkClientFrbMirrorAnchorGetHistoryMessagesResult(value: value);
+
+Future<void> frbMirrorAnchorSearchMessagesReq({
+  required SearchMessagesReq value,
+}) => RustLib.instance.api.crateSdkClientFrbMirrorAnchorSearchMessagesReq(
+  value: value,
+);
+
+/// flutter_rust_bridge:mirror(GetHistoryMessagesReq)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GetHistoryMessagesReq {
   final String conversationId;
   final String startClientMsgId;
@@ -33,7 +52,9 @@ class GetHistoryMessagesReq {
           count == other.count;
 }
 
-/// 历史消息分页结果
+/// flutter_rust_bridge:mirror(GetHistoryMessagesResult)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class GetHistoryMessagesResult {
   final List<MessageInfo> messages;
   final bool isEnd;
@@ -52,7 +73,9 @@ class GetHistoryMessagesResult {
           isEnd == other.isEnd;
 }
 
-/// 本地消息搜索参数
+/// flutter_rust_bridge:mirror(SearchMessagesReq)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class SearchMessagesReq {
   final String conversationId;
   final String keyword;

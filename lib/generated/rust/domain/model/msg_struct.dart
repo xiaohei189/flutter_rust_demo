@@ -6,7 +6,97 @@
 import '../../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// 富文本元素（对齐 Go SDK AdvancedTextElem）
+Future<void> frbMirrorAnchorAdvancedTextElem({
+  required AdvancedTextElem value,
+}) => RustLib.instance.api
+    .crateDomainModelMsgStructFrbMirrorAnchorAdvancedTextElem(value: value);
+
+Future<void> frbMirrorAnchorAtInfo({required AtInfo value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorAtInfo(value: value);
+
+Future<void> frbMirrorAnchorAtTextElem({required AtTextElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorAtTextElem(value: value);
+
+Future<void> frbMirrorAnchorCardElem({required CardElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorCardElem(value: value);
+
+Future<void> frbMirrorAnchorCustomElem({required CustomElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorCustomElem(value: value);
+
+Future<void> frbMirrorAnchorFaceElem({required FaceElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorFaceElem(value: value);
+
+Future<void> frbMirrorAnchorFileElem({required FileElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorFileElem(value: value);
+
+Future<void> frbMirrorAnchorLocationElem({required LocationElem value}) =>
+    RustLib.instance.api.crateDomainModelMsgStructFrbMirrorAnchorLocationElem(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorMarkdownTextElem({
+  required MarkdownTextElem value,
+}) => RustLib.instance.api
+    .crateDomainModelMsgStructFrbMirrorAnchorMarkdownTextElem(value: value);
+
+Future<void> frbMirrorAnchorMergeElem({required MergeElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorMergeElem(value: value);
+
+Future<void> frbMirrorAnchorMessageEntity({required MessageEntity value}) =>
+    RustLib.instance.api.crateDomainModelMsgStructFrbMirrorAnchorMessageEntity(
+      value: value,
+    );
+
+Future<void> frbMirrorAnchorMsgStruct({required MsgStruct value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorMsgStruct(value: value);
+
+Future<void> frbMirrorAnchorOfflinePushInfo({required OfflinePushInfo value}) =>
+    RustLib.instance.api
+        .crateDomainModelMsgStructFrbMirrorAnchorOfflinePushInfo(value: value);
+
+Future<void> frbMirrorAnchorPictureBaseInfo({required PictureBaseInfo value}) =>
+    RustLib.instance.api
+        .crateDomainModelMsgStructFrbMirrorAnchorPictureBaseInfo(value: value);
+
+Future<void> frbMirrorAnchorQuoteElem({required QuoteElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorQuoteElem(value: value);
+
+Future<void> frbMirrorAnchorSoundElem({required SoundElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorSoundElem(value: value);
+
+Future<void> frbMirrorAnchorTextElem({required TextElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorTextElem(value: value);
+
+Future<void> frbMirrorAnchorVideoElem({required VideoElem value}) => RustLib
+    .instance
+    .api
+    .crateDomainModelMsgStructFrbMirrorAnchorVideoElem(value: value);
+
+/// flutter_rust_bridge:mirror(AdvancedTextElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class AdvancedTextElem {
   final String text;
   final List<MessageEntity> messageEntityList;
@@ -25,7 +115,9 @@ class AdvancedTextElem {
           messageEntityList == other.messageEntityList;
 }
 
-/// @ 用户信息
+/// flutter_rust_bridge:mirror(AtInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class AtInfo {
   final String atUserId;
   final String groupNickname;
@@ -44,7 +136,9 @@ class AtInfo {
           groupNickname == other.groupNickname;
 }
 
-/// @ 消息元素（对齐 Go SDK AtTextElem）
+/// flutter_rust_bridge:mirror(AtTextElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class AtTextElem {
   final String text;
   final List<String> atUserList;
@@ -76,7 +170,9 @@ class AtTextElem {
           quoteMessage == other.quoteMessage;
 }
 
-/// 名片元素（对齐 Go SDK CardElem）
+/// flutter_rust_bridge:mirror(CardElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class CardElem {
   final String userId;
   final String nickname;
@@ -105,7 +201,9 @@ class CardElem {
           ex == other.ex;
 }
 
-/// 自定义元素（对齐 Go SDK CustomElem）
+/// flutter_rust_bridge:mirror(CustomElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class CustomElem {
   final String data;
   final String extension_;
@@ -131,7 +229,9 @@ class CustomElem {
           description == other.description;
 }
 
-/// 表情元素（对齐 Go SDK FaceElem）
+/// flutter_rust_bridge:mirror(FaceElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class FaceElem {
   final int index;
   final String data;
@@ -150,7 +250,9 @@ class FaceElem {
           data == other.data;
 }
 
-/// 文件消息元素（对齐 Go SDK FileElem）
+/// flutter_rust_bridge:mirror(FileElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class FileElem {
   final String filePath;
   final String uuid;
@@ -190,7 +292,9 @@ class FileElem {
           fileType == other.fileType;
 }
 
-/// 位置元素（对齐 Go SDK LocationElem）
+/// flutter_rust_bridge:mirror(LocationElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class LocationElem {
   final String description;
   final double longitude;
@@ -216,7 +320,9 @@ class LocationElem {
           latitude == other.latitude;
 }
 
-/// Markdown 文本元素（对齐 Go SDK MarkdownTextElem）
+/// flutter_rust_bridge:mirror(MarkdownTextElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MarkdownTextElem {
   final String content;
 
@@ -233,7 +339,9 @@ class MarkdownTextElem {
           content == other.content;
 }
 
-/// 合并转发元素（对齐 Go SDK MergeElem）
+/// flutter_rust_bridge:mirror(MergeElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MergeElem {
   final String title;
   final List<String> abstractList;
@@ -259,7 +367,9 @@ class MergeElem {
           multiMessage == other.multiMessage;
 }
 
-/// 消息实体（用于富文本）
+/// flutter_rust_bridge:mirror(MessageEntity)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MessageEntity {
   final String entityType;
   final int offset;
@@ -295,7 +405,9 @@ class MessageEntity {
           ex == other.ex;
 }
 
-/// 消息结构体（对齐 Go SDK sdk_struct.MsgStruct）
+/// flutter_rust_bridge:mirror(MsgStruct)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class MsgStruct {
   final String clientMsgId;
   final String serverMsgId;
@@ -316,6 +428,7 @@ class MsgStruct {
   final int status;
   final String attachedInfo;
   final String ex;
+  final String topicId;
   final String localEx;
   final TextElem? textElem;
   final PictureElem? pictureElem;
@@ -353,6 +466,7 @@ class MsgStruct {
     required this.status,
     required this.attachedInfo,
     required this.ex,
+    required this.topicId,
     required this.localEx,
     this.textElem,
     this.pictureElem,
@@ -392,6 +506,7 @@ class MsgStruct {
       status.hashCode ^
       attachedInfo.hashCode ^
       ex.hashCode ^
+      topicId.hashCode ^
       localEx.hashCode ^
       textElem.hashCode ^
       pictureElem.hashCode ^
@@ -433,6 +548,7 @@ class MsgStruct {
           status == other.status &&
           attachedInfo == other.attachedInfo &&
           ex == other.ex &&
+          topicId == other.topicId &&
           localEx == other.localEx &&
           textElem == other.textElem &&
           pictureElem == other.pictureElem &&
@@ -451,7 +567,9 @@ class MsgStruct {
           offlinePush == other.offlinePush;
 }
 
-/// 离线推送信息（对齐 Go SDK OfflinePushInfo）
+/// flutter_rust_bridge:mirror(OfflinePushInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class OfflinePushInfo {
   final String title;
   final String desc;
@@ -491,7 +609,9 @@ class OfflinePushInfo {
           signalInfo == other.signalInfo;
 }
 
-/// 图片基础信息
+/// flutter_rust_bridge:mirror(PictureBaseInfo)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class PictureBaseInfo {
   final int width;
   final int height;
@@ -531,7 +651,9 @@ class PictureBaseInfo {
           uuid == other.uuid;
 }
 
-/// 图片消息元素（对齐 Go SDK PictureElem）
+/// flutter_rust_bridge:mirror(PictureElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class PictureElem {
   final String sourcePath;
   final PictureBaseInfo sourcePicture;
@@ -563,7 +685,9 @@ class PictureElem {
           snapshotPicture == other.snapshotPicture;
 }
 
-/// 引用消息元素（对齐 Go SDK QuoteElem）
+/// flutter_rust_bridge:mirror(QuoteElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class QuoteElem {
   final String text;
   final MsgStruct? quoteMessage;
@@ -591,7 +715,9 @@ class QuoteElem {
           messageEntityList == other.messageEntityList;
 }
 
-/// 语音消息元素（对齐 Go SDK SoundElem）
+/// flutter_rust_bridge:mirror(SoundElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class SoundElem {
   final String uuid;
   final String soundPath;
@@ -631,7 +757,9 @@ class SoundElem {
           soundType == other.soundType;
 }
 
-/// 文本消息元素（对齐 Go SDK TextElem）
+/// flutter_rust_bridge:mirror(TextElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class TextElem {
   final String content;
 
@@ -648,7 +776,9 @@ class TextElem {
           content == other.content;
 }
 
-/// 视频消息元素（对齐 Go SDK VideoElem）
+/// flutter_rust_bridge:mirror(VideoElem)
+/// flutter_rust_bridge:unignore
+/// flutter_rust_bridge:non_opaque
 class VideoElem {
   final String videoPath;
   final String videoUuid;
